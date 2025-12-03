@@ -87,14 +87,21 @@ const PrivateCallModal = ({
   const initializeMedia = useCallback(async () => {
     try {
       const constraints = {
-        audio: true,
-        video: callType === "video" ? { width: 1280, height: 720 } : false,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+        video: callType === "video" ? {
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 },
+          facingMode: "user"
+        } : false,
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       localStreamRef.current = stream;
 
-      if (localVideoRef.current) {
+      if (localVideoRef.current && callType === "video") {
         localVideoRef.current.srcObject = stream;
       }
 
@@ -105,7 +112,7 @@ const PrivateCallModal = ({
       endCall();
       return null;
     }
-  }, [callType]);
+  }, [callType, endCall]);
 
   const startCall = useCallback(async () => {
     const stream = await initializeMedia();
@@ -234,7 +241,7 @@ const PrivateCallModal = ({
   }, [socket, otherUser, onClose, onCallEnd]);
 
   useEffect(() => {
-    if (!isOpen || !socket) return;
+    if (!isOpen || !socket || !otherUser) return;
 
     if (isInitiator) {
       startCall();
@@ -245,13 +252,23 @@ const PrivateCallModal = ({
     const handleOfferEvent = ({ sdp }) => handleOffer(sdp);
     const handleAnswerEvent = ({ sdp }) => handleAnswer(sdp);
     const handleIceCandidateEvent = ({ candidate }) => handleIceCandidate(candidate);
-    const handleCallEnded = () => endCall();
+    const handleCallEnded = () => {
+      console.log("Call ended by other user");
+      toast("Call ended", { icon: "📞" });
+      endCall();
+    };
+    const handleCallRejected = () => {
+      console.log("Call rejected by other user");
+      toast.error("Call declined");
+      endCall();
+    };
     const handleCallAccepted = () => setCallStatus("connecting");
 
     socket.on("private:offer", handleOfferEvent);
     socket.on("private:answer", handleAnswerEvent);
     socket.on("private:ice-candidate", handleIceCandidateEvent);
     socket.on("private:call-ended", handleCallEnded);
+    socket.on("private:call-rejected", handleCallRejected);
     socket.on("private:call-accepted", handleCallAccepted);
 
     return () => {
@@ -259,6 +276,7 @@ const PrivateCallModal = ({
       socket.off("private:answer", handleAnswerEvent);
       socket.off("private:ice-candidate", handleIceCandidateEvent);
       socket.off("private:call-ended", handleCallEnded);
+      socket.off("private:call-rejected", handleCallRejected);
       socket.off("private:call-accepted", handleCallAccepted);
       
       stopCallTimer();
@@ -266,7 +284,7 @@ const PrivateCallModal = ({
         localStreamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
-  }, [isOpen, socket, isInitiator, startCall, answerCall, handleOffer, handleAnswer, handleIceCandidate, endCall]);
+  }, [isOpen, socket, otherUser, isInitiator, startCall, answerCall, handleOffer, handleAnswer, handleIceCandidate, endCall]);
 
   if (!isOpen) return null;
 
@@ -277,115 +295,203 @@ const PrivateCallModal = ({
   };
 
   return (
-    <div className={`fixed inset-0 bg-black z-50 flex flex-col ${isFullscreen ? "" : "p-4"}`}>
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900 z-50 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent absolute top-0 left-0 right-0 z-10">
-        <div className="flex items-center gap-3">
-          <img
-            src={otherUser.profilePic || "/avatar.png"}
-            alt={otherUser.nickname}
-            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full ring-2 ring-white/20"
-          />
+      <div className="flex items-center justify-between p-3 sm:p-4 md:p-6 bg-gradient-to-b from-black/90 via-black/50 to-transparent">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="relative">
+            <img
+              src={otherUser?.profilePic || "/avatar.png"}
+              alt={otherUser?.nickname}
+              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full ring-2 ring-primary/50 shadow-lg"
+            />
+            {callStatus === "active" && (
+              <span className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-success rounded-full ring-2 ring-black animate-pulse" />
+            )}
+          </div>
           <div>
-            <h3 className="text-white font-semibold text-sm sm:text-base">
-              {otherUser.nickname || otherUser.username}
+            <h3 className="text-white font-bold text-sm sm:text-base md:text-lg">
+              {otherUser?.nickname || otherUser?.username}
             </h3>
-            <p className="text-white/70 text-xs sm:text-sm">
-              {callStatus === "connecting" && "Connecting..."}
-              {callStatus === "ringing" && "Ringing..."}
-              {callStatus === "active" && formatDuration(callDuration)}
+            <p className="text-white/70 text-xs sm:text-sm flex items-center gap-2">
+              {callStatus === "connecting" && (
+                <>
+                  <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+                  Connecting...
+                </>
+              )}
+              {callStatus === "ringing" && (
+                <>
+                  <span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-ping" />
+                  Ringing...
+                </>
+              )}
+              {callStatus === "active" && (
+                <>
+                  <span className="inline-block w-2 h-2 bg-success rounded-full" />
+                  {formatDuration(callDuration)}
+                </>
+              )}
               {callStatus === "ended" && "Call Ended"}
             </p>
           </div>
         </div>
         <button
           onClick={toggleFullscreen}
-          className="btn btn-ghost btn-circle btn-sm text-white"
+          className="btn btn-ghost btn-circle btn-sm sm:btn-md text-white hover:bg-white/10"
         >
-          {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+          {isFullscreen ? <Minimize2 className="w-4 h-4 sm:w-5 sm:h-5" /> : <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />}
         </button>
       </div>
 
       {/* Video Container */}
-      <div className="flex-1 relative flex items-center justify-center">
-        {/* Remote Video */}
-        <video
-          ref={remoteVideoRef}
-          autoPlay
-          playsInline
-          className="w-full h-full object-contain"
-        />
-
-        {/* Local Video (Picture-in-Picture) */}
-        {callType === "video" && (
-          <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-4 w-28 h-36 sm:w-36 sm:h-48 md:w-44 md:h-56 bg-gray-900 rounded-lg overflow-hidden shadow-2xl border-2 border-white/20">
+      <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+        {callType === "video" ? (
+          <>
+            {/* Remote Video - Full Screen */}
             <video
-              ref={localVideoRef}
+              ref={remoteVideoRef}
               autoPlay
               playsInline
-              muted
-              className="w-full h-full object-cover mirror"
+              className="w-full h-full object-cover"
             />
-            {isVideoOff && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-                <VideoOffIcon className="w-6 h-6 sm:w-8 sm:h-8 text-white/50" />
+            
+            {/* No Remote Video Placeholder */}
+            {!remoteStreamRef.current && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
+                <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center mb-4">
+                  <img
+                    src={otherUser?.profilePic || "/avatar.png"}
+                    alt={otherUser?.nickname}
+                    className="w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-full object-cover"
+                  />
+                </div>
+                <p className="text-white/70 text-sm sm:text-base">Waiting for video...</p>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Audio Call Avatar */}
-        {callType === "audio" && (
-          <div className="flex flex-col items-center gap-4">
-            <img
-              src={otherUser.profilePic || "/avatar.png"}
-              alt={otherUser.nickname}
-              className="w-32 h-32 sm:w-40 sm:h-40 rounded-full ring-4 ring-white/20"
-            />
-            <h2 className="text-white text-xl sm:text-2xl font-semibold">
-              {otherUser.nickname || otherUser.username}
-            </h2>
+            {/* Local Video (Picture-in-Picture) */}
+            <div className="absolute top-4 right-4 sm:top-6 sm:right-6 w-20 h-28 sm:w-28 sm:h-36 md:w-36 md:h-48 lg:w-40 lg:h-52 bg-gray-900 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 transition-all hover:scale-105">
+              <video
+                ref={localVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover mirror"
+              />
+              {isVideoOff && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900">
+                  <VideoOffIcon className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white/50 mb-2" />
+                  <span className="text-white/50 text-xs">Camera Off</span>
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          /* Audio Call UI */
+          <div className="flex flex-col items-center justify-center gap-4 sm:gap-6 p-4">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+              <img
+                src={otherUser?.profilePic || "/avatar.png"}
+                alt={otherUser?.nickname}
+                className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-full ring-4 ring-primary/30 shadow-2xl object-cover"
+              />
+              {callStatus === "active" && (
+                <span className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-4 h-4 sm:w-6 sm:h-6 bg-success rounded-full ring-4 ring-black animate-pulse" />
+              )}
+            </div>
+            <div className="text-center">
+              <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-bold mb-2">
+                {otherUser?.nickname || otherUser?.username}
+              </h2>
+              <p className="text-white/60 text-sm sm:text-base">
+                {callStatus === "ringing" && "Calling..."}
+                {callStatus === "connecting" && "Connecting..."}
+                {callStatus === "active" && "Voice Call"}
+              </p>
+            </div>
+            {/* Audio Visualizer */}
+            {callStatus === "active" && (
+              <div className="flex items-center gap-1 sm:gap-2 h-12 sm:h-16">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-1 sm:w-1.5 bg-primary rounded-full animate-pulse"
+                    style={{
+                      height: `${20 + Math.random() * 60}%`,
+                      animationDelay: `${i * 0.1}s`,
+                      animationDuration: `${0.5 + Math.random() * 0.5}s`
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
 
       {/* Controls */}
-      <div className="p-3 sm:p-4 md:p-6 bg-gradient-to-t from-black/90 to-transparent absolute bottom-0 left-0 right-0">
-        <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4">
+      <div className="p-4 sm:p-6 md:p-8 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
+        <div className="flex items-center justify-center gap-3 sm:gap-4 md:gap-6">
           {/* Mute Button */}
           <button
             onClick={toggleMute}
-            className={`btn btn-circle btn-md sm:btn-lg ${isMuted ? "btn-error" : "btn-ghost bg-white/10 text-white hover:bg-white/20"}`}
+            className={`btn btn-circle btn-md sm:btn-lg transition-all ${
+              isMuted 
+                ? "btn-error hover:btn-error" 
+                : "bg-white/10 text-white hover:bg-white/20 border-white/20"
+            }`}
             title={isMuted ? "Unmute" : "Mute"}
           >
             {isMuted ? <MicOff className="w-5 h-5 sm:w-6 sm:h-6" /> : <Mic className="w-5 h-5 sm:w-6 sm:h-6" />}
+          </button>
+
+          {/* End Call Button */}
+          <button
+            onClick={endCall}
+            className="btn btn-circle btn-lg sm:btn-xl bg-error hover:bg-error/80 border-none shadow-2xl scale-110 sm:scale-125"
+            title="End call"
+          >
+            <PhoneOff className="w-6 h-6 sm:w-7 sm:h-7" />
           </button>
 
           {/* Video Toggle (only for video calls) */}
           {callType === "video" && (
             <button
               onClick={toggleVideo}
-              className={`btn btn-circle btn-md sm:btn-lg ${isVideoOff ? "btn-error" : "btn-ghost bg-white/10 text-white hover:bg-white/20"}`}
+              className={`btn btn-circle btn-md sm:btn-lg transition-all ${
+                isVideoOff 
+                  ? "btn-error hover:btn-error" 
+                  : "bg-white/10 text-white hover:bg-white/20 border-white/20"
+              }`}
               title={isVideoOff ? "Turn on camera" : "Turn off camera"}
             >
               {isVideoOff ? <VideoOffIcon className="w-5 h-5 sm:w-6 sm:h-6" /> : <Video className="w-5 h-5 sm:w-6 sm:h-6" />}
             </button>
           )}
-
-          {/* End Call Button */}
-          <button
-            onClick={endCall}
-            className="btn btn-circle btn-md sm:btn-lg btn-error shadow-lg"
-            title="End call"
-          >
-            <PhoneOff className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
         </div>
+        
+        {/* Status Text */}
+        <p className="text-center text-white/50 text-xs sm:text-sm mt-4">
+          {isMuted && "Microphone muted"}
+          {isVideoOff && callType === "video" && " • Camera off"}
+        </p>
       </div>
 
       <style>{`
         .mirror {
           transform: scaleX(-1);
+        }
+        .btn-xl {
+          width: 4rem;
+          height: 4rem;
+        }
+        @media (min-width: 640px) {
+          .btn-xl {
+            width: 5rem;
+            height: 5rem;
+          }
         }
       `}</style>
     </div>

@@ -25,10 +25,23 @@ const HomePage = () => {
     if (!socket) return;
 
     const handleIncomingCall = ({ callerInfo, callType }) => {
+      console.log("Incoming call from:", callerInfo);
       setIncomingCall({ callerInfo, callType });
     };
 
     const handleCallEnded = () => {
+      console.log("Call ended event received");
+      setCallState({
+        isCallActive: false,
+        callType: null,
+        isInitiator: false,
+        otherUser: null,
+      });
+      setIncomingCall(null);
+    };
+
+    const handleCallRejected = ({ reason }) => {
+      console.log("Call rejected:", reason);
       setCallState({
         isCallActive: false,
         callType: null,
@@ -40,10 +53,12 @@ const HomePage = () => {
 
     socket.on("private:incoming-call", handleIncomingCall);
     socket.on("private:call-ended", handleCallEnded);
+    socket.on("private:call-rejected", handleCallRejected);
 
     return () => {
       socket.off("private:incoming-call", handleIncomingCall);
       socket.off("private:call-ended", handleCallEnded);
+      socket.off("private:call-rejected", handleCallRejected);
     };
   }, [socket]);
 
