@@ -109,10 +109,10 @@ const PrivateCallModal = ({
     } catch (error) {
       console.error("Error accessing media:", error);
       toast.error("Could not access camera/microphone");
-      endCall();
+      onClose();
       return null;
     }
-  }, [callType, endCall]);
+  }, [callType, onClose]);
 
   const startCall = useCallback(async () => {
     const stream = await initializeMedia();
