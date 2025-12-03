@@ -38,24 +38,12 @@ const HomePage = () => {
       setIncomingCall(null);
     };
 
-    const handleCallRejected = ({ reason }) => {
-      setCallState({
-        isCallActive: false,
-        callType: null,
-        isInitiator: false,
-        otherUser: null,
-      });
-      setIncomingCall(null);
-    };
-
     socket.on("private:incoming-call", handleIncomingCall);
     socket.on("private:call-ended", handleCallEnded);
-    socket.on("private:call-rejected", handleCallRejected);
 
     return () => {
       socket.off("private:incoming-call", handleIncomingCall);
       socket.off("private:call-ended", handleCallEnded);
-      socket.off("private:call-rejected", handleCallRejected);
     };
   }, [socket]);
 
