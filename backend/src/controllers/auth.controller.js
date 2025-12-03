@@ -266,22 +266,26 @@ export const forgotPassword = async (req, res) => {
 		user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 min
 		await user.save({ validateBeforeSave: false });
 
-		const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+		const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:5173";
+		const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 		const message = `
       <h1>Password Reset Request</h1>
       <p>Click the link below to reset your password. This link will expire in 15 minutes.</p>
       <a href="${resetUrl}" target="_blank">${resetUrl}</a>
+      <p>If you didn't request this, please ignore this email.</p>
     `;
 
 		try {
+			console.log(`📧 Attempting to send password reset email to ${user.email}`);
 			await sendEmail(user.email, "Password Reset Request", message);
+			console.log(`✅ Password reset email sent successfully to ${user.email}`);
 			res.status(200).json({ message: "Reset link sent to your email" });
 		} catch (emailError) {
-			console.error("Email send error:", emailError);
+			console.error("❌ Email send error:", emailError);
 			user.resetPasswordToken = undefined;
 			user.resetPasswordExpire = undefined;
 			await user.save({ validateBeforeSave: false });
-			res.status(500).json({ message: "Email could not be sent" });
+			res.status(500).json({ message: "Email could not be sent. Please check your email configuration." });
 		}
 	} catch (error) {
 		console.error("Forgot password error:", error);
