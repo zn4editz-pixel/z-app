@@ -505,7 +505,7 @@ const StrangerChatPage = () => {
 							</button>
 						)}
 					</div>
-					<div className="w-24 h-auto aspect-video md:w-48 bg-black rounded-lg overflow-hidden absolute bottom-2 right-2 md:bottom-4 md:right-4 border-2 border-base-100 z-10 shadow-lg">
+					<div className="w-32 h-auto aspect-video md:w-64 lg:w-72 bg-black rounded-lg overflow-hidden absolute bottom-2 right-2 md:bottom-4 md:right-4 border-2 border-base-100 z-10 shadow-lg">
 						<video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
 					</div>
 				</div>
