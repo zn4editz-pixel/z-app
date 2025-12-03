@@ -7,12 +7,28 @@ import {
 	sendAccountSuspendedEmail 
 } from "../lib/email.js";
 
-// ✅ Safe Socket Emit Utility (no changes)
+// ✅ Safe Socket Emit Utility
 const emitToUser = (io, userId, event, data) => {
-	// Your existing emitToUser function...
-	if (!io || !userId || !global.userSocketMap) return;
-	const socketId = global.userSocketMap[userId];
-	if (socketId) io.to(socketId).emit(event, data);
+	if (!io || !userId) return;
+	
+	// Get socket ID from io.sockets
+	const sockets = io.sockets.sockets;
+	let targetSocketId = null;
+	
+	// Find the socket for this user
+	for (const [socketId, socket] of sockets) {
+		if (socket.userId === userId || socket.userId === userId.toString()) {
+			targetSocketId = socketId;
+			break;
+		}
+	}
+	
+	if (targetSocketId) {
+		console.log(`📤 Emitting '${event}' to user ${userId} (socket ${targetSocketId})`);
+		io.to(targetSocketId).emit(event, data);
+	} else {
+		console.log(`⚠️ User ${userId} not connected, cannot emit '${event}'`);
+	}
 };
 
 // --- User Management Functions (no changes) ---
