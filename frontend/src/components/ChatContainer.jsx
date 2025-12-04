@@ -140,7 +140,7 @@ const ChatContainer = ({ onStartCall }) => {
     <>
       <div className="flex-1 flex flex-col h-full w-full md:pt-0 pt-0">
         <ChatHeader onStartCall={handleStartCall} />
-        <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent mb-16 md:mb-0">
+        <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent">
           {isMessagesLoading ? (
             <MessageSkeleton />
           ) : messages.length === 0 ? (

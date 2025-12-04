@@ -170,27 +170,6 @@ const App = () => {
 			localStorage.setItem("authUser", JSON.stringify(updatedUser));
 		});
 
-		// 5. Report status notifications
-		socket.on("report-status-updated", ({ title, message, status, actionTaken, reportedUser }) => {
-			// Show toast notification
-			if (status === "action_taken") {
-				toast.success(`${title}: ${message}`, { duration: 6000 });
-			} else {
-				toast(message, { icon: "📋", duration: 5000 });
-			}
-			
-			// Add to notification store
-			const { addNotification } = useNotificationStore.getState();
-			addNotification({
-				type: "report_update",
-				title,
-				message,
-				status,
-				actionTaken,
-				reportedUser,
-			});
-		});
-
 		socket.on("verification-rejected", ({ message, reason }) => {
 			toast.error(message || "Your verification request has been rejected");
 			if (reason) {
@@ -212,9 +191,25 @@ const App = () => {
 			localStorage.setItem("authUser", JSON.stringify(updatedUser));
 		});
 
-		// 5. Report status notifications
-		socket.on("report-status-updated", ({ status, reportedUser, message }) => {
-			toast.info(message || `Your report has been ${status.replace('_', ' ')}`);
+		// 5. Report status notifications (FIXED: removed duplicate)
+		socket.on("report-status-updated", ({ title, message, status, actionTaken, reportedUser }) => {
+			// Show toast notification
+			if (status === "action_taken") {
+				toast.success(`${title}: ${message}`, { duration: 6000 });
+			} else {
+				toast(message, { icon: "📋", duration: 5000 });
+			}
+			
+			// Add to notification store
+			const { addNotification } = useNotificationStore.getState();
+			addNotification({
+				type: "report_update",
+				title,
+				message,
+				status,
+				actionTaken,
+				reportedUser,
+			});
 		});
 
 		// 6. Cleanup
