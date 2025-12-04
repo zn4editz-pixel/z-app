@@ -18,12 +18,16 @@ const ChatContainer = ({ onStartCall }) => {
     subscribeToMessages,
   } = useChatStore();
 
-  const { authUser } = useAuthStore();
+  const { authUser, socket } = useAuthStore();
   const bottomRef = useRef(null);
   
   // Voice message playback
   const [playingVoiceId, setPlayingVoiceId] = useState(null);
   const audioRefs = useRef({});
+  
+  // Typing indicator
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (!selectedUser?._id) return;
@@ -34,7 +38,48 @@ const ChatContainer = ({ onStartCall }) => {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages.length]);
+  }, [messages.length, isTyping]);
+
+  // Handle typing indicator
+  useEffect(() => {
+    if (!socket || !selectedUser) return;
+
+    const handleTyping = ({ senderId }) => {
+      if (senderId === selectedUser._id) {
+        setIsTyping(true);
+        
+        // Clear previous timeout
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+        
+        // Auto-hide after 3 seconds
+        typingTimeoutRef.current = setTimeout(() => {
+          setIsTyping(false);
+        }, 3000);
+      }
+    };
+
+    const handleStopTyping = ({ senderId }) => {
+      if (senderId === selectedUser._id) {
+        setIsTyping(false);
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+      }
+    };
+
+    socket.on("typing", handleTyping);
+    socket.on("stopTyping", handleStopTyping);
+
+    return () => {
+      socket.off("typing", handleTyping);
+      socket.off("stopTyping", handleStopTyping);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, [socket, selectedUser]);
 
   // Call handling is now done in HomePage
   const handleStartCall = (type) => {
@@ -218,6 +263,27 @@ const ChatContainer = ({ onStartCall }) => {
               );
             })
           )}
+          
+          {/* Typing Indicator */}
+          {isTyping && (
+            <div className="flex items-start gap-2 animate-fadeIn">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0">
+                <img
+                  src={selectedUser.profilePic || "/avatar.png"}
+                  alt="avatar"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="bg-base-200 px-4 py-3 rounded-2xl shadow-sm">
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 bg-base-content/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-2 h-2 bg-base-content/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-2 h-2 bg-base-content/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div ref={bottomRef} />
         </div>
         <MessageInput />

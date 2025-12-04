@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
+import { useAuthStore } from "../store/useAuthStore";
 import { Image, Send, X, Smile } from "lucide-react";
 import toast from "react-hot-toast";
 import VoiceRecorder from "./VoiceRecorder";
@@ -8,10 +9,45 @@ const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const fileInputRef = useRef(null);
-  const { sendMessage } = useChatStore();
+  const typingTimeoutRef = useRef(null);
+  const { sendMessage, selectedUser } = useChatStore();
+  const { socket } = useAuthStore();
 
   const emojis = ["😊", "😂", "❤️", "👍", "🎉", "🔥", "😍", "🤔", "👏", "🙌", "💯", "✨"];
+
+  // Handle typing indicator
+  const handleTyping = (value) => {
+    setText(value);
+    
+    if (!socket || !selectedUser) return;
+    
+    // Emit typing event
+    socket.emit("typing", { receiverId: selectedUser._id });
+    
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Stop typing after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("stopTyping", { receiverId: selectedUser._id });
+    }, 2000);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      if (socket && selectedUser) {
+        socket.emit("stopTyping", { receiverId: selectedUser._id });
+      }
+    };
+  }, [socket, selectedUser]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -36,6 +72,13 @@ const MessageInput = () => {
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
 
+    setIsSending(true);
+    
+    // Stop typing indicator
+    if (socket && selectedUser) {
+      socket.emit("stopTyping", { receiverId: selectedUser._id });
+    }
+
     try {
       await sendMessage({
         text: text.trim(),
@@ -49,6 +92,8 @@ const MessageInput = () => {
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       console.error("Failed to send message:", error);
+    } finally {
+      setTimeout(() => setIsSending(false), 300);
     }
   };
 
@@ -132,7 +177,7 @@ const MessageInput = () => {
             className="flex-1 bg-transparent outline-none border-none text-sm sm:text-base"
             placeholder="Type a message..."
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => handleTyping(e.target.value)}
           />
           
           {/* Image Upload Button */}
@@ -165,10 +210,14 @@ const MessageInput = () => {
         {(text.trim() || imagePreview) && (
           <button
             type="submit"
-            className="btn btn-primary btn-circle btn-sm sm:btn-md flex-shrink-0 shadow-lg"
-            disabled={!text.trim() && !imagePreview}
+            className={`btn btn-primary btn-circle btn-sm sm:btn-md flex-shrink-0 shadow-lg transition-all ${
+              isSending ? 'scale-90 rotate-45' : 'scale-100 rotate-0'
+            }`}
+            disabled={!text.trim() && !imagePreview || isSending}
           >
-            <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+            <Send className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${
+              isSending ? 'translate-x-1 -translate-y-1' : ''
+            }`} />
           </button>
         )}
       </form>

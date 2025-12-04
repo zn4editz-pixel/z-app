@@ -464,6 +464,26 @@ io.on("connection", (socket) => {
 	});
 	// === END PRIVATE CALL EVENTS ===
 
+	// === TYPING INDICATOR ===
+	socket.on("typing", (payload) => {
+		const { receiverId } = payload;
+		const senderId = socket.userId;
+		
+		if (senderId) {
+			emitToUser(receiverId, "typing", { senderId });
+		}
+	});
+
+	socket.on("stopTyping", (payload) => {
+		const { receiverId } = payload;
+		const senderId = socket.userId;
+		
+		if (senderId) {
+			emitToUser(receiverId, "stopTyping", { senderId });
+		}
+	});
+	// === END TYPING INDICATOR ===
+
 	// Handle disconnects
 	socket.on("disconnect", () => {
 		console.log("❌ User disconnected:", socket.id);
