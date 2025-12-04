@@ -38,16 +38,23 @@ axiosInstance.interceptors.response.use(
     // Log detailed error information
     console.error("API Error:", {
         message: error.message,
-        // config: error.config, // Request config can be verbose, uncomment if needed
-        status: error.response?.status, // Response status
-        response: error.response?.data // Response data if available
+        status: error.response?.status,
+        response: error.response?.data
     });
     
-    // Handle 401 Unauthorized - token expired or invalid
+    // Handle 401 Unauthorized - but only for auth-related endpoints
+    // Don't auto-logout for other 401s (like accessing admin routes without permission)
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("authUser");
-      window.location.href = "/login";
+      const url = error.config?.url || '';
+      
+      // Only auto-logout for auth check failures, not for permission issues
+      if (url.includes('/auth/check') || url.includes('/auth/login') || url.includes('/auth/signup')) {
+        console.log("Auth token invalid, logging out");
+        localStorage.removeItem("token");
+        localStorage.removeItem("authUser");
+        window.location.href = "/login";
+      }
+      // For other 401s (like admin routes), just reject without auto-logout
     }
     
     // Reject the promise so downstream `.catch()` blocks can handle it
