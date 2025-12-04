@@ -64,21 +64,52 @@ export const useChatStore = create((set, get) => ({
                 // Add message to state if it's for the selected user
                 if (selectedUser && (newMessage.senderId === selectedUser._id || newMessage.receiverId === selectedUser._id)) {
                     set({ messages: [...messages, newMessage] });
+                    // Mark as read if chat is open
+                    get().markMessagesAsRead(selectedUser._id);
                 } else if (newMessage.senderId) { // Check if senderId exists before incrementing
                     // Increment unread count if chat not open
                     get().incrementUnread(newMessage.senderId);
-                     // Optional: Show toast notification for new message
-                     // const senderInfo = ? // Need a way to get sender info if not selectedUser
-                     // toast(`New message from ${senderInfo?.nickname || 'someone'}`);
                 }
             } else if (!newMessage || !newMessage._id) {
                  console.warn("Received invalid message object:", newMessage);
             }
         };
 
-        socket.off("newMessage", messageHandler); // Remove previous listener first
-        socket.on("newMessage", messageHandler); // Add the new listener
-        console.log("Subscribed to newMessage events");
+        const messageDeliveredHandler = ({ messageId, deliveredAt }) => {
+            const { messages } = get();
+            const updatedMessages = messages.map(msg => 
+                msg._id === messageId ? { ...msg, status: 'delivered', deliveredAt } : msg
+            );
+            set({ messages: updatedMessages });
+        };
+
+        const messagesReadHandler = ({ readBy }) => {
+            const { messages } = get();
+            const updatedMessages = messages.map(msg => 
+                msg.receiverId === readBy && msg.status !== 'read' 
+                    ? { ...msg, status: 'read', readAt: new Date() } 
+                    : msg
+            );
+            set({ messages: updatedMessages });
+        };
+
+        socket.off("newMessage", messageHandler);
+        socket.off("messageDelivered", messageDeliveredHandler);
+        socket.off("messagesRead", messagesReadHandler);
+        
+        socket.on("newMessage", messageHandler);
+        socket.on("messageDelivered", messageDeliveredHandler);
+        socket.on("messagesRead", messagesReadHandler);
+        
+        console.log("Subscribed to message events");
+    },
+
+    markMessagesAsRead: async (userId) => {
+        try {
+            await axiosInstance.put(`/messages/read/${userId}`);
+        } catch (error) {
+            console.error("Failed to mark messages as read:", error);
+        }
     },
 
     unsubscribeFromMessages: () => {

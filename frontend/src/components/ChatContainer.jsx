@@ -198,9 +198,22 @@ const ChatContainer = ({ onStartCall }) => {
                       )}
                     </div>
                   </div>
-                  <span className="text-[10px] sm:text-[11px] text-base-content/50 mt-1 px-1">
-                    {formatMessageTime(message.createdAt)}
-                  </span>
+                  <div className="flex items-center gap-1 mt-1 px-1">
+                    <span className="text-[10px] sm:text-[11px] text-base-content/50">
+                      {formatMessageTime(message.createdAt)}
+                    </span>
+                    {mine && (
+                      <span className="text-[10px] sm:text-[11px]">
+                        {message.status === 'read' ? (
+                          <span className="text-blue-500" title="Read">✓✓</span>
+                        ) : message.status === 'delivered' ? (
+                          <span className="text-base-content/50" title="Delivered">✓✓</span>
+                        ) : (
+                          <span className="text-base-content/50" title="Sent">✓</span>
+                        )}
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })

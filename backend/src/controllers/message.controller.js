@@ -71,7 +71,8 @@ export const sendMessage = async (req, res) => {
       text: text || "",
       image: imageUrl || null,
       voice: voiceUrl || null,
-      voiceDuration: voiceDuration || null
+      voiceDuration: voiceDuration || null,
+      status: 'sent'
     });
 
     await newMessage.save();
@@ -81,6 +82,11 @@ export const sendMessage = async (req, res) => {
 
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
+      // Mark as delivered if receiver is online
+      newMessage.status = 'delivered';
+      newMessage.deliveredAt = new Date();
+      await newMessage.save();
+
       io.to(receiverSocketId).emit("newMessage", {
         _id: newMessage._id,
         senderId,
@@ -89,10 +95,21 @@ export const sendMessage = async (req, res) => {
         image: newMessage.image,
         voice: newMessage.voice,
         voiceDuration: newMessage.voiceDuration,
+        status: newMessage.status,
+        deliveredAt: newMessage.deliveredAt,
         createdAt: newMessage.createdAt,
         senderName: sender.fullName,
         senderAvatar: sender.profilePic
       });
+
+      // Notify sender that message was delivered
+      const senderSocketId = getReceiverSocketId(senderId);
+      if (senderSocketId) {
+        io.to(senderSocketId).emit("messageDelivered", {
+          messageId: newMessage._id,
+          deliveredAt: newMessage.deliveredAt
+        });
+      }
     }
 
     res.status(201).json(newMessage);
@@ -118,6 +135,42 @@ export const clearChat = async (req, res) => {
     res.status(200).json({ message: "Chat cleared successfully" });
   } catch (error) {
     console.error("Error in clearChat:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const markMessagesAsRead = async (req, res) => {
+  try {
+    const { id: senderId } = req.params;
+    const myId = req.user._id;
+
+    // Mark all unread messages from sender as read
+    const result = await Message.updateMany(
+      {
+        senderId: senderId,
+        receiverId: myId,
+        status: { $ne: 'read' }
+      },
+      {
+        $set: {
+          status: 'read',
+          readAt: new Date()
+        }
+      }
+    );
+
+    // Notify sender that messages were read
+    const senderSocketId = getReceiverSocketId(senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messagesRead", {
+        readBy: myId,
+        count: result.modifiedCount
+      });
+    }
+
+    res.status(200).json({ message: "Messages marked as read", count: result.modifiedCount });
+  } catch (error) {
+    console.error("Error in markMessagesAsRead:", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };
