@@ -1,4 +1,4 @@
-import { ArrowLeft, Phone, Video, MoreVertical, Trash2, Info } from "lucide-react";
+import { ArrowLeft, Phone, Video, MoreVertical, Trash2 } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 import { useState, useRef, useEffect } from "react";
@@ -6,24 +6,19 @@ import { useNavigate } from "react-router-dom";
 import VerifiedBadge from "./VerifiedBadge";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
-import { Capacitor } from "@capacitor/core";
 
 const ChatHeader = ({ onStartCall }) => {
-	const { selectedUser, setSelectedUser, messages, setMessages } = useChatStore();
+	const { selectedUser, setSelectedUser, setMessages } = useChatStore();
 	const { onlineUsers } = useAuthStore();
 	const [showMenu, setShowMenu] = useState(false);
 	const [showClearConfirm, setShowClearConfirm] = useState(false);
 	const menuRef = useRef(null);
 	const navigate = useNavigate();
 
-	// Check if running in native app (APK) or web
-	const isNativeApp = Capacitor.isNativePlatform();
-
 	if (!selectedUser) return null;
 
 	const isOnline = onlineUsers.includes(selectedUser._id);
 
-	// Close menu when clicking outside
 	useEffect(() => {
 		const handleClickOutside = (event) => {
 			if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -59,107 +54,73 @@ const ChatHeader = ({ onStartCall }) => {
 	};
 
 	return (
-		<div className="p-2 sm:p-3 border-b flex items-center justify-between bg-base-300 text-base-content border-base-100">
-			<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-				{/* Back button on mobile */}
+		<div className="p-2.5 border-b border-base-300 flex items-center justify-between bg-base-100">
+			<div className="flex items-center gap-3 min-w-0 flex-1">
+				{/* Back button - mobile only */}
 				<button
-					className="md:hidden btn btn-ghost btn-circle btn-xs sm:btn-sm flex-shrink-0"
+					className="md:hidden btn btn-ghost btn-circle btn-sm"
 					onClick={() => setSelectedUser(null)}
-					aria-label="Back"
 				>
-					<ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+					<ArrowLeft className="w-5 h-5" />
 				</button>
 
-				{/* Clickable Avatar */}
+				{/* Avatar */}
 				<button
 					onClick={handleViewProfile}
-					className="avatar flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-					aria-label="View Profile"
+					className="avatar cursor-pointer hover:opacity-80 transition-opacity"
 				>
-					<div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-base-200 hover:border-primary transition-colors relative">
+					<div className="w-10 h-10 rounded-full">
 						<img
 							src={selectedUser.profilePic || "/avatar.png"}
 							alt={selectedUser.nickname || selectedUser.username}
-							className="w-full h-full object-cover"
 						/>
-						{/* Online Indicator - only for native app */}
-						{isNativeApp && isOnline && (
-							<span className="absolute bottom-0 right-0 w-3 h-3 bg-success rounded-full border-2 border-base-100"></span>
-						)}
 					</div>
 				</button>
 
-				{/* User Info - Also clickable */}
+				{/* User Info */}
 				<button
 					onClick={handleViewProfile}
 					className="min-w-0 flex-1 text-left hover:opacity-80 transition-opacity"
 				>
-					<div className="font-semibold truncate text-sm sm:text-base flex items-center gap-1">
+					<div className="font-semibold truncate text-sm flex items-center gap-1">
 						<span className="truncate">
-							{selectedUser.nickname ||
-								selectedUser.username ||
-								"Unknown"}
+							{selectedUser.nickname || selectedUser.username}
 						</span>
 						{selectedUser.isVerified && <VerifiedBadge size="xs" />}
 					</div>
-					<p className="text-[10px] sm:text-xs text-base-content/70 truncate">
+					<p className="text-xs text-base-content/70 truncate">
 						{isOnline ? "Online" : "Offline"}
 					</p>
 				</button>
 			</div>
 
-			{/* Call Buttons - Different style for native vs web */}
-			<div className="flex items-center gap-2 flex-shrink-0">
-				{isNativeApp ? (
-					// Native App (APK) - Colored buttons with backgrounds
-					<>
-						<button
-							className="btn btn-circle btn-sm sm:btn-md bg-success/10 hover:bg-success hover:text-success-content border-success/20 hover:border-success transition-all active:scale-95"
-							onClick={() => handleStartCall('audio')}
-							aria-label="Audio Call"
-							title="Audio call"
-						>
-							<Phone className="w-5 h-5 sm:w-6 sm:h-6 text-success" />
-						</button>
-						<button
-							className="btn btn-circle btn-sm sm:btn-md bg-primary/10 hover:bg-primary hover:text-primary-content border-primary/20 hover:border-primary transition-all active:scale-95"
-							onClick={() => handleStartCall('video')}
-							aria-label="Video Call"
-							title="Video call"
-						>
-							<Video className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-						</button>
-					</>
-				) : (
-					// Web - Original simple ghost buttons
-					<>
-						<button
-							className="btn btn-ghost btn-circle btn-sm hover:bg-success/20 hover:text-success transition-colors"
-							onClick={() => handleStartCall('audio')}
-							aria-label="Start Audio Call"
-							title="Audio call"
-						>
-							<Phone className="w-5 h-5" />
-						</button>
-						<button
-							className="btn btn-ghost btn-circle btn-sm hover:bg-primary/20 hover:text-primary transition-colors"
-							onClick={() => handleStartCall('video')}
-							aria-label="Start Video Call"
-							title="Video call"
-						>
-							<Video className="w-4 h-4 sm:w-5 sm:h-5" />
-						</button>
-					</>
-				)}
+			{/* Action Buttons */}
+			<div className="flex items-center gap-1">
+				{/* Audio Call */}
+				<button
+					className="btn btn-ghost btn-circle btn-sm"
+					onClick={() => handleStartCall('audio')}
+					title="Audio call"
+				>
+					<Phone className="w-5 h-5" />
+				</button>
+
+				{/* Video Call */}
+				<button
+					className="btn btn-ghost btn-circle btn-sm"
+					onClick={() => handleStartCall('video')}
+					title="Video call"
+				>
+					<Video className="w-5 h-5" />
+				</button>
 				
-				{/* More Options Menu */}
+				{/* More Options */}
 				<div className="relative" ref={menuRef}>
 					<button
-						className="btn btn-ghost btn-circle btn-xs sm:btn-sm"
+						className="btn btn-ghost btn-circle btn-sm"
 						onClick={() => setShowMenu(!showMenu)}
-						aria-label="More options"
 					>
-						<MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
+						<MoreVertical className="w-5 h-5" />
 					</button>
 					
 					{showMenu && (
@@ -179,7 +140,7 @@ const ChatHeader = ({ onStartCall }) => {
 				</div>
 			</div>
 
-			{/* Clear Chat Confirmation Modal */}
+			{/* Clear Chat Modal */}
 			{showClearConfirm && (
 				<div className="modal modal-open">
 					<div className="modal-box">
