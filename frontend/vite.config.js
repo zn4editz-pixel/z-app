@@ -3,6 +3,12 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    // Ensure _redirects file is copied to dist
+    copyPublicDir: true,
+  },
   server: {
     proxy: {
       '/api': {
