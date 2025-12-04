@@ -54,14 +54,22 @@ const ChatHeader = ({ onStartCall }) => {
 	};
 
 	return (
-		<div className="px-3 py-2.5 sm:px-4 sm:py-3 border-b border-base-300 flex items-center justify-between bg-base-100">
-			<div className="flex items-center gap-3 min-w-0 flex-1">
+		<div className="px-3 py-2.5 border-b border-base-300 flex items-center justify-between bg-base-100">
+			<div className="flex items-center gap-2 min-w-0 flex-1">
+				{/* Back Button - Mobile */}
+				<button
+					className="btn btn-ghost btn-circle btn-sm md:hidden"
+					onClick={() => setSelectedUser(null)}
+				>
+					<ArrowLeft className="w-5 h-5" />
+				</button>
+
 				{/* Avatar */}
 				<button
 					onClick={handleViewProfile}
 					className="avatar cursor-pointer hover:opacity-80 transition-opacity"
 				>
-					<div className="w-10 h-10 rounded-full">
+					<div className="w-9 h-9 rounded-full">
 						<img
 							src={selectedUser.profilePic || "/avatar.png"}
 							alt={selectedUser.nickname || selectedUser.username}
@@ -80,7 +88,7 @@ const ChatHeader = ({ onStartCall }) => {
 						</span>
 						{selectedUser.isVerified && <VerifiedBadge size="xs" />}
 					</div>
-					<p className="text-xs text-base-content/70 truncate">
+					<p className="text-xs text-base-content/60 truncate">
 						{isOnline ? "Online" : "Offline"}
 					</p>
 				</button>

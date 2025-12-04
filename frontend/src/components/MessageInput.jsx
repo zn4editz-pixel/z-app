@@ -116,7 +116,7 @@ const MessageInput = () => {
   };
 
   return (
-    <div className="p-3 sm:p-4 w-full bg-base-100 border-t border-base-300">
+    <div className="p-3 w-full bg-base-100 border-t border-base-300">
       {imagePreview && (
         <div className="mb-2 sm:mb-3 flex items-center gap-2 p-2 bg-base-200 rounded-lg">
           <div className="relative">
@@ -160,21 +160,11 @@ const MessageInput = () => {
         onSubmit={handleSendMessage}
         className="flex items-center gap-2"
       >
-        {/* Emoji Button */}
-        <button
-          type="button"
-          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          className="btn btn-ghost btn-circle btn-sm sm:btn-md flex-shrink-0"
-          title="Add emoji"
-        >
-          <Smile className="w-5 h-5 sm:w-6 sm:h-6" />
-        </button>
-
         {/* Text Input Container */}
-        <div className="flex-1 flex items-center gap-2 bg-base-200 rounded-full px-4 sm:px-5 py-3 sm:py-3.5 min-h-[44px] sm:min-h-[48px]">
+        <div className="flex-1 flex items-center gap-2 bg-base-200 rounded-full px-4 py-2.5">
           <input
             type="text"
-            className="flex-1 bg-transparent outline-none border-none text-sm sm:text-base placeholder:text-base-content/50"
+            className="flex-1 bg-transparent outline-none border-none text-sm placeholder:text-base-content/50"
             placeholder="Type a message..."
             value={text}
             onChange={(e) => handleTyping(e.target.value)}
@@ -183,12 +173,12 @@ const MessageInput = () => {
           {/* Image Upload Button */}
           <button
             type="button"
-            className={`p-1.5 rounded-full hover:bg-base-300 transition flex-shrink-0
+            className={`p-1 rounded-full hover:bg-base-300 transition flex-shrink-0
               ${imagePreview ? "text-primary" : "text-base-content/60"}`}
             onClick={() => fileInputRef.current?.click()}
             title="Attach image"
           >
-            <Image className="w-5 h-5 sm:w-6 sm:h-6" />
+            <Image className="w-5 h-5" />
           </button>
 
           {/* Hidden File Input */}
@@ -201,25 +191,16 @@ const MessageInput = () => {
           />
         </div>
 
-        {/* Voice Recorder */}
-        {!text.trim() && !imagePreview && (
-          <VoiceRecorder onSendVoice={handleSendVoice} />
-        )}
-
         {/* Send Button */}
-        {(text.trim() || imagePreview) && (
-          <button
-            type="submit"
-            className={`btn btn-primary btn-circle btn-sm sm:btn-md flex-shrink-0 shadow-lg transition-all ${
-              isSending ? 'scale-90 rotate-45' : 'scale-100 rotate-0'
-            }`}
-            disabled={!text.trim() && !imagePreview || isSending}
-          >
-            <Send className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform ${
-              isSending ? 'translate-x-1 -translate-y-1' : ''
-            }`} />
-          </button>
-        )}
+        <button
+          type="submit"
+          className={`btn btn-primary btn-circle flex-shrink-0 shadow-lg transition-all ${
+            isSending ? 'scale-90' : 'scale-100'
+          }`}
+          disabled={!text.trim() && !imagePreview || isSending}
+        >
+          <Send className="w-5 h-5" />
+        </button>
       </form>
     </div>
   );

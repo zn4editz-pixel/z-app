@@ -4,7 +4,6 @@ import { Loader } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 
 import Navbar from "./components/Navbar";
-import DeveloperLogo from "./components/DeveloperSign";
 import OfflineIndicator from "./components/OfflineIndicator";
 import PermissionHandler from "./components/PermissionHandler";
 
@@ -380,7 +379,6 @@ const App = () => {
 			</Routes>
 
 			<Toaster position="top-center" />
-			<DeveloperLogo />
 		</div>
 	);
 };
