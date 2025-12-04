@@ -9,7 +9,13 @@ import {
 
 // ✅ Safe Socket Emit Utility
 const emitToUser = (io, userId, event, data) => {
-	if (!io || !userId) return;
+	if (!io || !userId) {
+		console.log(`⚠️ Cannot emit '${event}': io=${!!io}, userId=${userId}`);
+		return;
+	}
+	
+	// Convert userId to string for comparison
+	const userIdStr = userId.toString();
 	
 	// Get socket ID from io.sockets
 	const sockets = io.sockets.sockets;
@@ -17,7 +23,7 @@ const emitToUser = (io, userId, event, data) => {
 	
 	// Find the socket for this user
 	for (const [socketId, socket] of sockets) {
-		if (socket.userId === userId || socket.userId === userId.toString()) {
+		if (socket.userId && socket.userId.toString() === userIdStr) {
 			targetSocketId = socketId;
 			break;
 		}
@@ -26,8 +32,11 @@ const emitToUser = (io, userId, event, data) => {
 	if (targetSocketId) {
 		console.log(`📤 Emitting '${event}' to user ${userId} (socket ${targetSocketId})`);
 		io.to(targetSocketId).emit(event, data);
+		return true;
 	} else {
 		console.log(`⚠️ User ${userId} not connected, cannot emit '${event}'`);
+		console.log(`   Available sockets: ${Array.from(sockets.values()).map(s => s.userId).filter(Boolean).join(', ')}`);
+		return false;
 	}
 };
 
@@ -272,6 +281,8 @@ export const getVerificationRequests = async (req, res) => {
 export const approveVerification = async (req, res) => {
 	const { userId } = req.params;
 	try {
+		console.log(`🔍 Admin approving verification for user ${userId}`);
+		
 		const user = await User.findById(userId);
 		if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -281,17 +292,30 @@ export const approveVerification = async (req, res) => {
 		user.verificationRequest.reviewedBy = req.user._id;
 
 		await user.save();
+		console.log(`✅ User ${userId} verification status updated to approved in database`);
 
 		const io = req.app.get("io");
-		emitToUser(io, userId, "verification-approved", { 
+		const socketEmitted = emitToUser(io, userId, "verification-approved", { 
 			message: "Your verification request has been approved!" 
 		});
+		
+		if (socketEmitted) {
+			console.log(`✅ Socket event 'verification-approved' sent to user ${userId}`);
+		} else {
+			console.log(`⚠️ User ${userId} not online, socket event not sent`);
+		}
 
 		// Send email notification
-		await sendVerificationApprovedEmail(
-			user.email,
-			user.nickname || user.username
-		);
+		try {
+			await sendVerificationApprovedEmail(
+				user.email,
+				user.nickname || user.username
+			);
+			console.log(`📧 Approval email sent to ${user.email}`);
+		} catch (emailErr) {
+			console.error("Failed to send approval email:", emailErr);
+			// Don't fail the request if email fails
+		}
 
 		res.status(200).json({ message: "Verification approved", user });
 	} catch (err) {
@@ -306,6 +330,8 @@ export const rejectVerification = async (req, res) => {
 	const { reason } = req.body;
 
 	try {
+		console.log(`🔍 Admin rejecting verification for user ${userId} with reason: ${reason}`);
+		
 		const user = await User.findById(userId);
 		if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -316,19 +342,32 @@ export const rejectVerification = async (req, res) => {
 		user.verificationRequest.reviewedBy = req.user._id;
 
 		await user.save();
+		console.log(`✅ User ${userId} verification status updated to rejected in database`);
 
 		const io = req.app.get("io");
-		emitToUser(io, userId, "verification-rejected", { 
+		const socketEmitted = emitToUser(io, userId, "verification-rejected", { 
 			message: "Your verification request has been rejected",
 			reason: user.verificationRequest.adminNote
 		});
+		
+		if (socketEmitted) {
+			console.log(`✅ Socket event 'verification-rejected' sent to user ${userId}`);
+		} else {
+			console.log(`⚠️ User ${userId} not online, socket event not sent`);
+		}
 
 		// Send email notification
-		await sendVerificationRejectedEmail(
-			user.email,
-			user.nickname || user.username,
-			user.verificationRequest.adminNote
-		);
+		try {
+			await sendVerificationRejectedEmail(
+				user.email,
+				user.nickname || user.username,
+				user.verificationRequest.adminNote
+			);
+			console.log(`📧 Rejection email sent to ${user.email}`);
+		} catch (emailErr) {
+			console.error("Failed to send rejection email:", emailErr);
+			// Don't fail the request if email fails
+		}
 
 		res.status(200).json({ message: "Verification rejected", user });
 	} catch (err) {

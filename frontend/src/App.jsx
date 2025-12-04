@@ -128,17 +128,33 @@ const App = () => {
 			}
 		});
 
-		// 3. Friend request listener
+		// 3. Friend request listeners
 		socket.on("friendRequest:received", (senderProfileData) => {
 			console.log("📥 Received friendRequest:received event:", senderProfileData);
-			addPendingReceived(senderProfileData); 
+			console.log("Current pendingReceived before add:", useFriendStore.getState().pendingReceived);
+			addPendingReceived(senderProfileData);
+			console.log("Current pendingReceived after add:", useFriendStore.getState().pendingReceived);
+		});
+
+		socket.on("friendRequest:accepted", ({ user, message }) => {
+			console.log("✅ Friend request accepted:", user);
+			toast.success(message || `${user.nickname || user.username} accepted your friend request!`);
+			// Refresh friend data to update sidebar
+			useFriendStore.getState().fetchFriendData();
+		});
+
+		socket.on("friendRequest:rejected", ({ message }) => {
+			console.log("❌ Friend request rejected");
+			toast.error(message || "Your friend request was declined");
+			// Refresh friend data to update sent requests
+			useFriendStore.getState().fetchFriendData();
 		});
 
 		// 4. Verification notifications
 		socket.on("verification-approved", ({ message }) => {
 			toast.success(message || "Your verification request has been approved!");
 			// Update authUser state immediately
-			setAuthUser({
+			const updatedUser = {
 				...authUser,
 				isVerified: true,
 				verificationRequest: {
@@ -146,7 +162,10 @@ const App = () => {
 					status: "approved",
 					reviewedAt: new Date()
 				}
-			});
+			};
+			setAuthUser(updatedUser);
+			// Also update localStorage to persist the change
+			localStorage.setItem("authUser", JSON.stringify(updatedUser));
 		});
 
 		// 5. Report status notifications
@@ -176,7 +195,7 @@ const App = () => {
 				toast.error(`Reason: ${reason}`, { duration: 5000 });
 			}
 			// Update authUser state immediately
-			setAuthUser({
+			const updatedUser = {
 				...authUser,
 				isVerified: false,
 				verificationRequest: {
@@ -185,7 +204,10 @@ const App = () => {
 					adminNote: reason || "Does not meet verification criteria",
 					reviewedAt: new Date()
 				}
-			});
+			};
+			setAuthUser(updatedUser);
+			// Also update localStorage to persist the change
+			localStorage.setItem("authUser", JSON.stringify(updatedUser));
 		});
 
 		// 5. Report status notifications
@@ -198,10 +220,11 @@ const App = () => {
 			socket.off("user-action");
 			socket.off("message-received");
 			socket.off("friendRequest:received");
+			socket.off("friendRequest:accepted");
+			socket.off("friendRequest:rejected");
 			socket.off("verification-approved");
 			socket.off("verification-rejected");
 			socket.off("report-status-updated");
-			socket.off("friendRequest:received"); // ✅ Cleanup the new listener
 		};
 	// Added addPendingReceived to dependencies
 	}, [socket, authUser, navigate, forceLogout, theme, addPendingReceived]); 

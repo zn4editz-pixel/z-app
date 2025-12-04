@@ -26,47 +26,48 @@ const HomePage = () => {
     if (!socket) return;
 
     const handleIncomingCall = ({ callerInfo, callType }) => {
-      console.log("Incoming call from:", callerInfo);
-      setIncomingCall({ callerInfo, callType });
-    };
-
-    const handleCallEnded = () => {
-      console.log("Call ended event received");
-      toast("Call ended", { icon: "📞" });
-      setCallState({
-        isCallActive: false,
-        callType: null,
-        isInitiator: false,
-        otherUser: null,
+      console.log("📞 Incoming call from:", callerInfo, "Type:", callType);
+      
+      // Validate callerInfo
+      if (!callerInfo || !callerInfo._id) {
+        console.error("Invalid caller info received:", callerInfo);
+        toast.error("Invalid call data received");
+        return;
+      }
+      
+      // Check if already in a call using the latest state
+      setCallState((prevState) => {
+        if (prevState.isCallActive) {
+          console.log("Already in a call, rejecting incoming call");
+          socket.emit("private:reject-call", { callerId: callerInfo._id });
+          return prevState; // Don't update state
+        }
+        
+        // Not in a call, show incoming call modal
+        setIncomingCall({ callerInfo, callType });
+        return prevState;
       });
-      setIncomingCall(null);
-    };
-
-    const handleCallRejected = ({ reason }) => {
-      console.log("Call rejected:", reason);
-      toast.error(`Call ${reason || 'declined'}`);
-      setCallState({
-        isCallActive: false,
-        callType: null,
-        isInitiator: false,
-        otherUser: null,
-      });
-      setIncomingCall(null);
     };
 
     socket.on("private:incoming-call", handleIncomingCall);
-    socket.on("private:call-ended", handleCallEnded);
-    socket.on("private:call-rejected", handleCallRejected);
 
     return () => {
       socket.off("private:incoming-call", handleIncomingCall);
-      socket.off("private:call-ended", handleCallEnded);
-      socket.off("private:call-rejected", handleCallRejected);
     };
   }, [socket]);
 
   const handleStartCall = (callType) => {
-    if (!selectedUser) return;
+    if (!selectedUser) {
+      toast.error("No user selected");
+      return;
+    }
+    
+    if (callState.isCallActive) {
+      toast.error("Already in a call");
+      return;
+    }
+    
+    console.log(`📞 Starting ${callType} call with:`, selectedUser.nickname || selectedUser.username);
     
     setCallState({
       isCallActive: true,

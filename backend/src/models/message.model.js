@@ -24,6 +24,19 @@ const messageSchema = new mongoose.Schema(
     voiceDuration: {
       type: Number,
     },
+    messageType: {
+      type: String,
+      enum: ['text', 'image', 'voice', 'call'],
+      default: 'text'
+    },
+    callData: {
+      type: {
+        type: String,
+        enum: ['audio', 'video']
+      },
+      duration: Number, // in seconds
+      timestamp: Date
+    },
     status: {
       type: String,
       enum: ['sent', 'delivered', 'read'],

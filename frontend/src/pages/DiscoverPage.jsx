@@ -16,8 +16,13 @@ const DiscoverPage = () => {
 	const [isLoadingSuggested, setIsLoadingSuggested] = useState(true);
 	const [loadingRequestId, setLoadingRequestId] = useState(null);
 
-	const { pendingReceived, acceptRequest, rejectRequest } = useFriendStore();
+	const { pendingReceived, acceptRequest, rejectRequest, fetchFriendData } = useFriendStore();
 	const { authUser } = useAuthStore();
+
+	// Fetch friend data on mount
+	useEffect(() => {
+		fetchFriendData();
+	}, [fetchFriendData]);
 
 	// Fetch suggested users on mount
 	useEffect(() => {

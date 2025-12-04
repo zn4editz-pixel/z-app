@@ -37,6 +37,42 @@ export const getMessages = async (req, res) => {
   }
 };
 
+export const createCallLog = async (req, res) => {
+  try {
+    const { receiverId, callType, duration } = req.body;
+    const senderId = req.user._id;
+
+    if (!receiverId || !callType || duration === undefined) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Create call log message
+    const callLogMessage = new Message({
+      senderId,
+      receiverId,
+      messageType: "call",
+      callData: {
+        type: callType, // "audio" or "video"
+        duration: duration, // in seconds
+        timestamp: new Date()
+      }
+    });
+
+    await callLogMessage.save();
+
+    // Emit to receiver
+    const receiverSocketId = getReceiverSocketId(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", callLogMessage);
+    }
+
+    res.status(201).json(callLogMessage);
+  } catch (error) {
+    console.error("Error in createCallLog:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 export const sendMessage = async (req, res) => {
   try {
     const { text, image, voice, voiceDuration } = req.body;

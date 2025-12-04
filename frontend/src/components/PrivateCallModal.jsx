@@ -26,8 +26,11 @@ const PrivateCallModal = ({
   const iceCandidateQueueRef = useRef([]);
   const callTimerRef = useRef(null);
 
-  const endCall = useCallback(() => {
+  const endCall = useCallback(async () => {
     stopCallTimer();
+    
+    // Save call duration before cleanup
+    const finalDuration = callDuration;
     
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => track.stop());
@@ -43,10 +46,27 @@ const PrivateCallModal = ({
       socket.emit("private:end-call", { targetUserId: otherUser._id });
     }
 
+    // Create call log if call was active (duration > 0)
+    if (finalDuration > 0 && otherUser) {
+      try {
+        const { axiosInstance } = await import("../lib/axios.js");
+        await axiosInstance.post("/messages/call-log", {
+          receiverId: otherUser._id,
+          callType: callType,
+          duration: finalDuration
+        });
+        console.log(`✅ Call log created: ${callType} call, ${finalDuration}s`);
+      } catch (error) {
+        console.error("Failed to create call log:", error);
+      }
+    }
+
     setCallStatus("ended");
-    if (onCallEnd) onCallEnd();
+    if (onCallEnd && typeof onCallEnd === 'function') {
+      onCallEnd(finalDuration);
+    }
     setTimeout(() => onClose(), 500);
-  }, [socket, otherUser, onClose, onCallEnd]);
+  }, [socket, otherUser, onClose, onCallEnd, callDuration, callType]);
 
   const createPeerConnection = useCallback(() => {
     console.log("Creating peer connection");
@@ -69,15 +89,24 @@ const PrivateCallModal = ({
     };
 
     pc.ontrack = (e) => {
-      console.log("Received remote track");
+      console.log("🎉 Received remote track!", e.track.kind);
       if (e.streams && e.streams[0]) {
+        console.log("Remote stream has", e.streams[0].getTracks().length, "tracks");
         remoteStreamRef.current = e.streams[0];
+        
+        // Set remote stream to video element (works for both audio and video)
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = e.streams[0];
-          console.log("Remote video stream set");
+          // Ensure audio plays
+          remoteVideoRef.current.play().catch(err => {
+            console.error("Error playing remote stream:", err);
+          });
+          console.log("✅ Remote stream set and playing");
         }
+        
         setCallStatus("active");
         startCallTimer();
+        toast.success("Call connected!");
       }
     };
 
@@ -177,10 +206,13 @@ const PrivateCallModal = ({
   }, [initializeMedia, createPeerConnection, socket, otherUser, authUser, callType]);
 
   const answerCall = useCallback(async () => {
+    console.log("Answering call - initializing media");
     const stream = await initializeMedia();
     if (!stream) return;
 
+    console.log("Media initialized, waiting for offer");
     setCallStatus("connecting");
+    // Don't create peer connection yet - wait for offer
   }, [initializeMedia]);
 
   const handleOffer = useCallback(async (sdp) => {
@@ -405,6 +437,16 @@ const PrivateCallModal = ({
 
       {/* Video Container */}
       <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+        {/* Hidden audio element for audio calls */}
+        {callType === "audio" && (
+          <audio
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            className="hidden"
+          />
+        )}
+        
         {callType === "video" ? (
           <>
             {/* Remote Video - Full Screen */}

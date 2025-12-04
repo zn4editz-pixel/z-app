@@ -113,7 +113,32 @@ export const acceptFriendRequest = async (req, res) => {
 		await session.commitTransaction();
 		session.endSession();
 
-		// We will add socket.io logic here to notify the sender
+		// 4. Notify the sender via socket that their request was accepted
+		const io = req.app.get("io");
+		if (io) {
+			// Get receiver's info to send to sender
+			const receiverInfo = {
+				_id: receiver._id,
+				username: receiver.username,
+				nickname: receiver.nickname,
+				profilePic: receiver.profilePic,
+				isVerified: receiver.isVerified
+			};
+			
+			// Emit to sender
+			const sockets = io.sockets.sockets;
+			for (const [socketId, socket] of sockets) {
+				if (socket.userId && socket.userId.toString() === senderId.toString()) {
+					console.log(`✅ Notifying ${senderId} that ${receiverId} accepted their friend request`);
+					socket.emit("friendRequest:accepted", {
+						user: receiverInfo,
+						message: `${receiver.nickname || receiver.username} accepted your friend request!`
+					});
+					break;
+				}
+			}
+		}
+
 		res.status(200).json({ message: "Friend request accepted." });
 	} catch (error) {
 		await session.abortTransaction();
@@ -174,6 +199,23 @@ export const rejectFriendRequest = async (req, res) => {
 
 		await session.commitTransaction();
 		session.endSession();
+
+		// Notify via socket if this was a rejection (not a cancellation)
+		const io = req.app.get("io");
+		if (io && loggedInUser.friendRequestsReceived.length < userToReject.friendRequestsSent.length) {
+			// This means logged-in user rejected a received request
+			const sockets = io.sockets.sockets;
+			for (const [socketId, socket] of sockets) {
+				if (socket.userId && socket.userId.toString() === userId.toString()) {
+					console.log(`❌ Notifying ${userId} that ${loggedInUserId} rejected their friend request`);
+					socket.emit("friendRequest:rejected", {
+						userId: loggedInUserId,
+						message: "Your friend request was declined"
+					});
+					break;
+				}
+			}
+		}
 
 		res.status(200).json({ message: "Friend request rejected." });
 	} catch (error) {

@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
+import CallLogMessage from "./CallLogMessage";
 import { formatMessageTime } from "../lib/utils";
 
 const ChatContainer = ({ onStartCall }) => {
@@ -153,6 +154,21 @@ const ChatContainer = ({ onStartCall }) => {
           ) : (
             messages.map((message) => {
               const mine = message.senderId === authUser?._id;
+              
+              // Render call log message
+              if (message.messageType === "call" || message.callData) {
+                return (
+                  <div
+                    key={message._id || message.id}
+                    className="flex justify-center w-full my-2"
+                  >
+                    <div className="max-w-md w-full">
+                      <CallLogMessage message={message} isOwnMessage={mine} />
+                    </div>
+                  </div>
+                );
+              }
+              
               return (
                 <div
                   key={message._id || message.id}
