@@ -48,10 +48,23 @@
         margin: 0;
         padding: 0;
         background-color: #1a1a1a;
+        /* Fix mobile viewport height issues */
+        height: 100%;
+        width: 100%;
+        position: fixed;
+        overflow: hidden;
+      }
+      
+      /* Allow scrolling in the app container */
+      #root {
+        height: 100%;
+        width: 100%;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
       }
       
       /* Prevent scrolling ONLY during initial load */
-      body:not(.loaded) {
+      body:not(.loaded) #root {
         overflow: hidden;
       }
       
