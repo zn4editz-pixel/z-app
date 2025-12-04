@@ -54,7 +54,7 @@ const ChatHeader = ({ onStartCall }) => {
 	};
 
 	return (
-		<div className="p-2.5 border-b border-base-300 flex items-center justify-between bg-base-100">
+		<div className="px-3 py-2.5 sm:px-4 sm:py-3 border-b border-base-300 flex items-center justify-between bg-base-100">
 			<div className="flex items-center gap-3 min-w-0 flex-1">
 				{/* Avatar */}
 				<button

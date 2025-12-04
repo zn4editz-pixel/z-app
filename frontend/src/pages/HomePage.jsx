@@ -107,15 +107,15 @@ const HomePage = () => {
 
   return (
     <div className="fixed inset-0 bg-base-200">
-      {/* Main container with proper height calculation */}
+      {/* Main container */}
       <div className="h-full w-full flex flex-col">
         {/* Spacer for navbar */}
         <div className="h-14 sm:h-16 flex-shrink-0"></div>
         
-        {/* Chat container */}
-        <div className="flex-1 flex items-center justify-center px-0 sm:px-4 py-0 sm:py-4 overflow-hidden">
-          <div className="bg-base-100 rounded-none sm:rounded-lg shadow-xl w-full h-full max-w-6xl sm:max-h-[calc(100vh-8rem)] flex overflow-hidden">
-            {/* Sidebar: hidden on mobile when a chat is selected */}
+        {/* Chat container - Full screen on mobile, contained on desktop */}
+        <div className="flex-1 flex items-center justify-center overflow-hidden">
+          <div className="bg-base-100 w-full h-full max-w-7xl flex overflow-hidden border-x border-base-300">
+            {/* Sidebar */}
             <Sidebar />
 
             {/* Chat area */}
