@@ -25,6 +25,7 @@ import ResetPassword from "./pages/ResetPassword";
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
 import { useFriendStore } from "./store/useFriendStore"; // ✅ 1. Import Friend Store
+import { useNotificationStore } from "./store/useNotificationStore";
 
 // Toast UI (no changes)
 const showMessageToast = ({ senderName, senderAvatar, messageText, theme }) => {
@@ -145,6 +146,27 @@ const App = () => {
 					status: "approved",
 					reviewedAt: new Date()
 				}
+			});
+		});
+
+		// 5. Report status notifications
+		socket.on("report-status-updated", ({ title, message, status, actionTaken, reportedUser }) => {
+			// Show toast notification
+			if (status === "action_taken") {
+				toast.success(`${title}: ${message}`, { duration: 6000 });
+			} else {
+				toast(message, { icon: "📋", duration: 5000 });
+			}
+			
+			// Add to notification store
+			const { addNotification } = useNotificationStore.getState();
+			addNotification({
+				type: "report_update",
+				title,
+				message,
+				status,
+				actionTaken,
+				reportedUser,
 			});
 		});
 

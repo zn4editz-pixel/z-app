@@ -147,7 +147,7 @@ export const getReports = async (req, res) => {
 // ✅ --- Update Report Status ---
 export const updateReportStatus = async (req, res) => {
 	const { reportId } = req.params;
-	const { status, adminNotes } = req.body;
+	const { status, adminNotes, actionTaken } = req.body;
 
 	try {
 		const report = await Report.findById(reportId)
@@ -164,12 +164,42 @@ export const updateReportStatus = async (req, res) => {
 			return res.status(400).json({ error: "Invalid status" });
 		}
 
+		// Update report
 		report.status = status;
 		if (adminNotes) {
 			report.adminNotes = adminNotes;
 		}
+		if (actionTaken) {
+			report.actionTaken = actionTaken;
+		}
+		report.reviewedBy = req.user._id;
+		report.reviewedAt = new Date();
+		report.reporterNotified = true;
 
 		await report.save();
+
+		// Prepare notification message
+		let notificationMessage = "";
+		let notificationTitle = "";
+		
+		if (status === "reviewed") {
+			notificationTitle = "Report Reviewed";
+			notificationMessage = `Your report against ${report.reportedUser?.nickname || report.reportedUser?.username} has been reviewed by our team.`;
+		} else if (status === "action_taken") {
+			notificationTitle = "Action Taken";
+			if (actionTaken === "warning") {
+				notificationMessage = `We've issued a warning to ${report.reportedUser?.nickname || report.reportedUser?.username} based on your report.`;
+			} else if (actionTaken === "suspended") {
+				notificationMessage = `${report.reportedUser?.nickname || report.reportedUser?.username} has been suspended based on your report. Thank you for keeping our community safe.`;
+			} else if (actionTaken === "banned") {
+				notificationMessage = `${report.reportedUser?.nickname || report.reportedUser?.username} has been permanently banned based on your report. Thank you for keeping our community safe.`;
+			} else {
+				notificationMessage = `Action has been taken on your report against ${report.reportedUser?.nickname || report.reportedUser?.username}.`;
+			}
+		} else if (status === "dismissed") {
+			notificationTitle = "Report Reviewed";
+			notificationMessage = `Your report has been reviewed. After investigation, no policy violation was found.`;
+		}
 
 		// Send socket notification to reporter
 		const io = req.app.get("io");
@@ -177,8 +207,11 @@ export const updateReportStatus = async (req, res) => {
 			emitToUser(io, report.reporter._id, "report-status-updated", {
 				reportId: report._id,
 				status,
+				actionTaken: actionTaken || "none",
 				reportedUser: report.reportedUser?.nickname || report.reportedUser?.username,
-				message: `Your report has been ${status.replace('_', ' ')}`
+				title: notificationTitle,
+				message: notificationMessage,
+				timestamp: new Date()
 			});
 		}
 

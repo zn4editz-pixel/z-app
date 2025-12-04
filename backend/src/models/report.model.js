@@ -43,6 +43,26 @@ const reportSchema = new mongoose.Schema(
 			type: String,
 			default: "",
 		},
+		// Action taken by admin
+		actionTaken: {
+			type: String,
+			enum: ["none", "warning", "suspended", "banned"],
+			default: "none",
+		},
+		// Notification sent to reporter
+		reporterNotified: {
+			type: Boolean,
+			default: false,
+		},
+		// Admin who reviewed
+		reviewedBy: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "User",
+		},
+		// Review date
+		reviewedAt: {
+			type: Date,
+		},
 	},
 	{ timestamps: true } // Adds createdAt and updatedAt fields automatically
 );
