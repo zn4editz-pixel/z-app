@@ -292,12 +292,34 @@ const PrivateCallModal = ({
     const handleCallEnded = () => {
       console.log("Call ended by other user");
       toast("Call ended", { icon: "📞" });
-      endCall();
+      // Close modal immediately
+      stopCallTimer();
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((track) => track.stop());
+        localStreamRef.current = null;
+      }
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+        peerConnectionRef.current = null;
+      }
+      setCallStatus("ended");
+      onClose();
     };
     const handleCallRejected = () => {
       console.log("Call rejected by other user");
       toast.error("Call declined");
-      endCall();
+      // Close modal immediately
+      stopCallTimer();
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((track) => track.stop());
+        localStreamRef.current = null;
+      }
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+        peerConnectionRef.current = null;
+      }
+      setCallStatus("ended");
+      onClose();
     };
     const handleCallAccepted = () => setCallStatus("connecting");
 

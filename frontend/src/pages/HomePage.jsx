@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
+import toast from "react-hot-toast";
 
 import Sidebar from "../components/Sidebar";
 import NoChatSelected from "../components/NoChatSelected";
@@ -31,6 +32,7 @@ const HomePage = () => {
 
     const handleCallEnded = () => {
       console.log("Call ended event received");
+      toast("Call ended", { icon: "📞" });
       setCallState({
         isCallActive: false,
         callType: null,
@@ -42,6 +44,7 @@ const HomePage = () => {
 
     const handleCallRejected = ({ reason }) => {
       console.log("Call rejected:", reason);
+      toast.error(`Call ${reason || 'declined'}`);
       setCallState({
         isCallActive: false,
         callType: null,
