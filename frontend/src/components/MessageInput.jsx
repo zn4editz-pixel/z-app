@@ -191,16 +191,23 @@ const MessageInput = () => {
           />
         </div>
 
-        {/* Send Button */}
-        <button
-          type="submit"
-          className={`btn btn-primary btn-circle flex-shrink-0 shadow-lg transition-all ${
-            isSending ? 'scale-90' : 'scale-100'
-          }`}
-          disabled={!text.trim() && !imagePreview || isSending}
-        >
-          <Send className="w-5 h-5" />
-        </button>
+        {/* Voice Recorder - Show when no text */}
+        {!text.trim() && !imagePreview && (
+          <VoiceRecorder onSendVoice={handleSendVoice} />
+        )}
+
+        {/* Send Button - Show when typing or image attached */}
+        {(text.trim() || imagePreview) && (
+          <button
+            type="submit"
+            className={`btn btn-primary btn-circle flex-shrink-0 shadow-lg transition-all ${
+              isSending ? 'scale-90' : 'scale-100'
+            }`}
+            disabled={isSending}
+          >
+            <Send className="w-5 h-5" />
+          </button>
+        )}
       </form>
     </div>
   );
