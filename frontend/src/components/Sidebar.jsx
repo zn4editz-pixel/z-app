@@ -4,7 +4,7 @@ import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useFriendStore } from "../store/useFriendStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
-import { Search, X, Video } from "lucide-react";
+import { Search, X, Video, Check } from "lucide-react";
 import VerifiedBadge from "./VerifiedBadge";
 
 const Sidebar = () => {
@@ -119,15 +119,18 @@ const Sidebar = () => {
         {/* Scrollable Chat List - THIS IS THE KEY FIX */}
         <div className="flex-1 min-h-0 flex flex-col">
           {/* Online Filter */}
-          <div className="flex-shrink-0 px-3 sm:px-4 py-2 sm:py-3 border-b border-base-200">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showOnlineOnly}
-                onChange={(e) => setShowOnlineOnly(e.target.checked)}
-                className="checkbox checkbox-xs sm:checkbox-sm"
-              />
-              <span className="text-sm sm:text-base font-medium">Show Active only</span>
+          <div className="flex-shrink-0 px-3 sm:px-4 py-1.5 border-b border-base-200">
+            <label className="flex items-center gap-1.5 cursor-pointer group">
+              <div className="relative flex items-center justify-center">
+                <input
+                  type="checkbox"
+                  checked={showOnlineOnly}
+                  onChange={(e) => setShowOnlineOnly(e.target.checked)}
+                  className="peer w-3.5 h-3.5 rounded border-2 border-base-content/40 checked:bg-primary checked:border-primary appearance-none cursor-pointer transition-all"
+                />
+                <Check className="absolute w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" strokeWidth={3} />
+              </div>
+              <span className="text-xs font-medium text-base-content/80">Show Active only</span>
             </label>
           </div>
 

@@ -18,19 +18,19 @@ const Navbar = () => {
 
 	return (
 		<header className="bg-base-100 border-b border-base-300 fixed w-full top-0 z-40 backdrop-blur-lg bg-base-100/80">
-			<div className="container mx-auto px-3 sm:px-4 h-14 sm:h-16">
+			<div className="container mx-auto px-2 sm:px-4 h-14 sm:h-16">
 				<div className="flex items-center justify-between h-full">
 					{/* Logo */}
-					<Link to="/" className="flex items-center gap-2">
+					<Link to="/" className="flex items-center">
 						<img
 							src="/zn4.png"
 							alt="Z-APP"
-							className="h-8 sm:h-10 w-auto"
+							className="h-7 sm:h-10 w-auto"
 						/>
 					</Link>
 
 					{/* Navigation Icons */}
-					<div className="flex items-center gap-1 sm:gap-2">
+					<div className="flex items-center gap-0.5 sm:gap-2">
 						{/* Social Hub / Friend Requests */}
 						{authUser && (
 							<Link
