@@ -224,17 +224,7 @@ const App = () => {
 	// Added addPendingReceived to dependencies
 	}, [socket, authUser, navigate, forceLogout, theme, addPendingReceived]); 
 
-	// Show loader while checking auth
-	if (isCheckingAuth) {
-		return (
-			<div className="flex items-center justify-center h-screen bg-base-200">
-				<div className="relative w-12 h-12">
-					<div className="absolute inset-0 border-[3px] border-base-content/20 rounded-full"></div>
-					<div className="absolute inset-0 border-[3px] border-transparent border-t-base-content border-l-base-content rounded-full animate-spin"></div>
-				</div>
-			</div>
-		);
-	}
+	// Removed loading splash - instant load
 
 	const hasCompletedProfile = authUser?.hasCompletedProfile;
 
