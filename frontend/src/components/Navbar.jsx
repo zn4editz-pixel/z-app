@@ -25,7 +25,7 @@ const Navbar = () => {
 						<img
 							src="/zn4.png"
 							alt="Z-APP"
-							className="h-7 sm:h-8 w-auto"
+							className="h-6 sm:h-7 w-auto"
 						/>
 					</Link>
 
