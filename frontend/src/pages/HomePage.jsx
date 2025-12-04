@@ -11,7 +11,7 @@ import IncomingCallModal from "../components/IncomingCallModal";
 
 const HomePage = () => {
   const { selectedUser } = useChatStore();
-  const { socket } = useAuthStore();
+  const { socket, authUser } = useAuthStore();
   
   const [callState, setCallState] = useState({
     isCallActive: false,
@@ -25,25 +25,28 @@ const HomePage = () => {
   useEffect(() => {
     if (!socket) return;
 
-    const handleIncomingCall = ({ callerInfo, callType }) => {
-      console.log("📞 Incoming call from:", callerInfo, "Type:", callType);
+    const handleIncomingCall = ({ callerInfo, callType, callerId }) => {
+      console.log("📞 Incoming call from:", callerInfo?.nickname || callerId, "Type:", callType);
+      console.log("📞 Full call data:", { callerInfo, callType, callerId });
       
       // Validate callerInfo
       if (!callerInfo || !callerInfo._id) {
-        console.error("Invalid caller info received:", callerInfo);
+        console.error("❌ Invalid caller info received:", callerInfo);
         toast.error("Invalid call data received");
         return;
       }
       
       // Check if already in a call using the latest state
       setCallState((prevState) => {
+        console.log("📊 Current call state:", prevState);
         if (prevState.isCallActive) {
-          console.log("Already in a call, rejecting incoming call");
+          console.log("⚠️ Already in a call, rejecting incoming call from:", callerInfo.nickname);
           socket.emit("private:reject-call", { callerId: callerInfo._id });
           return prevState; // Don't update state
         }
         
         // Not in a call, show incoming call modal
+        console.log("✅ Showing incoming call modal for:", callerInfo.nickname);
         setIncomingCall({ callerInfo, callType });
         return prevState;
       });
@@ -78,7 +81,19 @@ const HomePage = () => {
   };
 
   const handleAcceptCall = () => {
-    if (!incomingCall) return;
+    if (!incomingCall || !socket) return;
+    
+    console.log("✅ Accepting call from:", incomingCall.callerInfo.nickname);
+    
+    // Immediately notify caller that call was accepted
+    socket.emit("private:call-accepted", {
+      callerId: incomingCall.callerInfo._id,
+      acceptorInfo: {
+        _id: authUser._id,
+        nickname: authUser.nickname,
+        profilePic: authUser.profilePic,
+      },
+    });
     
     setCallState({
       isCallActive: true,
@@ -91,6 +106,7 @@ const HomePage = () => {
 
   const handleRejectCall = () => {
     if (incomingCall && socket) {
+      console.log("🚫 Rejecting call from:", incomingCall.callerInfo.nickname);
       socket.emit("private:reject-call", { callerId: incomingCall.callerInfo._id });
     }
     setIncomingCall(null);
@@ -114,7 +130,7 @@ const HomePage = () => {
         
         {/* Chat container - Full screen on mobile, contained on desktop */}
         <div className="flex-1 flex items-center justify-center overflow-hidden">
-          <div className="bg-base-100 w-full h-full max-w-7xl flex overflow-hidden border-x border-base-300">
+          <div className="bg-base-100 w-full h-full max-w-7xl flex overflow-hidden md:border-x border-base-300">
             {/* Sidebar */}
             <Sidebar />
 
@@ -122,6 +138,9 @@ const HomePage = () => {
             {selectedUser ? <ChatContainer onStartCall={handleStartCall} /> : <NoChatSelected />}
           </div>
         </div>
+        
+        {/* Bottom padding for mobile safe area */}
+        <div className="h-0 md:h-0 safe-area-bottom"></div>
       </div>
 
       {/* Private Call Modal */}

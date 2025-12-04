@@ -138,9 +138,9 @@ const ChatContainer = ({ onStartCall }) => {
 
   return (
     <>
-      <div className="flex-1 flex flex-col h-full w-full md:pt-0 pt-0">
+      <div className="flex-1 flex flex-col h-full w-full">
         <ChatHeader onStartCall={handleStartCall} />
-        <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto p-2.5 sm:p-4 space-y-2.5 sm:space-y-4 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent" style={{ WebkitOverflowScrolling: 'touch' }}>
           {isMessagesLoading ? (
             <MessageSkeleton />
           ) : messages.length === 0 ? (
@@ -178,9 +178,9 @@ const ChatContainer = ({ onStartCall }) => {
                     const isEmojiOnly = message.text && /^[\p{Emoji}\s]+$/u.test(message.text) && !message.image && !message.voice;
                     
                     return (
-                      <div className="flex items-end max-w-[85%] sm:max-w-[75%] gap-1 sm:gap-2">
+                      <div className="flex items-end max-w-[85%] sm:max-w-[75%] gap-2">
                         {!mine && !isEmojiOnly && (
-                          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0">
                             <img
                               src={selectedUser.profilePic || "/avatar.png"}
                               alt="avatar"
@@ -189,7 +189,7 @@ const ChatContainer = ({ onStartCall }) => {
                           </div>
                         )}
                         <div
-                          className={isEmojiOnly ? "" : `relative px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm rounded-2xl shadow-sm ${
+                          className={isEmojiOnly ? "" : `relative px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-2xl shadow-sm ${
                             mine
                               ? "bg-gradient-to-br from-primary to-primary/90 text-primary-content bubble-right"
                               : "bg-base-200 text-base-content bubble-left"

@@ -1,4 +1,5 @@
 import User from "../models/user.model.js";
+import FriendRequest from "../models/friendRequest.model.js";
 import mongoose from "mongoose";
 
 // ─── Send Friend Request ───────────────────────────────────
@@ -109,6 +110,12 @@ export const acceptFriendRequest = async (req, res) => {
 		await receiver.save({ session });
 		await sender.save({ session });
 
+		// 2.5. Delete the FriendRequest document from database
+		await FriendRequest.findOneAndDelete({
+			sender: senderId,
+			receiver: receiverId
+		}).session(session);
+
 		// 3. Commit transaction
 		await session.commitTransaction();
 		session.endSession();
@@ -196,6 +203,15 @@ export const rejectFriendRequest = async (req, res) => {
 
 		await loggedInUser.save({ session });
 		await userToReject.save({ session });
+
+		// Delete the FriendRequest document from database
+		// Try both directions since we don't know who sent the request
+		await FriendRequest.findOneAndDelete({
+			$or: [
+				{ sender: userId, receiver: loggedInUserId },
+				{ sender: loggedInUserId, receiver: userId }
+			]
+		}).session(session);
 
 		await session.commitTransaction();
 		session.endSession();

@@ -328,7 +328,7 @@ export const useChatStore = create((set, get) => ({
         const { callState, callPartner } = get();
         if (callState !== 'idle') {
             console.log(`Received signal: Call ended by ${data?.userId === callPartner?._id ? callPartner.nickname : 'partner'}.`);
-            toast.info("Call ended.");
+            toast("Call ended", { icon: "📞" });
             get().resetCallState();
             // WebRTC cleanup should be triggered in the CallModal component
         }
@@ -337,8 +337,14 @@ export const useChatStore = create((set, get) => ({
     toggleMute: () => { set((state) => ({ isMuted: !state.isMuted })); },
     toggleCamera: () => { set((state) => ({ isCameraOff: !state.isCameraOff })); },
 
-    // --- NEW: Subscribe/Unsubscribe Call Events ---
+    // --- DISABLED: Call events are now handled in HomePage to avoid conflicts ---
     subscribeToCallEvents: () => {
+        // Call events are handled directly in HomePage.jsx
+        // This prevents duplicate listeners and conflicts
+        console.log("Call events handled in HomePage (useChatStore subscription disabled)");
+        return;
+        
+        /* COMMENTED OUT TO PREVENT CONFLICTS
         const { socket } = useAuthStore.getState();
         if (!socket) return;
         console.log("Subscribing to private call events");
@@ -360,6 +366,7 @@ export const useChatStore = create((set, get) => ({
         socket.on("private:call-accepted", onCallAccepted);
         socket.on("private:call-rejected", onCallRejected);
         socket.on("private:call-ended", onCallEnded);
+        */
     },
 
     unsubscribeFromCallEvents: () => {

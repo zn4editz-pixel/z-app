@@ -10,7 +10,60 @@ const PermissionHandler = () => {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
+    let cameraPermission = null;
+    let micPermission = null;
+    let cameraHandler = null;
+    let micHandler = null;
+
+    const checkPermissions = async () => {
+      try {
+        // Check if running in browser that supports permissions API
+        if (!navigator.permissions) {
+          console.log("Permissions API not supported");
+          return;
+        }
+
+        // Check camera permission
+        try {
+          cameraPermission = await navigator.permissions.query({ name: 'camera' });
+          setPermissions(prev => ({ ...prev, camera: cameraPermission.state }));
+          
+          cameraHandler = () => {
+            setPermissions(prev => ({ ...prev, camera: cameraPermission.state }));
+          };
+          cameraPermission.addEventListener('change', cameraHandler);
+        } catch (err) {
+          console.log("Camera permission check not supported:", err);
+        }
+
+        // Check microphone permission
+        try {
+          micPermission = await navigator.permissions.query({ name: 'microphone' });
+          setPermissions(prev => ({ ...prev, microphone: micPermission.state }));
+          
+          micHandler = () => {
+            setPermissions(prev => ({ ...prev, microphone: micPermission.state }));
+          };
+          micPermission.addEventListener('change', micHandler);
+        } catch (err) {
+          console.log("Microphone permission check not supported:", err);
+        }
+      } catch (error) {
+        console.error("Error checking permissions:", error);
+      }
+    };
+
     checkPermissions();
+
+    // Cleanup function
+    return () => {
+      if (cameraPermission && cameraHandler) {
+        cameraPermission.removeEventListener('change', cameraHandler);
+      }
+      if (micPermission && micHandler) {
+        micPermission.removeEventListener('change', micHandler);
+      }
+    };
   }, []);
 
   const checkPermissions = async () => {
@@ -25,10 +78,6 @@ const PermissionHandler = () => {
       try {
         const cameraPermission = await navigator.permissions.query({ name: 'camera' });
         setPermissions(prev => ({ ...prev, camera: cameraPermission.state }));
-        
-        cameraPermission.addEventListener('change', () => {
-          setPermissions(prev => ({ ...prev, camera: cameraPermission.state }));
-        });
       } catch (err) {
         console.log("Camera permission check not supported:", err);
       }
@@ -37,10 +86,6 @@ const PermissionHandler = () => {
       try {
         const micPermission = await navigator.permissions.query({ name: 'microphone' });
         setPermissions(prev => ({ ...prev, microphone: micPermission.state }));
-        
-        micPermission.addEventListener('change', () => {
-          setPermissions(prev => ({ ...prev, microphone: micPermission.state }));
-        });
       } catch (err) {
         console.log("Microphone permission check not supported:", err);
       }

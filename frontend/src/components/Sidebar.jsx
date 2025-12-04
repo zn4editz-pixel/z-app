@@ -119,18 +119,15 @@ const Sidebar = () => {
         {/* Scrollable Chat List - THIS IS THE KEY FIX */}
         <div className="flex-1 min-h-0 flex flex-col">
           {/* Online Filter */}
-          <div className="flex-shrink-0 px-3 sm:px-4 py-1.5 border-b border-base-200">
-            <label className="flex items-center gap-1.5 cursor-pointer group">
-              <div className="relative flex items-center justify-center">
-                <input
-                  type="checkbox"
-                  checked={showOnlineOnly}
-                  onChange={(e) => setShowOnlineOnly(e.target.checked)}
-                  className="peer w-3.5 h-3.5 rounded border-2 border-base-content/40 checked:bg-primary checked:border-primary appearance-none cursor-pointer transition-all"
-                />
-                <Check className="absolute w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" strokeWidth={3} />
-              </div>
-              <span className="text-xs font-medium text-base-content/80">Show Active only</span>
+          <div className="flex-shrink-0 px-2 sm:px-4 py-0.5 sm:py-1 border-b border-base-200">
+            <label className="flex items-center gap-1.5 sm:gap-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={showOnlineOnly}
+                onChange={(e) => setShowOnlineOnly(e.target.checked)}
+                className="checkbox checkbox-primary w-3 h-3 sm:w-4 sm:h-4 rounded-full"
+              />
+              <span className="text-[11px] sm:text-xs font-medium text-base-content/80">Show Active only</span>
             </label>
           </div>
 

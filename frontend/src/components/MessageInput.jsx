@@ -116,9 +116,9 @@ const MessageInput = () => {
   };
 
   return (
-    <div className="p-3 w-full bg-base-100 border-t border-base-300">
+    <div className="p-2.5 sm:p-4 w-full bg-base-100 border-t border-base-300">
       {imagePreview && (
-        <div className="mb-2 sm:mb-3 flex items-center gap-2 p-2 bg-base-200 rounded-lg">
+        <div className="mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-base-200 rounded-xl">
           <div className="relative">
             <img
               src={imagePreview}
@@ -128,26 +128,26 @@ const MessageInput = () => {
             <button
               onClick={removeImage}
               className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-error text-white
-              flex items-center justify-center hover:scale-110 transition shadow-lg"
+              flex items-center justify-center hover:scale-110 active:scale-95 transition shadow-lg"
               type="button"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
-          <span className="text-xs text-base-content/70">Image ready to send</span>
+          <span className="text-sm text-base-content/70">Image ready to send</span>
         </div>
       )}
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
-        <div className="mb-2 p-2 bg-base-200 rounded-lg">
-          <div className="flex flex-wrap gap-2">
+        <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-base-200 rounded-xl shadow-lg">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
             {emojis.map((emoji) => (
               <button
                 key={emoji}
                 type="button"
                 onClick={() => addEmoji(emoji)}
-                className="text-2xl hover:scale-125 transition"
+                className="text-2xl p-2 hover:bg-base-300 rounded-lg active:scale-110 transition"
               >
                 {emoji}
               </button>
@@ -161,19 +161,30 @@ const MessageInput = () => {
         className="flex items-center gap-2"
       >
         {/* Text Input Container */}
-        <div className="flex-1 flex items-center gap-2 bg-base-200 rounded-full px-4 py-2.5">
+        <div className="flex-1 flex items-center gap-1.5 sm:gap-2 bg-base-200 rounded-full px-3 sm:px-4 py-2.5 sm:py-3">
           <input
             type="text"
-            className="flex-1 bg-transparent outline-none border-none text-sm placeholder:text-base-content/50"
+            className="flex-1 bg-transparent outline-none border-none text-sm sm:text-base placeholder:text-base-content/50"
             placeholder="Type a message..."
             value={text}
             onChange={(e) => handleTyping(e.target.value)}
           />
           
+          {/* Emoji Button */}
+          <button
+            type="button"
+            className={`p-2 rounded-full hover:bg-base-300 active:scale-95 transition flex-shrink-0
+              ${showEmojiPicker ? "text-primary" : "text-base-content/60"}`}
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            title="Add emoji"
+          >
+            <Smile className="w-5 h-5" />
+          </button>
+          
           {/* Image Upload Button */}
           <button
             type="button"
-            className={`p-1 rounded-full hover:bg-base-300 transition flex-shrink-0
+            className={`p-2 rounded-full hover:bg-base-300 active:scale-95 transition flex-shrink-0
               ${imagePreview ? "text-primary" : "text-base-content/60"}`}
             onClick={() => fileInputRef.current?.click()}
             title="Attach image"
@@ -201,7 +212,7 @@ const MessageInput = () => {
           <button
             type="submit"
             className={`btn btn-primary btn-circle flex-shrink-0 shadow-lg transition-all ${
-              isSending ? 'scale-90' : 'scale-100'
+              isSending ? 'scale-90' : 'scale-100 hover:scale-105'
             }`}
             disabled={isSending}
           >

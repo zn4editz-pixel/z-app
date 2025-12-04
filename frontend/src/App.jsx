@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useEffect, useCallback } from "react";
-import { Loader } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 
 import Navbar from "./components/Navbar";
@@ -74,7 +73,7 @@ const App = () => {
 
 	useEffect(() => {
 		checkAuth();
-	}, [checkAuth]);
+	}, []); // eslint-disable-line react-hooks/exhaustive-deps
 	
 	useEffect(() => {
 		if (authUser?.isSuspended && window.location.pathname !== "/suspended") {
@@ -228,8 +227,11 @@ const App = () => {
 	// Show loader while checking auth
 	if (isCheckingAuth) {
 		return (
-			<div className="flex items-center justify-center h-screen">
-				<Loader className="size-10 animate-spin" />
+			<div className="flex items-center justify-center h-screen bg-base-200">
+				<div className="relative w-12 h-12">
+					<div className="absolute inset-0 border-[3px] border-base-content/20 rounded-full"></div>
+					<div className="absolute inset-0 border-[3px] border-transparent border-t-base-content border-l-base-content rounded-full animate-spin"></div>
+				</div>
 			</div>
 		);
 	}

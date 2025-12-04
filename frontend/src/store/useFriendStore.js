@@ -25,10 +25,41 @@ export const useFriendStore = create((set, get) => ({
                 sent: requestsRes.data?.sent?.length || 0
             });
 
-            set({
-                friends: friendsRes.data || [],
-                pendingReceived: requestsRes.data?.received || [],
-                pendingSent: requestsRes.data?.sent || [],
+            // Merge with existing data to preserve real-time additions
+            set((state) => {
+                const newFriends = friendsRes.data || [];
+                const newReceived = requestsRes.data?.received || [];
+                const newSent = requestsRes.data?.sent || [];
+
+                // Create ID sets from API data for efficient lookup
+                const apiReceivedIds = new Set(newReceived.map(r => r._id));
+                const apiSentIds = new Set(newSent.map(r => r._id));
+
+                // Only keep existing requests that are still in the API response
+                // This ensures accepted/rejected requests are removed
+                const existingReceivedStillValid = state.pendingReceived.filter(r => apiReceivedIds.has(r._id));
+                const existingSentStillValid = state.pendingSent.filter(r => apiSentIds.has(r._id));
+
+                // Add new requests from API that aren't in existing state
+                const mergedReceived = [...existingReceivedStillValid];
+                newReceived.forEach(req => {
+                    if (!mergedReceived.some(r => r._id === req._id)) {
+                        mergedReceived.push(req);
+                    }
+                });
+
+                const mergedSent = [...existingSentStillValid];
+                newSent.forEach(req => {
+                    if (!mergedSent.some(r => r._id === req._id)) {
+                        mergedSent.push(req);
+                    }
+                });
+
+                return {
+                    friends: newFriends,
+                    pendingReceived: mergedReceived,
+                    pendingSent: mergedSent,
+                };
             });
         } catch (error) {
             console.error("❌ Failed to fetch friend data:", error.response?.data || error.message);
@@ -93,13 +124,24 @@ export const useFriendStore = create((set, get) => ({
 
     acceptRequest: async (senderId) => {
         try {
+            // Optimistically update state before API call
+            const acceptedUser = get().pendingReceived.find(r => r._id === senderId);
+            
+            set((state) => ({
+                pendingReceived: state.pendingReceived.filter((r) => r._id !== senderId),
+                friends: acceptedUser ? [...state.friends, acceptedUser] : state.friends,
+            }));
+
             await axiosInstance.post(`/friends/accept/${senderId}`);
             toast.success("Friend request accepted!");
-            // Refetch is necessary to move the user from 'pending' to 'friends' list
+            
+            // Refetch to ensure consistency with backend
             get().fetchFriendData();
             return true;
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to accept request.");
+            // Revert optimistic update on error
+            get().fetchFriendData();
             return false;
         }
     },

@@ -290,12 +290,17 @@ io.on("connection", (socket) => {
                 });
                 throw new Error("This user has already sent you a friend request.");
 			} else {
-                // 3. Create new friend request
+                // 3. Create new friend request and update User arrays
                 const newRequest = new FriendRequest({
                     sender: senderId,
                     receiver: receiverId,
                 });
                 await newRequest.save();
+
+                // Update User model arrays so acceptFriendRequest can find the request
+                sender.friendRequestsSent.push(receiverId);
+                receiver.friendRequestsReceived.push(senderId);
+                await Promise.all([sender.save(), receiver.save()]);
 
                 // 4. Emit success events
                 console.log(`👥 Friend request from ${senderId} to ${receiverId} created`);
@@ -311,8 +316,8 @@ io.on("connection", (socket) => {
                 });
                 
                 // Also emit to Social Hub (for pending requests)
-                const senderProfile = await User.findById(senderId).select("username nickname profilePic isVerified");
-                console.log(`📤 Emitting friendRequest:received to ${receiverId} with profile:`, senderProfile?.username);
+                const senderProfile = await User.findById(senderId).select("_id username nickname profilePic isVerified");
+                console.log(`📤 Emitting friendRequest:received to ${receiverId} with profile:`, senderProfile);
                 partnerSocket.emit("friendRequest:received", senderProfile);
                 console.log(`✅ Friend request event emitted successfully`);
             }
@@ -454,20 +459,8 @@ io.on("connection", (socket) => {
 		}
 	});
 
-	socket.on("private:call-rejected", (payload) => {
-		const { callerId, reason } = payload;
-		const rejectorId = socket.userId;
-		console.log(`❌ Call rejected by ${rejectorId} for caller ${callerId}. Reason: ${reason}`);
-		
-		if (rejectorId) {
-			emitToUser(callerId, "private:call-rejected", {
-				rejectorId,
-				reason,
-			});
-		} else {
-			console.error("Cannot reject call: rejectorId not found on socket.");
-		}
-	});
+	// Removed duplicate private:call-rejected handler to prevent echo/loop
+	// Only private:reject-call should be used by clients
 
 	socket.on("private:reject-call", (payload) => {
 		const { callerId } = payload;

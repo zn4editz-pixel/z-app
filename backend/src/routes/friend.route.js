@@ -2,7 +2,7 @@
 // backend/routes/friend.routes.js
 
 import express from "express";
-import { protectRoute } from "../middleware/protectRoute.js";
+import { protectRoute } from "../middleware/auth.middleware.js";
 import {
 	sendFriendRequest,
 	acceptFriendRequest,

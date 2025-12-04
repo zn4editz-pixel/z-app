@@ -34,33 +34,45 @@ export const useAuthStore = create((set, get) => ({
 		try {
 			// Restore token from localStorage if exists
 			const token = localStorage.getItem("token");
-			if (token) {
-				axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+			if (!token) {
+				// No token, skip auth check
+				set({ authUser: null, isCheckingAuth: false });
+				return;
 			}
+			
+			axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
 			// axiosInstance now uses the correct baseURL from axios.js
-			const res = await axiosInstance.get("/auth/check"); // Removed withCredentials here, should be default in instance
+			const res = await axiosInstance.get("/auth/check");
 			const user = res.data;
 
-			if (!user || typeof user !== 'object') { // Add check for valid user object
+			if (!user || typeof user !== 'object') {
                  throw new Error("Invalid user data received");
             }
 
-			if (user.isBlocked) { toast.error("Account is blocked"); return get().logout(); }
-			if (user.suspension && new Date(user.suspension.endTime) > new Date()) { toast.error("Account is suspended"); return get().logout(); }
+			if (user.isBlocked) { 
+				toast.error("Account is blocked"); 
+				set({ authUser: null, isCheckingAuth: false });
+				return;
+			}
+			if (user.suspension && new Date(user.suspension.endTime) > new Date()) { 
+				toast.error("Account is suspended"); 
+				set({ authUser: null, isCheckingAuth: false });
+				return;
+			}
 
 			set({ authUser: user });
 			localStorage.setItem("authUser", JSON.stringify(user));
-			get().connectSocket(); // Connect socket after setting authUser
+			get().connectSocket();
 			useFriendStore.getState().fetchFriendData();
 		} catch (error) {
-			console.error("Auth check failed:", error.response?.data?.message || error.message);
+			console.log("Auth check failed - user not logged in");
 			// Clear state on any auth check failure
 			set({ authUser: null });
 			localStorage.removeItem("authUser");
 			localStorage.removeItem("token");
 			delete axiosInstance.defaults.headers.common['Authorization'];
-			get().disconnectSocket(); // Ensure socket is disconnected
+			get().disconnectSocket();
 			useFriendStore.getState().clearFriendData();
 		} finally {
 			set({ isCheckingAuth: false });

@@ -27,6 +27,22 @@ const reportSchema = new mongoose.Schema(
 				"Other",
 			],
 		},
+		// Additional description from reporter
+		description: {
+			type: String,
+			default: "",
+		},
+		// Category of the report
+		category: {
+			type: String,
+			enum: ["stranger_chat", "private_chat", "profile", "other"],
+			default: "stranger_chat",
+		},
+		// Context information
+		context: {
+			chatType: String,
+			socketIds: [String],
+		},
 		// The URL to the screenshot proof (stored on Cloudinary)
 		screenshot: {
 			type: String,

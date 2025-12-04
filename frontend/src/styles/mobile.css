@@ -1,38 +1,50 @@
 /* Mobile-optimized styles for Android APK */
 
-/* Hide top navbar on mobile, show bottom nav */
+/* Safe area utilities for all devices */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Mobile optimizations */
 @media (max-width: 768px) {
-  /* Hide top navbar on mobile */
+  /* Keep navbar visible but optimize it */
   header.fixed.top-0 {
-    display: none;
+    display: block !important;
   }
 
   /* Add padding for bottom navigation */
   body {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
   }
 
-  /* Better touch targets for mobile */
-  /* Larger buttons for easier tapping */
-  .btn {
+  /* Better touch targets for mobile - but don't override all buttons */
+  .btn:not(.btn-circle):not(.btn-sm) {
     min-height: 48px;
     padding: 12px 24px;
-    font-size: 16px;
-    font-weight: 600;
-    border-radius: 12px;
-    transition: all 0.2s;
   }
 
-  .btn:active {
-    transform: scale(0.95);
+  /* Keep circle buttons small */
+  .btn-circle {
+    min-height: 40px;
+    width: 40px;
+    height: 40px;
   }
 
   /* Better input fields */
-  input, textarea, select {
-    min-height: 48px;
+  input:not([type="file"]), textarea, select {
     font-size: 16px;
-    padding: 12px 16px;
-    border-radius: 12px;
   }
 
   /* Improved spacing */
@@ -216,13 +228,17 @@
     outline-offset: 2px;
   }
 
-  /* Better safe area handling for notched devices */
-  .safe-area-top {
-    padding-top: env(safe-area-inset-top);
+  /* Improved touch feedback */
+  .btn-ripple,
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
   }
-
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
+  
+  /* Better scrolling on iOS */
+  .overflow-y-auto,
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Improved pull-to-refresh indicator */
@@ -432,4 +448,342 @@ a:active {
   opacity: 0.7;
   transform: scale(0.98);
   transition: all 0.1s ease;
+}
+
+/* ===== ADDITIONAL MOBILE IMPROVEMENTS ===== */
+
+/* Better page transitions on mobile */
+@media (max-width: 768px) {
+  .page-container {
+    padding-top: 60px;
+    padding-bottom: 70px;
+    min-height: 100vh;
+  }
+
+  /* Improved auth pages */
+  .auth-container {
+    padding: 16px;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .auth-form {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  /* Better profile pages */
+  .profile-container {
+    padding: 16px;
+    padding-top: 80px;
+  }
+
+  .profile-avatar {
+    width: 96px;
+    height: 96px;
+  }
+
+  /* Improved settings page */
+  .settings-container {
+    padding: 16px;
+    padding-top: 80px;
+  }
+
+  .theme-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  /* Better discover page */
+  .discover-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .user-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  /* Improved admin dashboard */
+  .admin-container {
+    padding: 16px;
+    padding-top: 80px;
+  }
+
+  .admin-stats {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  /* Better stranger chat */
+  .stranger-chat-container {
+    height: calc(100vh - 60px);
+    padding: 0;
+  }
+
+  .stranger-controls {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  /* Improved modals */
+  .modal-content {
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 100px);
+    margin: 16px;
+    border-radius: 16px;
+  }
+
+  .modal-header {
+    padding: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .modal-body {
+    padding: 16px;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+
+  .modal-footer {
+    padding: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  /* Better form inputs */
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-label {
+    font-size: 14px;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .form-input {
+    font-size: 16px;
+    padding: 12px 16px;
+    border-radius: 8px;
+  }
+
+  .form-textarea {
+    font-size: 16px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    min-height: 100px;
+  }
+
+  /* Better buttons */
+  .btn-mobile {
+    min-height: 44px;
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+
+  .btn-icon-mobile {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Improved cards */
+  .card-mobile {
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* Better lists */
+  .list-item-mobile {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+
+  /* Improved avatars */
+  .avatar-xs {
+    width: 32px;
+    height: 32px;
+  }
+
+  .avatar-sm {
+    width: 40px;
+    height: 40px;
+  }
+
+  .avatar-md {
+    width: 48px;
+    height: 48px;
+  }
+
+  .avatar-lg {
+    width: 64px;
+    height: 64px;
+  }
+
+  .avatar-xl {
+    width: 96px;
+    height: 96px;
+  }
+
+  /* Better badges */
+  .badge-mobile {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+
+  /* Improved tabs */
+  .tabs-mobile {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .tabs-mobile::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-mobile {
+    flex-shrink: 0;
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+
+  /* Better alerts */
+  .alert-mobile {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  /* Improved tooltips */
+  .tooltip-mobile {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    max-width: 200px;
+  }
+
+  /* Better dropdowns */
+  .dropdown-mobile {
+    max-height: 300px;
+    overflow-y: auto;
+    border-radius: 12px;
+  }
+
+  .dropdown-item-mobile {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+
+  /* Improved progress bars */
+  .progress-mobile {
+    height: 6px;
+    border-radius: 3px;
+  }
+
+  /* Better loading states */
+  .loading-mobile {
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .loading-spinner-mobile {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Improved empty states */
+  .empty-state-mobile {
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .empty-state-icon-mobile {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+  }
+
+  .empty-state-text-mobile {
+    font-size: 16px;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  /* Better error states */
+  .error-state-mobile {
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .error-icon-mobile {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    color: #ef4444;
+  }
+
+  /* Improved success states */
+  .success-state-mobile {
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .success-icon-mobile {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    color: #10b981;
+  }
+}
+
+/* Extra small devices (phones in portrait) */
+@media (max-width: 375px) {
+  .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .btn-mobile {
+    font-size: 14px;
+    padding: 10px 16px;
+  }
+
+  .card-mobile {
+    padding: 12px;
+  }
+
+  .modal-content {
+    margin: 12px;
+  }
+}
+
+/* Large phones and small tablets */
+@media (min-width: 480px) and (max-width: 767px) {
+  .theme-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .discover-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

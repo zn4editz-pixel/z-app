@@ -391,3 +391,17 @@ html {
 .transform-smooth {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* Orbital Loading Animation */
+@keyframes orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-orbit {
+  animation: orbit 1.5s linear infinite;
+}
