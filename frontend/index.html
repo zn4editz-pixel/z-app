@@ -43,6 +43,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <style>
+      /* Prevent white flash - set body background immediately */
+      html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #1a1a1a;
+        overflow: hidden;
+      }
+      
       /* Loading Screen */
       #loading-screen {
         position: fixed;
@@ -73,6 +81,11 @@
       @keyframes spin {
         to { transform: rotate(360deg); }
       }
+      
+      /* Allow scrolling once app loads */
+      body.loaded {
+        overflow: auto;
+      }
     </style>
   </head>
   <body>
@@ -98,6 +111,7 @@
     <script>
       window.addEventListener('load', () => {
         const loader = document.getElementById('loading-screen');
+        document.body.classList.add('loaded');
         setTimeout(() => {
           loader.classList.add('loaded');
           setTimeout(() => loader.remove(), 300);

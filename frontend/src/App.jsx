@@ -227,7 +227,14 @@ const App = () => {
 	// Show loading spinner while checking auth to prevent flash
 	if (isCheckingAuth) {
 		return (
-			<div className="flex items-center justify-center h-screen bg-base-200">
+			<div style={{
+				position: 'fixed',
+				inset: 0,
+				display: 'flex',
+				alignItems: 'center',
+				justifyContent: 'center',
+				backgroundColor: '#1a1a1a'
+			}}>
 				<div className="spinner" style={{
 					width: '50px',
 					height: '50px',
