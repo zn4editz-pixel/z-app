@@ -48,6 +48,10 @@
         margin: 0;
         padding: 0;
         background-color: #1a1a1a;
+      }
+      
+      /* Prevent scrolling ONLY during initial load */
+      body:not(.loaded) {
         overflow: hidden;
       }
       
@@ -80,11 +84,6 @@
       
       @keyframes spin {
         to { transform: rotate(360deg); }
-      }
-      
-      /* Allow scrolling once app loads */
-      body.loaded {
-        overflow: auto;
       }
     </style>
   </head>
