@@ -1,6 +1,7 @@
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";
+import jwt from "jsonwebtoken";
 import cloudinary from "./cloudinary.js";
 import Report from "../models/report.model.js";
 import User from "../models/user.model.js"; // <-- ADDED
@@ -10,7 +11,7 @@ import Message from "../models/message.model.js";
 const app = express();
 const server = http.createServer(app);
 
-// Setup Socket.IO server
+// Setup Socket.IO server with authentication middleware
 const io = new Server(server, {
 	cors: {
 		origin: [
@@ -20,6 +21,27 @@ const io = new Server(server, {
 		],
 		credentials: true,
 	},
+});
+
+// Socket.IO authentication middleware
+io.use((socket, next) => {
+	try {
+		// Get token from query or auth header
+		const token = socket.handshake.auth.token || socket.handshake.query.token;
+		
+		if (token) {
+			// Verify token
+			const decoded = jwt.verify(token, process.env.JWT_SECRET);
+			socket.userId = decoded.userId;
+			console.log(`✅ Socket authenticated for user ${decoded.userId}`);
+		}
+		
+		next();
+	} catch (error) {
+		console.error("Socket authentication error:", error.message);
+		// Allow connection even without token for backward compatibility
+		next();
+	}
 });
 
 // === PRIVATE CHAT LOGIC ===

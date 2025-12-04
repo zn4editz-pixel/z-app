@@ -19,14 +19,25 @@ export const useFriendStore = create((set, get) => ({
                 axiosInstance.get("/friends/requests"),
             ]);
 
+            console.log("✅ Friends data loaded:", {
+                friends: friendsRes.data?.length || 0,
+                received: requestsRes.data?.received?.length || 0,
+                sent: requestsRes.data?.sent?.length || 0
+            });
+
             set({
-                friends: friendsRes.data,
-                pendingReceived: requestsRes.data.received,
-                pendingSent: requestsRes.data.sent,
+                friends: friendsRes.data || [],
+                pendingReceived: requestsRes.data?.received || [],
+                pendingSent: requestsRes.data?.sent || [],
             });
         } catch (error) {
-            console.error("Failed to fetch friend data:", error);
-            toast.error("Could not load friend data.");
+            console.error("❌ Failed to fetch friend data:", error.response?.data || error.message);
+            // Don't show toast error on initial load to avoid spam
+            set({
+                friends: [],
+                pendingReceived: [],
+                pendingSent: [],
+            });
         } finally {
             set({ isLoading: false });
         }

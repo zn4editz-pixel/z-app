@@ -32,6 +32,12 @@ export const useAuthStore = create((set, get) => ({
 	checkAuth: async () => {
 		set({ isCheckingAuth: true });
 		try {
+			// Restore token from localStorage if exists
+			const token = localStorage.getItem("token");
+			if (token) {
+				axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+			}
+
 			// axiosInstance now uses the correct baseURL from axios.js
 			const res = await axiosInstance.get("/auth/check"); // Removed withCredentials here, should be default in instance
 			const user = res.data;
@@ -52,6 +58,8 @@ export const useAuthStore = create((set, get) => ({
 			// Clear state on any auth check failure
 			set({ authUser: null });
 			localStorage.removeItem("authUser");
+			localStorage.removeItem("token");
+			delete axiosInstance.defaults.headers.common['Authorization'];
 			get().disconnectSocket(); // Ensure socket is disconnected
 			useFriendStore.getState().clearFriendData();
 		} finally {
@@ -63,7 +71,14 @@ export const useAuthStore = create((set, get) => ({
 		set({ isSigningUp: true });
 		try {
 			const res = await axiosInstance.post("/auth/signup", data); // Removed withCredentials
-			const user = res.data;
+			const { token, ...user } = res.data;
+			
+			// Store token for mobile compatibility
+			if (token) {
+				localStorage.setItem("token", token);
+				axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+			}
+			
 			set({ authUser: user });
 			localStorage.setItem("authUser", JSON.stringify(user));
 			toast.success("Account created successfully");
@@ -82,13 +97,19 @@ export const useAuthStore = create((set, get) => ({
 		set({ isLoggingIn: true });
 		try {
 			const res = await axiosInstance.post("/auth/login", data); // Removed withCredentials
-			const user = res.data;
+			const { token, ...user } = res.data;
 
             if (!user || typeof user !== 'object') {
                  throw new Error("Invalid login response");
             }
 			if (user.isBlocked) { toast.error("Account is blocked"); return; }
 			if (user.suspension && new Date(user.suspension.endTime) > new Date()) { toast.error("Account is suspended"); return; }
+
+			// Store token for mobile compatibility
+			if (token) {
+				localStorage.setItem("token", token);
+				axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+			}
 
 			set({ authUser: user });
 			localStorage.setItem("authUser", JSON.stringify(user));
@@ -116,6 +137,8 @@ export const useAuthStore = create((set, get) => ({
             // Don't necessarily stop the logout process here
 		} finally {
 			localStorage.removeItem("authUser");
+			localStorage.removeItem("token");
+			delete axiosInstance.defaults.headers.common['Authorization'];
 			set({ authUser: null, onlineUsers: [], socket: null }); // Clear socket in state too
 			useFriendStore.getState().clearFriendData();
 			toast.success("Logged out successfully");
@@ -148,9 +171,19 @@ export const useAuthStore = create((set, get) => ({
         }
 
         console.log(`Connecting socket to ${SOCKET_URL} for user ${authUser._id}`);
-		// ✅ --- USE CORRECT SOCKET_URL ---
+		
+		// Get token for authentication
+		const token = localStorage.getItem("token");
+		
+		// ✅ --- USE CORRECT SOCKET_URL WITH TOKEN AUTH ---
 		const newSocket = io(SOCKET_URL, {
-			query: { userId: authUser._id },
+			query: { 
+				userId: authUser._id,
+				token: token // Send token for mobile compatibility
+			},
+			auth: {
+				token: token // Also send in auth object
+			},
             // Optional: force new connection if needed, depends on server behavior
             // forceNew: true,
 			transports: ["websocket"], // Explicitly use websockets

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -38,8 +39,17 @@ const ResetPassword = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
-      <div className="card w-full max-w-sm shadow-lg bg-base-100 p-6">
-        <h2 className="text-2xl font-bold text-center mb-4">Reset Password</h2>
+      <div className="card w-full max-w-sm shadow-lg bg-base-100 p-6 relative">
+        {/* Back Button for Mobile */}
+        <button
+          onClick={() => navigate("/login")}
+          className="btn btn-ghost btn-sm absolute top-4 left-4 gap-2"
+        >
+          <ArrowLeft size={20} />
+          <span className="hidden sm:inline">Back</span>
+        </button>
+        
+        <h2 className="text-2xl font-bold text-center mb-4 mt-8">Reset Password</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="password"

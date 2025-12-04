@@ -2,6 +2,7 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios"; // Keep axiosInstance for getMessages/sendMessage
 import { useAuthStore } from "./useAuthStore"; // Auth store needed for socket & user info
+import { cacheMessages, getCachedMessages, updateLastSync } from "../utils/offlineStorage";
 
 export const useChatStore = create((set, get) => ({
     // --- Existing Chat State ---
@@ -22,15 +23,30 @@ export const useChatStore = create((set, get) => ({
     // --- Existing Chat Actions ---
     getMessages: async (userId) => {
         set({ isMessagesLoading: true, messages: [] }); // Clear previous messages
+        
+        // Try to load cached messages first (instant load)
+        const cachedMessages = getCachedMessages(userId);
+        if (cachedMessages && cachedMessages.length > 0) {
+            set({ messages: cachedMessages, isMessagesLoading: false });
+        }
+        
         try {
             const res = await axiosInstance.get(`/messages/${userId}`);
             set({ messages: res.data });
+            // Cache the messages for offline use
+            cacheMessages(userId, res.data);
+            updateLastSync();
             get().resetUnread(userId); // reset unread when opening chat
             // Mark messages as read when opening chat
             get().markMessagesAsRead(userId);
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to fetch messages");
-            set({ messages: [] }); // Clear messages on error
+            // If online fetch fails but we have cache, keep showing cache
+            if (cachedMessages && cachedMessages.length > 0) {
+                toast.error("Using cached messages - Check your connection");
+            } else {
+                toast.error(error.response?.data?.message || "Failed to fetch messages");
+                set({ messages: [] }); // Clear messages on error
+            }
         } finally {
             set({ isMessagesLoading: false });
         }
@@ -39,11 +55,21 @@ export const useChatStore = create((set, get) => ({
     sendMessage: async (messageData) => {
         const { selectedUser, messages } = get();
         if (!selectedUser) return; // Don't send if no user selected
+        
+        // Check if online
+        if (!navigator.onLine) {
+            toast.error("You are offline - Cannot send messages");
+            return;
+        }
+        
         try {
             const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
             // Append without creating duplicates, check message structure
              if (res.data && res.data._id && !messages.find((m) => m._id === res.data._id)) {
-                 set({ messages: [...messages, res.data] });
+                 const newMessages = [...messages, res.data];
+                 set({ messages: newMessages });
+                 // Update cache with new message
+                 cacheMessages(selectedUser._id, newMessages);
             } else if (res.data && !res.data._id) {
                  console.warn("Sent message response missing _id:", res.data);
                  // Handle potentially incomplete response if necessary

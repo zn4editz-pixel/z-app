@@ -138,9 +138,9 @@ const ChatContainer = ({ onStartCall }) => {
 
   return (
     <>
-      <div className="flex-1 flex flex-col h-full w-full">
+      <div className="flex-1 flex flex-col h-full w-full md:pt-0 pt-0">
         <ChatHeader onStartCall={handleStartCall} />
-        <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent mb-16 md:mb-0">
           {isMessagesLoading ? (
             <MessageSkeleton />
           ) : messages.length === 0 ? (
@@ -174,53 +174,74 @@ const ChatContainer = ({ onStartCall }) => {
                   key={message._id || message.id}
                   className={`flex flex-col ${mine ? "items-end" : "items-start"}`}
                 >
-                  <div className="flex items-end max-w-[85%] sm:max-w-[75%] gap-1 sm:gap-2">
-                    {!mine && (
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0">
-                        <img
-                          src={selectedUser.profilePic || "/avatar.png"}
-                          alt="avatar"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <div
-                      className={`relative px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm rounded-2xl shadow-sm ${
-                        mine
-                          ? "bg-gradient-to-br from-primary to-primary/90 text-primary-content bubble-right"
-                          : "bg-base-200 text-base-content bubble-left"
-                      }`}
-                    >
-                      {/* Image Message */}
-                      {message.image && (
-                        <div className="relative group">
-                          <img
-                            src={message.image}
-                            className="rounded-lg mb-2 max-h-48 sm:max-h-64 object-cover w-full cursor-pointer hover:opacity-90 transition"
-                            alt="attached"
-                            onClick={() => window.open(message.image, "_blank")}
-                          />
-                          <button
-                            onClick={() => handleDownloadImage(message.image)}
-                            className="absolute top-2 right-2 btn btn-circle btn-xs bg-black/50 border-none text-white opacity-0 group-hover:opacity-100 transition"
-                            title="Download image"
-                          >
-                            <Download className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
+                  {(() => {
+                    const isEmojiOnly = message.text && /^[\p{Emoji}\s]+$/u.test(message.text) && !message.image && !message.voice;
+                    
+                    return (
+                      <div className="flex items-end max-w-[85%] sm:max-w-[75%] gap-1 sm:gap-2">
+                        {!mine && !isEmojiOnly && (
+                          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0">
+                            <img
+                              src={selectedUser.profilePic || "/avatar.png"}
+                              alt="avatar"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div
+                          className={isEmojiOnly ? "" : `relative px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm rounded-2xl shadow-sm ${
+                            mine
+                              ? "bg-gradient-to-br from-primary to-primary/90 text-primary-content bubble-right"
+                              : "bg-base-200 text-base-content bubble-left"
+                          }`}
+                        >
+                      {/* Check if message is emoji-only */}
+                      {(() => {
+                        const isEmojiOnly = message.text && /^[\p{Emoji}\s]+$/u.test(message.text) && !message.image && !message.voice;
+                        const emojiCount = message.text ? (message.text.match(/\p{Emoji}/gu) || []).length : 0;
+                        
+                        if (isEmojiOnly && emojiCount > 0) {
+                          // Render emoji-only message (Instagram style - smaller)
+                          return (
+                            <div className={`text-3xl sm:text-4xl leading-tight ${emojiCount === 1 ? 'text-4xl sm:text-5xl' : ''}`}>
+                              {message.text}
+                            </div>
+                          );
+                        }
+                        
+                        // Regular message rendering
+                        return (
+                          <>
+                            {/* Image Message */}
+                            {message.image && (
+                              <div className="relative group">
+                                <img
+                                  src={message.image}
+                                  className="rounded-lg mb-2 max-h-48 sm:max-h-64 object-cover w-full cursor-pointer hover:opacity-90 transition"
+                                  alt="attached"
+                                  onClick={() => window.open(message.image, "_blank")}
+                                />
+                                <button
+                                  onClick={() => handleDownloadImage(message.image)}
+                                  className="absolute top-2 right-2 btn btn-circle btn-xs bg-black/50 border-none text-white opacity-0 group-hover:opacity-100 transition"
+                                  title="Download image"
+                                >
+                                  <Download className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )}
                       
                       {/* Voice Message */}
                       {message.voice && (
                         <div className="flex items-center gap-2 min-w-[200px]">
                           <button
                             onClick={() => toggleVoicePlayback(message._id)}
-                            className="btn btn-circle btn-xs"
+                            className="btn btn-circle btn-sm flex-shrink-0"
                           >
                             {playingVoiceId === message._id ? (
-                              <Pause className="w-3 h-3" />
+                              <Pause className="w-4 h-4" />
                             ) : (
-                              <Play className="w-3 h-3" />
+                              <Play className="w-4 h-4" />
                             )}
                           </button>
                           <audio
@@ -250,15 +271,20 @@ const ChatContainer = ({ onStartCall }) => {
                           </span>
                         </div>
                       )}
-                      
-                      {/* Text Message */}
-                      {message.text && (
-                        <div className="whitespace-pre-wrap break-words leading-relaxed">
-                          {message.text}
+                            
+                            {/* Text Message */}
+                            {message.text && (
+                              <div className="whitespace-pre-wrap break-words leading-relaxed">
+                                {message.text}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                         </div>
-                      )}
-                    </div>
-                  </div>
+                      </div>
+                    );
+                  })()}
                   <div className="flex items-center gap-1 mt-1 px-1">
                     <span className="text-[10px] sm:text-[11px] text-base-content/50">
                       {formatMessageTime(message.createdAt)}

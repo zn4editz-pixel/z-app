@@ -57,9 +57,10 @@ export const signup = async (req, res) => {
 		});
 
 		await newUser.save();
-		generateToken(newUser._id, res);
+		const token = generateToken(newUser._id, res);
 
 		res.status(201).json({
+			token, // Return token for mobile apps
 			_id: newUser._id,
 			fullName: newUser.fullName,
 			email: newUser.email,
@@ -105,9 +106,10 @@ export const login = async (req, res) => {
 		if (user.isBlocked) return res.status(403).json({ message: "Your account is blocked." });
 		if (user.isSuspended) return res.status(403).json({ message: "Your account is suspended." });
 
-		generateToken(user._id, res);
+		const token = generateToken(user._id, res);
 
 		res.status(200).json({
+			token, // Return token for mobile apps
 			_id: user._id,
 			fullName: user.fullName,
 			email: user.email,
@@ -245,41 +247,49 @@ export const checkAuth = async (req, res) => {
 	}
 };
 
-// ─── Forgot Password ─────────────────────────────────────
+// ─── Forgot Password (Send OTP) ─────────────────────────────────────
 export const forgotPassword = async (req, res) => {
-	const { email } = req.body;
+	const { username } = req.body;
 
 	try {
-		if (!email) {
-			return res.status(400).json({ message: "Email is required" });
+		if (!username) {
+			return res.status(400).json({ message: "Username is required" });
 		}
 
-		const user = await User.findOne({ email });
+		// Find user by username
+		const user = await User.findOne({ username: username.toLowerCase() });
 		if (!user) {
-			return res.status(404).json({ message: "No account with that email" });
+			return res.status(404).json({ message: "No account with that username" });
 		}
 
-		const resetToken = crypto.randomBytes(32).toString("hex");
-		const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+		// Generate 6-digit OTP
+		const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-		user.resetPasswordToken = hashedToken;
-		user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 min
+		// Save OTP to user (expires in 60 seconds)
+		user.resetPasswordToken = otp;
+		user.resetPasswordExpire = Date.now() + 60 * 1000; // 60 seconds
 		await user.save({ validateBeforeSave: false });
 
-		const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:5173";
-		const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
+		// Send OTP via email
 		const message = `
-      <h1>Password Reset Request</h1>
-      <p>Click the link below to reset your password. This link will expire in 15 minutes.</p>
-      <a href="${resetUrl}" target="_blank">${resetUrl}</a>
+      <h1>Password Reset OTP</h1>
+      <p>Your OTP for password reset is:</p>
+      <h2 style="color: #6366f1; font-size: 32px; letter-spacing: 5px;">${otp}</h2>
+      <p><strong>This OTP will expire in 60 seconds.</strong></p>
       <p>If you didn't request this, please ignore this email.</p>
     `;
 
 		try {
-			console.log(`📧 Attempting to send password reset email to ${user.email}`);
-			await sendEmail(user.email, "Password Reset Request", message);
-			console.log(`✅ Password reset email sent successfully to ${user.email}`);
-			res.status(200).json({ message: "Reset link sent to your email" });
+			console.log(`📧 Sending OTP to ${user.email} for username: ${username}`);
+			await sendEmail(user.email, "Password Reset OTP", message);
+			console.log(`✅ OTP sent successfully to ${user.email}`);
+			
+			// Return masked email for security
+			const maskedEmail = user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
+			res.status(200).json({ 
+				message: "OTP sent to your email",
+				email: maskedEmail 
+			});
 		} catch (emailError) {
 			console.error("❌ Email send error:", emailError);
 			user.resetPasswordToken = undefined;
@@ -293,29 +303,61 @@ export const forgotPassword = async (req, res) => {
 	}
 };
 
-// ─── Reset Password ─────────────────────────────────────
-export const resetPassword = async (req, res) => {
-	const { token } = req.params;
-	const { password } = req.body;
+// ─── Verify OTP ─────────────────────────────────────
+export const verifyResetOTP = async (req, res) => {
+	const { username, otp } = req.body;
 
 	try {
-		if (!password || password.length < 6) {
-			return res.status(400).json({ message: "Password must be at least 6 characters long" });
+		if (!username || !otp) {
+			return res.status(400).json({ message: "Username and OTP are required" });
 		}
 
-		const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
 		const user = await User.findOne({
-			resetPasswordToken: hashedToken,
+			username: username.toLowerCase(),
+			resetPasswordToken: otp,
 			resetPasswordExpire: { $gt: Date.now() },
 		});
 
 		if (!user) {
-			return res.status(400).json({ message: "Invalid or expired token" });
+			return res.status(400).json({ message: "Invalid or expired OTP" });
 		}
 
+		// OTP is valid, return success (don't clear OTP yet, need it for password reset)
+		res.status(200).json({ message: "OTP verified successfully" });
+	} catch (error) {
+		console.error("Verify OTP error:", error);
+		res.status(500).json({ message: "Server error" });
+	}
+};
+
+// ─── Reset Password with OTP ─────────────────────────────────────
+export const resetPassword = async (req, res) => {
+	const { username, otp, password } = req.body;
+
+	try {
+		if (!username || !otp || !password) {
+			return res.status(400).json({ message: "Username, OTP, and password are required" });
+		}
+
+		if (password.length < 6) {
+			return res.status(400).json({ message: "Password must be at least 6 characters long" });
+		}
+
+		const user = await User.findOne({
+			username: username.toLowerCase(),
+			resetPasswordToken: otp,
+			resetPasswordExpire: { $gt: Date.now() },
+		});
+
+		if (!user) {
+			return res.status(400).json({ message: "Invalid or expired OTP" });
+		}
+
+		// Hash new password
 		const salt = await bcrypt.genSalt(10);
 		user.password = await bcrypt.hash(password, salt);
+		
+		// Clear OTP fields
 		user.resetPasswordToken = undefined;
 		user.resetPasswordExpire = undefined;
 

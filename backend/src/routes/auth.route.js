@@ -6,6 +6,7 @@ import {
 	updateProfile,
 	checkAuth,
 	forgotPassword,
+	verifyResetOTP,
 	resetPassword,
 	changePassword,
 	completeProfileSetup,
@@ -21,8 +22,9 @@ const router = express.Router();
 router.post("/signup", signup);
 router.post("/login", login);
 router.post("/logout", logout);
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password/:token", resetPassword);
+router.post("/forgot-password", forgotPassword); // Send OTP to email
+router.post("/verify-reset-otp", verifyResetOTP); // Verify OTP
+router.post("/reset-password", resetPassword); // Reset password with OTP
 
 // 🔒 Protected Routes
 router.get("/check", protectRoute, checkAuth);

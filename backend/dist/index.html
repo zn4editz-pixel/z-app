@@ -2,16 +2,98 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
 
     <link rel="icon" type="image/png" href="/z-app-logo.png" />
+    <link rel="apple-touch-icon" href="/z-app-logo.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#6366f1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Z-App" />
 
     <title>Z-APP</title>
     <meta name="description" content="Z-APP — Your modern realtime chat experience." />
-    <script type="module" crossorigin src="/assets/index-DfY9ViDv.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BxgRlaas.css">
+    
+    <style>
+      /* Mobile responsive fixes */
+      * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        box-sizing: border-box;
+      }
+      
+      html, body {
+        width: 100%;
+        min-height: 100%;
+        overflow-x: hidden;
+        -webkit-text-size-adjust: 100%;
+        overscroll-behavior: none;
+      }
+      
+      #root {
+        width: 100%;
+        min-height: 100vh;
+      }
+      
+      /* Ensure buttons are touchable */
+      button, a {
+        min-height: 44px;
+        min-width: 44px;
+      }
+      
+      /* Fix modals for mobile */
+      .modal-box {
+        max-width: 95vw !important;
+        max-height: 90vh !important;
+        overflow-y: auto !important;
+        margin: auto !important;
+        padding: 1rem !important;
+      }
+      
+      .modal {
+        padding: 1rem !important;
+      }
+      
+      /* Fix buttons in modals */
+      .modal-box .btn {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      
+      /* Fix form inputs */
+      input, textarea, select {
+        max-width: 100% !important;
+        font-size: 16px !important; /* Prevents zoom on iOS */
+      }
+      
+      /* Prevent text overflow */
+      p, span, div {
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-DsOnUACc.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BBOZHzfo.css">
   </head>
-  <body>
+  <body></body>
     <div id="root"></div>
+    <script>
+      // Register service worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then((registration) => {
+              console.log('SW registered:', registration);
+            })
+            .catch((error) => {
+              console.log('SW registration failed:', error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

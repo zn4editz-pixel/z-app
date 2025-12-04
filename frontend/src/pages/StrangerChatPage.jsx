@@ -258,9 +258,14 @@ const StrangerChatPage = () => {
 		let isMounted = true;
 		let hasJoinedQueue = false;
 
-		// ... (Media access logic) ...
-		navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-			.then((stream) => {
+		// Request camera and microphone permissions
+		const requestPermissions = async () => {
+			try {
+				const stream = await navigator.mediaDevices.getUserMedia({ 
+					video: true, 
+					audio: true 
+				});
+				
 				if (!isMounted) {
 					stream.getTracks().forEach(t => t.stop());
 					return;
@@ -277,12 +282,14 @@ const StrangerChatPage = () => {
 					socket.emit("stranger:joinQueue", { userId: authUser._id });
 					hasJoinedQueue = true;
 				}
-			})
-			.catch((err) => {
-				console.error("Media error:", err);
-				toast.error("Camera/Mic access denied.");
+			} catch (error) {
+				console.error("Permission denied:", error);
+				toast.error("Camera and microphone access required for stranger chat");
 				navigate("/");
-			});
+			}
+		};
+		
+		requestPermissions();
 
 
 		const onWaiting = () => {
