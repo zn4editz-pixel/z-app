@@ -224,9 +224,25 @@ const App = () => {
 	// Added addPendingReceived to dependencies
 	}, [socket, authUser, navigate, forceLogout, theme, addPendingReceived]); 
 
-	// Show nothing while checking auth to prevent flash
+	// Show loading spinner while checking auth to prevent flash
 	if (isCheckingAuth) {
-		return null; // Loading screen in index.html will show
+		return (
+			<div className="flex items-center justify-center h-screen bg-base-200">
+				<div className="spinner" style={{
+					width: '50px',
+					height: '50px',
+					border: '3px solid rgba(255, 153, 51, 0.2)',
+					borderTopColor: '#FF9933',
+					borderRadius: '50%',
+					animation: 'spin 0.8s linear infinite'
+				}}></div>
+				<style>{`
+					@keyframes spin {
+						to { transform: rotate(360deg); }
+					}
+				`}</style>
+			</div>
+		);
 	}
 
 	const hasCompletedProfile = authUser?.hasCompletedProfile;
