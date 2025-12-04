@@ -7,6 +7,7 @@ import {
 	checkAuth,
 	forgotPassword,
 	resetPassword,
+	changePassword,
 	completeProfileSetup,
 	sendEmailChangeOTP,
 	verifyEmailChangeOTP,
@@ -27,6 +28,7 @@ router.post("/reset-password/:token", resetPassword);
 router.get("/check", protectRoute, checkAuth);
 router.put("/update-profile", protectRoute, updateProfile);
 router.post("/setup-profile", protectRoute, completeProfileSetup);
+router.post("/change-password", protectRoute, changePassword);
 
 // Email change with OTP
 router.post("/send-email-otp", protectRoute, sendEmailChangeOTP);

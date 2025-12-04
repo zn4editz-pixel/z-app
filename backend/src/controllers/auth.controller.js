@@ -329,6 +329,43 @@ export const resetPassword = async (req, res) => {
 };
 
 
+// ─── Change Password ─────────────────────────────────────
+export const changePassword = async (req, res) => {
+	const { currentPassword, newPassword } = req.body;
+	const userId = req.user._id;
+
+	try {
+		if (!currentPassword || !newPassword) {
+			return res.status(400).json({ message: "Current password and new password are required" });
+		}
+
+		if (newPassword.length < 6) {
+			return res.status(400).json({ message: "New password must be at least 6 characters long" });
+		}
+
+		const user = await User.findById(userId);
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+
+		// Verify current password
+		const isPasswordCorrect = await bcrypt.compare(currentPassword, user.password);
+		if (!isPasswordCorrect) {
+			return res.status(400).json({ message: "Current password is incorrect" });
+		}
+
+		// Hash new password
+		const salt = await bcrypt.genSalt(10);
+		user.password = await bcrypt.hash(newPassword, salt);
+		await user.save();
+
+		res.status(200).json({ message: "Password changed successfully" });
+	} catch (error) {
+		console.error("Change password error:", error);
+		res.status(500).json({ message: "Server error" });
+	}
+};
+
 // ─── Send Email Change OTP ────────────────────────────────────
 export const sendEmailChangeOTP = async (req, res) => {
 	try {
