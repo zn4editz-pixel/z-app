@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Z-App</string>
-    <string name="title_activity_main">Z-App</string>
-    <string name="package_name">com.z4fwn.zapp</string>
-    <string name="custom_url_scheme">com.z4fwn.zapp</string>
-</resources>

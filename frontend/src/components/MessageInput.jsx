@@ -158,23 +158,23 @@ const MessageInput = () => {
 
       <form
         onSubmit={handleSendMessage}
-        className="flex items-center gap-1 sm:gap-2"
+        className="flex items-center gap-2"
       >
         {/* Emoji Button */}
         <button
           type="button"
           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          className="btn btn-ghost btn-circle btn-sm flex-shrink-0"
+          className="btn btn-ghost btn-circle btn-sm sm:btn-md flex-shrink-0"
           title="Add emoji"
         >
-          <Smile className="w-5 h-5" />
+          <Smile className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
-        {/* Text Input */}
-        <div className="flex-1 flex items-center gap-2 bg-base-200 rounded-full px-4 sm:px-5 py-2.5 sm:py-3">
+        {/* Text Input Container */}
+        <div className="flex-1 flex items-center gap-2 bg-base-200 rounded-full px-4 sm:px-5 py-3 sm:py-3.5 min-h-[44px] sm:min-h-[48px]">
           <input
             type="text"
-            className="flex-1 bg-transparent outline-none border-none text-sm sm:text-base"
+            className="flex-1 bg-transparent outline-none border-none text-sm sm:text-base placeholder:text-base-content/50"
             placeholder="Type a message..."
             value={text}
             onChange={(e) => handleTyping(e.target.value)}
@@ -183,12 +183,12 @@ const MessageInput = () => {
           {/* Image Upload Button */}
           <button
             type="button"
-            className={`p-1 rounded-full hover:bg-base-300 transition flex-shrink-0
+            className={`p-1.5 rounded-full hover:bg-base-300 transition flex-shrink-0
               ${imagePreview ? "text-primary" : "text-base-content/60"}`}
             onClick={() => fileInputRef.current?.click()}
             title="Attach image"
           >
-            <Image className="w-5 h-5" />
+            <Image className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
 
           {/* Hidden File Input */}
@@ -215,7 +215,7 @@ const MessageInput = () => {
             }`}
             disabled={!text.trim() && !imagePreview || isSending}
           >
-            <Send className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${
+            <Send className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform ${
               isSending ? 'translate-x-1 -translate-y-1' : ''
             }`} />
           </button>
