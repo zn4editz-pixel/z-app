@@ -4,13 +4,19 @@ import User from "../models/user.model.js";
 // 🔐 Middleware to protect routes
 export const protectRoute = async (req, res, next) => {
   try {
-    if (!req.cookies) {
-      return res.status(401).json({ error: "Unauthorized: No cookies received" });
+    // Check both cookie and Authorization header for token (mobile compatibility)
+    let token = req.cookies?.jwt;
+    
+    // If no cookie, check Authorization header
+    if (!token && req.headers.authorization) {
+      const authHeader = req.headers.authorization;
+      if (authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      }
     }
 
-    const token = req.cookies.jwt;
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized: No token in cookies" });
+      return res.status(401).json({ error: "Unauthorized: No token provided" });
     }
 
     let decoded;
