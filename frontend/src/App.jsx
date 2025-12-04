@@ -224,7 +224,10 @@ const App = () => {
 	// Added addPendingReceived to dependencies
 	}, [socket, authUser, navigate, forceLogout, theme, addPendingReceived]); 
 
-	// Removed loading splash - instant load
+	// Show nothing while checking auth to prevent flash
+	if (isCheckingAuth) {
+		return null; // Loading screen in index.html will show
+	}
 
 	const hasCompletedProfile = authUser?.hasCompletedProfile;
 
