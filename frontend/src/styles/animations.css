@@ -614,3 +614,27 @@ html {
 .reply-slide-in {
   animation: replySlideIn 0.3s ease-out;
 }
+
+/* Highlight Flash for Replied Message - WhatsApp Style */
+@keyframes highlightFlash {
+  0% {
+    background-color: transparent;
+  }
+  15% {
+    background-color: rgba(var(--primary-rgb, 59, 130, 246), 0.25);
+    transform: scale(1.02);
+  }
+  50% {
+    background-color: rgba(var(--primary-rgb, 59, 130, 246), 0.15);
+    transform: scale(1.01);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+.highlight-flash {
+  animation: highlightFlash 1.5s ease-out;
+  border-radius: 1rem;
+}

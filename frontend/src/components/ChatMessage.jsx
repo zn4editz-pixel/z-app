@@ -231,7 +231,10 @@ const ChatMessage = ({ message, onReply }) => {
 
   return (
     <>
-      <div className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-3 relative`}>
+      <div 
+        id={`message-${message._id}`}
+        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-3 relative`}
+      >
         <div className="flex items-end max-w-[85%] sm:max-w-[75%] gap-2 relative">
           {!isMyMessage && !isEmojiOnly && (
             <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0">
@@ -272,12 +275,36 @@ const ChatMessage = ({ message, onReply }) => {
                   : "bg-base-200 text-base-content"
               }`}
             >
-              {/* Reply To Message */}
+              {/* Reply To Message - WhatsApp/Instagram Style */}
               {message.replyTo && (
-                <div className="mb-2 pb-2 border-l-2 border-base-content/20 pl-2 opacity-70">
-                  <div className="text-xs font-semibold mb-0.5">Replying to</div>
-                  <div className="text-xs truncate max-w-[200px]">
-                    {message.replyTo.text || "Image"}
+                <div 
+                  className={`mb-2 pb-2 border-l-3 pl-2.5 py-1.5 rounded-md cursor-pointer active:scale-[0.98] transition-transform ${
+                    isMyMessage 
+                      ? "bg-primary-content/10 border-primary-content/40" 
+                      : "bg-base-300/50 border-primary/60"
+                  }`}
+                  onClick={() => {
+                    // Scroll to replied message
+                    const replyElement = document.getElementById(`message-${message.replyTo._id}`);
+                    if (replyElement) {
+                      replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      // Highlight effect
+                      replyElement.classList.add('highlight-flash');
+                      setTimeout(() => replyElement.classList.remove('highlight-flash'), 1500);
+                    }
+                  }}
+                >
+                  <div className={`text-[11px] font-semibold mb-0.5 ${
+                    isMyMessage ? "text-primary-content/90" : "text-primary"
+                  }`}>
+                    {message.replyTo.senderId === authUser._id ? "You" : selectedUser?.fullName || "User"}
+                  </div>
+                  <div className={`text-xs truncate max-w-[200px] ${
+                    isMyMessage ? "text-primary-content/70" : "text-base-content/70"
+                  }`}>
+                    {message.replyTo.image && "📷 "}
+                    {message.replyTo.voice && "🎤 "}
+                    {message.replyTo.text || (message.replyTo.image ? "Photo" : message.replyTo.voice ? "Voice message" : "Message")}
                   </div>
                 </div>
               )}
