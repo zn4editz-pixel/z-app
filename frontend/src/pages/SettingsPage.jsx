@@ -56,7 +56,7 @@ const SettingsPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
-      <div className="container mx-auto px-2 xs:px-3 sm:px-4 lg:px-6 pt-16 xs:pt-18 sm:pt-20 md:pt-24 lg:pt-28 pb-6 xs:pb-8 sm:pb-10 md:pb-16 max-w-6xl">
+      <div className="container mx-auto px-2 xs:px-3 sm:px-4 lg:px-6 pt-20 xs:pt-22 sm:pt-24 md:pt-28 lg:pt-32 pb-6 xs:pb-8 sm:pb-10 md:pb-16 max-w-6xl">
         {/* Page Header */}
         <div className="mb-3 sm:mb-4 md:mb-6 flex flex-row items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
