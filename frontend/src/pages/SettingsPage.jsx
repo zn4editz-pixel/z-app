@@ -257,137 +257,100 @@ const SettingsPage = () => {
             </div>
           </div>
 
-          {/* Permissions Info Section */}
-          <div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 border border-base-300">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">Permissions</h2>
-                <p className="text-xs text-base-content/60">Camera & Microphone access</p>
-              </div>
+          {/* Permissions Section */}
+          <div className="bg-base-100 rounded-xl shadow-lg p-3 sm:p-4 border border-base-300">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="w-4 h-4 text-primary" />
+              <h2 className="text-sm font-semibold">Permissions</h2>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-1.5">
               {/* Camera Permission */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 bg-base-200 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Video className="w-5 h-5 text-primary flex-shrink-0" />
-                  <div>
-                    <div className="font-medium text-sm sm:text-base">Camera</div>
-                    <div className="text-xs text-base-content/60 mt-0.5">
-                      Required for video calls
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {cameraStatus === 'granted' ? (
-                    <>
-                      <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-success/20 text-success">
-                        <Check className="w-3 h-3" /> Allowed
-                      </span>
-                      <button
-                        onClick={() => setCameraStatus('not-tested')}
-                        className="btn btn-outline btn-error btn-xs gap-1"
-                      >
-                        <X className="w-3 h-3" />
-                        <span className="hidden sm:inline">Revoke</span>
-                      </button>
-                    </>
-                  ) : cameraStatus === 'denied' ? (
-                    <>
-                      <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-error/20 text-error">
-                        <X className="w-3 h-3" /> Denied
-                      </span>
-                      <button
-                        onClick={testCameraPermission}
-                        className="btn btn-outline btn-success btn-xs gap-1"
-                      >
-                        <Check className="w-3 h-3" />
-                        Retry
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={testCameraPermission}
-                      className="btn btn-outline btn-primary btn-xs sm:btn-sm gap-1"
-                    >
-                      <Check className="w-3 h-3" />
-                      Allow Access
-                    </button>
+              <div className="flex items-center justify-between gap-2 p-2 bg-base-200 rounded-lg">
+                <div className="flex items-center gap-1.5 flex-1">
+                  <Video className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs font-medium">Camera</span>
+                  {cameraStatus === 'granted' && (
+                    <Check className="w-3 h-3 text-success ml-auto" />
+                  )}
+                  {cameraStatus === 'denied' && (
+                    <X className="w-3 h-3 text-error ml-auto" />
                   )}
                 </div>
+                {cameraStatus === 'granted' ? (
+                  <button
+                    onClick={() => setCameraStatus('not-tested')}
+                    className="btn btn-outline btn-error btn-xs h-6 min-h-6 px-2 text-[10px]"
+                  >
+                    Revoke
+                  </button>
+                ) : cameraStatus === 'denied' ? (
+                  <button
+                    onClick={testCameraPermission}
+                    className="btn btn-outline btn-success btn-xs h-6 min-h-6 px-2 text-[10px]"
+                  >
+                    Retry
+                  </button>
+                ) : (
+                  <button
+                    onClick={testCameraPermission}
+                    className="btn btn-outline btn-primary btn-xs h-6 min-h-6 px-2 text-[10px]"
+                  >
+                    Allow
+                  </button>
+                )}
               </div>
 
               {/* Microphone Permission */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 bg-base-200 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Mic className="w-5 h-5 text-primary flex-shrink-0" />
-                  <div>
-                    <div className="font-medium text-sm sm:text-base">Microphone</div>
-                    <div className="text-xs text-base-content/60 mt-0.5">
-                      Required for voice/video calls
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {micStatus === 'granted' ? (
-                    <>
-                      <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-success/20 text-success">
-                        <Check className="w-3 h-3" /> Allowed
-                      </span>
-                      <button
-                        onClick={() => setMicStatus('not-tested')}
-                        className="btn btn-outline btn-error btn-xs gap-1"
-                      >
-                        <X className="w-3 h-3" />
-                        <span className="hidden sm:inline">Revoke</span>
-                      </button>
-                    </>
-                  ) : micStatus === 'denied' ? (
-                    <>
-                      <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-error/20 text-error">
-                        <X className="w-3 h-3" /> Denied
-                      </span>
-                      <button
-                        onClick={testMicPermission}
-                        className="btn btn-outline btn-success btn-xs gap-1"
-                      >
-                        <Check className="w-3 h-3" />
-                        Retry
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={testMicPermission}
-                      className="btn btn-outline btn-primary btn-xs sm:btn-sm gap-1"
-                    >
-                      <Check className="w-3 h-3" />
-                      Allow Access
-                    </button>
+              <div className="flex items-center justify-between gap-2 p-2 bg-base-200 rounded-lg">
+                <div className="flex items-center gap-1.5 flex-1">
+                  <Mic className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs font-medium">Microphone</span>
+                  {micStatus === 'granted' && (
+                    <Check className="w-3 h-3 text-success ml-auto" />
+                  )}
+                  {micStatus === 'denied' && (
+                    <X className="w-3 h-3 text-error ml-auto" />
                   )}
                 </div>
+                {micStatus === 'granted' ? (
+                  <button
+                    onClick={() => setMicStatus('not-tested')}
+                    className="btn btn-outline btn-error btn-xs h-6 min-h-6 px-2 text-[10px]"
+                  >
+                    Revoke
+                  </button>
+                ) : micStatus === 'denied' ? (
+                  <button
+                    onClick={testMicPermission}
+                    className="btn btn-outline btn-success btn-xs h-6 min-h-6 px-2 text-[10px]"
+                  >
+                    Retry
+                  </button>
+                ) : (
+                  <button
+                    onClick={testMicPermission}
+                    className="btn btn-outline btn-primary btn-xs h-6 min-h-6 px-2 text-[10px]"
+                  >
+                    Allow
+                  </button>
+                )}
               </div>
 
-              {/* Allow Both Button */}
+              {/* Allow All Button */}
               {(cameraStatus !== 'granted' || micStatus !== 'granted') && (
                 <button
                   onClick={testBothPermissions}
-                  className="w-full btn btn-outline btn-primary btn-sm gap-2"
+                  className="w-full btn btn-outline btn-primary btn-xs h-6 min-h-6 text-[10px] gap-1 mt-1"
                 >
-                  <Check className="w-4 h-4" />
-                  Allow All Permissions
+                  <Check className="w-3 h-3" />
+                  Allow All
                 </button>
               )}
 
-              <div className="flex items-start gap-2 p-3 bg-info/10 rounded-lg border border-info/20">
-                <Info className="w-4 h-4 text-info mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-base-content/70">
-                  Click "Allow Access" to grant permissions. 
-                  Your browser will show a permission prompt.
-                </p>
-              </div>
+              <p className="text-[10px] text-base-content/50 text-center mt-1.5">
+                Browser will prompt for access
+              </p>
             </div>
           </div>
 
