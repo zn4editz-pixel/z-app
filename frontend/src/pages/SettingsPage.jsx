@@ -61,7 +61,7 @@ const SettingsPage = () => {
         <div className="mb-3 sm:mb-4 md:mb-6 flex flex-row items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
             <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-base-content truncate">Settings</h1>
-            <p className="text-[10px] sm:text-xs md:text-sm lg:text-base text-base-content/60 mt-0.5 sm:mt-1 truncate">Customize your experience</p>
+            <p className="text-[10px] sm:text-xs md:text-sm lg:text-base text-base-content/60 mt-0 sm:mt-0.5 truncate">Customize your experience</p>
           </div>
           <Link 
             to="/change-password"
