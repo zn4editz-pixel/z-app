@@ -215,14 +215,34 @@ const SettingsPage = () => {
         <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex-1">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-base-content">Settings</h1>
-            <p className="text-xs sm:text-sm lg:text-base text-base-content/60 mt-0.5 sm:mt-1">Customize your experience</p>
+            <p className="text-xs sm:text-sm lg:text-base text-base-content/60 mt-1 sm:mt-1.5 lg:mt-2">Customize your experience</p>
           </div>
           <Link 
             to="/change-password"
-            className="btn btn-outline btn-primary btn-xs sm:btn-sm h-7 min-h-7 sm:h-8 sm:min-h-8 gap-1 px-2 sm:px-3 flex-shrink-0"
+            className="group relative btn btn-sm sm:btn-md h-9 sm:h-11 gap-2 px-4 sm:px-6 flex-shrink-0 overflow-hidden
+                       bg-gradient-to-r from-primary via-primary to-secondary
+                       hover:from-secondary hover:via-primary hover:to-primary
+                       border-0 shadow-lg hover:shadow-xl
+                       transition-all duration-300 ease-in-out
+                       hover:scale-105 active:scale-95"
           >
-            <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            <span className="text-[10px] sm:text-xs">Change Password</span>
+            {/* Animated background shimmer */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
+                          translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+            
+            {/* Icon with animation */}
+            <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 relative z-10 
+                           group-hover:rotate-12 transition-transform duration-300" />
+            
+            {/* Text */}
+            <span className="text-[11px] sm:text-sm font-semibold relative z-10 text-primary-content
+                           tracking-wide">
+              Change Password
+            </span>
+            
+            {/* Pulse effect on hover */}
+            <div className="absolute inset-0 rounded-lg bg-white/10 opacity-0 
+                          group-hover:opacity-100 group-hover:animate-pulse"></div>
           </Link>
         </div>
 

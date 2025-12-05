@@ -108,17 +108,27 @@ const ChangePasswordPage = () => {
               <button
                 onClick={handleSendOTP}
                 disabled={isLoading}
-                className="w-full btn btn-primary btn-sm sm:btn-md gap-2 h-10 sm:h-12"
+                className="group relative w-full btn btn-sm sm:btn-md gap-2 h-10 sm:h-12 overflow-hidden
+                           bg-gradient-to-r from-primary via-primary to-secondary
+                           hover:from-secondary hover:via-primary hover:to-primary
+                           border-0 shadow-lg hover:shadow-xl
+                           transition-all duration-300 ease-in-out
+                           hover:scale-[1.02] active:scale-95
+                           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
+                {/* Animated background shimmer */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
+                              translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                
                 {isLoading ? (
                   <>
-                    <span className="loading loading-spinner loading-sm"></span>
-                    <span className="text-xs sm:text-sm">Sending...</span>
+                    <span className="loading loading-spinner loading-sm relative z-10"></span>
+                    <span className="text-xs sm:text-sm font-semibold relative z-10 text-primary-content">Sending...</span>
                   </>
                 ) : (
                   <>
-                    <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span className="text-xs sm:text-sm">Send Verification Code</span>
+                    <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 relative z-10 group-hover:rotate-12 transition-transform duration-300" />
+                    <span className="text-xs sm:text-sm font-semibold relative z-10 text-primary-content">Send Verification Code</span>
                   </>
                 )}
               </button>
@@ -236,17 +246,27 @@ const ChangePasswordPage = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full btn btn-primary btn-sm sm:btn-md gap-2 h-10 sm:h-12 mt-2"
+                className="group relative w-full btn btn-sm sm:btn-md gap-2 h-10 sm:h-12 mt-2 overflow-hidden
+                           bg-gradient-to-r from-success via-success to-primary
+                           hover:from-primary hover:via-success hover:to-success
+                           border-0 shadow-lg hover:shadow-xl
+                           transition-all duration-300 ease-in-out
+                           hover:scale-[1.02] active:scale-95
+                           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
+                {/* Animated background shimmer */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
+                              translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                
                 {isLoading ? (
                   <>
-                    <span className="loading loading-spinner loading-sm"></span>
-                    <span className="text-xs sm:text-sm">Changing...</span>
+                    <span className="loading loading-spinner loading-sm relative z-10"></span>
+                    <span className="text-xs sm:text-sm font-semibold relative z-10 text-primary-content">Changing...</span>
                   </>
                 ) : (
                   <>
-                    <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span className="text-xs sm:text-sm">Change Password</span>
+                    <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 relative z-10 group-hover:rotate-12 transition-transform duration-300" />
+                    <span className="text-xs sm:text-sm font-semibold relative z-10 text-primary-content">Change Password</span>
                   </>
                 )}
               </button>
@@ -256,8 +276,12 @@ const ChangePasswordPage = () => {
                 type="button"
                 onClick={handleSendOTP}
                 disabled={isLoading}
-                className="w-full btn btn-ghost btn-xs sm:btn-sm text-xs sm:text-sm"
+                className="group w-full btn btn-ghost btn-xs sm:btn-sm text-xs sm:text-sm
+                           hover:bg-primary/10 hover:text-primary
+                           transition-all duration-200
+                           disabled:opacity-50"
               >
+                <Mail className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:rotate-12 transition-transform duration-300" />
                 Resend Code
               </button>
             </form>
