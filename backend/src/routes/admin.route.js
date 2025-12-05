@@ -8,6 +8,7 @@ import {
 	deleteUser,
 	toggleVerification,
 	getReports,
+	getAIReports,
 	updateReportStatus,
 	deleteReport,
 	getVerificationRequests,
@@ -44,6 +45,7 @@ router.put("/verify/:userId", toggleVerification);
 
 // --- Moderation ---
 router.get("/reports", getReports);
+router.get("/reports/ai", getAIReports);
 router.put("/reports/:reportId/status", updateReportStatus);
 router.delete("/reports/:reportId", deleteReport);
 

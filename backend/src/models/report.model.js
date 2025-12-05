@@ -38,6 +38,21 @@ const reportSchema = new mongoose.Schema(
 			enum: ["stranger_chat", "private_chat", "profile", "other"],
 			default: "stranger_chat",
 		},
+		// AI Detection flag
+		isAIDetected: {
+			type: Boolean,
+			default: false,
+		},
+		// AI Confidence score (0-1)
+		aiConfidence: {
+			type: Number,
+			min: 0,
+			max: 1,
+		},
+		// AI Detection category
+		aiCategory: {
+			type: String,
+		},
 		// Context information
 		context: {
 			chatType: String,

@@ -470,10 +470,13 @@ const StrangerChatPage = () => {
 							socket.emit('stranger:report', {
 								reporterId: authUser._id,
 								reportedUserId: partnerUserId,
-								reason: 'Inappropriate Content (AI Detected)',
+								reason: 'Nudity or Sexual Content',
 								description: `AI detected: ${analysis.highestRisk?.className} (${(confidence * 100).toFixed(1)}% confidence)`,
 								screenshot,
-								category: 'stranger_chat'
+								category: 'stranger_chat',
+								isAIDetected: true,
+								aiConfidence: confidence,
+								aiCategory: analysis.highestRisk?.className
 							});
 						}
 						

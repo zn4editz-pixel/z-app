@@ -332,8 +332,8 @@ io.on("connection", (socket) => {
 
     // --- *** THIS FUNCTION IS ALSO FIXED *** ---
 	socket.on("stranger:report", async (payload) => {
-        // FIX 1: Destructure 'screenshot' from the payload
-		const { reporterId, reason, description, category, screenshot } = payload;
+        // Destructure all fields including AI detection data
+		const { reporterId, reason, description, category, screenshot, isAIDetected, aiConfidence, aiCategory } = payload;
 		const partnerSocketId = matchedPairs.get(socket.id);
 		
 		if (partnerSocketId) {
@@ -341,12 +341,12 @@ io.on("connection", (socket) => {
 			
 			if (partnerSocket && partnerSocket.userId) {
 				try {
-                    // FIX 2: Validate that the screenshot exists
+                    // Validate that the screenshot exists
                     if (!screenshot) {
                         throw new Error("A screenshot is required as proof.");
                     }
 
-                    // FIX 3: Upload the screenshot to Cloudinary
+                    // Upload the screenshot to Cloudinary
                     const uploadResponse = await cloudinary.uploader.upload(screenshot, {
                         resource_type: "image",
                         folder: "reports",
@@ -357,14 +357,17 @@ io.on("connection", (socket) => {
                         throw new Error("Failed to upload screenshot.");
                     }
 
-                    // FIX 4: Save the report WITH the new screenshotUrl
+                    // Save the report with AI detection data
 					const report = new Report({
 						reporter: reporterId,
 						reportedUser: partnerSocket.userId,
 						reason,
 						description,
 						category: category || "stranger_chat",
-                        screenshot: screenshotUrl, // <-- Added the URL
+                        screenshot: screenshotUrl,
+						isAIDetected: isAIDetected || false,
+						aiConfidence: aiConfidence || null,
+						aiCategory: aiCategory || null,
 						context: {
 							chatType: "stranger",
 							socketIds: [socket.id, partnerSocketId]
@@ -372,7 +375,7 @@ io.on("connection", (socket) => {
 					});
 					
 					await report.save();
-					console.log(`🚨 Report saved: ${reporterId} reported ${partnerSocket.userId}`);
+					console.log(`🚨 Report saved: ${reporterId} reported ${partnerSocket.userId}${isAIDetected ? ' (AI Detected)' : ''}`);
 					
 					socket.emit("stranger:reportSuccess", { message: "Report submitted" });
 				} catch (error) {

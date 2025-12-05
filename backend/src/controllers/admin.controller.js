@@ -154,6 +154,41 @@ export const getReports = async (req, res) => {
 	}
 };
 
+// ✅ --- Get AI-Detected Reports ---
+export const getAIReports = async (req, res) => {
+	try {
+		const aiReports = await Report.find({ isAIDetected: true })
+			.sort({ createdAt: -1 })
+			.populate("reporter", "username nickname profilePic email")
+			.populate("reportedUser", "username nickname profilePic email");
+
+		// Calculate AI moderation stats
+		const stats = {
+			total: aiReports.length,
+			pending: aiReports.filter(r => r.status === 'pending').length,
+			reviewed: aiReports.filter(r => r.status === 'reviewed').length,
+			actionTaken: aiReports.filter(r => r.status === 'action_taken').length,
+			dismissed: aiReports.filter(r => r.status === 'dismissed').length,
+			avgConfidence: aiReports.length > 0 
+				? (aiReports.reduce((sum, r) => sum + (r.aiConfidence || 0), 0) / aiReports.length).toFixed(2)
+				: 0,
+			categories: {}
+		};
+
+		// Count by AI category
+		aiReports.forEach(report => {
+			if (report.aiCategory) {
+				stats.categories[report.aiCategory] = (stats.categories[report.aiCategory] || 0) + 1;
+			}
+		});
+
+		res.status(200).json({ reports: aiReports, stats });
+	} catch (err) {
+		console.error("getAIReports error:", err);
+		res.status(500).json({ error: "Failed to fetch AI reports" });
+	}
+};
+
 // ✅ --- Update Report Status ---
 export const updateReportStatus = async (req, res) => {
 	const { reportId } = req.params;
