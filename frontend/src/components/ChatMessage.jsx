@@ -16,6 +16,7 @@ const ChatMessage = ({ message, onReply }) => {
   const [showReactions, setShowReactions] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
   
@@ -24,10 +25,22 @@ const ChatMessage = ({ message, onReply }) => {
   const touchStartPos = useRef({ x: 0, y: 0 });
   const touchStartTime = useRef(0);
   const audioRef = useRef(null);
-  const messageRef = useRef(null);
   
   const isMyMessage = message.senderId === authUser._id;
   const myReaction = message.reactions?.find(r => r.userId?._id === authUser._id || r.userId === authUser._id);
+
+  // Update current time while playing
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const updateTime = () => {
+      setCurrentTime(audio.currentTime);
+    };
+
+    audio.addEventListener('timeupdate', updateTime);
+    return () => audio.removeEventListener('timeupdate', updateTime);
+  }, []);
 
   // Handle touch start
   const handleTouchStart = (e) => {
@@ -298,7 +311,7 @@ const ChatMessage = ({ message, onReply }) => {
                       <button
                         onClick={toggleVoicePlayback}
                         className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                          isPlaying ? 'bg-primary/20' : isMyMessage ? 'bg-primary-content/20' : 'bg-primary/10'
+                          isPlaying ? 'bg-primary/20 scale-110' : isMyMessage ? 'bg-primary-content/20' : 'bg-primary/10'
                         }`}
                       >
                         {isPlaying ? (
@@ -308,27 +321,43 @@ const ChatMessage = ({ message, onReply }) => {
                         )}
                       </button>
                       
-                      {/* Instagram-style Waveform */}
+                      {/* Instagram-style Animated Waveform */}
                       <div className="flex-1 flex items-center gap-0.5 h-8">
-                        {[3, 6, 4, 8, 5, 9, 6, 7, 4, 8, 5, 6, 7, 5, 8, 6, 4, 7, 5, 6].map((height, i) => (
-                          <div
-                            key={i}
-                            className={`w-0.5 rounded-full transition-all ${
-                              isPlaying && i < 10 ? 'bg-primary' : isMyMessage ? 'bg-primary-content/40' : 'bg-base-content/40'
-                            }`}
-                            style={{ height: `${height * 3}px` }}
-                          />
-                        ))}
+                        {[3, 6, 4, 8, 5, 9, 6, 7, 4, 8, 5, 6, 7, 5, 8, 6, 4, 7, 5, 6].map((height, i) => {
+                          const duration = message.voiceDuration || 3;
+                          const progress = currentTime / duration;
+                          const isActive = isPlaying && (i / 20) <= progress;
+                          
+                          return (
+                            <div
+                              key={i}
+                              className={`w-0.5 rounded-full transition-all duration-200 ${
+                                isActive ? 'bg-primary' : isMyMessage ? 'bg-primary-content/40' : 'bg-base-content/40'
+                              }`}
+                              style={{ 
+                                height: `${height * 3}px`,
+                                transform: isPlaying && isActive ? 'scaleY(1.1)' : 'scaleY(1)'
+                              }}
+                            />
+                          );
+                        })}
                       </div>
                       
+                      {/* Countdown Timer */}
                       <span className="text-xs opacity-70 font-medium min-w-[32px] text-right">
-                        {message.voiceDuration || 0}s
+                        {isPlaying 
+                          ? `${Math.max(0, Math.ceil((message.voiceDuration || 0) - currentTime))}s`
+                          : `${message.voiceDuration || 0}s`
+                        }
                       </span>
                       
                       <audio
                         ref={audioRef}
                         src={message.voice}
-                        onEnded={() => setIsPlaying(false)}
+                        onEnded={() => {
+                          setIsPlaying(false);
+                          setCurrentTime(0);
+                        }}
                       />
                     </div>
                   )}
