@@ -235,7 +235,7 @@ const ChatMessage = ({ message, onReply }) => {
         id={`message-${message._id}`}
         className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-3 relative`}
       >
-        <div className="flex items-end max-w-[85%] sm:max-w-[75%] gap-2 relative">
+        <div className="flex items-end max-w-[80%] sm:max-w-[70%] gap-2 relative">
           {!isMyMessage && !isEmojiOnly && (
             <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0">
               <img
@@ -278,10 +278,10 @@ const ChatMessage = ({ message, onReply }) => {
               {/* Reply To Message - WhatsApp/Instagram Style */}
               {message.replyTo && (
                 <div 
-                  className={`mb-2 pb-2 border-l-3 pl-2.5 py-1.5 rounded-md cursor-pointer active:scale-[0.98] transition-transform ${
+                  className={`mb-2 border-l-4 pl-2 py-1 rounded-sm cursor-pointer active:scale-[0.98] transition-transform ${
                     isMyMessage 
-                      ? "bg-primary-content/10 border-primary-content/40" 
-                      : "bg-base-300/50 border-primary/60"
+                      ? "bg-primary-content/10 border-primary-content/50" 
+                      : "bg-base-300/40 border-primary/70"
                   }`}
                   onClick={() => {
                     // Scroll to replied message
@@ -294,13 +294,13 @@ const ChatMessage = ({ message, onReply }) => {
                     }
                   }}
                 >
-                  <div className={`text-[11px] font-semibold mb-0.5 ${
-                    isMyMessage ? "text-primary-content/90" : "text-primary"
+                  <div className={`text-[10px] font-bold mb-0.5 ${
+                    isMyMessage ? "text-primary-content" : "text-primary"
                   }`}>
                     {message.replyTo.senderId === authUser._id ? "You" : selectedUser?.fullName || "User"}
                   </div>
-                  <div className={`text-xs truncate max-w-[200px] ${
-                    isMyMessage ? "text-primary-content/70" : "text-base-content/70"
+                  <div className={`text-[11px] leading-tight truncate ${
+                    isMyMessage ? "text-primary-content/80" : "text-base-content/70"
                   }`}>
                     {message.replyTo.image && "📷 "}
                     {message.replyTo.voice && "🎤 "}
