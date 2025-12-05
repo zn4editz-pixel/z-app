@@ -169,6 +169,9 @@ const App = () => {
 				color: notification.color,
 				notificationType: notification.type,
 				createdAt: notification.createdAt,
+				id: notification._id || notification.id, // Use DB ID
+				dbId: notification._id || notification.id, // Store for deletion
+				_id: notification._id || notification.id,
 			});
 		});
 
@@ -189,6 +192,9 @@ const App = () => {
 				color: notification.color,
 				notificationType: notification.type,
 				createdAt: notification.createdAt,
+				id: notification._id || notification.id, // Use DB ID
+				dbId: notification._id || notification.id, // Store for deletion
+				_id: notification._id || notification.id,
 			});
 		});
 

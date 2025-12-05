@@ -579,3 +579,20 @@ html {
 .height-smooth {
   transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+
+/* Heart Float Animation for Double Tap */
+@keyframes heartFloat {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -80%) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -120%) scale(0.8);
+  }
+}

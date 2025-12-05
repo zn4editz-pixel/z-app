@@ -1,5 +1,6 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
+import { messageLimiter, uploadLimiter } from "../middleware/security.js";
 import { 
   getMessages, 
   getUsersForSidebar, 
@@ -17,7 +18,7 @@ const router = express.Router();
 router.get("/users", protectRoute, getUsersForSidebar);
 router.get("/:id", protectRoute, getMessages);
 
-router.post("/send/:id", protectRoute, sendMessage);
+router.post("/send/:id", protectRoute, messageLimiter, sendMessage);
 router.post("/call-log", protectRoute, createCallLog);
 router.post("/reaction/:messageId", protectRoute, addReaction);
 

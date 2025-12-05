@@ -2,24 +2,26 @@ import { useState, useRef, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 import { formatMessageTime } from "../lib/utils";
-import { Trash2, Download, Play, Pause } from "lucide-react";
+import { Trash2, Download, Play, Pause, Reply, X } from "lucide-react";
 import toast from "react-hot-toast";
 
 const REACTION_EMOJIS = ["❤️", "😂", "👍", "😮", "😢", "🔥"];
 const LONG_PRESS_DURATION = 500; // ms
 const DOUBLE_TAP_DELAY = 300; // ms
+const SWIPE_THRESHOLD = 60; // px
 
-const ChatMessage = ({ message }) => {
+const ChatMessage = ({ message, onReply }) => {
   const { authUser } = useAuthStore();
   const { addReaction, removeReaction, deleteMessage, selectedUser } = useChatStore();
-  const [showReactionPicker, setShowReactionPicker] = useState(false);
-  const [showDeleteOption, setShowDeleteOption] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [showImageModal, setShowImageModal] = useState(false);
   
   const longPressTimer = useRef(null);
   const lastTap = useRef(0);
   const touchStartPos = useRef({ x: 0, y: 0 });
+  const touchStartTime = useRef(0);
   const audioRef = useRef(null);
   
   const isMyMessage = message.senderId === authUser._id;
@@ -29,21 +31,31 @@ const ChatMessage = ({ message }) => {
   const handleTouchStart = (e) => {
     const touch = e.touches[0];
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    touchStartTime.current = Date.now();
     
-    // Start long press timer
-    longPressTimer.current = setTimeout(() => {
-      handleLongPress();
-    }, LONG_PRESS_DURATION);
+    // Start long press timer for image save
+    if (message.image) {
+      longPressTimer.current = setTimeout(() => {
+        handleLongPressImage();
+      }, LONG_PRESS_DURATION);
+    }
   };
 
-  // Handle touch move (cancel long press if moved too much)
+  // Handle touch move (swipe to reply + cancel long press)
   const handleTouchMove = (e) => {
     const touch = e.touches[0];
-    const deltaX = Math.abs(touch.clientX - touchStartPos.current.x);
+    const deltaX = touch.clientX - touchStartPos.current.x;
     const deltaY = Math.abs(touch.clientY - touchStartPos.current.y);
     
-    if (deltaX > 10 || deltaY > 10) {
+    // Cancel long press if moved
+    if (Math.abs(deltaX) > 10 || deltaY > 10) {
       clearTimeout(longPressTimer.current);
+    }
+    
+    // Swipe to reply (only horizontal swipe)
+    if (Math.abs(deltaX) > 10 && deltaY < 30) {
+      const offset = isMyMessage ? Math.min(0, deltaX) : Math.max(0, deltaX);
+      setSwipeOffset(Math.abs(offset) > SWIPE_THRESHOLD ? (isMyMessage ? -SWIPE_THRESHOLD : SWIPE_THRESHOLD) : offset);
     }
   };
 
@@ -51,32 +63,60 @@ const ChatMessage = ({ message }) => {
   const handleTouchEnd = () => {
     clearTimeout(longPressTimer.current);
     
-    // Check for double tap
+    // Check for swipe to reply
+    if (Math.abs(swipeOffset) >= SWIPE_THRESHOLD) {
+      onReply && onReply(message);
+      if (navigator.vibrate) navigator.vibrate(30);
+    }
+    
+    // Reset swipe
+    setTimeout(() => setSwipeOffset(0), 200);
+    
+    // Check for double tap (quick heart)
     const now = Date.now();
-    if (now - lastTap.current < DOUBLE_TAP_DELAY) {
+    const timeSinceStart = now - touchStartTime.current;
+    
+    if (timeSinceStart < 200 && now - lastTap.current < DOUBLE_TAP_DELAY) {
       handleDoubleTap();
     }
     lastTap.current = now;
   };
 
-  // Long press handler
-  const handleLongPress = () => {
-    if (isMyMessage) {
-      setShowDeleteOption(true);
-    } else {
-      setShowReactionPicker(true);
+  // Long press handler for images
+  const handleLongPressImage = () => {
+    if (message.image) {
+      if (navigator.vibrate) navigator.vibrate(50);
+      setShowImageModal(true);
     }
   };
 
   // Double tap handler (quick heart)
   const handleDoubleTap = () => {
-    if (!isMyMessage) {
-      if (myReaction?.emoji === "❤️") {
-        removeReaction(message._id);
-      } else {
-        addReaction(message._id, "❤️");
-      }
+    if (navigator.vibrate) navigator.vibrate(30);
+    if (myReaction?.emoji === "❤️") {
+      removeReaction(message._id);
+    } else {
+      addReaction(message._id, "❤️");
+      showHeartAnimation();
     }
+  };
+
+  // Show heart animation
+  const showHeartAnimation = () => {
+    const heart = document.createElement('div');
+    heart.innerHTML = '❤️';
+    heart.style.cssText = `
+      position: fixed;
+      font-size: 60px;
+      pointer-events: none;
+      z-index: 9999;
+      animation: heartFloat 1s ease-out forwards;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    `;
+    document.body.appendChild(heart);
+    setTimeout(() => heart.remove(), 1000);
   };
 
   // Handle reaction selection
@@ -86,27 +126,12 @@ const ChatMessage = ({ message }) => {
     } else {
       addReaction(message._id, emoji);
     }
-    setShowReactionPicker(false);
   };
 
   // Handle delete
   const handleDelete = () => {
     deleteMessage(message._id);
-    setShowDeleteOption(false);
   };
-
-  // Close modals on outside click
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setShowReactionPicker(false);
-      setShowDeleteOption(false);
-    };
-    
-    if (showReactionPicker || showDeleteOption) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
-    }
-  }, [showReactionPicker, showDeleteOption]);
 
   // Handle download image
   const handleDownloadImage = async (imageUrl) => {
@@ -116,14 +141,15 @@ const ChatMessage = ({ message }) => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "image.jpg";
+      link.download = `image-${Date.now()}.jpg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      toast.success("Image downloaded!");
+      toast.success("Image saved!");
+      setShowImageModal(false);
     } catch (error) {
-      toast.error("Failed to download image");
+      toast.error("Failed to save image");
     }
   };
 
@@ -152,10 +178,10 @@ const ChatMessage = ({ message }) => {
   const isEmojiOnly = message.text && /^[\p{Emoji}\s]+$/u.test(message.text) && !message.image && !message.voice;
   const emojiCount = message.text ? (message.text.match(/\p{Emoji}/gu) || []).length : 0;
 
-  // If message is deleted, show placeholder
+  // If message is deleted
   if (message.isDeleted) {
     return (
-      <div className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-4`}>
+      <div className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-3`}>
         <div className="flex items-end max-w-[85%] sm:max-w-[75%] gap-2">
           {!isMyMessage && (
             <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0 opacity-50">
@@ -166,263 +192,246 @@ const ChatMessage = ({ message }) => {
               />
             </div>
           )}
-          <div className="relative px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-2xl bg-base-200/50 border border-base-300/50">
-            <div className="flex items-center gap-2 text-base-content/50 italic">
+          <div className="px-3 py-2 text-sm rounded-2xl bg-base-200/50 border border-base-300/50">
+            <div className="flex items-center gap-2 text-base-content/50 italic text-xs">
               <Trash2 className="w-3 h-3" />
               <span>Message deleted</span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1 mt-1 px-1">
-          <span className="text-[10px] sm:text-[11px] text-base-content/50">
-            {formatMessageTime(message.createdAt)}
-          </span>
+        <div className="text-[10px] text-base-content/40 mt-1 px-1">
+          {formatMessageTime(message.createdAt)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-4`}>
-      <div className="flex items-end max-w-[85%] sm:max-w-[75%] gap-2">
-        {!isMyMessage && !isEmojiOnly && (
-          <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0">
-            <img
-              src={selectedUser?.profilePic || "/avatar.png"}
-              alt="avatar"
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
+    <>
+      <div className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-3 relative`}>
+        <div className="flex items-end max-w-[85%] sm:max-w-[75%] gap-2 relative">
+          {!isMyMessage && !isEmojiOnly && (
+            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0">
+              <img
+                src={selectedUser?.profilePic || "/avatar.png"}
+                alt="avatar"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
 
-        <div
-          className="relative select-none"
-          style={{ WebkitTapHighlightColor: 'transparent' }}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          {/* Message Bubble */}
           <div
-            className={isEmojiOnly ? "" : `relative px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-2xl shadow-sm ${
-              isMyMessage
-                ? "bg-gradient-to-br from-primary to-primary/90 text-primary-content"
-                : "bg-base-200 text-base-content"
-            }`}
-            style={{ WebkitTapHighlightColor: 'transparent' }}
+            className="relative"
+            style={{ 
+              WebkitTapHighlightColor: 'transparent',
+              transform: `translateX(${swipeOffset}px)`,
+              transition: swipeOffset === 0 ? 'transform 0.2s ease-out' : 'none'
+            }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
-            {isEmojiOnly && emojiCount > 0 ? (
-              <div className={`${emojiCount === 1 ? 'text-4xl sm:text-5xl' : 'text-3xl sm:text-4xl'} leading-tight`}>
-                {message.text}
+            {/* Swipe Reply Icon */}
+            {Math.abs(swipeOffset) > 20 && (
+              <div 
+                className={`absolute top-1/2 -translate-y-1/2 ${isMyMessage ? '-right-10' : '-left-10'}`}
+                style={{ opacity: Math.min(Math.abs(swipeOffset) / SWIPE_THRESHOLD, 1) }}
+              >
+                <Reply className={`w-5 h-5 text-base-content/50 ${isMyMessage ? '' : 'scale-x-[-1]'}`} />
               </div>
-            ) : (
-              <>
-                {/* Image Message */}
-                {message.image && (
-                  <div 
-                    className="relative group mb-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.open(message.image, "_blank");
-                    }}
-                    onTouchEnd={(e) => {
-                      e.stopPropagation();
-                    }}
-                  >
-                    <img
-                      src={message.image}
-                      className="rounded-lg max-h-48 sm:max-h-64 object-cover w-full cursor-pointer active:opacity-80 transition"
-                      alt="attached"
-                    />
-                    <button
+            )}
+
+            {/* Message Bubble */}
+            <div
+              className={isEmojiOnly ? "" : `relative px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-2xl shadow-sm ${
+                isMyMessage
+                  ? "bg-gradient-to-br from-primary to-primary/90 text-primary-content"
+                  : "bg-base-200 text-base-content"
+              }`}
+            >
+              {/* Reply To Message */}
+              {message.replyTo && (
+                <div className="mb-2 pb-2 border-l-2 border-base-content/20 pl-2 opacity-70">
+                  <div className="text-xs font-semibold mb-0.5">Replying to</div>
+                  <div className="text-xs truncate max-w-[200px]">
+                    {message.replyTo.text || "Image"}
+                  </div>
+                </div>
+              )}
+
+              {isEmojiOnly && emojiCount > 0 ? (
+                <div className={`${emojiCount === 1 ? 'text-5xl sm:text-6xl' : 'text-4xl sm:text-5xl'} leading-tight`}>
+                  {message.text}
+                </div>
+              ) : (
+                <>
+                  {/* Image Message - NO BORDER */}
+                  {message.image && (
+                    <div 
+                      className="relative group mb-1"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDownloadImage(message.image);
+                        setShowImageModal(true);
                       }}
-                      className="absolute top-2 right-2 btn btn-circle btn-xs bg-black/50 border-none text-white opacity-0 group-hover:opacity-100 transition"
-                      title="Download image"
                     >
-                      <Download className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
+                      <img
+                        src={message.image}
+                        className="rounded-xl max-h-64 sm:max-h-80 object-cover w-full cursor-pointer active:scale-[0.98] transition-transform"
+                        alt="attached"
+                      />
+                    </div>
+                  )}
 
-                {/* Voice Message */}
-                {message.voice && (
-                  <div className="flex items-center gap-2 min-w-[200px]">
-                    <button
-                      onClick={toggleVoicePlayback}
-                      className="btn btn-circle btn-sm flex-shrink-0"
-                    >
-                      {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                    </button>
-                    <audio
-                      ref={audioRef}
-                      src={message.voice}
-                      onEnded={() => setIsPlaying(false)}
-                      className="hidden"
-                    />
-                    <div className="flex-1 h-8 bg-base-300/50 rounded-full flex items-center px-2">
-                      <div className="flex gap-0.5 items-center h-full">
-                        {[...Array(20)].map((_, i) => (
-                          <div
-                            key={i}
-                            className="w-0.5 bg-current rounded-full"
-                            style={{
-                              height: `${Math.random() * 100}%`,
-                              minHeight: "20%",
-                            }}
-                          />
-                        ))}
+                  {/* Voice Message */}
+                  {message.voice && (
+                    <div className="flex items-center gap-2 min-w-[200px]">
+                      <button
+                        onClick={toggleVoicePlayback}
+                        className="btn btn-circle btn-sm flex-shrink-0"
+                      >
+                        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                      </button>
+                      <div className="flex-1 h-1 bg-base-300 rounded-full overflow-hidden">
+                        <div className="h-full bg-primary w-1/3"></div>
                       </div>
+                      <span className="text-xs opacity-70">{message.voiceDuration || 0}s</span>
+                      <audio
+                        ref={audioRef}
+                        src={message.voice}
+                        onEnded={() => setIsPlaying(false)}
+                      />
                     </div>
-                    <span className="text-xs opacity-70">
-                      {message.voiceDuration || 0}s
-                    </span>
-                  </div>
-                )}
+                  )}
 
-                {/* Text Message */}
-                {message.text && (
-                  <div className="whitespace-pre-wrap break-words leading-relaxed">
-                    {message.text}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Reactions Display */}
-          {Object.keys(groupedReactions).length > 0 && (
-            <div
-              className={`absolute -bottom-3 ${isMyMessage ? "right-2" : "left-2"} flex gap-1 cursor-pointer z-10`}
-              onClick={() => setShowReactions(!showReactions)}
-            >
-              {Object.entries(groupedReactions).map(([emoji, users]) => (
-                <div
-                  key={emoji}
-                  className="bg-base-100 border border-base-300 rounded-full px-2 py-0.5 text-xs flex items-center gap-1 shadow-sm"
-                >
-                  <span>{emoji}</span>
-                  <span className="text-base-content/70">{users.length}</span>
-                </div>
-              ))}
+                  {/* Text Message */}
+                  {message.text && !isEmojiOnly && (
+                    <p className="break-words whitespace-pre-wrap leading-relaxed">
+                      {message.text}
+                    </p>
+                  )}
+                </>
+              )}
             </div>
-          )}
 
-          {/* Reaction Picker */}
-          {showReactionPicker && (
-            <div
-              className={`absolute ${isMyMessage ? "right-0" : "left-0"} -top-12 bg-base-100 border border-base-300 rounded-full px-3 py-2 shadow-lg flex gap-2 z-50 animate-in fade-in zoom-in duration-200`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {REACTION_EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => handleReactionSelect(emoji)}
-                  className={`text-2xl hover:scale-125 transition-transform ${
-                    myReaction?.emoji === emoji ? "scale-125" : ""
-                  }`}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Delete Modal with Blur Background */}
-          {showDeleteOption && (
-            <div
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
-              onClick={() => setShowDeleteOption(false)}
-            >
+            {/* Reactions Display - IMPROVED POSITIONING */}
+            {Object.keys(groupedReactions).length > 0 && (
               <div
-                className="bg-base-100 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in duration-200"
-                onClick={(e) => e.stopPropagation()}
+                className={`absolute -bottom-2 ${isMyMessage ? "right-2" : "left-2"} flex gap-1 z-10`}
+                onClick={() => setShowReactions(!showReactions)}
               >
-                <div className="text-center mb-6">
-                  <div className="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Trash2 className="w-8 h-8 text-error" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">Delete Message?</h3>
-                  <p className="text-sm text-base-content/60">
-                    This message will be deleted for everyone. This action cannot be undone.
-                  </p>
-                </div>
-                
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowDeleteOption(false)}
-                    className="flex-1 btn btn-ghost"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="flex-1 btn btn-error"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Reactions Detail Modal */}
-          {showReactions && (
-            <div
-              className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-              onClick={() => setShowReactions(false)}
-            >
-              <div
-                className="bg-base-100 rounded-lg p-4 max-w-sm w-full max-h-96 overflow-y-auto"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <h3 className="font-bold text-lg mb-3">Reactions</h3>
                 {Object.entries(groupedReactions).map(([emoji, users]) => (
-                  <div key={emoji} className="mb-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">{emoji}</span>
-                      <span className="text-sm text-base-content/70">{users.length}</span>
-                    </div>
-                    <div className="space-y-1 ml-8">
-                      {users.map((user) => (
-                        <div key={user._id || user} className="flex items-center gap-2">
-                          <img
-                            src={user.profilePic || "/avatar.png"}
-                            alt={user.fullName || "User"}
-                            className="w-6 h-6 rounded-full"
-                          />
-                          <span className="text-sm">{user.fullName || user.nickname || "User"}</span>
-                        </div>
-                      ))}
-                    </div>
+                  <div
+                    key={emoji}
+                    className="flex items-center gap-0.5 bg-base-100 border-2 border-base-300 rounded-full px-1.5 py-0.5 shadow-md cursor-pointer hover:scale-110 transition-transform active:scale-95"
+                  >
+                    <span className="text-sm">{emoji}</span>
+                    {users.length > 1 && (
+                      <span className="text-[10px] font-semibold text-base-content/70">{users.length}</span>
+                    )}
                   </div>
                 ))}
               </div>
-            </div>
+            )}
+          </div>
+        </div>
+
+        {/* Time + Status */}
+        <div className="flex items-center gap-2 mt-1 px-1">
+          <span className="text-[10px] text-base-content/50">
+            {formatMessageTime(message.createdAt)}
+          </span>
+          {isMyMessage && message.status && (
+            <span className="text-[10px] text-base-content/40">
+              {message.status === 'read' ? '✓✓' : message.status === 'delivered' ? '✓✓' : '✓'}
+            </span>
+          )}
+        </div>
+
+        {/* Quick Reaction Bar - INSTAGRAM STYLE */}
+        <div className={`flex gap-1 mt-2 ${isMyMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+          {REACTION_EMOJIS.map((emoji) => (
+            <button
+              key={emoji}
+              onClick={() => handleReactionSelect(emoji)}
+              className={`text-xl sm:text-2xl hover:scale-125 active:scale-110 transition-transform ${
+                myReaction?.emoji === emoji ? 'scale-125' : 'opacity-60 hover:opacity-100'
+              }`}
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              {emoji}
+            </button>
+          ))}
+          {isMyMessage && (
+            <button
+              onClick={handleDelete}
+              className="btn btn-ghost btn-xs text-error hover:scale-110 active:scale-95 transition-transform"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
           )}
         </div>
       </div>
 
-      {/* Message Status */}
-      <div className="flex items-center gap-1 mt-1 px-1">
-        <span className="text-[10px] sm:text-[11px] text-base-content/50">
-          {formatMessageTime(message.createdAt)}
-        </span>
-        {isMyMessage && (
-          <span className="text-[10px] sm:text-[11px]">
-            {message.status === 'read' ? (
-              <span className="text-blue-500" title="Read">✓✓</span>
-            ) : message.status === 'delivered' ? (
-              <span className="text-base-content/50" title="Delivered">✓✓</span>
-            ) : (
-              <span className="text-base-content/50" title="Sent">✓</span>
-            )}
-          </span>
-        )}
-      </div>
-    </div>
+      {/* Reactions Detail Modal */}
+      {showReactions && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowReactions(false)}
+        >
+          <div
+            className="bg-base-100 rounded-2xl p-4 max-w-sm w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-bold text-lg mb-3">Reactions</h3>
+            {Object.entries(groupedReactions).map(([emoji, users]) => (
+              <div key={emoji} className="mb-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">{emoji}</span>
+                  <span className="text-sm font-semibold">{users.length}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {users.map((user, idx) => (
+                    <div key={idx} className="flex items-center gap-1 bg-base-200 rounded-full px-2 py-1">
+                      <span className="text-xs">{user?.fullName || "User"}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Image Modal with Save Option */}
+      {showImageModal && message.image && (
+        <div
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowImageModal(false)}
+        >
+          <button
+            onClick={() => setShowImageModal(false)}
+            className="absolute top-4 right-4 btn btn-circle btn-sm bg-base-100/20 border-none text-white"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={message.image}
+              className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+              alt="Full size"
+            />
+            <button
+              onClick={() => handleDownloadImage(message.image)}
+              className="absolute bottom-4 right-4 btn btn-primary gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Save Image
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

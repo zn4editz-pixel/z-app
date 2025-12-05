@@ -508,6 +508,7 @@ export const sendPersonalNotification = async (req, res) => {
 		if (io) {
 			const notificationData = {
 				id: notification._id,
+				_id: notification._id, // Add _id for frontend deletion
 				title,
 				message,
 				color: notification.color,

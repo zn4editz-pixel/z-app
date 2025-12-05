@@ -30,6 +30,14 @@ const ChatContainer = ({ onStartCall }) => {
   // Typing indicator
   const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef(null);
+  
+  // Reply to message
+  const [replyingTo, setReplyingTo] = useState(null);
+  
+  const handleReply = (message) => {
+    setReplyingTo(message);
+    toast.success("Replying to message");
+  };
 
   useEffect(() => {
     if (!selectedUser?._id) return;
@@ -170,8 +178,8 @@ const ChatContainer = ({ onStartCall }) => {
                 );
               }
               
-              // Use new ChatMessage component with reactions
-              return <ChatMessage key={message._id || message.id} message={message} />;
+              // Use new ChatMessage component with reactions and reply
+              return <ChatMessage key={message._id || message.id} message={message} onReply={handleReply} />;
             })
           )}
           

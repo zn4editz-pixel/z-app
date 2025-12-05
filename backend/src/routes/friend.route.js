@@ -3,6 +3,7 @@
 
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
+import { friendRequestLimiter } from "../middleware/security.js";
 import {
 	sendFriendRequest,
 	acceptFriendRequest,
@@ -18,7 +19,7 @@ const router = express.Router();
 router.use(protectRoute);
 
 // Send a friend request to a user by their ID
-router.post("/send/:receiverId", sendFriendRequest);
+router.post("/send/:receiverId", friendRequestLimiter, sendFriendRequest);
 
 // Accept a friend request from a user by their ID
 router.post("/accept/:senderId", acceptFriendRequest);

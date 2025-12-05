@@ -31,8 +31,9 @@ const AdminNotificationsList = () => {
 						color: notif.color,
 						notificationType: notif.type,
 						createdAt: notif.createdAt,
-						id: notif._id,
-						dbId: notif._id, // Store DB ID for deletion
+						id: notif._id, // Use _id as the main ID
+						dbId: notif._id, // Also store as dbId for deletion
+						_id: notif._id, // Keep original _id
 					});
 				});
 			} catch (error) {
@@ -89,16 +90,20 @@ const AdminNotificationsList = () => {
 
 	const handleDelete = async (notification) => {
 		try {
+			console.log("Deleting notification:", notification);
 			// Delete from backend if it has a DB ID
 			if (notification.dbId) {
+				console.log(`Calling DELETE /users/notifications/${notification.dbId}`);
 				await axiosInstance.delete(`/users/notifications/${notification.dbId}`);
+				console.log("Backend deletion successful");
 			}
 			// Remove from local store
 			clearNotification(notification.id);
 			toast.success("Notification deleted");
 		} catch (error) {
 			console.error("Error deleting notification:", error);
-			toast.error("Failed to delete notification");
+			console.error("Error response:", error.response?.data);
+			toast.error(error.response?.data?.error || "Failed to delete notification");
 		}
 	};
 
@@ -156,6 +161,7 @@ const AdminNotificationsList = () => {
 
 const DiscoverPage = () => {
 	const [activeTab, setActiveTab] = useState("discover"); // discover, requests, notifications
+	const { clearBadge } = useNotificationStore();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [searchResults, setSearchResults] = useState([]);
 	const [isLoadingSearch, setIsLoadingSearch] = useState(false);
@@ -282,7 +288,10 @@ const DiscoverPage = () => {
 							)}
 						</button>
 						<button
-							onClick={() => setActiveTab("notifications")}
+							onClick={() => {
+								setActiveTab("notifications");
+								clearBadge(); // Clear badge when opening notifications
+							}}
 							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-colors relative text-xs sm:text-base ${
 								activeTab === "notifications"
 									? "text-primary border-b-2 border-primary"

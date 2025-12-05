@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import VerifiedBadge from "../components/VerifiedBadge";
+import { analyzeFrame, captureVideoFrame, MODERATION_CONFIG } from "../utils/contentModeration";
 
 const REPORT_REASONS = [
 	"Nudity or Sexual Content",
@@ -434,6 +435,75 @@ const StrangerChatPage = () => {
 	// Added fetchFriendData as a dependency
 	}, [socket, authUser, navigate, addMessage, closeConnection, startCall, handleOffer, handleAnswer, handleIceCandidate, fetchFriendData]); 
 
+	// --- AI Content Moderation Effect ---
+	useEffect(() => {
+		if (!MODERATION_CONFIG.enabled || status !== 'connected' || !remoteVideoRef.current || !partnerUserId) {
+			return;
+		}
+
+		let violations = 0;
+		let moderationInterval;
+
+		const checkContent = async () => {
+			try {
+				if (!remoteVideoRef.current || remoteVideoRef.current.readyState < 2) {
+					return; // Video not ready yet
+				}
+
+				const analysis = await analyzeFrame(remoteVideoRef.current);
+				
+				if (!analysis.safe) {
+					violations++;
+					const confidence = analysis.highestRisk?.probability || 0;
+					
+					console.warn('⚠️ AI Moderation Alert:', {
+						violations,
+						confidence: `${(confidence * 100).toFixed(1)}%`,
+						category: analysis.highestRisk?.className
+					});
+
+					if (confidence >= MODERATION_CONFIG.autoReportThreshold) {
+						// High confidence - auto-report
+						const screenshot = captureVideoFrame(remoteVideoRef.current);
+						if (screenshot && socket) {
+							socket.emit('stranger:report', {
+								reporterId: authUser._id,
+								reportedUserId: partnerUserId,
+								reason: 'Inappropriate Content (AI Detected)',
+								description: `AI detected: ${analysis.highestRisk?.className} (${(confidence * 100).toFixed(1)}% confidence)`,
+								screenshot,
+								category: 'stranger_chat'
+							});
+						}
+						
+						toast.error('Inappropriate content detected. Disconnecting and reporting.');
+						handleSkip();
+					} else if (violations >= MODERATION_CONFIG.maxViolations) {
+						// Multiple violations - disconnect
+						toast.error('Multiple content violations detected. Disconnecting.');
+						handleSkip();
+					} else {
+						// Warning
+						toast.warning(`Warning: Potentially inappropriate content detected (${violations}/${MODERATION_CONFIG.maxViolations})`);
+					}
+				}
+			} catch (error) {
+				console.error('AI Moderation error:', error);
+			}
+		};
+
+		// Start checking after a short delay to let video stabilize
+		const startTimeout = setTimeout(() => {
+			moderationInterval = setInterval(checkContent, MODERATION_CONFIG.checkInterval);
+		}, 3000);
+
+		return () => {
+			clearTimeout(startTimeout);
+			if (moderationInterval) {
+				clearInterval(moderationInterval);
+			}
+		};
+	}, [status, partnerUserId, authUser, socket]);
 
 	const handleSkip = () => {
 		if (status === "idle") return;
