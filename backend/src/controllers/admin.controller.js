@@ -415,9 +415,12 @@ export const rejectVerification = async (req, res) => {
 // ✅ --- Get Admin Statistics ---
 export const getAdminStats = async (req, res) => {
 	try {
+		// Import userSocketMap to get real-time online users count
+		const { userSocketMap } = await import("../lib/socket.js");
+		
 		const totalUsers = await User.countDocuments();
 		const verifiedUsers = await User.countDocuments({ isVerified: true });
-		const onlineUsers = await User.countDocuments({ isOnline: true });
+		const onlineUsers = Object.keys(userSocketMap).length; // Count from socket connections
 		const suspendedUsers = await User.countDocuments({ isSuspended: true });
 		const blockedUsers = await User.countDocuments({ isBlocked: true });
 		
@@ -466,9 +469,12 @@ export const getAdminStats = async (req, res) => {
 // ✅ --- Get Dashboard Statistics ---
 export const getDashboardStats = async (req, res) => {
 	try {
+		// Import userSocketMap to get real-time online users count
+		const { userSocketMap } = await import("../lib/socket.js");
+		
 		const totalUsers = await User.countDocuments();
 		const verifiedUsers = await User.countDocuments({ isVerified: true });
-		const onlineUsers = await User.countDocuments({ isOnline: true });
+		const onlineUsers = Object.keys(userSocketMap).length; // Count from socket connections
 		const suspendedUsers = await User.countDocuments({ isSuspended: true });
 		const blockedUsers = await User.countDocuments({ isBlocked: true });
 		

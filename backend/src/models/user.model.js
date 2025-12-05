@@ -184,9 +184,7 @@ const userSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
-// Add an index for faster username lookups
-userSchema.index({ username: 1 });
-// Add indexes for new fields
+// Add indexes for new fields (username already has unique: true which creates an index)
 userSchema.index({ friends: 1 });
 userSchema.index({ friendRequestsSent: 1 });
 userSchema.index({ friendRequestsReceived: 1 });

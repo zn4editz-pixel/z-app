@@ -16,8 +16,9 @@ const io = new Server(server, {
 	cors: {
 		origin: [
 			"http://localhost:5173",
+			"https://z-app-beta-z.onrender.com",
 			"https://z-app-frontend-2-0.onrender.com",
-			"https://z-pp-main-com.onrender.com", // Added this from your server.js
+			"https://z-pp-main-com.onrender.com",
 		],
 		credentials: true,
 	},
