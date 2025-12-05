@@ -196,7 +196,8 @@ const ChatMessage = ({ message }) => {
         )}
 
         <div
-          className="relative"
+          className="relative select-none"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -208,6 +209,7 @@ const ChatMessage = ({ message }) => {
                 ? "bg-gradient-to-br from-primary to-primary/90 text-primary-content"
                 : "bg-base-200 text-base-content"
             }`}
+            style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             {isEmojiOnly && emojiCount > 0 ? (
               <div className={`${emojiCount === 1 ? 'text-4xl sm:text-5xl' : 'text-3xl sm:text-4xl'} leading-tight`}>

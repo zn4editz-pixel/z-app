@@ -72,6 +72,7 @@ const Sidebar = () => {
             <Link
               to="/discover"
               className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-transform"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-primary flex items-center justify-center bg-primary/10">
                 <Search className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
@@ -85,6 +86,7 @@ const Sidebar = () => {
             <Link
               to="/stranger"
               className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-transform"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-dashed border-base-content/50 flex items-center justify-center bg-base-200">
                 <Video className="w-6 h-6 sm:w-7 sm:h-7 text-base-content/70" />
@@ -100,6 +102,7 @@ const Sidebar = () => {
                 key={u._id}
                 onClick={() => setSelectedUser(u)}
                 className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-transform focus:outline-none"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] ring-2 ring-primary overflow-hidden"> 
                   <img

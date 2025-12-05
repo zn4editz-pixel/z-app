@@ -1,3 +1,9 @@
+/* ===== GLOBAL TAP HIGHLIGHT REMOVAL ===== */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
 /* ===== SMOOTH ANIMATIONS ===== */
 
 /* Fade In Animation */
