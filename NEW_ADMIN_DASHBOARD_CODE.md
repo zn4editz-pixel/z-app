@@ -1,3 +1,10 @@
+# New AdminDashboard.jsx Code
+
+This is the complete new code for AdminDashboard.jsx with tab system.
+
+## File: frontend/src/pages/AdminDashboard.jsx
+
+```javascript
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
@@ -331,3 +338,18 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+```
+
+## Next Step
+
+Replace the content of `frontend/src/pages/AdminDashboard.jsx` with the code above.
+
+This will give you a clean, organized admin dashboard with:
+- 6 separate tabs
+- Each tool in its own component
+- Clean code structure
+- All functionality preserved
+- Responsive design
+- Beautiful UI
+
+Ready to apply? Say "apply" and I'll update the file!
