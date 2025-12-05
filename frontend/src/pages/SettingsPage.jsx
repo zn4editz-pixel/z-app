@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
 import { useAuthStore } from "../store/useAuthStore";
@@ -211,9 +212,18 @@ const SettingsPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 pt-16 sm:pt-20 pb-10 max-w-6xl">
         {/* Page Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-base-content">Settings</h1>
-          <p className="text-sm sm:text-base text-base-content/60 mt-1">Customize your experience</p>
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-base-content">Settings</h1>
+            <p className="text-sm sm:text-base text-base-content/60 mt-1">Customize your experience</p>
+          </div>
+          <Link 
+            to="/change-password"
+            className="btn btn-outline btn-primary btn-sm gap-2"
+          >
+            <Lock className="w-4 h-4" />
+            <span className="hidden sm:inline">Change Password</span>
+          </Link>
         </div>
 
         {/* Settings Grid */}
@@ -377,20 +387,6 @@ const SettingsPage = () => {
               <LogOut className="w-4 h-4" />
               Logout from Account
             </button>
-          </div>
-
-          {/* Change Password Section - Full Width */}
-          <div className="lg:col-span-2 bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 border border-base-300">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                <Lock className="w-5 h-5 text-warning" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">Change Password</h2>
-                <p className="text-xs text-base-content/60">Update your account password</p>
-              </div>
-            </div>
-            <ChangePasswordSection />
           </div>
 
           {/* Preview Section - Full Width */}

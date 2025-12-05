@@ -13,6 +13,7 @@ import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
 import SetupProfilePage from "./pages/SetupProfilePage";
 import SettingsPage from "./pages/SettingsPage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
 import MyProfilePage from "./pages/ProfilePage";
 import PublicProfilePage from "./pages/PublicProfilePage";
 import StrangerChatPage from "./pages/StrangerChatPage"; 
@@ -374,6 +375,18 @@ const App = () => {
 							<Navigate to="/setup-profile" />
 						) : (
 							<SettingsPage />
+						)
+					}
+				/>
+				<Route
+					path="/change-password"
+					element={
+						!authUser ? (
+							<Navigate to="/login" />
+						) : !hasCompletedProfile ? (
+							<Navigate to="/setup-profile" />
+						) : (
+							<ChangePasswordPage />
 						)
 					}
 				/>
