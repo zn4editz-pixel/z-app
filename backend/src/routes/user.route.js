@@ -13,6 +13,12 @@ import {
 	getUsernameChangeInfo,
 } from "../controllers/user.controller.js";
 
+import {
+	getUserNotifications,
+	markNotificationRead,
+	deleteNotification,
+} from "../controllers/admin.controller.js";
+
 import { protectRoute, isAdmin } from "../middleware/protectRoute.js";
 import User from "../models/user.model.js";
 
@@ -83,6 +89,11 @@ router.post("/request-verification", async (req, res) => {
 
 // ✅ Delete your own account
 router.delete("/me", deleteMyAccount);
+
+// ✅ Admin Notifications for Users
+router.get("/notifications", getUserNotifications);
+router.put("/notifications/:notificationId/read", markNotificationRead);
+router.delete("/notifications/:notificationId", deleteNotification);
 
 // ✅ --- NEW: Get a user's public profile by their USERNAME
 // This MUST be before the '/:id' route

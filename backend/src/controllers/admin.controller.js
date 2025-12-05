@@ -1,5 +1,6 @@
 import User from "../models/user.model.js";
 import Report from "../models/report.model.js";
+import AdminNotification from "../models/adminNotification.model.js";
 import { 
 	sendVerificationApprovedEmail, 
 	sendVerificationRejectedEmail,
@@ -470,5 +471,169 @@ export const getDashboardStats = async (req, res) => {
 	} catch (err) {
 		console.error("getDashboardStats error:", err);
 		res.status(500).json({ error: "Failed to fetch dashboard statistics" });
+	}
+};
+
+// ✅ --- Send Personal Notification ---
+export const sendPersonalNotification = async (req, res) => {
+	const { userId } = req.params;
+	const { title, message, color, type } = req.body;
+	const adminId = req.user._id;
+
+	try {
+		if (!title || !message) {
+			return res.status(400).json({ error: "Title and message are required" });
+		}
+
+		const user = await User.findById(userId);
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
+		}
+
+		const notification = new AdminNotification({
+			recipient: userId,
+			sender: adminId,
+			title,
+			message,
+			color: color || "blue",
+			type: type || "info",
+			isBroadcast: false,
+		});
+
+		await notification.save();
+
+		// Emit real-time notification to user
+		const io = req.app.get("io");
+		if (io) {
+			emitToUser(io, userId, "admin-notification", {
+				id: notification._id,
+				title,
+				message,
+				color: notification.color,
+				type: notification.type,
+				createdAt: notification.createdAt,
+			});
+		}
+
+		res.status(200).json({ 
+			message: "Notification sent successfully",
+			notification 
+		});
+	} catch (error) {
+		console.error("sendPersonalNotification error:", error);
+		res.status(500).json({ error: "Failed to send notification" });
+	}
+};
+
+// ✅ --- Send Broadcast Notification ---
+export const sendBroadcastNotification = async (req, res) => {
+	const { title, message, color, type } = req.body;
+	const adminId = req.user._id;
+
+	try {
+		if (!title || !message) {
+			return res.status(400).json({ error: "Title and message are required" });
+		}
+
+		// Get all users
+		const users = await User.find({ isAdmin: false }).select("_id");
+
+		// Create notification for each user
+		const notifications = users.map(user => ({
+			recipient: user._id,
+			sender: adminId,
+			title,
+			message,
+			color: color || "blue",
+			type: type || "info",
+			isBroadcast: true,
+		}));
+
+		await AdminNotification.insertMany(notifications);
+
+		// Emit real-time notification to all users
+		const io = req.app.get("io");
+		if (io) {
+			io.emit("admin-broadcast", {
+				title,
+				message,
+				color: color || "blue",
+				type: type || "info",
+				createdAt: new Date(),
+			});
+		}
+
+		res.status(200).json({ 
+			message: `Broadcast sent to ${users.length} users`,
+			count: users.length 
+		});
+	} catch (error) {
+		console.error("sendBroadcastNotification error:", error);
+		res.status(500).json({ error: "Failed to send broadcast" });
+	}
+};
+
+// ✅ --- Get User Notifications ---
+export const getUserNotifications = async (req, res) => {
+	const userId = req.user._id;
+
+	try {
+		const notifications = await AdminNotification.find({ recipient: userId })
+			.populate("sender", "fullName username profilePic")
+			.sort({ createdAt: -1 })
+			.limit(50);
+
+		res.status(200).json(notifications);
+	} catch (error) {
+		console.error("getUserNotifications error:", error);
+		res.status(500).json({ error: "Failed to fetch notifications" });
+	}
+};
+
+// ✅ --- Mark Notification as Read ---
+export const markNotificationRead = async (req, res) => {
+	const { notificationId } = req.params;
+	const userId = req.user._id;
+
+	try {
+		const notification = await AdminNotification.findOne({
+			_id: notificationId,
+			recipient: userId,
+		});
+
+		if (!notification) {
+			return res.status(404).json({ error: "Notification not found" });
+		}
+
+		notification.isRead = true;
+		notification.readAt = new Date();
+		await notification.save();
+
+		res.status(200).json({ message: "Notification marked as read" });
+	} catch (error) {
+		console.error("markNotificationRead error:", error);
+		res.status(500).json({ error: "Failed to mark notification as read" });
+	}
+};
+
+// ✅ --- Delete Notification ---
+export const deleteNotification = async (req, res) => {
+	const { notificationId } = req.params;
+	const userId = req.user._id;
+
+	try {
+		const notification = await AdminNotification.findOneAndDelete({
+			_id: notificationId,
+			recipient: userId,
+		});
+
+		if (!notification) {
+			return res.status(404).json({ error: "Notification not found" });
+		}
+
+		res.status(200).json({ message: "Notification deleted" });
+	} catch (error) {
+		console.error("deleteNotification error:", error);
+		res.status(500).json({ error: "Failed to delete notification" });
 	}
 };

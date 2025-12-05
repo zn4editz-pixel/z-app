@@ -14,6 +14,11 @@ import {
 	approveVerification,
 	rejectVerification,
 	getAdminStats,
+	sendPersonalNotification,
+	sendBroadcastNotification,
+	getUserNotifications,
+	markNotificationRead,
+	deleteNotification,
 } from "../controllers/admin.controller.js";
 
 // Make sure these middleware paths are correct
@@ -46,5 +51,9 @@ router.delete("/reports/:reportId", deleteReport);
 router.get("/verification-requests", getVerificationRequests);
 router.put("/verification/approve/:userId", approveVerification);
 router.put("/verification/reject/:userId", rejectVerification);
+
+// --- Admin Notifications ---
+router.post("/notifications/personal/:userId", sendPersonalNotification);
+router.post("/notifications/broadcast", sendBroadcastNotification);
 
 export default router;
