@@ -220,140 +220,135 @@ const PermissionHandler = () => {
 
   if (!showModal) return null;
 
+  const allGranted = permissions.camera === 'granted' && permissions.microphone === 'granted';
+  const anyDenied = permissions.camera === 'denied' || permissions.microphone === 'denied';
+
   return (
     <div className="modal modal-open backdrop-blur-sm">
-      <div className="modal-box max-w-md shadow-2xl border border-base-300 animate-scaleIn">
-        <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-3 animate-bounce-slow">
-            <AlertCircle className="w-8 h-8 text-white" />
+      <div className="modal-box max-w-md shadow-xl border border-base-300">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 rounded-full bg-base-200 flex items-center justify-center mx-auto mb-3">
+            <AlertCircle className="w-8 h-8 text-primary" />
           </div>
-          <h3 className="font-bold text-xl mb-1">Allow Permissions</h3>
-          <p className="text-sm text-base-content/70">To use all features of Z-APP</p>
+          <h3 className="font-bold text-xl mb-1">Permissions Required</h3>
+          <p className="text-sm text-base-content/60">Enable camera and microphone for calls</p>
         </div>
 
+        {/* Permission Cards */}
         <div className="space-y-3 mb-6">
-          <div className={`flex items-center gap-3 p-4 bg-base-100 rounded-xl border-2 transition-all ${
+          {/* Camera Permission */}
+          <div className={`flex items-center gap-3 p-3 bg-base-100 rounded-lg border-2 transition-all ${
             permissions.camera === 'granted' ? 'border-success' : 
             permissions.camera === 'denied' ? 'border-error' : 
-            'border-warning'
+            'border-base-300'
           }`}>
-            <div className="w-10 h-10 rounded-full bg-base-200 flex items-center justify-center flex-shrink-0">
-              <Camera className={`w-5 h-5 ${
-                permissions.camera === 'granted' ? 'text-success' : 
-                permissions.camera === 'denied' ? 'text-error' : 
-                'text-warning'
-              }`} />
+            <Camera className={`w-5 h-5 flex-shrink-0 ${
+              permissions.camera === 'granted' ? 'text-success' : 
+              permissions.camera === 'denied' ? 'text-error' : 
+              'text-base-content/60'
+            }`} />
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm">Camera</p>
+              <p className="text-xs text-base-content/50">Video calls</p>
             </div>
-            <div className="flex-1">
-              <p className="font-semibold text-sm">Camera Access</p>
-              <p className="text-xs text-base-content/60">For video calls and media</p>
-            </div>
-            <div className={`badge badge-lg ${
-              permissions.camera === 'granted' ? 'badge-success' : 
-              permissions.camera === 'denied' ? 'badge-error' : 
-              'badge-warning'
+            <span className={`text-xs font-semibold ${
+              permissions.camera === 'granted' ? 'text-success' : 
+              permissions.camera === 'denied' ? 'text-error' : 
+              'text-base-content/40'
             }`}>
-              {permissions.camera === 'granted' ? '✓' : 
-               permissions.camera === 'denied' ? '✗' : 
-               '!'}
-            </div>
+              {permissions.camera === 'granted' ? 'Allowed' : 
+               permissions.camera === 'denied' ? 'Denied' : 
+               'Not set'}
+            </span>
           </div>
 
-          <div className={`flex items-center gap-3 p-4 bg-base-100 rounded-xl border-2 transition-all ${
+          {/* Microphone Permission */}
+          <div className={`flex items-center gap-3 p-3 bg-base-100 rounded-lg border-2 transition-all ${
             permissions.microphone === 'granted' ? 'border-success' : 
             permissions.microphone === 'denied' ? 'border-error' : 
-            'border-warning'
+            'border-base-300'
           }`}>
-            <div className="w-10 h-10 rounded-full bg-base-200 flex items-center justify-center flex-shrink-0">
-              <Mic className={`w-5 h-5 ${
-                permissions.microphone === 'granted' ? 'text-success' : 
-                permissions.microphone === 'denied' ? 'text-error' : 
-                'text-warning'
-              }`} />
+            <Mic className={`w-5 h-5 flex-shrink-0 ${
+              permissions.microphone === 'granted' ? 'text-success' : 
+              permissions.microphone === 'denied' ? 'text-error' : 
+              'text-base-content/60'
+            }`} />
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm">Microphone</p>
+              <p className="text-xs text-base-content/50">Voice calls</p>
             </div>
-            <div className="flex-1">
-              <p className="font-semibold text-sm">Microphone Access</p>
-              <p className="text-xs text-base-content/60">For voice calls and messages</p>
-            </div>
-            <div className={`badge badge-lg ${
-              permissions.microphone === 'granted' ? 'badge-success' : 
-              permissions.microphone === 'denied' ? 'badge-error' : 
-              'badge-warning'
+            <span className={`text-xs font-semibold ${
+              permissions.microphone === 'granted' ? 'text-success' : 
+              permissions.microphone === 'denied' ? 'text-error' : 
+              'text-base-content/40'
             }`}>
-              {permissions.microphone === 'granted' ? '✓' : 
-               permissions.microphone === 'denied' ? '✗' : 
-               '!'}
-            </div>
+              {permissions.microphone === 'granted' ? 'Allowed' : 
+               permissions.microphone === 'denied' ? 'Denied' : 
+               'Not set'}
+            </span>
           </div>
         </div>
 
-        <div className={`bg-base-100 border-2 rounded-xl p-3 mb-6 flex items-center gap-2 ${
-          permissions.camera === 'denied' || permissions.microphone === 'denied' 
-            ? 'border-warning' 
-            : 'border-info'
-        }`}>
-          <AlertCircle className={`w-5 h-5 flex-shrink-0 ${
-            permissions.camera === 'denied' || permissions.microphone === 'denied' 
-              ? 'text-warning' 
-              : 'text-info'
-          }`} />
-          <span className="text-sm">
-            {permissions.camera === 'denied' || permissions.microphone === 'denied' 
-              ? "Permissions denied. Open settings to enable."
-              : "Required for calls and media features"}
-          </span>
-        </div>
+        {/* Info Message */}
+        {anyDenied && (
+          <div className="bg-base-100 border-2 border-warning rounded-lg p-3 mb-4 flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-base-content/70">
+              Permissions denied. Please open settings to enable them manually.
+            </p>
+          </div>
+        )}
 
-        <div className="flex flex-col gap-3">
-          {(permissions.camera !== 'granted' || permissions.microphone !== 'granted') && (
+        {/* Action Buttons */}
+        <div className="space-y-2">
+          {!allGranted && !anyDenied && (
             <button 
-              className="btn btn-primary btn-lg w-full gap-2 shadow-lg hover:shadow-xl transition-all"
+              className="btn btn-primary w-full"
               onClick={requestPermissions}
             >
-              <Camera className="w-5 h-5" />
-              <Mic className="w-5 h-5" />
-              Allow Camera & Microphone
+              Allow Permissions
             </button>
           )}
           
-          {/* Show settings button if permissions denied */}
-          {(permissions.camera === 'denied' || permissions.microphone === 'denied') && (
+          {anyDenied && (
             <button 
-              className="btn btn-warning btn-lg w-full gap-2 shadow-lg hover:shadow-xl transition-all"
+              className="btn btn-warning w-full gap-2"
               onClick={openAppSettings}
             >
-              <Settings className="w-5 h-5" />
-              Open App Settings
+              <Settings className="w-4 h-4" />
+              Open Settings
             </button>
           )}
           
-          <div className="flex gap-2">
-            {permissions.camera !== 'granted' && permissions.camera !== 'denied' && (
-              <button 
-                className="btn btn-outline flex-1 gap-2"
-                onClick={requestCameraOnly}
-              >
-                <Camera className="w-4 h-4" />
-                Camera
-              </button>
-            )}
-            
-            {permissions.microphone !== 'granted' && permissions.microphone !== 'denied' && (
-              <button 
-                className="btn btn-outline flex-1 gap-2"
-                onClick={requestMicrophoneOnly}
-              >
-                <Mic className="w-4 h-4" />
-                Microphone
-              </button>
-            )}
-          </div>
+          {!allGranted && !anyDenied && (
+            <div className="grid grid-cols-2 gap-2">
+              {permissions.camera !== 'granted' && (
+                <button 
+                  className="btn btn-outline btn-sm"
+                  onClick={requestCameraOnly}
+                >
+                  <Camera className="w-4 h-4" />
+                  Camera
+                </button>
+              )}
+              {permissions.microphone !== 'granted' && (
+                <button 
+                  className="btn btn-outline btn-sm"
+                  onClick={requestMicrophoneOnly}
+                >
+                  <Mic className="w-4 h-4" />
+                  Microphone
+                </button>
+              )}
+            </div>
+          )}
           
           <button 
-            className="btn btn-ghost btn-sm"
+            className="btn btn-ghost btn-sm w-full"
             onClick={() => setShowModal(false)}
           >
-            I'll do this later
+            Skip for now
           </button>
         </div>
       </div>
