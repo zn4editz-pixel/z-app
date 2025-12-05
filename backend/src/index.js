@@ -52,6 +52,7 @@ app.use("/api", apiLimiter);
 // CORS configuration
 const allowedOrigins = [
 	FRONTEND_URL,
+	"https://z-app-beta-z.onrender.com",
 	"https://z-pp-main-com.onrender.com",
 	"http://localhost:5173",
 ];
