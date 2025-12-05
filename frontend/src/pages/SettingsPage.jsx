@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
 import { useAuthStore } from "../store/useAuthStore";
-import { Send, Lock, Eye, EyeOff, LogOut, Video, Mic, Shield, AlertTriangle, ExternalLink } from "lucide-react";
+import { Send, Lock, Eye, EyeOff, LogOut } from "lucide-react";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 
@@ -162,65 +162,6 @@ const ChangePasswordSection = () => {
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
   const { logout } = useAuthStore();
-  const [cameraPermission, setCameraPermission] = useState('prompt');
-  const [microphonePermission, setMicrophonePermission] = useState('prompt');
-
-  useEffect(() => {
-    checkPermissions();
-  }, []);
-
-  // Check current permission status
-  const checkPermissions = async () => {
-    try {
-      if (navigator.permissions) {
-        const cameraResult = await navigator.permissions.query({ name: 'camera' });
-        const micResult = await navigator.permissions.query({ name: 'microphone' });
-        setCameraPermission(cameraResult.state);
-        setMicrophonePermission(micResult.state);
-      }
-    } catch (error) {
-      console.log('Permission API not supported');
-    }
-  };
-
-  // Request camera permission
-  const requestCameraPermission = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      stream.getTracks().forEach(track => track.stop());
-      setCameraPermission('granted');
-      toast.success('Camera access granted!');
-    } catch (error) {
-      setCameraPermission('denied');
-      toast.error('Camera access denied');
-    }
-  };
-
-  // Request microphone permission
-  const requestMicrophonePermission = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(track => track.stop());
-      setMicrophonePermission('granted');
-      toast.success('Microphone access granted!');
-    } catch (error) {
-      setMicrophonePermission('denied');
-      toast.error('Microphone access denied');
-    }
-  };
-
-  // Request both permissions
-  const requestBothPermissions = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      stream.getTracks().forEach(track => track.stop());
-      setCameraPermission('granted');
-      setMicrophonePermission('granted');
-      toast.success('Camera and microphone access granted!');
-    } catch (error) {
-      toast.error('Failed to get camera and microphone access');
-    }
-  };
 
   const handleLogout = () => {
     if (confirm("Are you sure you want to logout?")) {
@@ -301,100 +242,6 @@ const SettingsPage = () => {
               <LogOut className="w-4 h-4" />
               Logout from Account
             </button>
-          </div>
-
-          {/* Permissions Section - Full Width */}
-          <div className="lg:col-span-2 bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 border border-base-300">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">Permissions</h2>
-                <p className="text-xs text-base-content/60">Manage camera and microphone access</p>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              {/* Camera Permission */}
-              <div className="flex items-center justify-between p-4 bg-base-200 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Video className="w-5 h-5 text-base-content/70" />
-                  <div>
-                    <div className="font-medium text-sm sm:text-base">Camera</div>
-                    <div className="text-xs text-base-content/60">
-                      Required for video calls
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    cameraPermission === 'granted' ? 'bg-success/20 text-success' :
-                    cameraPermission === 'denied' ? 'bg-error/20 text-error' :
-                    'bg-warning/20 text-warning'
-                  }`}>
-                    {cameraPermission === 'granted' ? 'Granted' :
-                     cameraPermission === 'denied' ? 'Denied' : 'Not Set'}
-                  </span>
-                  {cameraPermission !== 'granted' && (
-                    <button
-                      onClick={requestCameraPermission}
-                      className="btn btn-primary btn-sm"
-                    >
-                      Allow
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Microphone Permission */}
-              <div className="flex items-center justify-between p-4 bg-base-200 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Mic className="w-5 h-5 text-base-content/70" />
-                  <div>
-                    <div className="font-medium text-sm sm:text-base">Microphone</div>
-                    <div className="text-xs text-base-content/60">
-                      Required for voice/video calls
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    microphonePermission === 'granted' ? 'bg-success/20 text-success' :
-                    microphonePermission === 'denied' ? 'bg-error/20 text-error' :
-                    'bg-warning/20 text-warning'
-                  }`}>
-                    {microphonePermission === 'granted' ? 'Granted' :
-                     microphonePermission === 'denied' ? 'Denied' : 'Not Set'}
-                  </span>
-                  {microphonePermission !== 'granted' && (
-                    <button
-                      onClick={requestMicrophonePermission}
-                      className="btn btn-primary btn-sm"
-                    >
-                      Allow
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Grant All Permissions */}
-              {(cameraPermission !== 'granted' || microphonePermission !== 'granted') && (
-                <button
-                  onClick={requestBothPermissions}
-                  className="w-full btn btn-primary gap-2 shadow-md hover:shadow-lg transition-all"
-                >
-                  <Shield className="w-4 h-4" />
-                  Grant All Permissions
-                </button>
-              )}
-
-              {/* Permission Info */}
-              <div className="text-xs text-base-content/60 bg-base-200 p-3 rounded-lg">
-                <strong>Note:</strong> Permissions are required for video calls and voice messages. 
-                You can also grant them when starting a call for the first time.
-              </div>
-            </div>
           </div>
 
           {/* Change Password Section - Full Width */}
