@@ -56,7 +56,7 @@ const SettingsPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
-      <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pt-20 sm:pt-24 md:pt-28 lg:pt-32 pb-20 sm:pb-24 md:pb-16 max-w-5xl">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pt-24 sm:pt-28 md:pt-32 lg:pt-36 pb-20 sm:pb-24 md:pb-16 max-w-5xl">
         {/* Page Header */}
         <div className="mb-4 sm:mb-6 md:mb-8 flex flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex-1 min-w-0">
@@ -92,25 +92,25 @@ const SettingsPage = () => {
               </div>
             </div>
             
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3 max-h-[320px] sm:max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
+            <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-3 md:gap-4 max-h-[400px] sm:max-h-[420px] md:max-h-[450px] overflow-y-auto custom-scrollbar pr-2">
               {THEMES.map((t) => (
                 <button
                   key={t}
                   className={`
-                    group flex flex-col items-center gap-1.5 p-2 sm:p-2.5 rounded-lg transition-all duration-200
-                    ${theme === t ? "bg-primary/10 ring-2 ring-primary shadow-md scale-105" : "hover:bg-base-200 hover:shadow-sm hover:scale-105"}
+                    group flex flex-col items-center gap-2 p-2.5 sm:p-3 rounded-xl transition-all duration-200
+                    ${theme === t ? "bg-primary/10 ring-2 ring-primary shadow-lg scale-105" : "hover:bg-base-200 hover:shadow-md hover:scale-105 active:scale-95"}
                   `}
                   onClick={() => setTheme(t)}
                 >
-                  <div className="relative h-8 sm:h-9 md:h-10 w-full rounded-md overflow-hidden shadow-sm" data-theme={t}>
-                    <div className="absolute inset-0 grid grid-cols-4 gap-px p-1">
-                      <div className="rounded bg-primary"></div>
-                      <div className="rounded bg-secondary"></div>
-                      <div className="rounded bg-accent"></div>
-                      <div className="rounded bg-neutral"></div>
+                  <div className="relative h-10 sm:h-11 md:h-12 w-full rounded-lg overflow-hidden shadow-md" data-theme={t}>
+                    <div className="absolute inset-0 grid grid-cols-4 gap-0.5 p-1.5">
+                      <div className="rounded-sm bg-primary"></div>
+                      <div className="rounded-sm bg-secondary"></div>
+                      <div className="rounded-sm bg-accent"></div>
+                      <div className="rounded-sm bg-neutral"></div>
                     </div>
                   </div>
-                  <span className={`text-[10px] sm:text-xs font-medium truncate w-full text-center ${theme === t ? 'text-primary font-semibold' : 'text-base-content/70'}`}>
+                  <span className={`text-xs sm:text-sm font-medium truncate w-full text-center leading-tight ${theme === t ? 'text-primary font-bold' : 'text-base-content/70'}`}>
                     {t.charAt(0).toUpperCase() + t.slice(1)}
                   </span>
                 </button>
