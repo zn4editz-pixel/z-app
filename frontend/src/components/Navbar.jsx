@@ -6,12 +6,11 @@ import {
 	LayoutDashboard,
 	Settings,
 	User,
-	LogOut,
 	Users,
 } from "lucide-react";
 
 const Navbar = () => {
-	const { logout, authUser } = useAuthStore();
+	const { authUser } = useAuthStore();
 	const { selectedUser } = useChatStore();
 	const isAdmin = authUser?.isAdmin;
 	const { pendingReceived } = useFriendStore();
@@ -76,17 +75,6 @@ const Navbar = () => {
 							>
 								<User className="w-[18px] h-[18px] sm:w-5 sm:h-5" />
 							</Link>
-						)}
-
-						{/* Logout */}
-						{authUser && (
-							<button
-								onClick={logout}
-								className="btn btn-ghost btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11"
-								title="Logout"
-							>
-								<LogOut className="w-[18px] h-[18px] sm:w-5 sm:h-5" />
-							</button>
 						)}
 					</div>
 				</div>

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
-import { Send, Lock, Eye, EyeOff } from "lucide-react";
+import { useAuthStore } from "../store/useAuthStore";
+import { Send, Lock, Eye, EyeOff, LogOut } from "lucide-react";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 
@@ -160,6 +161,13 @@ const ChangePasswordSection = () => {
 
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
+  const { logout } = useAuthStore();
+
+  const handleLogout = () => {
+    if (confirm("Are you sure you want to logout?")) {
+      logout();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -197,6 +205,24 @@ const SettingsPage = () => {
 
           {/* Change Password Section */}
           <ChangePasswordSection />
+
+          {/* Logout Section */}
+          <div className="border-t border-base-300 pt-6">
+            <div className="flex items-center gap-2 mb-4">
+              <LogOut className="w-5 h-5 text-error" />
+              <h3 className="text-base sm:text-lg font-semibold">Logout</h3>
+            </div>
+            <p className="text-sm text-base-content/70 mb-4">
+              Sign out of your account on this device
+            </p>
+            <button
+              onClick={handleLogout}
+              className="btn btn-error gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
 
           {/* Preview Section */}
           <div className="pt-4">
