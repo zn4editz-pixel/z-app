@@ -219,15 +219,26 @@ const ChatMessage = ({ message }) => {
               <>
                 {/* Image Message */}
                 {message.image && (
-                  <div className="relative group mb-2">
+                  <div 
+                    className="relative group mb-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(message.image, "_blank");
+                    }}
+                    onTouchEnd={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
                     <img
                       src={message.image}
-                      className="rounded-lg max-h-48 sm:max-h-64 object-cover w-full cursor-pointer hover:opacity-90 transition"
+                      className="rounded-lg max-h-48 sm:max-h-64 object-cover w-full cursor-pointer active:opacity-80 transition"
                       alt="attached"
-                      onClick={() => window.open(message.image, "_blank")}
                     />
                     <button
-                      onClick={() => handleDownloadImage(message.image)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadImage(message.image);
+                      }}
                       className="absolute top-2 right-2 btn btn-circle btn-xs bg-black/50 border-none text-white opacity-0 group-hover:opacity-100 transition"
                       title="Download image"
                     >
