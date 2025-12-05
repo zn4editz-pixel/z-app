@@ -261,68 +261,80 @@ const SettingsPage = () => {
                 <p className="text-[10px] xs:text-[11px] sm:text-xs text-base-content/60 truncate">See how your theme looks</p>
               </div>
             </div>
-            <div className="rounded-md xs:rounded-lg sm:rounded-xl border border-base-300 overflow-hidden bg-base-100 shadow-lg">
-              <div className="p-2 xs:p-2.5 sm:p-3 md:p-4 bg-base-200">
-                <div className="max-w-lg mx-auto">
-                  {/* Mock Chat UI */}
-                  <div className="bg-base-100 rounded-lg xs:rounded-xl shadow-sm overflow-hidden">
-                    {/* Chat Header */}
-                    <div className="px-2.5 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 border-b border-base-300 bg-base-100">
-                      <div className="flex items-center gap-2 xs:gap-2.5 sm:gap-3">
-                        <div className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 rounded-full bg-primary flex items-center justify-center text-primary-content font-medium text-xs xs:text-sm flex-shrink-0">
-                          J
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="font-medium text-xs xs:text-sm truncate">Username</h3>
-                          <p className="text-[10px] xs:text-[11px] sm:text-xs text-base-content/70 truncate">Online</p>
+            
+            {/* Chat Preview Container */}
+            <div className="w-full max-w-2xl mx-auto">
+              <div className="bg-base-100 rounded-lg sm:rounded-xl shadow-xl border border-base-300 overflow-hidden">
+                {/* Chat Header */}
+                <div className="px-3 xs:px-4 sm:px-5 py-2.5 xs:py-3 sm:py-3.5 border-b border-base-300 bg-base-100/80 backdrop-blur-sm">
+                  <div className="flex items-center gap-2.5 xs:gap-3">
+                    <div className="relative flex-shrink-0">
+                      <div className="w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-content font-semibold text-sm xs:text-base shadow-md">
+                        J
+                      </div>
+                      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 xs:w-3 xs:h-3 bg-success rounded-full border-2 border-base-100"></div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-sm xs:text-base truncate">John Doe</h3>
+                      <p className="text-[10px] xs:text-xs text-success truncate">Online</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chat Messages */}
+                <div className="p-3 xs:p-4 sm:p-5 space-y-3 xs:space-y-4 min-h-[180px] xs:min-h-[220px] sm:min-h-[260px] max-h-[180px] xs:max-h-[220px] sm:max-h-[260px] overflow-y-auto bg-base-200/30 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent">
+                  {/* Received Message */}
+                  <div className="flex justify-start animate-fade-in">
+                    <div className="max-w-[80%] xs:max-w-[75%]">
+                      <div className="bg-base-100 rounded-2xl rounded-tl-sm p-2.5 xs:p-3 sm:p-3.5 shadow-md border border-base-300/50">
+                        <p className="text-[11px] xs:text-xs sm:text-sm leading-relaxed text-base-content">
+                          Hey! How's it going?
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-1.5 xs:mt-2">
+                          <p className="text-[9px] xs:text-[10px] text-base-content/60">
+                            12:00 PM
+                          </p>
                         </div>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Chat Messages */}
-                    <div className="p-2.5 xs:p-3 sm:p-4 space-y-2.5 xs:space-y-3 sm:space-y-4 min-h-[150px] xs:min-h-[180px] sm:min-h-[200px] max-h-[150px] xs:max-h-[180px] sm:max-h-[200px] overflow-y-auto bg-base-100">
-                      {PREVIEW_MESSAGES.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`flex ${message.isSent ? "justify-end" : "justify-start"}`}
-                        >
-                          <div
-                            className={`
-                              max-w-[85%] xs:max-w-[80%] rounded-lg xs:rounded-xl p-2 xs:p-2.5 sm:p-3 shadow-sm
-                              ${message.isSent ? "bg-primary text-primary-content" : "bg-base-200"}
-                            `}
-                          >
-                            <p className="text-[11px] xs:text-xs sm:text-sm leading-snug">{message.content}</p>
-                            <p
-                              className={`
-                                text-[9px] xs:text-[10px] mt-1 xs:mt-1.5
-                                ${message.isSent ? "text-primary-content/70" : "text-base-content/70"}
-                              `}
-                            >
-                              12:00 PM
-                            </p>
-                          </div>
+                  {/* Sent Message */}
+                  <div className="flex justify-end animate-fade-in">
+                    <div className="max-w-[80%] xs:max-w-[75%]">
+                      <div className="bg-gradient-to-br from-primary to-primary/90 rounded-2xl rounded-tr-sm p-2.5 xs:p-3 sm:p-3.5 shadow-md">
+                        <p className="text-[11px] xs:text-xs sm:text-sm leading-relaxed text-primary-content">
+                          I'm doing great! Just working on some new features.
+                        </p>
+                        <div className="flex items-center justify-end gap-1.5 mt-1.5 xs:mt-2">
+                          <p className="text-[9px] xs:text-[10px] text-primary-content/80">
+                            12:00 PM
+                          </p>
+                          <svg className="w-3 h-3 xs:w-3.5 xs:h-3.5 text-primary-content/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
                         </div>
-                      ))}
-                    </div>
-
-                    {/* Chat Input */}
-                    <div className="p-2 xs:p-2.5 sm:p-3 md:p-4 border-t border-base-300 bg-base-100">
-                      <div className="flex gap-1.5 xs:gap-2">
-                        <input
-                          type="text"
-                          className="input input-bordered input-xs xs:input-sm sm:input-md flex-1 text-[11px] xs:text-xs sm:text-sm h-7 xs:h-8 sm:h-10"
-                          placeholder="Type a message..."
-                          value="This is a preview"
-                          readOnly
-                        />
-                        <button className="btn btn-primary btn-xs xs:btn-sm sm:btn-md h-7 xs:h-8 sm:h-10 min-h-0 px-2 xs:px-3">
-                          <Send size={14} className="xs:hidden" />
-                          <Send size={16} className="hidden xs:block sm:hidden" />
-                          <Send size={18} className="hidden sm:block" />
-                        </button>
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* Chat Input */}
+                <div className="p-2.5 xs:p-3 sm:p-4 border-t border-base-300 bg-base-100/80 backdrop-blur-sm">
+                  <div className="flex items-center gap-1.5 xs:gap-2">
+                    <input
+                      type="text"
+                      className="input input-bordered flex-1 text-[11px] xs:text-xs sm:text-sm h-8 xs:h-9 sm:h-10 
+                                 bg-base-200 border-base-300 focus:border-primary focus:outline-none
+                                 rounded-full px-3 xs:px-4"
+                      placeholder="Type a message..."
+                      value="This is a preview"
+                      readOnly
+                    />
+                    <button className="btn btn-primary btn-circle btn-sm xs:btn-md h-8 w-8 xs:h-10 xs:w-10 min-h-0 
+                                     shadow-lg hover:shadow-xl transition-all hover:scale-105">
+                      <Send className="w-3.5 h-3.5 xs:w-4 xs:h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
