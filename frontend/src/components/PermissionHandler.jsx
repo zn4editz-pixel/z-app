@@ -232,9 +232,17 @@ const PermissionHandler = () => {
         </div>
 
         <div className="space-y-3 mb-6">
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-base-200 to-base-300 rounded-xl border border-base-300 hover:shadow-md transition-all">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <Camera className="w-5 h-5 text-primary" />
+          <div className={`flex items-center gap-3 p-4 bg-base-100 rounded-xl border-2 transition-all ${
+            permissions.camera === 'granted' ? 'border-success' : 
+            permissions.camera === 'denied' ? 'border-error' : 
+            'border-warning'
+          }`}>
+            <div className="w-10 h-10 rounded-full bg-base-200 flex items-center justify-center flex-shrink-0">
+              <Camera className={`w-5 h-5 ${
+                permissions.camera === 'granted' ? 'text-success' : 
+                permissions.camera === 'denied' ? 'text-error' : 
+                'text-warning'
+              }`} />
             </div>
             <div className="flex-1">
               <p className="font-semibold text-sm">Camera Access</p>
@@ -251,9 +259,17 @@ const PermissionHandler = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-base-200 to-base-300 rounded-xl border border-base-300 hover:shadow-md transition-all">
-            <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0">
-              <Mic className="w-5 h-5 text-secondary" />
+          <div className={`flex items-center gap-3 p-4 bg-base-100 rounded-xl border-2 transition-all ${
+            permissions.microphone === 'granted' ? 'border-success' : 
+            permissions.microphone === 'denied' ? 'border-error' : 
+            'border-warning'
+          }`}>
+            <div className="w-10 h-10 rounded-full bg-base-200 flex items-center justify-center flex-shrink-0">
+              <Mic className={`w-5 h-5 ${
+                permissions.microphone === 'granted' ? 'text-success' : 
+                permissions.microphone === 'denied' ? 'text-error' : 
+                'text-warning'
+              }`} />
             </div>
             <div className="flex-1">
               <p className="font-semibold text-sm">Microphone Access</p>
@@ -271,12 +287,20 @@ const PermissionHandler = () => {
           </div>
         </div>
 
-        <div className="alert alert-info mb-6 shadow-sm">
-          <AlertCircle className="w-5 h-5" />
+        <div className={`bg-base-100 border-2 rounded-xl p-3 mb-6 flex items-center gap-2 ${
+          permissions.camera === 'denied' || permissions.microphone === 'denied' 
+            ? 'border-warning' 
+            : 'border-info'
+        }`}>
+          <AlertCircle className={`w-5 h-5 flex-shrink-0 ${
+            permissions.camera === 'denied' || permissions.microphone === 'denied' 
+              ? 'text-warning' 
+              : 'text-info'
+          }`} />
           <span className="text-sm">
             {permissions.camera === 'denied' || permissions.microphone === 'denied' 
-              ? "⚠️ Permissions denied. Open settings to enable."
-              : "📱 Required for calls and media features"}
+              ? "Permissions denied. Open settings to enable."
+              : "Required for calls and media features"}
           </span>
         </div>
 

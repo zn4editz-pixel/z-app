@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 import { useFriendStore } from "../store/useFriendStore";
+import { useNotificationStore } from "../store/useNotificationStore";
 import {
 	LayoutDashboard,
 	Settings,
@@ -14,6 +15,12 @@ const Navbar = () => {
 	const { selectedUser } = useChatStore();
 	const isAdmin = authUser?.isAdmin;
 	const { pendingReceived } = useFriendStore();
+	const { notifications } = useNotificationStore();
+
+	// Calculate total Social Hub updates
+	const adminNotifications = notifications.filter(n => n.type === 'admin' || n.type === 'admin_broadcast');
+	const hasVerificationUpdate = authUser?.verificationRequest?.status && authUser.verificationRequest.status !== "none";
+	const totalUpdates = pendingReceived.length + adminNotifications.length + (hasVerificationUpdate ? 1 : 0) + (authUser?.isSuspended ? 1 : 0);
 
 	return (
 		<header className="bg-base-100 border-b border-base-300 fixed w-full top-0 z-40 shadow-sm">
@@ -38,9 +45,9 @@ const Navbar = () => {
 								title="Social Hub"
 							>
 								<Users className="w-[18px] h-[18px] sm:w-5 sm:h-5" />
-								{pendingReceived.length > 0 && (
+								{totalUpdates > 0 && (
 									<span className="absolute -top-0.5 -right-0.5 bg-error text-white text-[10px] sm:text-xs font-bold rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shadow-lg animate-pulse">
-										{pendingReceived.length > 9 ? '9+' : pendingReceived.length}
+										{totalUpdates > 9 ? '9+' : totalUpdates}
 									</span>
 								)}
 							</Link>

@@ -10,7 +10,7 @@ import { useNotificationStore } from "../store/useNotificationStore";
 
 // Admin Notifications List Component
 const AdminNotificationsList = () => {
-	const { notifications, addNotification } = useNotificationStore();
+	const { notifications, addNotification, clearNotification } = useNotificationStore();
 	const [adminNotifications, setAdminNotifications] = useState([]);
 	const [isLoading, setIsLoading] = useState(true);
 
@@ -32,6 +32,7 @@ const AdminNotificationsList = () => {
 						notificationType: notif.type,
 						createdAt: notif.createdAt,
 						id: notif._id,
+						dbId: notif._id, // Store DB ID for deletion
 					});
 				});
 			} catch (error) {
@@ -50,25 +51,55 @@ const AdminNotificationsList = () => {
 		setAdminNotifications(adminNotes);
 	}, [notifications]);
 
-	const getColorClass = (color) => {
+	const getBorderColor = (color) => {
 		const colorMap = {
-			green: 'bg-success text-success-content',
-			red: 'bg-error text-error-content',
-			blue: 'bg-info text-info-content',
-			yellow: 'bg-warning text-warning-content',
-			orange: 'bg-orange-500 text-white',
+			green: 'border-success',
+			red: 'border-error',
+			blue: 'border-info',
+			yellow: 'border-warning',
+			orange: 'border-orange-500',
 		};
-		return colorMap[color] || 'bg-info text-info-content';
+		return colorMap[color] || 'border-info';
+	};
+
+	const getTextColor = (color) => {
+		const colorMap = {
+			green: 'text-success',
+			red: 'text-error',
+			blue: 'text-info',
+			yellow: 'text-warning',
+			orange: 'text-orange-500',
+		};
+		return colorMap[color] || 'text-info';
 	};
 
 	const getIcon = (type) => {
-		const icons = {
-			success: '✅',
-			error: '❌',
-			warning: '⚠️',
-			info: 'ℹ️',
-		};
-		return icons[type] || 'ℹ️';
+		switch(type) {
+			case 'success':
+				return <CheckCircle className="w-5 h-5" />;
+			case 'error':
+				return <XCircle className="w-5 h-5" />;
+			case 'warning':
+				return <Bell className="w-5 h-5" />;
+			case 'info':
+			default:
+				return <Mail className="w-5 h-5" />;
+		}
+	};
+
+	const handleDelete = async (notification) => {
+		try {
+			// Delete from backend if it has a DB ID
+			if (notification.dbId) {
+				await axiosInstance.delete(`/users/notifications/${notification.dbId}`);
+			}
+			// Remove from local store
+			clearNotification(notification.id);
+			toast.success("Notification deleted");
+		} catch (error) {
+			console.error("Error deleting notification:", error);
+			toast.error("Failed to delete notification");
+		}
 	};
 
 	if (isLoading) {
@@ -87,22 +118,35 @@ const AdminNotificationsList = () => {
 				<Mail className="w-5 h-5 text-primary" />
 				<h3 className="font-semibold text-base">Admin Messages</h3>
 			</div>
-			{adminNotifications.map((notification, index) => (
+			{adminNotifications.map((notification) => (
 				<div
-					key={notification.id || index}
-					className={`alert shadow-lg ${getColorClass(notification.color)}`}
+					key={notification.id}
+					className={`bg-base-100 border-2 ${getBorderColor(notification.color)} rounded-lg p-3 sm:p-4 shadow-sm hover:shadow-md transition-all`}
 				>
-					<div className="flex-1">
-						<div className="flex items-center gap-2 mb-1">
-							<span className="text-lg">{getIcon(notification.notificationType)}</span>
-							<h4 className="font-bold text-sm sm:text-base">{notification.title}</h4>
+					<div className="flex items-start gap-3">
+						<div className={`flex-shrink-0 ${getTextColor(notification.color)}`}>
+							{getIcon(notification.notificationType)}
 						</div>
-						<p className="text-xs sm:text-sm opacity-90">{notification.message}</p>
-						{notification.createdAt && (
-							<p className="text-xs opacity-70 mt-2">
-								{new Date(notification.createdAt).toLocaleString()}
+						<div className="flex-1 min-w-0">
+							<h4 className={`font-bold text-sm sm:text-base ${getTextColor(notification.color)} mb-1`}>
+								{notification.title}
+							</h4>
+							<p className="text-xs sm:text-sm text-base-content/80">
+								{notification.message}
 							</p>
-						)}
+							{notification.createdAt && (
+								<p className="text-xs text-base-content/50 mt-2">
+									{new Date(notification.createdAt).toLocaleString()}
+								</p>
+							)}
+						</div>
+						<button
+							onClick={() => handleDelete(notification)}
+							className="btn btn-ghost btn-circle btn-xs flex-shrink-0 hover:bg-error/10 hover:text-error"
+							title="Delete notification"
+						>
+							<Trash2 className="w-4 h-4" />
+						</button>
 					</div>
 				</div>
 			))}
