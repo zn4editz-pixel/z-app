@@ -10,9 +10,6 @@ import VerifiedBadge from "../components/VerifiedBadge";
 import AdminNotifications from "../components/AdminNotifications";
 
 const AdminDashboard = () => {
-	// --- Active Tab State ---
-	const [activeTab, setActiveTab] = useState("dashboard");
-
 	// --- Stats State ---
 	const [stats, setStats] = useState(null);
 	const [loadingStats, setLoadingStats] = useState(true);
@@ -24,11 +21,6 @@ const AdminDashboard = () => {
 	// --- Report State ---
 	const [reports, setReports] = useState([]);
 	const [loadingReports, setLoadingReports] = useState(true);
-
-	// --- AI Moderation State ---
-	const [aiReports, setAIReports] = useState([]);
-	const [aiStats, setAIStats] = useState(null);
-	const [loadingAIReports, setLoadingAIReports] = useState(true);
 
 	// --- Verification Requests State ---
 	const [verificationRequests, setVerificationRequests] = useState([]);
@@ -47,7 +39,6 @@ const AdminDashboard = () => {
 		fetchStats();
 		fetchUsers();
 		fetchReports();
-		fetchAIReports();
 		fetchVerificationRequests();
 	}, []);
 
@@ -89,22 +80,6 @@ const AdminDashboard = () => {
 			setReports([]);
 		} finally {
 			setLoadingReports(false);
-		}
-	};
-
-	const fetchAIReports = async () => {
-		setLoadingAIReports(true);
-		try {
-			const res = await axiosInstance.get("/admin/reports/ai");
-			setAIReports(Array.isArray(res.data.reports) ? res.data.reports : []);
-			setAIStats(res.data.stats || null);
-		} catch (err) {
-			console.error("Error fetching AI reports", err);
-			toast.error("Failed to load AI moderation data");
-			setAIReports([]);
-			setAIStats(null);
-		} finally {
-			setLoadingAIReports(false);
 		}
 	};
 
@@ -235,7 +210,6 @@ const AdminDashboard = () => {
 			
 			toast.success(res.data.message || "Report status updated");
 			fetchReports();
-			fetchAIReports(); // Also refresh AI reports
 			fetchStats();
 		} catch (err) {
 			console.error("Error updating report status:", err);
@@ -261,126 +235,63 @@ const AdminDashboard = () => {
 		req => req.verificationRequest?.status === "pending"
 	);
 
-	// Tab configuration
-	const tabs = [
-		{ id: "dashboard", label: "Dashboard", icon: TrendingUp },
-		{ id: "users", label: "Users", icon: Users },
-		{ id: "ai-moderation", label: "AI Moderation", icon: Shield },
-		{ id: "reports", label: "Reports", icon: AlertTriangle },
-		{ id: "verifications", label: "Verifications", icon: BadgeCheck },
-		{ id: "notifications", label: "Notifications", icon: FileText },
-	];
-
 	return (
 		<div className="min-h-screen pt-14 xs:pt-16 sm:pt-18 md:pt-20 px-2 xs:px-3 sm:px-4 lg:px-6 bg-base-200 pb-16 xs:pb-18 sm:pb-20 md:pb-10">
 			<div className="max-w-7xl mx-auto">
-				{/* Header */}
-				<div className="mb-4 sm:mb-6">
-					<h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">Admin Panel</h1>
-					<p className="text-sm sm:text-base text-base-content/60">Manage users, content, and platform settings</p>
-				</div>
+				<h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-center">Admin Dashboard</h1>
 
-				{/* Tab Navigation */}
-				<div className="bg-base-100 rounded-xl shadow-lg p-2 mb-4 sm:mb-6 overflow-x-auto">
-					<div className="flex gap-1 sm:gap-2 min-w-max sm:min-w-0">
-						{tabs.map((tab) => {
-							const Icon = tab.icon;
-							return (
-								<button
-									key={tab.id}
-									onClick={() => setActiveTab(tab.id)}
-									className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg transition-all duration-200 whitespace-nowrap ${
-										activeTab === tab.id
-											? "bg-primary text-primary-content shadow-md"
-											: "hover:bg-base-200 text-base-content/70"
-									}`}
-								>
-									<Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-									<span className="text-xs sm:text-sm font-medium">{tab.label}</span>
-								</button>
-							);
-						})}
-					</div>
-				</div>
-
-				{/* Tab Content */}
-				<div className="animate-fadeIn">
-					{/* Dashboard Tab */}
-					{activeTab === "dashboard" && (
-						<div className="space-y-4 sm:space-y-6">
-							{/* Statistics Cards */}
-							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-								{loadingStats ? (
-									<div className="col-span-1 sm:col-span-2 lg:col-span-4 text-center py-8">
-										<span className="loading loading-spinner loading-lg"></span>
-									</div>
-								) : stats && (
-									<>
-										<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
-											<div className="stat-figure text-primary hidden sm:block">
-												<Users className="w-6 h-6 sm:w-8 sm:h-8" />
-											</div>
-											<div className="stat-title text-xs sm:text-sm">Total Users</div>
-											<div className="stat-value text-primary text-2xl sm:text-3xl">{stats.totalUsers}</div>
-											<div className="stat-desc text-xs">{stats.recentUsers} new this week</div>
-										</div>
-
-										<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
-											<div className="stat-figure text-success hidden sm:block">
-												<UserCheck className="w-6 h-6 sm:w-8 sm:h-8" />
-											</div>
-											<div className="stat-title text-xs sm:text-sm">Online Now</div>
-											<div className="stat-value text-success text-2xl sm:text-3xl">{stats.onlineUsers}</div>
-											<div className="stat-desc text-xs">{stats.verifiedUsers} verified</div>
-										</div>
-
-										<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
-											<div className="stat-figure text-warning hidden sm:block">
-												<Clock className="w-6 h-6 sm:w-8 sm:h-8" />
-											</div>
-											<div className="stat-title text-xs sm:text-sm">Pending Verifications</div>
-											<div className="stat-value text-warning text-2xl sm:text-3xl">{stats.pendingVerifications}</div>
-											<div className="stat-desc text-xs">{stats.approvedVerifications} approved</div>
-										</div>
-
-										<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
-											<div className="stat-figure text-error hidden sm:block">
-												<AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8" />
-											</div>
-											<div className="stat-title text-xs sm:text-sm">Pending Reports</div>
-											<div className="stat-value text-error text-2xl sm:text-3xl">{stats.pendingReports}</div>
-											<div className="stat-desc text-xs">{stats.totalReports} total reports</div>
-										</div>
-									</>
-								)}
-							</div>
-
-							{/* Quick Actions */}
-							<div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
-								<h3 className="text-lg sm:text-xl font-semibold mb-4">Quick Actions</h3>
-								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
-									{tabs.slice(1).map((tab) => {
-										const Icon = tab.icon;
-										return (
-											<button
-												key={tab.id}
-												onClick={() => setActiveTab(tab.id)}
-												className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-lg bg-base-200 hover:bg-primary hover:text-primary-content transition-all duration-200 group"
-											>
-												<Icon className="w-6 h-6 sm:w-8 sm:h-8" />
-												<span className="text-xs sm:text-sm font-medium text-center">{tab.label}</span>
-											</button>
-										);
-									})}
-								</div>
-							</div>
+				{/* Statistics Cards */}
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+					{loadingStats ? (
+						<div className="col-span-1 sm:col-span-2 lg:col-span-4 text-center py-8">
+							<span className="loading loading-spinner loading-lg"></span>
 						</div>
-					)}
+					) : stats && (
+						<>
+							<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
+								<div className="stat-figure text-primary hidden sm:block">
+									<Users className="w-6 h-6 sm:w-8 sm:h-8" />
+								</div>
+								<div className="stat-title text-xs sm:text-sm">Total Users</div>
+								<div className="stat-value text-primary text-2xl sm:text-3xl">{stats.totalUsers}</div>
+								<div className="stat-desc text-xs">{stats.recentUsers} new this week</div>
+							</div>
 
-					{/* Users Tab */}
-					{activeTab === "users" && (
-						<div className="bg-base-100 rounded-xl shadow-lg p-3 sm:p-4 lg:p-6">
-							<h2 className="text-lg sm:text-xl lg:text-2xl font-semibold mb-4">User Management</h2>
+							<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
+								<div className="stat-figure text-success hidden sm:block">
+									<UserCheck className="w-6 h-6 sm:w-8 sm:h-8" />
+								</div>
+								<div className="stat-title text-xs sm:text-sm">Online Now</div>
+								<div className="stat-value text-success text-2xl sm:text-3xl">{stats.onlineUsers}</div>
+								<div className="stat-desc text-xs">{stats.verifiedUsers} verified</div>
+							</div>
+
+							<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
+								<div className="stat-figure text-warning hidden sm:block">
+									<Clock className="w-6 h-6 sm:w-8 sm:h-8" />
+								</div>
+								<div className="stat-title text-xs sm:text-sm">Pending Verifications</div>
+								<div className="stat-value text-warning text-2xl sm:text-3xl">{stats.pendingVerifications}</div>
+								<div className="stat-desc text-xs">{stats.approvedVerifications} approved</div>
+							</div>
+
+							<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
+								<div className="stat-figure text-error hidden sm:block">
+									<AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8" />
+								</div>
+								<div className="stat-title text-xs sm:text-sm">Pending Reports</div>
+								<div className="stat-value text-error text-2xl sm:text-3xl">{stats.pendingReports}</div>
+								<div className="stat-desc text-xs">{stats.totalReports} total reports</div>
+							</div>
+						</>
+					)}
+				</div>
+
+				{/* Verification Requests Section */}
+				<section className="mb-6 sm:mb-8">
+					<div className="bg-base-100 rounded-xl shadow-lg p-3 sm:p-4 lg:p-6">
+						<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-4">
+							<h2 className="text-lg sm:text-xl lg:text-2xl font-semibold flex items-center gap-2">
 								<BadgeCheck className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
 								Verification Requests
 							</h2>
@@ -556,169 +467,10 @@ const AdminDashboard = () => {
 					</div>
 				</section>
 
-				{/* AI Moderation Section */}
-				<section className="mb-6 sm:mb-8">
-					<div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl shadow-lg p-4 sm:p-6 border-2 border-purple-500/20">
-						<div className="flex items-center gap-3 mb-4">
-							<div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-								<Shield className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
-							</div>
-							<div>
-								<h2 className="text-xl sm:text-2xl font-semibold">AI Content Moderation</h2>
-								<p className="text-xs sm:text-sm text-base-content/60">Automatically detected violations</p>
-							</div>
-						</div>
-
-						{loadingAIReports ? (
-							<div className="text-center py-8">
-								<span className="loading loading-spinner loading-lg text-purple-500"></span>
-							</div>
-						) : (
-							<>
-								{/* AI Stats Cards */}
-								{aiStats && (
-									<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-										<div className="bg-base-100 rounded-lg p-3 text-center">
-											<div className="text-2xl font-bold text-purple-500">{aiStats.total}</div>
-											<div className="text-xs text-base-content/60">Total AI Reports</div>
-										</div>
-										<div className="bg-base-100 rounded-lg p-3 text-center">
-											<div className="text-2xl font-bold text-warning">{aiStats.pending}</div>
-											<div className="text-xs text-base-content/60">Pending</div>
-										</div>
-										<div className="bg-base-100 rounded-lg p-3 text-center">
-											<div className="text-2xl font-bold text-info">{aiStats.reviewed}</div>
-											<div className="text-xs text-base-content/60">Reviewed</div>
-										</div>
-										<div className="bg-base-100 rounded-lg p-3 text-center">
-											<div className="text-2xl font-bold text-success">{aiStats.actionTaken}</div>
-											<div className="text-xs text-base-content/60">Action Taken</div>
-										</div>
-										<div className="bg-base-100 rounded-lg p-3 text-center">
-											<div className="text-2xl font-bold text-neutral">{aiStats.dismissed}</div>
-											<div className="text-xs text-base-content/60">Dismissed</div>
-										</div>
-										<div className="bg-base-100 rounded-lg p-3 text-center">
-											<div className="text-2xl font-bold text-purple-500">{(aiStats.avgConfidence * 100).toFixed(0)}%</div>
-											<div className="text-xs text-base-content/60">Avg Confidence</div>
-										</div>
-									</div>
-								)}
-
-								{/* AI Reports Table */}
-								{aiReports.length === 0 ? (
-									<div className="text-center text-success py-8">
-										<Shield className="w-12 h-12 mx-auto mb-2 text-success" />
-										<p className="font-semibold">No AI-detected violations!</p>
-										<p className="text-sm text-base-content/60">The system is monitoring content in real-time</p>
-									</div>
-								) : (
-									<div className="overflow-x-auto">
-										<table className="table w-full table-zebra table-sm sm:table-md">
-											<thead>
-												<tr className="text-xs sm:text-sm text-center">
-													<th>Date</th>
-													<th>Reported User</th>
-													<th>AI Category</th>
-													<th>Confidence</th>
-													<th>Screenshot</th>
-													<th>Status</th>
-													<th>Actions</th>
-												</tr>
-											</thead>
-											<tbody>
-												{aiReports.map((report) => (
-													<tr key={report._id} className="text-center text-xs sm:text-sm">
-														<td>{new Date(report.createdAt).toLocaleString()}</td>
-														<td>
-															<div className="flex items-center justify-center gap-2">
-																<img 
-																	src={report.reportedUser?.profilePic || '/avatar.png'} 
-																	alt="" 
-																	className="w-6 h-6 rounded-full"
-																/>
-																<span>{report.reportedUser?.nickname || report.reportedUser?.username || 'N/A'}</span>
-															</div>
-														</td>
-														<td>
-															<span className="badge badge-error badge-sm">
-																{report.aiCategory || 'Unknown'}
-															</span>
-														</td>
-														<td>
-															<div className="flex items-center justify-center gap-1">
-																<div className="w-16 bg-base-300 rounded-full h-2">
-																	<div 
-																		className="bg-purple-500 h-2 rounded-full" 
-																		style={{ width: `${(report.aiConfidence * 100).toFixed(0)}%` }}
-																	></div>
-																</div>
-																<span className="text-xs font-bold">{(report.aiConfidence * 100).toFixed(0)}%</span>
-															</div>
-														</td>
-														<td>
-															<a
-																href={report.screenshot}
-																target="_blank"
-																rel="noopener noreferrer"
-																className="btn btn-ghost btn-xs"
-															>
-																<ExternalLink size={14} /> View
-															</a>
-														</td>
-														<td>
-															<span className={`badge badge-sm ${
-																report.status === 'pending' ? 'badge-warning' :
-																report.status === 'reviewed' ? 'badge-info' :
-																report.status === 'action_taken' ? 'badge-success' :
-																report.status === 'dismissed' ? 'badge-neutral' : ''
-															}`}>
-																{report.status}
-															</span>
-														</td>
-														<td>
-															<div className="flex flex-wrap justify-center gap-1">
-																{report.status === 'pending' && (
-																	<button
-																		onClick={() => handleReportStatus(report._id, 'reviewed')}
-																		className="btn btn-info btn-xs"
-																	>
-																		<Eye size={12} /> Review
-																	</button>
-																)}
-																{report.status === 'reviewed' && (
-																	<>
-																		<button
-																			onClick={() => handleReportStatus(report._id, 'action_taken')}
-																			className="btn btn-success btn-xs"
-																		>
-																			<CheckCircle size={12} /> Action
-																		</button>
-																		<button
-																			onClick={() => handleReportStatus(report._id, 'dismissed')}
-																			className="btn btn-neutral btn-xs"
-																		>
-																			<XCircle size={12} /> Dismiss
-																		</button>
-																	</>
-																)}
-															</div>
-														</td>
-													</tr>
-												))}
-											</tbody>
-										</table>
-									</div>
-								)}
-							</>
-						)}
-					</div>
-				</section>
-
 				{/* Reports Section */}
 				<section>
 					<div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
-						<h2 className="text-xl sm:text-2xl font-semibold mb-4">User-Submitted Reports</h2>
+						<h2 className="text-xl sm:text-2xl font-semibold mb-4">Moderation Reports</h2>
 						{loadingReports ? (
 							<div className="text-center py-8">
 								<span className="loading loading-spinner loading-lg"></span>
@@ -743,20 +495,9 @@ const AdminDashboard = () => {
 										{reports.map((report) => (
 											<tr key={report._id} className="text-center text-xs sm:text-sm">
 												<td>{new Date(report.createdAt).toLocaleString()}</td>
-												<td>
-													{report.isAIDetected ? (
-														<span className="badge badge-purple badge-xs">AI Auto-Report</span>
-													) : (
-														report.reporter?.nickname || report.reporter?.username || 'N/A'
-													)}
-												</td>
+												<td>{report.reporter?.nickname || report.reporter?.username || 'N/A'}</td>
 												<td>{report.reportedUser?.nickname || report.reportedUser?.username || 'N/A'}</td>
-												<td>
-													{report.reason}
-													{report.isAIDetected && (
-														<span className="badge badge-purple badge-xs ml-1">AI</span>
-													)}
-												</td>
+												<td>{report.reason}</td>
 												<td>
 													<a
 														href={report.screenshot}
