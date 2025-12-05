@@ -150,6 +150,47 @@ const App = () => {
 			useFriendStore.getState().fetchFriendData();
 		});
 
+		// Admin notification listeners
+		socket.on("admin-notification", (notification) => {
+			console.log("📬 Received admin notification:", notification);
+			toast(notification.message, {
+				icon: notification.type === 'success' ? '✅' : 
+					  notification.type === 'error' ? '❌' : 
+					  notification.type === 'warning' ? '⚠️' : 'ℹ️',
+				duration: 5000,
+			});
+			// Store notification for Social Hub
+			const { addNotification } = useNotificationStore.getState();
+			addNotification({
+				type: 'admin',
+				title: notification.title,
+				message: notification.message,
+				color: notification.color,
+				notificationType: notification.type,
+				createdAt: notification.createdAt,
+			});
+		});
+
+		socket.on("admin-broadcast", (notification) => {
+			console.log("📢 Received admin broadcast:", notification);
+			toast(notification.message, {
+				icon: notification.type === 'success' ? '✅' : 
+					  notification.type === 'error' ? '❌' : 
+					  notification.type === 'warning' ? '⚠️' : 'ℹ️',
+				duration: 5000,
+			});
+			// Store notification for Social Hub
+			const { addNotification } = useNotificationStore.getState();
+			addNotification({
+				type: 'admin_broadcast',
+				title: notification.title,
+				message: notification.message,
+				color: notification.color,
+				notificationType: notification.type,
+				createdAt: notification.createdAt,
+			});
+		});
+
 		// 4. Verification notifications
 		socket.on("verification-approved", ({ message }) => {
 			toast.success(message || "Your verification request has been approved!");
@@ -220,6 +261,8 @@ const App = () => {
 			socket.off("verification-approved");
 			socket.off("verification-rejected");
 			socket.off("report-status-updated");
+			socket.off("admin-notification");
+			socket.off("admin-broadcast");
 		};
 	// Added addPendingReceived to dependencies
 	}, [socket, authUser, navigate, forceLogout, theme, addPendingReceived]); 

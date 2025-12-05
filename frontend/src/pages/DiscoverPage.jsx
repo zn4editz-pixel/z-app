@@ -1,11 +1,75 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { axiosInstance } from "../lib/axios.js";
-import { Search, Loader2, UserPlus, Users, Bell, UserCheck, CheckCircle, XCircle, BadgeCheck } from "lucide-react";
+import { Search, Loader2, UserPlus, Users, Bell, UserCheck, CheckCircle, XCircle, BadgeCheck, Mail, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import VerifiedBadge from "../components/VerifiedBadge";
 import { useFriendStore } from "../store/useFriendStore";
 import { useAuthStore } from "../store/useAuthStore";
+import { useNotificationStore } from "../store/useNotificationStore";
+
+// Admin Notifications List Component
+const AdminNotificationsList = () => {
+	const { notifications } = useNotificationStore();
+	const [adminNotifications, setAdminNotifications] = useState([]);
+
+	// Filter admin notifications
+	useEffect(() => {
+		const adminNotes = notifications.filter(n => n.type === 'admin' || n.type === 'admin_broadcast');
+		setAdminNotifications(adminNotes);
+	}, [notifications]);
+
+	const getColorClass = (color) => {
+		const colorMap = {
+			green: 'bg-success text-success-content',
+			red: 'bg-error text-error-content',
+			blue: 'bg-info text-info-content',
+			yellow: 'bg-warning text-warning-content',
+			orange: 'bg-orange-500 text-white',
+		};
+		return colorMap[color] || 'bg-info text-info-content';
+	};
+
+	const getIcon = (type) => {
+		const icons = {
+			success: '✅',
+			error: '❌',
+			warning: '⚠️',
+			info: 'ℹ️',
+		};
+		return icons[type] || 'ℹ️';
+	};
+
+	if (adminNotifications.length === 0) return null;
+
+	return (
+		<div className="space-y-3">
+			<div className="flex items-center gap-2 mb-2">
+				<Mail className="w-5 h-5 text-primary" />
+				<h3 className="font-semibold text-base">Admin Messages</h3>
+			</div>
+			{adminNotifications.map((notification, index) => (
+				<div
+					key={index}
+					className={`alert shadow-lg ${getColorClass(notification.color)}`}
+				>
+					<div className="flex-1">
+						<div className="flex items-center gap-2 mb-1">
+							<span className="text-lg">{getIcon(notification.notificationType)}</span>
+							<h4 className="font-bold text-sm sm:text-base">{notification.title}</h4>
+						</div>
+						<p className="text-xs sm:text-sm opacity-90">{notification.message}</p>
+						{notification.createdAt && (
+							<p className="text-xs opacity-70 mt-2">
+								{new Date(notification.createdAt).toLocaleString()}
+							</p>
+						)}
+					</div>
+				</div>
+			))}
+		</div>
+	);
+};
 
 const DiscoverPage = () => {
 	const [activeTab, setActiveTab] = useState("discover"); // discover, requests, notifications
@@ -395,6 +459,9 @@ const DiscoverPage = () => {
 									</div>
 								</div>
 							)}
+
+							{/* Admin Notifications */}
+							<AdminNotificationsList />
 
 							{/* Welcome Message */}
 							{!authUser?.verificationRequest?.status && !authUser?.isSuspended && (
