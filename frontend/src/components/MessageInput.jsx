@@ -158,13 +158,13 @@ const MessageInput = () => {
 
       <form
         onSubmit={handleSendMessage}
-        className="flex items-center gap-2"
+        className="flex items-center gap-1.5 sm:gap-2"
       >
         {/* Text Input Container */}
-        <div className="flex-1 flex items-center gap-1.5 sm:gap-2 bg-base-200 rounded-full px-3 sm:px-4 py-2.5 sm:py-3">
+        <div className="flex-1 flex items-center gap-1 sm:gap-1.5 bg-base-200 rounded-full px-2.5 sm:px-4 py-2 sm:py-2.5">
           <input
             type="text"
-            className="flex-1 bg-transparent outline-none border-none text-sm sm:text-base placeholder:text-base-content/50"
+            className="flex-1 bg-transparent outline-none border-none text-sm sm:text-base placeholder:text-base-content/50 min-w-0"
             placeholder="Type a message..."
             value={text}
             onChange={(e) => handleTyping(e.target.value)}
@@ -173,23 +173,23 @@ const MessageInput = () => {
           {/* Emoji Button */}
           <button
             type="button"
-            className={`p-2 rounded-full hover:bg-base-300 active:scale-95 transition flex-shrink-0
+            className={`p-1.5 sm:p-2 rounded-full hover:bg-base-300 active:scale-95 transition flex-shrink-0
               ${showEmojiPicker ? "text-primary" : "text-base-content/60"}`}
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             title="Add emoji"
           >
-            <Smile className="w-5 h-5" />
+            <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           
           {/* Image Upload Button */}
           <button
             type="button"
-            className={`p-2 rounded-full hover:bg-base-300 active:scale-95 transition flex-shrink-0
+            className={`p-1.5 sm:p-2 rounded-full hover:bg-base-300 active:scale-95 transition flex-shrink-0
               ${imagePreview ? "text-primary" : "text-base-content/60"}`}
             onClick={() => fileInputRef.current?.click()}
             title="Attach image"
           >
-            <Image className="w-5 h-5" />
+            <Image className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           {/* Hidden File Input */}
@@ -211,12 +211,12 @@ const MessageInput = () => {
         {(text.trim() || imagePreview) && (
           <button
             type="submit"
-            className={`btn btn-primary btn-circle flex-shrink-0 shadow-lg transition-all ${
+            className={`btn btn-primary btn-circle btn-sm sm:btn-md flex-shrink-0 shadow-lg transition-all ${
               isSending ? 'scale-90' : 'scale-100 hover:scale-105'
             }`}
             disabled={isSending}
           >
-            <Send className="w-5 h-5" />
+            <Send className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         )}
       </form>
