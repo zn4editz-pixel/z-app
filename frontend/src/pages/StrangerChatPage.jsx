@@ -512,7 +512,8 @@ const StrangerChatPage = () => {
 							</button>
 						)}
 					</div>
-					<div className="w-40 h-auto aspect-video md:w-48 lg:w-56 bg-black rounded-lg overflow-hidden absolute bottom-2 right-2 md:bottom-4 md:right-4 border-2 border-base-100 z-10 shadow-lg">
+					{/* Self Camera - Vertical on Mobile, Horizontal on Desktop */}
+					<div className="w-32 h-48 md:w-48 md:h-auto md:aspect-video lg:w-56 bg-black rounded-lg overflow-hidden absolute bottom-2 right-2 md:bottom-4 md:right-4 border-2 border-base-100 z-10 shadow-lg">
 						<video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
 					</div>
 				</div>
