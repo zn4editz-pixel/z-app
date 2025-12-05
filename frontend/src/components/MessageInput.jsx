@@ -158,10 +158,10 @@ const MessageInput = () => {
 
       <form
         onSubmit={handleSendMessage}
-        className="flex items-center gap-1.5 sm:gap-2"
+        className="flex items-center gap-2"
       >
         {/* Text Input Container */}
-        <div className="flex-1 flex items-center gap-1 sm:gap-1.5 bg-base-200 rounded-full px-2.5 sm:px-4 py-2 sm:py-2.5">
+        <div className="flex-1 flex items-center gap-1 sm:gap-1.5 bg-base-200 rounded-full px-3 sm:px-4 py-2 sm:py-2.5 min-w-0">
           <input
             type="text"
             className="flex-1 bg-transparent outline-none border-none text-sm sm:text-base placeholder:text-base-content/50 min-w-0"
@@ -173,7 +173,7 @@ const MessageInput = () => {
           {/* Emoji Button */}
           <button
             type="button"
-            className={`p-1.5 sm:p-2 rounded-full hover:bg-base-300 active:scale-95 transition flex-shrink-0
+            className={`p-1 sm:p-1.5 rounded-full hover:bg-base-300 active:scale-95 transition flex-shrink-0
               ${showEmojiPicker ? "text-primary" : "text-base-content/60"}`}
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             title="Add emoji"
@@ -184,7 +184,7 @@ const MessageInput = () => {
           {/* Image Upload Button */}
           <button
             type="button"
-            className={`p-1.5 sm:p-2 rounded-full hover:bg-base-300 active:scale-95 transition flex-shrink-0
+            className={`p-1 sm:p-1.5 rounded-full hover:bg-base-300 active:scale-95 transition flex-shrink-0
               ${imagePreview ? "text-primary" : "text-base-content/60"}`}
             onClick={() => fileInputRef.current?.click()}
             title="Attach image"

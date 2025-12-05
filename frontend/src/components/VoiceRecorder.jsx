@@ -191,11 +191,11 @@ const VoiceRecorder = ({ onSendVoice, disabled }) => {
   return (
     <button
       onClick={startRecording}
-      className="btn btn-ghost btn-circle hover:bg-primary/10 hover:text-primary transition-colors flex-shrink-0"
+      className="btn btn-ghost btn-circle btn-sm sm:btn-md hover:bg-primary/10 hover:text-primary transition-colors flex-shrink-0"
       disabled={disabled}
       title="Record voice message"
     >
-      <Mic className="w-5 h-5" />
+      <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
     </button>
   );
 };
