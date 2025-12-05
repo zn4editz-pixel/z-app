@@ -74,6 +74,7 @@ const StrangerChatPage = () => {
 	const navigate = useNavigate();
 
 	const [status, setStatus] = useState("idle");
+	const [permissionsGranted, setPermissionsGranted] = useState(false);
 	const [tempMessages, setTempMessages] = useState([]);
 	const [currentMessage, setCurrentMessage] = useState("");
 	// ✅ FIX: Use null to track the partner's permanent ID
