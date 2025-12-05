@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
 import { useAuthStore } from "../store/useAuthStore";
-import { Send, Lock, Eye, EyeOff, LogOut, Video, Mic, Shield, Info, Check, X } from "lucide-react";
+import { Send, Lock, LogOut, Video, Mic, Shield, Check, X } from "lucide-react";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 
@@ -11,154 +11,6 @@ const PREVIEW_MESSAGES = [
   { id: 1, content: "Hey! How's it going?", isSent: false },
   { id: 2, content: "I'm doing great! Just working on some new features.", isSent: true },
 ];
-
-const ChangePasswordSection = () => {
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error("All fields are required");
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      toast.error("New password must be at least 6 characters");
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      toast.error("New passwords do not match");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await axiosInstance.post("/auth/change-password", {
-        currentPassword,
-        newPassword,
-      });
-      toast.success("Password changed successfully!");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to change password");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-      <form onSubmit={handleChangePassword} className="space-y-4 max-w-2xl">
-        {/* Current Password */}
-        <div>
-          <label className="label">
-            <span className="label-text">Current Password</span>
-          </label>
-          <div className="relative">
-            <input
-              type={showCurrentPassword ? "text" : "password"}
-              className="input input-bordered w-full pr-10"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="Enter current password"
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-            >
-              {showCurrentPassword ? (
-                <EyeOff className="w-5 h-5 text-base-content/60" />
-              ) : (
-                <Eye className="w-5 h-5 text-base-content/60" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* New Password */}
-        <div>
-          <label className="label">
-            <span className="label-text">New Password</span>
-          </label>
-          <div className="relative">
-            <input
-              type={showNewPassword ? "text" : "password"}
-              className="input input-bordered w-full pr-10"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Enter new password (min 6 characters)"
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-              onClick={() => setShowNewPassword(!showNewPassword)}
-            >
-              {showNewPassword ? (
-                <EyeOff className="w-5 h-5 text-base-content/60" />
-              ) : (
-                <Eye className="w-5 h-5 text-base-content/60" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Confirm Password */}
-        <div>
-          <label className="label">
-            <span className="label-text">Confirm New Password</span>
-          </label>
-          <div className="relative">
-            <input
-              type={showConfirmPassword ? "text" : "password"}
-              className="input input-bordered w-full pr-10"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? (
-                <EyeOff className="w-5 h-5 text-base-content/60" />
-              ) : (
-                <Eye className="w-5 h-5 text-base-content/60" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          className="btn btn-primary w-full sm:w-auto shadow-md hover:shadow-lg transition-all"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <span className="loading loading-spinner loading-sm"></span>
-              <span>Updating...</span>
-            </>
-          ) : (
-            <>
-              <Lock className="w-4 h-4" />
-              <span>Change Password</span>
-            </>
-          )}
-        </button>
-      </form>
-  );
-};
 
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
@@ -210,76 +62,65 @@ const SettingsPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
-      <div className="container mx-auto px-3 sm:px-4 lg:px-6 pt-20 sm:pt-24 lg:pt-28 pb-10 sm:pb-16 max-w-6xl">
+      <div className="container mx-auto px-2 xs:px-3 sm:px-4 lg:px-6 pt-16 xs:pt-18 sm:pt-20 md:pt-24 lg:pt-28 pb-6 xs:pb-8 sm:pb-10 md:pb-16 max-w-6xl">
         {/* Page Header */}
-        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex-1">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-base-content">Settings</h1>
-            <p className="text-xs sm:text-sm lg:text-base text-base-content/60 mt-1 sm:mt-1.5 lg:mt-2">Customize your experience</p>
+        <div className="mb-3 sm:mb-4 md:mb-6 flex flex-row items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-base-content truncate">Settings</h1>
+            <p className="text-[10px] sm:text-xs md:text-sm lg:text-base text-base-content/60 mt-0.5 sm:mt-1 truncate">Customize your experience</p>
           </div>
           <Link 
             to="/change-password"
-            className="group relative btn btn-sm sm:btn-md h-9 sm:h-11 gap-2 px-4 sm:px-6 flex-shrink-0 overflow-hidden
-                       bg-gradient-to-r from-primary via-primary to-secondary
-                       hover:from-secondary hover:via-primary hover:to-primary
-                       border-0 shadow-lg hover:shadow-xl
-                       transition-all duration-300 ease-in-out
-                       hover:scale-105 active:scale-95"
+            className="btn btn-outline btn-primary h-6 sm:h-7 md:h-8 
+                       gap-0.5 sm:gap-1 px-1.5 sm:px-2 md:px-3 flex-shrink-0
+                       hover:bg-primary hover:text-primary-content
+                       transition-all duration-200 text-[9px] sm:text-[10px] md:text-xs
+                       min-h-0 border"
           >
-            {/* Animated background shimmer */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
-                          translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-            
-            {/* Icon with animation */}
-            <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 relative z-10 
-                           group-hover:rotate-12 transition-transform duration-300" />
-            
-            {/* Text */}
-            <span className="text-[11px] sm:text-sm font-semibold relative z-10 text-primary-content
-                           tracking-wide">
-              Change Password
+            <Lock className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5" />
+            <span className="font-medium hidden xs:inline">
+              Password
             </span>
-            
-            {/* Pulse effect on hover */}
-            <div className="absolute inset-0 rounded-lg bg-white/10 opacity-0 
-                          group-hover:opacity-100 group-hover:animate-pulse"></div>
+            <span className="font-medium xs:hidden">
+              Pass
+            </span>
           </Link>
         </div>
 
         {/* Settings Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5 xs:gap-3 sm:gap-4 md:gap-6">
           
           {/* Theme Section */}
-          <div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 border border-base-300">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary to-secondary"></div>
+          <div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg p-2.5 xs:p-3 sm:p-4 md:p-6 border border-base-300">
+            <div className="flex items-center gap-2 xs:gap-2.5 sm:gap-3 mb-2.5 xs:mb-3 sm:mb-4">
+              <div className="w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5 rounded-full bg-gradient-to-br from-primary to-secondary"></div>
               </div>
-              <div>
-                <h2 className="text-lg font-semibold">Theme</h2>
-                <p className="text-xs text-base-content/60">Choose your style</p>
+              <div className="min-w-0">
+                <h2 className="text-sm xs:text-base sm:text-lg font-semibold truncate">Theme</h2>
+                <p className="text-[10px] xs:text-[11px] sm:text-xs text-base-content/60 truncate">Choose your style</p>
               </div>
             </div>
             
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent pr-1">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 xs:gap-2 sm:gap-3 max-h-[250px] xs:max-h-[280px] sm:max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent pr-0.5 xs:pr-1">
               {THEMES.map((t) => (
                 <button
                   key={t}
                   className={`
-                    group flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all
-                    ${theme === t ? "bg-primary/10 ring-2 ring-primary shadow-md" : "hover:bg-base-200 hover:shadow-sm"}
+                    group flex flex-col items-center gap-1 xs:gap-1.5 p-1.5 xs:p-2 rounded-md xs:rounded-lg transition-all
+                    ${theme === t ? "bg-primary/10 ring-1 xs:ring-2 ring-primary shadow-md" : "hover:bg-base-200 hover:shadow-sm"}
                   `}
                   onClick={() => setTheme(t)}
                 >
-                  <div className="relative h-8 w-full rounded-md overflow-hidden shadow-sm" data-theme={t}>
-                    <div className="absolute inset-0 grid grid-cols-4 gap-px p-1">
+                  <div className="relative h-6 xs:h-7 sm:h-8 w-full rounded-sm xs:rounded-md overflow-hidden shadow-sm" data-theme={t}>
+                    <div className="absolute inset-0 grid grid-cols-4 gap-px p-0.5 xs:p-1">
                       <div className="rounded bg-primary"></div>
                       <div className="rounded bg-secondary"></div>
                       <div className="rounded bg-accent"></div>
                       <div className="rounded bg-neutral"></div>
                     </div>
                   </div>
-                  <span className={`text-[10px] sm:text-[11px] font-medium truncate w-full text-center ${theme === t ? 'text-primary' : ''}`}>
+                  <span className={`text-[9px] xs:text-[10px] sm:text-[11px] font-medium truncate w-full text-center ${theme === t ? 'text-primary' : ''}`}>
                     {t.charAt(0).toUpperCase() + t.slice(1)}
                   </span>
                 </button>
@@ -288,10 +129,10 @@ const SettingsPage = () => {
           </div>
 
           {/* Permissions Section */}
-          <div className="bg-base-100 rounded-xl shadow-lg p-3 sm:p-4 border border-base-300">
-            <div className="flex items-center gap-2 mb-2">
-              <Shield className="w-4 h-4 text-primary" />
-              <h2 className="text-sm font-semibold">Permissions</h2>
+          <div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg p-2.5 xs:p-3 sm:p-4 border border-base-300">
+            <div className="flex items-center gap-1.5 xs:gap-2 mb-2">
+              <Shield className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-primary flex-shrink-0" />
+              <h2 className="text-xs xs:text-sm font-semibold truncate">Permissions</h2>
             </div>
             
             <div className="space-y-1.5">
@@ -385,61 +226,61 @@ const SettingsPage = () => {
           </div>
 
           {/* Logout Section */}
-          <div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 border border-base-300">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center">
-                <LogOut className="w-5 h-5 text-error" />
+          <div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg p-2.5 xs:p-3 sm:p-4 md:p-6 border border-base-300">
+            <div className="flex items-center gap-2 xs:gap-2.5 sm:gap-3 mb-2.5 xs:mb-3 sm:mb-4">
+              <div className="w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-lg bg-error/10 flex items-center justify-center flex-shrink-0">
+                <LogOut className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5 text-error" />
               </div>
-              <div>
-                <h2 className="text-lg font-semibold">Logout</h2>
-                <p className="text-xs text-base-content/60">Sign out of your account</p>
+              <div className="min-w-0">
+                <h2 className="text-sm xs:text-base sm:text-lg font-semibold truncate">Logout</h2>
+                <p className="text-[10px] xs:text-[11px] sm:text-xs text-base-content/60 truncate">Sign out of your account</p>
               </div>
             </div>
             
-            <p className="text-sm text-base-content/70 mb-4">
+            <p className="text-[11px] xs:text-xs sm:text-sm text-base-content/70 mb-2.5 xs:mb-3 sm:mb-4 line-clamp-2">
               You will be signed out from this device. You can always sign back in with your credentials.
             </p>
             
             <button
               onClick={handleLogout}
-              className="btn btn-error w-full gap-2 shadow-md hover:shadow-lg transition-all"
+              className="btn btn-error btn-xs xs:btn-sm sm:btn-md w-full gap-1.5 xs:gap-2 shadow-md hover:shadow-lg transition-all h-8 xs:h-9 sm:h-auto"
             >
-              <LogOut className="w-4 h-4" />
-              Logout from Account
+              <LogOut className="w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4" />
+              <span className="text-[11px] xs:text-xs sm:text-sm">Logout from Account</span>
             </button>
           </div>
 
           {/* Preview Section - Full Width */}
-          <div className="lg:col-span-2 bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 border border-base-300">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
-                <Send className="w-5 h-5 text-info" />
+          <div className="lg:col-span-2 bg-base-100 rounded-lg sm:rounded-xl shadow-lg p-2.5 xs:p-3 sm:p-4 md:p-6 border border-base-300">
+            <div className="flex items-center gap-2 xs:gap-2.5 sm:gap-3 mb-2.5 xs:mb-3 sm:mb-4">
+              <div className="w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-lg bg-info/10 flex items-center justify-center flex-shrink-0">
+                <Send className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5 text-info" />
               </div>
-              <div>
-                <h2 className="text-lg font-semibold">Theme Preview</h2>
-                <p className="text-xs text-base-content/60">See how your theme looks</p>
+              <div className="min-w-0">
+                <h2 className="text-sm xs:text-base sm:text-lg font-semibold truncate">Theme Preview</h2>
+                <p className="text-[10px] xs:text-[11px] sm:text-xs text-base-content/60 truncate">See how your theme looks</p>
               </div>
             </div>
-            <div className="rounded-lg sm:rounded-xl border border-base-300 overflow-hidden bg-base-100 shadow-lg">
-              <div className="p-3 sm:p-4 bg-base-200">
+            <div className="rounded-md xs:rounded-lg sm:rounded-xl border border-base-300 overflow-hidden bg-base-100 shadow-lg">
+              <div className="p-2 xs:p-2.5 sm:p-3 md:p-4 bg-base-200">
                 <div className="max-w-lg mx-auto">
                   {/* Mock Chat UI */}
-                  <div className="bg-base-100 rounded-xl shadow-sm overflow-hidden">
+                  <div className="bg-base-100 rounded-lg xs:rounded-xl shadow-sm overflow-hidden">
                     {/* Chat Header */}
-                    <div className="px-4 py-3 border-b border-base-300 bg-base-100">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-content font-medium">
+                    <div className="px-2.5 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 border-b border-base-300 bg-base-100">
+                      <div className="flex items-center gap-2 xs:gap-2.5 sm:gap-3">
+                        <div className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 rounded-full bg-primary flex items-center justify-center text-primary-content font-medium text-xs xs:text-sm flex-shrink-0">
                           J
                         </div>
-                        <div>
-                          <h3 className="font-medium text-sm">Username</h3>
-                          <p className="text-xs text-base-content/70">Online</p>
+                        <div className="min-w-0">
+                          <h3 className="font-medium text-xs xs:text-sm truncate">Username</h3>
+                          <p className="text-[10px] xs:text-[11px] sm:text-xs text-base-content/70 truncate">Online</p>
                         </div>
                       </div>
                     </div>
 
                     {/* Chat Messages */}
-                    <div className="p-4 space-y-4 min-h-[200px] max-h-[200px] overflow-y-auto bg-base-100">
+                    <div className="p-2.5 xs:p-3 sm:p-4 space-y-2.5 xs:space-y-3 sm:space-y-4 min-h-[150px] xs:min-h-[180px] sm:min-h-[200px] max-h-[150px] xs:max-h-[180px] sm:max-h-[200px] overflow-y-auto bg-base-100">
                       {PREVIEW_MESSAGES.map((message) => (
                         <div
                           key={message.id}
@@ -447,14 +288,14 @@ const SettingsPage = () => {
                         >
                           <div
                             className={`
-                              max-w-[80%] rounded-xl p-3 shadow-sm
+                              max-w-[85%] xs:max-w-[80%] rounded-lg xs:rounded-xl p-2 xs:p-2.5 sm:p-3 shadow-sm
                               ${message.isSent ? "bg-primary text-primary-content" : "bg-base-200"}
                             `}
                           >
-                            <p className="text-sm">{message.content}</p>
+                            <p className="text-[11px] xs:text-xs sm:text-sm leading-snug">{message.content}</p>
                             <p
                               className={`
-                                text-[10px] mt-1.5
+                                text-[9px] xs:text-[10px] mt-1 xs:mt-1.5
                                 ${message.isSent ? "text-primary-content/70" : "text-base-content/70"}
                               `}
                             >
@@ -466,17 +307,19 @@ const SettingsPage = () => {
                     </div>
 
                     {/* Chat Input */}
-                    <div className="p-4 border-t border-base-300 bg-base-100">
-                      <div className="flex gap-2">
+                    <div className="p-2 xs:p-2.5 sm:p-3 md:p-4 border-t border-base-300 bg-base-100">
+                      <div className="flex gap-1.5 xs:gap-2">
                         <input
                           type="text"
-                          className="input input-bordered flex-1 text-sm h-10"
+                          className="input input-bordered input-xs xs:input-sm sm:input-md flex-1 text-[11px] xs:text-xs sm:text-sm h-7 xs:h-8 sm:h-10"
                           placeholder="Type a message..."
                           value="This is a preview"
                           readOnly
                         />
-                        <button className="btn btn-primary h-10 min-h-0">
-                          <Send size={18} />
+                        <button className="btn btn-primary btn-xs xs:btn-sm sm:btn-md h-7 xs:h-8 sm:h-10 min-h-0 px-2 xs:px-3">
+                          <Send size={14} className="xs:hidden" />
+                          <Send size={16} className="hidden xs:block sm:hidden" />
+                          <Send size={18} className="hidden sm:block" />
                         </button>
                       </div>
                     </div>
