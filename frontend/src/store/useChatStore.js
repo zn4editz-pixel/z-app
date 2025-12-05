@@ -204,7 +204,9 @@ export const useChatStore = create((set, get) => ({
         try {
             await axiosInstance.delete(`/messages/message/${messageId}`);
             const { messages } = get();
-            const updatedMessages = messages.filter(msg => msg._id !== messageId);
+            const updatedMessages = messages.map(msg => 
+                msg._id === messageId ? { ...msg, isDeleted: true, deletedAt: new Date() } : msg
+            );
             set({ messages: updatedMessages });
             toast.success("Message deleted");
         } catch (error) {
@@ -224,9 +226,11 @@ export const useChatStore = create((set, get) => ({
             set({ messages: updatedMessages });
         };
 
-        const deleteHandler = ({ messageId }) => {
+        const deleteHandler = ({ messageId, isDeleted, deletedAt }) => {
             const { messages } = get();
-            const updatedMessages = messages.filter(msg => msg._id !== messageId);
+            const updatedMessages = messages.map(msg => 
+                msg._id === messageId ? { ...msg, isDeleted, deletedAt } : msg
+            );
             set({ messages: updatedMessages });
         };
 

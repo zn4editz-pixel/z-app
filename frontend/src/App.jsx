@@ -265,7 +265,8 @@ const App = () => {
 			{/* Navbar */}
 			{hasCompletedProfile && window.location.pathname !== "/stranger" && <Navbar />}
 
-			<Routes>
+			<div className="page-fade">
+				<Routes>
 				{/* --- Auth Routes --- */}
 				<Route
 					path="/signup"
@@ -394,7 +395,8 @@ const App = () => {
 				<Route path="/suspended" element={<SuspendedPage />} />
 				<Route path="/goodbye" element={<GoodbyePage />} />
 				<Route path="/blocked" element={<GoodbyePage />} />
-			</Routes>
+				</Routes>
+			</div>
 
 			<Toaster position="top-center" />
 		</div>

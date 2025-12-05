@@ -35,7 +35,7 @@ const Navbar = () => {
 						{authUser && (
 							<Link
 								to="/discover"
-								className="btn btn-ghost btn-sm btn-circle relative w-9 h-9 min-h-0 sm:w-11 sm:h-11"
+								className="btn btn-ghost btn-sm btn-circle relative w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch"
 								title="Social Hub"
 							>
 								<Users className="w-[18px] h-[18px] sm:w-5 sm:h-5" />
@@ -51,7 +51,7 @@ const Navbar = () => {
 						{isAdmin && (
 							<Link
 								to="/admin"
-								className="btn btn-ghost btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11"
+								className="btn btn-ghost btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch"
 								title="Admin Dashboard"
 							>
 								<LayoutDashboard className="w-[18px] h-[18px] sm:w-5 sm:h-5" />
@@ -61,7 +61,7 @@ const Navbar = () => {
 						{/* Settings */}
 						<Link
 							to="/settings"
-							className="btn btn-ghost btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11"
+							className="btn btn-ghost btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch"
 							title="Settings"
 						>
 							<Settings className="w-[18px] h-[18px] sm:w-5 sm:h-5" />
@@ -71,7 +71,7 @@ const Navbar = () => {
 						{authUser && (
 							<Link
 								to="/profile"
-								className="btn btn-ghost btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11"
+								className="btn btn-ghost btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch"
 								title="Profile"
 							>
 								<User className="w-[18px] h-[18px] sm:w-5 sm:h-5" />

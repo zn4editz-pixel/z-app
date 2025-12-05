@@ -405,3 +405,171 @@ html {
 .animate-orbit {
   animation: orbit 1.5s linear infinite;
 }
+
+/* ===== TOUCH FEEDBACK ANIMATIONS ===== */
+
+/* Active Touch Feedback */
+.touch-feedback {
+  position: relative;
+  transition: transform 0.1s ease, opacity 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-feedback:active {
+  transform: scale(0.96);
+  opacity: 0.8;
+}
+
+/* Button Touch Feedback */
+.btn-touch {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-touch:active {
+  transform: scale(0.95);
+  filter: brightness(0.9);
+}
+
+/* Card Touch Feedback */
+.card-touch {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.card-touch:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Icon Touch Feedback */
+.icon-touch {
+  transition: transform 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icon-touch:active {
+  transform: scale(0.9);
+}
+
+/* Ripple Touch Effect */
+@keyframes ripple-touch {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.ripple-touch {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-touch::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+}
+
+.ripple-touch:active::before {
+  animation: ripple-touch 0.6s ease-out;
+}
+
+/* Page Transition Fade */
+@keyframes page-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-fade {
+  animation: page-fade 0.3s ease-out;
+}
+
+/* Smooth Scale Transition */
+.scale-smooth {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.scale-smooth:hover {
+  transform: scale(1.05);
+}
+
+.scale-smooth:active {
+  transform: scale(0.95);
+}
+
+/* Avatar Ring Animation */
+@keyframes ring-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0);
+  }
+}
+
+.avatar-ring-pulse {
+  animation: ring-pulse 2s ease-in-out infinite;
+}
+
+/* Smooth Background Transition */
+.bg-smooth {
+  transition: background-color 0.3s ease;
+}
+
+/* Fade Slide Up */
+@keyframes fade-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-slide-up {
+  animation: fade-slide-up 0.4s ease-out;
+}
+
+/* Smooth Border Radius Transition */
+.rounded-smooth {
+  transition: border-radius 0.3s ease;
+}
+
+/* Glow on Hover */
+.glow-hover {
+  transition: box-shadow 0.3s ease;
+}
+
+.glow-hover:hover {
+  box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.4);
+}
+
+/* Smooth Width Transition */
+.width-smooth {
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth Height Transition */
+.height-smooth {
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

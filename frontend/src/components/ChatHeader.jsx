@@ -37,13 +37,13 @@ const ChatHeader = ({ onStartCall }) => {
 				{/* Avatar */}
 				<button
 					onClick={handleViewProfile}
-					className="avatar cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+					className="flex-shrink-0 touch-feedback"
 				>
-					<div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full ring-2 ring-base-300">
+					<div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full ring-2 ring-base-300 overflow-hidden">
 						<img
 							src={selectedUser.profilePic || "/avatar.png"}
 							alt={selectedUser.nickname || selectedUser.username}
-							className="object-cover"
+							className="w-full h-full object-cover"
 						/>
 					</div>
 				</button>
@@ -76,7 +76,7 @@ const ChatHeader = ({ onStartCall }) => {
 			<div className="flex items-center gap-2 sm:gap-3">
 				{/* Audio Call */}
 				<button
-					className="btn btn-ghost btn-circle btn-sm sm:btn-md"
+					className="btn btn-ghost btn-circle btn-sm sm:btn-md btn-touch"
 					onClick={() => handleStartCall('audio')}
 					title="Audio call"
 				>
@@ -85,7 +85,7 @@ const ChatHeader = ({ onStartCall }) => {
 
 				{/* Video Call */}
 				<button
-					className="btn btn-ghost btn-circle btn-sm sm:btn-md"
+					className="btn btn-ghost btn-circle btn-sm sm:btn-md btn-touch"
 					onClick={() => handleStartCall('video')}
 					title="Video call"
 				>

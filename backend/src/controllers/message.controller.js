@@ -326,23 +326,26 @@ export const deleteMessage = async (req, res) => {
       return res.status(403).json({ error: "You can only delete your own messages" });
     }
 
+    // Mark as deleted instead of removing
+    message.isDeleted = true;
+    message.deletedAt = new Date();
+    await message.save();
+
     // Delete images/voice from cloudinary if exists
     if (message.image) {
       const publicId = message.image.split('/').pop().split('.')[0];
-      await cloudinary.uploader.destroy(`chat_images/${publicId}`);
+      await cloudinary.uploader.destroy(`chat_images/${publicId}`).catch(err => console.log("Cloudinary delete error:", err));
     }
     if (message.voice) {
       const publicId = message.voice.split('/').pop().split('.')[0];
-      await cloudinary.uploader.destroy(`chat_voices/${publicId}`, { resource_type: 'video' });
+      await cloudinary.uploader.destroy(`chat_voices/${publicId}`, { resource_type: 'video' }).catch(err => console.log("Cloudinary delete error:", err));
     }
-
-    await Message.findByIdAndDelete(messageId);
 
     // Notify both users
     const receiverSocketId = getReceiverSocketId(message.receiverId);
     const senderSocketId = getReceiverSocketId(message.senderId);
     
-    const deleteData = { messageId, deletedBy: userId };
+    const deleteData = { messageId, deletedBy: userId, isDeleted: true, deletedAt: message.deletedAt };
 
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("messageDeleted", deleteData);

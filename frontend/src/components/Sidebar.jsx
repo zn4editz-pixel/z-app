@@ -152,7 +152,7 @@ const Sidebar = () => {
                         setSelectedUser(user);
                         if (searchOpen) setSearchOpen(false); 
                       }}
-                      className={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg text-left transition-all hover:bg-base-200 active:bg-base-300 ${
+                      className={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg text-left transition-all hover:bg-base-200 card-touch ${
                         selectedUser?._id === user._id ? "bg-base-200 ring-2 ring-primary/20" : ""
                       }`}
                     >
@@ -166,7 +166,7 @@ const Sidebar = () => {
                           />
                         </div>
                         {isOnline && (
-                          <span className="absolute right-0 bottom-0 w-3 h-3 rounded-full ring-2 ring-base-100 bg-success" /> 
+                          <span className="absolute right-0 bottom-0 w-3 h-3 rounded-full ring-2 ring-base-100 bg-success animate-pulse" /> 
                         )}
                       </div>
 

@@ -152,6 +152,36 @@ const ChatMessage = ({ message }) => {
   const isEmojiOnly = message.text && /^[\p{Emoji}\s]+$/u.test(message.text) && !message.image && !message.voice;
   const emojiCount = message.text ? (message.text.match(/\p{Emoji}/gu) || []).length : 0;
 
+  // If message is deleted, show placeholder
+  if (message.isDeleted) {
+    return (
+      <div className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-4`}>
+        <div className="flex items-end max-w-[85%] sm:max-w-[75%] gap-2">
+          {!isMyMessage && (
+            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0 opacity-50">
+              <img
+                src={selectedUser?.profilePic || "/avatar.png"}
+                alt="avatar"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          <div className="relative px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-2xl bg-base-200/50 border border-base-300/50">
+            <div className="flex items-center gap-2 text-base-content/50 italic">
+              <Trash2 className="w-3 h-3" />
+              <span>Message deleted</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 mt-1 px-1">
+          <span className="text-[10px] sm:text-[11px] text-base-content/50">
+            {formatMessageTime(message.createdAt)}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-4`}>
       <div className="flex items-end max-w-[85%] sm:max-w-[75%] gap-2">
@@ -287,19 +317,41 @@ const ChatMessage = ({ message }) => {
             </div>
           )}
 
-          {/* Delete Option */}
+          {/* Delete Modal with Blur Background */}
           {showDeleteOption && (
             <div
-              className="absolute right-0 -top-12 bg-error text-error-content rounded-lg px-4 py-2 shadow-lg z-50 animate-in fade-in zoom-in duration-200"
-              onClick={(e) => e.stopPropagation()}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+              onClick={() => setShowDeleteOption(false)}
             >
-              <button
-                onClick={handleDelete}
-                className="flex items-center gap-2 font-medium"
+              <div
+                className="bg-base-100 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in duration-200"
+                onClick={(e) => e.stopPropagation()}
               >
-                <Trash2 className="w-4 h-4" />
-                Delete Message
-              </button>
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Trash2 className="w-8 h-8 text-error" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Delete Message?</h3>
+                  <p className="text-sm text-base-content/60">
+                    This message will be deleted for everyone. This action cannot be undone.
+                  </p>
+                </div>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeleteOption(false)}
+                    className="flex-1 btn btn-ghost"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="flex-1 btn btn-error"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
