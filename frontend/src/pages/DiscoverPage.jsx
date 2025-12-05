@@ -244,7 +244,7 @@ const DiscoverPage = () => {
 	const isLoading = searchQuery.trim() ? isLoadingSearch : isLoadingSuggested;
 
 	return (
-		<div className="min-h-screen pt-16 sm:pt-20 pb-20 sm:pb-10 px-2 sm:px-4 bg-base-200">
+		<div className="min-h-screen pt-14 xs:pt-16 sm:pt-18 md:pt-20 pb-16 xs:pb-18 sm:pb-20 md:pb-10 px-2 xs:px-3 sm:px-4 bg-base-200">
 			<div className="max-w-4xl mx-auto">
 				{/* Header */}
 				<div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
@@ -258,31 +258,40 @@ const DiscoverPage = () => {
 				</div>
 
 				{/* Tabs */}
-				<div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg mb-4 sm:mb-6">
-					<div className="flex border-b border-base-300">
+				<div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg mb-4 sm:mb-6 overflow-hidden">
+					<div className="flex border-b border-base-300 relative">
+						{/* Animated underline */}
+						<div 
+							className="absolute bottom-0 h-0.5 bg-primary transition-all duration-300 ease-out"
+							style={{
+								width: '33.333%',
+								transform: `translateX(${activeTab === 'discover' ? '0%' : activeTab === 'requests' ? '100%' : '200%'})`
+							}}
+						/>
+						
 						<button
 							onClick={() => setActiveTab("discover")}
-							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-colors text-xs sm:text-base ${
+							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-all duration-300 text-xs sm:text-base relative ${
 								activeTab === "discover"
-									? "text-primary border-b-2 border-primary"
-									: "text-base-content/60 hover:text-base-content"
+									? "text-primary scale-105"
+									: "text-base-content/60 hover:text-base-content hover:bg-base-200/50"
 							}`}
 						>
-							<Search className="w-4 h-4 sm:w-5 sm:h-5" />
+							<Search className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ${activeTab === "discover" ? "scale-110" : ""}`} />
 							<span>Discover</span>
 						</button>
 						<button
 							onClick={() => setActiveTab("requests")}
-							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-colors relative text-xs sm:text-base ${
+							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-all duration-300 relative text-xs sm:text-base ${
 								activeTab === "requests"
-									? "text-primary border-b-2 border-primary"
-									: "text-base-content/60 hover:text-base-content"
+									? "text-primary scale-105"
+									: "text-base-content/60 hover:text-base-content hover:bg-base-200/50"
 							}`}
 						>
-							<UserCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+							<UserCheck className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ${activeTab === "requests" ? "scale-110" : ""}`} />
 							<span>Requests</span>
 							{pendingReceived.length > 0 && (
-								<span className="absolute top-1 right-1 sm:relative sm:top-0 sm:right-0 badge badge-error badge-xs sm:badge-sm">
+								<span className="absolute top-1 right-1 sm:relative sm:top-0 sm:right-0 badge badge-error badge-xs sm:badge-sm animate-pulse">
 									{pendingReceived.length}
 								</span>
 							)}
@@ -292,16 +301,16 @@ const DiscoverPage = () => {
 								setActiveTab("notifications");
 								clearBadge(); // Clear badge when opening notifications
 							}}
-							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-colors relative text-xs sm:text-base ${
+							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-all duration-300 relative text-xs sm:text-base ${
 								activeTab === "notifications"
-									? "text-primary border-b-2 border-primary"
-									: "text-base-content/60 hover:text-base-content"
+									? "text-primary scale-105"
+									: "text-base-content/60 hover:text-base-content hover:bg-base-200/50"
 							}`}
 						>
-							<Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+							<Bell className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ${activeTab === "notifications" ? "scale-110" : ""}`} />
 							<span>Notifications</span>
 							{notificationCount > 0 && (
-								<span className="absolute top-1 right-1 sm:relative sm:top-0 sm:right-0 badge badge-error badge-xs sm:badge-sm">
+								<span className="absolute top-1 right-1 sm:relative sm:top-0 sm:right-0 badge badge-error badge-xs sm:badge-sm animate-pulse">
 									{notificationCount > 9 ? "9+" : notificationCount}
 								</span>
 							)}
@@ -309,9 +318,9 @@ const DiscoverPage = () => {
 					</div>
 				</div>
 
-				{/* Tab Content */}
+				{/* Tab Content with fade-in animation */}
 				{activeTab === "discover" && (
-					<>
+					<div className="animate-fade-in">
 						{/* Search Bar */}
 						<div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg p-3 sm:p-6 mb-4 sm:mb-6">
 							<div className="relative">
@@ -389,7 +398,7 @@ const DiscoverPage = () => {
 														<div className="flex gap-2">
 															<Link
 																to={`/profile/${user.username}`}
-																className="btn btn-primary btn-xs sm:btn-sm flex-1"
+																className="btn btn-primary btn-xs sm:btn-sm flex-1 hover:scale-105 active:scale-95 transition-transform duration-200"
 															>
 																<UserPlus className="w-3 h-3 sm:w-4 sm:h-4" />
 																<span className="text-xs sm:text-sm">View Profile</span>
@@ -403,10 +412,11 @@ const DiscoverPage = () => {
 								</div>
 							)}
 						</div>
-					</>
+					</div>
 				)}
 
 				{activeTab === "requests" && (
+					<div className="animate-fade-in">
 					<div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg p-3 sm:p-6">
 						<h2 className="text-base sm:text-xl font-semibold mb-3 sm:mb-4">Friend Requests</h2>
 						
@@ -420,7 +430,7 @@ const DiscoverPage = () => {
 								{pendingReceived.map((user) => (
 									<div
 										key={user._id}
-										className="card bg-base-200 border border-base-300"
+										className="card bg-base-200 border border-base-300 hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
 									>
 										<div className="card-body p-3 sm:p-4">
 											<div className="flex items-center gap-3 sm:gap-4">
@@ -453,7 +463,7 @@ const DiscoverPage = () => {
 													<button
 														onClick={() => handleAccept(user._id)}
 														disabled={loadingRequestId === user._id}
-														className="btn btn-success btn-xs sm:btn-sm"
+														className="btn btn-success btn-xs sm:btn-sm hover:scale-105 active:scale-95 transition-transform duration-200"
 													>
 														{loadingRequestId === user._id ? (
 															<Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
@@ -467,7 +477,7 @@ const DiscoverPage = () => {
 													<button
 														onClick={() => handleReject(user._id)}
 														disabled={loadingRequestId === user._id}
-														className="btn btn-ghost btn-xs sm:btn-sm"
+														className="btn btn-ghost btn-xs sm:btn-sm hover:scale-105 active:scale-95 transition-transform duration-200"
 													>
 														{loadingRequestId === user._id ? (
 															<Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
@@ -486,9 +496,11 @@ const DiscoverPage = () => {
 							</div>
 						)}
 					</div>
+					</div>
 				)}
 
 				{activeTab === "notifications" && (
+					<div className="animate-fade-in">
 					<div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg p-3 sm:p-6">
 						<h2 className="text-base sm:text-xl font-semibold mb-3 sm:mb-4">Notifications</h2>
 						
@@ -577,6 +589,7 @@ const DiscoverPage = () => {
 								</div>
 							)}
 						</div>
+					</div>
 					</div>
 				)}
 			</div>

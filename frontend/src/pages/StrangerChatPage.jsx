@@ -566,7 +566,7 @@ const StrangerChatPage = () => {
 	};
 
 	return (
-		<div className="h-screen pt-14 flex flex-col bg-gradient-to-br from-base-300 via-base-200 to-base-300">
+		<div className="h-screen pt-12 xs:pt-14 sm:pt-16 flex flex-col bg-gradient-to-br from-base-300 via-base-200 to-base-300">
 			<div className="flex-1 flex flex-col md:flex-row gap-3 p-3 md:p-4 overflow-hidden">
 				{/* Video Section - Optimized for Remote Video Visibility */}
 				<div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-b from-black to-gray-900 rounded-xl md:rounded-2xl shadow-2xl border border-base-content/10">

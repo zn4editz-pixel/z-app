@@ -141,7 +141,7 @@ const PublicProfilePage = () => {
 
 	return (
 		<div className="min-h-screen bg-base-200">
-			<div className="max-w-md mx-auto px-3 sm:px-4 pt-16 sm:pt-20 pb-10">
+			<div className="max-w-md mx-auto px-2 xs:px-3 sm:px-4 pt-14 xs:pt-16 sm:pt-18 md:pt-20 pb-16 xs:pb-18 sm:pb-20 md:pb-10">
 				<div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6">
 					<div className="flex flex-col items-center gap-3 sm:gap-4">
 						{/* Avatar */}
