@@ -2,7 +2,7 @@ import { useState } from "react";
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
 import { useAuthStore } from "../store/useAuthStore";
-import { Send, Lock, Eye, EyeOff, LogOut, Video, Mic, Shield, Info } from "lucide-react";
+import { Send, Lock, Eye, EyeOff, LogOut, Video, Mic, Shield, Info, Check, X } from "lucide-react";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 
@@ -162,6 +162,44 @@ const ChangePasswordSection = () => {
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
   const { logout } = useAuthStore();
+  const [cameraStatus, setCameraStatus] = useState('not-tested');
+  const [micStatus, setMicStatus] = useState('not-tested');
+
+  const testCameraPermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(track => track.stop());
+      setCameraStatus('granted');
+      toast.success('Camera access granted!');
+    } catch (error) {
+      setCameraStatus('denied');
+      toast.error('Camera access denied. Check browser settings.');
+    }
+  };
+
+  const testMicPermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      setMicStatus('granted');
+      toast.success('Microphone access granted!');
+    } catch (error) {
+      setMicStatus('denied');
+      toast.error('Microphone access denied. Check browser settings.');
+    }
+  };
+
+  const testBothPermissions = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      setCameraStatus('granted');
+      setMicStatus('granted');
+      toast.success('Camera and microphone access granted!');
+    } catch (error) {
+      toast.error('Permission denied. Check browser settings.');
+    }
+  };
 
   const handleLogout = () => {
     if (confirm("Are you sure you want to logout?")) {
@@ -232,31 +270,82 @@ const SettingsPage = () => {
             </div>
             
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-3 bg-base-200 rounded-lg">
-                <Video className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <div className="font-medium text-sm">Camera</div>
-                  <div className="text-xs text-base-content/60 mt-1">
-                    Required for video calls. Permission will be requested when you start a video call.
+              {/* Camera Permission */}
+              <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Video className="w-5 h-5 text-primary flex-shrink-0" />
+                  <div>
+                    <div className="font-medium text-sm">Camera</div>
+                    <div className="text-xs text-base-content/60 mt-0.5">
+                      Required for video calls
+                    </div>
                   </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {cameraStatus === 'granted' && (
+                    <span className="flex items-center gap-1 text-xs text-success">
+                      <Check className="w-3 h-3" /> Granted
+                    </span>
+                  )}
+                  {cameraStatus === 'denied' && (
+                    <span className="flex items-center gap-1 text-xs text-error">
+                      <X className="w-3 h-3" /> Denied
+                    </span>
+                  )}
+                  <button
+                    onClick={testCameraPermission}
+                    className="btn btn-primary btn-xs"
+                  >
+                    Test
+                  </button>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 bg-base-200 rounded-lg">
-                <Mic className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <div className="font-medium text-sm">Microphone</div>
-                  <div className="text-xs text-base-content/60 mt-1">
-                    Required for voice/video calls. Permission will be requested when you start a call.
+              {/* Microphone Permission */}
+              <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Mic className="w-5 h-5 text-primary flex-shrink-0" />
+                  <div>
+                    <div className="font-medium text-sm">Microphone</div>
+                    <div className="text-xs text-base-content/60 mt-0.5">
+                      Required for voice/video calls
+                    </div>
                   </div>
                 </div>
+                <div className="flex items-center gap-2">
+                  {micStatus === 'granted' && (
+                    <span className="flex items-center gap-1 text-xs text-success">
+                      <Check className="w-3 h-3" /> Granted
+                    </span>
+                  )}
+                  {micStatus === 'denied' && (
+                    <span className="flex items-center gap-1 text-xs text-error">
+                      <X className="w-3 h-3" /> Denied
+                    </span>
+                  )}
+                  <button
+                    onClick={testMicPermission}
+                    className="btn btn-primary btn-xs"
+                  >
+                    Test
+                  </button>
+                </div>
               </div>
+
+              {/* Test Both Button */}
+              <button
+                onClick={testBothPermissions}
+                className="w-full btn btn-primary btn-sm gap-2"
+              >
+                <Shield className="w-4 h-4" />
+                Test Both Permissions
+              </button>
 
               <div className="flex items-start gap-2 p-3 bg-info/10 rounded-lg border border-info/20">
                 <Info className="w-4 h-4 text-info mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-base-content/70">
-                  Your browser will automatically ask for permission when needed. 
-                  To manage permissions, check your browser settings.
+                  Click "Test" to check if permissions are granted. 
+                  Your browser will prompt you if permission is needed.
                 </p>
               </div>
             </div>
