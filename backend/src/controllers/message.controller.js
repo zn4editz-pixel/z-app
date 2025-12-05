@@ -210,3 +210,150 @@ export const markMessagesAsRead = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const addReaction = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { emoji } = req.body;
+    const userId = req.user._id;
+
+    if (!emoji) {
+      return res.status(400).json({ error: "Emoji is required" });
+    }
+
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    // Check if user already reacted
+    const existingReaction = message.reactions.find(
+      r => r.userId.toString() === userId.toString()
+    );
+
+    if (existingReaction) {
+      // Update existing reaction
+      existingReaction.emoji = emoji;
+      existingReaction.createdAt = new Date();
+    } else {
+      // Add new reaction
+      message.reactions.push({ userId, emoji });
+    }
+
+    await message.save();
+
+    // Populate user info for reactions
+    await message.populate('reactions.userId', 'fullName profilePic');
+
+    // Notify both users
+    const receiverSocketId = getReceiverSocketId(message.receiverId);
+    const senderSocketId = getReceiverSocketId(message.senderId);
+    
+    const reactionData = {
+      messageId,
+      reactions: message.reactions,
+      reactedBy: userId
+    };
+
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("messageReaction", reactionData);
+    }
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messageReaction", reactionData);
+    }
+
+    res.status(200).json(message);
+  } catch (error) {
+    console.error("Error in addReaction:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const removeReaction = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const userId = req.user._id;
+
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    // Remove user's reaction
+    message.reactions = message.reactions.filter(
+      r => r.userId.toString() !== userId.toString()
+    );
+
+    await message.save();
+    await message.populate('reactions.userId', 'fullName profilePic');
+
+    // Notify both users
+    const receiverSocketId = getReceiverSocketId(message.receiverId);
+    const senderSocketId = getReceiverSocketId(message.senderId);
+    
+    const reactionData = {
+      messageId,
+      reactions: message.reactions,
+      removedBy: userId
+    };
+
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("messageReaction", reactionData);
+    }
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messageReaction", reactionData);
+    }
+
+    res.status(200).json(message);
+  } catch (error) {
+    console.error("Error in removeReaction:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const deleteMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const userId = req.user._id;
+
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    // Only sender can delete their own message
+    if (message.senderId.toString() !== userId.toString()) {
+      return res.status(403).json({ error: "You can only delete your own messages" });
+    }
+
+    // Delete images/voice from cloudinary if exists
+    if (message.image) {
+      const publicId = message.image.split('/').pop().split('.')[0];
+      await cloudinary.uploader.destroy(`chat_images/${publicId}`);
+    }
+    if (message.voice) {
+      const publicId = message.voice.split('/').pop().split('.')[0];
+      await cloudinary.uploader.destroy(`chat_voices/${publicId}`, { resource_type: 'video' });
+    }
+
+    await Message.findByIdAndDelete(messageId);
+
+    // Notify both users
+    const receiverSocketId = getReceiverSocketId(message.receiverId);
+    const senderSocketId = getReceiverSocketId(message.senderId);
+    
+    const deleteData = { messageId, deletedBy: userId };
+
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("messageDeleted", deleteData);
+    }
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messageDeleted", deleteData);
+    }
+
+    res.status(200).json({ message: "Message deleted successfully" });
+  } catch (error) {
+    console.error("Error in deleteMessage:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

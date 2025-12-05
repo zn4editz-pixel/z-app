@@ -8,6 +8,7 @@ import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 import CallLogMessage from "./CallLogMessage";
+import ChatMessage from "./ChatMessage";
 import { formatMessageTime } from "../lib/utils";
 
 const ChatContainer = ({ onStartCall }) => {
@@ -169,140 +170,8 @@ const ChatContainer = ({ onStartCall }) => {
                 );
               }
               
-              return (
-                <div
-                  key={message._id || message.id}
-                  className={`flex flex-col ${mine ? "items-end" : "items-start"}`}
-                >
-                  {(() => {
-                    const isEmojiOnly = message.text && /^[\p{Emoji}\s]+$/u.test(message.text) && !message.image && !message.voice;
-                    
-                    return (
-                      <div className="flex items-end max-w-[85%] sm:max-w-[75%] gap-2">
-                        {!mine && !isEmojiOnly && (
-                          <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0">
-                            <img
-                              src={selectedUser.profilePic || "/avatar.png"}
-                              alt="avatar"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-                        <div
-                          className={isEmojiOnly ? "" : `relative px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-2xl shadow-sm ${
-                            mine
-                              ? "bg-gradient-to-br from-primary to-primary/90 text-primary-content bubble-right"
-                              : "bg-base-200 text-base-content bubble-left"
-                          }`}
-                        >
-                      {/* Check if message is emoji-only */}
-                      {(() => {
-                        const isEmojiOnly = message.text && /^[\p{Emoji}\s]+$/u.test(message.text) && !message.image && !message.voice;
-                        const emojiCount = message.text ? (message.text.match(/\p{Emoji}/gu) || []).length : 0;
-                        
-                        if (isEmojiOnly && emojiCount > 0) {
-                          // Render emoji-only message (Instagram style - smaller)
-                          return (
-                            <div className={`text-3xl sm:text-4xl leading-tight ${emojiCount === 1 ? 'text-4xl sm:text-5xl' : ''}`}>
-                              {message.text}
-                            </div>
-                          );
-                        }
-                        
-                        // Regular message rendering
-                        return (
-                          <>
-                            {/* Image Message */}
-                            {message.image && (
-                              <div className="relative group">
-                                <img
-                                  src={message.image}
-                                  className="rounded-lg mb-2 max-h-48 sm:max-h-64 object-cover w-full cursor-pointer hover:opacity-90 transition"
-                                  alt="attached"
-                                  onClick={() => window.open(message.image, "_blank")}
-                                />
-                                <button
-                                  onClick={() => handleDownloadImage(message.image)}
-                                  className="absolute top-2 right-2 btn btn-circle btn-xs bg-black/50 border-none text-white opacity-0 group-hover:opacity-100 transition"
-                                  title="Download image"
-                                >
-                                  <Download className="w-3 h-3" />
-                                </button>
-                              </div>
-                            )}
-                      
-                      {/* Voice Message */}
-                      {message.voice && (
-                        <div className="flex items-center gap-2 min-w-[200px]">
-                          <button
-                            onClick={() => toggleVoicePlayback(message._id)}
-                            className="btn btn-circle btn-sm flex-shrink-0"
-                          >
-                            {playingVoiceId === message._id ? (
-                              <Pause className="w-4 h-4" />
-                            ) : (
-                              <Play className="w-4 h-4" />
-                            )}
-                          </button>
-                          <audio
-                            ref={(el) => {
-                              if (el) audioRefs.current[message._id] = el;
-                            }}
-                            src={message.voice}
-                            onEnded={() => setPlayingVoiceId(null)}
-                            className="hidden"
-                          />
-                          <div className="flex-1 h-8 bg-base-300/50 rounded-full flex items-center px-2">
-                            <div className="flex gap-0.5 items-center h-full">
-                              {[...Array(20)].map((_, i) => (
-                                <div
-                                  key={i}
-                                  className="w-0.5 bg-current rounded-full"
-                                  style={{
-                                    height: `${Math.random() * 100}%`,
-                                    minHeight: "20%",
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                          <span className="text-xs opacity-70">
-                            {message.voiceDuration || 0}s
-                          </span>
-                        </div>
-                      )}
-                            
-                            {/* Text Message */}
-                            {message.text && (
-                              <div className="whitespace-pre-wrap break-words leading-relaxed">
-                                {message.text}
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                  <div className="flex items-center gap-1 mt-1 px-1">
-                    <span className="text-[10px] sm:text-[11px] text-base-content/50">
-                      {formatMessageTime(message.createdAt)}
-                    </span>
-                    {mine && (
-                      <span className="text-[10px] sm:text-[11px]">
-                        {message.status === 'read' ? (
-                          <span className="text-blue-500" title="Read">✓✓</span>
-                        ) : message.status === 'delivered' ? (
-                          <span className="text-base-content/50" title="Delivered">✓✓</span>
-                        ) : (
-                          <span className="text-base-content/50" title="Sent">✓</span>
-                        )}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
+              // Use new ChatMessage component with reactions
+              return <ChatMessage key={message._id || message.id} message={message} />;
             })
           )}
           

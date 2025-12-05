@@ -173,6 +173,72 @@ export const useChatStore = create((set, get) => ({
     incrementUnread: (userId) => set((state) => ({ unreadCounts: {...state.unreadCounts, [userId]: (state.unreadCounts[userId] || 0) + 1} })),
     resetUnread: (userId) => set((state) => { const updated = {...state.unreadCounts}; delete updated[userId]; return { unreadCounts: updated }; }),
 
+    // --- Message Reactions ---
+    addReaction: async (messageId, emoji) => {
+        try {
+            const res = await axiosInstance.post(`/messages/reaction/${messageId}`, { emoji });
+            const { messages } = get();
+            const updatedMessages = messages.map(msg => 
+                msg._id === messageId ? { ...msg, reactions: res.data.reactions } : msg
+            );
+            set({ messages: updatedMessages });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to add reaction");
+        }
+    },
+
+    removeReaction: async (messageId) => {
+        try {
+            const res = await axiosInstance.delete(`/messages/reaction/${messageId}`);
+            const { messages } = get();
+            const updatedMessages = messages.map(msg => 
+                msg._id === messageId ? { ...msg, reactions: res.data.reactions } : msg
+            );
+            set({ messages: updatedMessages });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to remove reaction");
+        }
+    },
+
+    deleteMessage: async (messageId) => {
+        try {
+            await axiosInstance.delete(`/messages/message/${messageId}`);
+            const { messages } = get();
+            const updatedMessages = messages.filter(msg => msg._id !== messageId);
+            set({ messages: updatedMessages });
+            toast.success("Message deleted");
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to delete message");
+        }
+    },
+
+    subscribeToReactions: () => {
+        const { socket } = useAuthStore.getState();
+        if (!socket) return;
+
+        const reactionHandler = ({ messageId, reactions }) => {
+            const { messages } = get();
+            const updatedMessages = messages.map(msg => 
+                msg._id === messageId ? { ...msg, reactions } : msg
+            );
+            set({ messages: updatedMessages });
+        };
+
+        const deleteHandler = ({ messageId }) => {
+            const { messages } = get();
+            const updatedMessages = messages.filter(msg => msg._id !== messageId);
+            set({ messages: updatedMessages });
+        };
+
+        socket.off("messageReaction", reactionHandler);
+        socket.off("messageDeleted", deleteHandler);
+        
+        socket.on("messageReaction", reactionHandler);
+        socket.on("messageDeleted", deleteHandler);
+        
+        console.log("Subscribed to reaction events");
+    },
+
 
     // --- NEW: Call Actions ---
     resetCallState: () => {
@@ -393,6 +459,7 @@ useAuthStore.subscribe((state, prevState) => {
         console.log("AuthStore subscription: Socket connected, subscribing call events.");
         chatStore.subscribeToCallEvents();
         chatStore.subscribeToMessages(); // Also subscribe to messages here
+        chatStore.subscribeToReactions(); // Subscribe to reactions
         subscribed = true;
     }
     // Unsubscribe when socket becomes unavailable and was available before
