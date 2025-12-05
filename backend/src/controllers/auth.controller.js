@@ -371,14 +371,64 @@ export const resetPassword = async (req, res) => {
 };
 
 
-// ─── Change Password ─────────────────────────────────────
-export const changePassword = async (req, res) => {
-	const { currentPassword, newPassword } = req.body;
+// ─── Send OTP for Password Change ─────────────────────────────────────
+export const sendPasswordChangeOTP = async (req, res) => {
 	const userId = req.user._id;
 
 	try {
-		if (!currentPassword || !newPassword) {
-			return res.status(400).json({ message: "Current password and new password are required" });
+		const user = await User.findById(userId);
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+
+		// Generate 6-digit OTP
+		const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+		// Save OTP to user (expires in 5 minutes)
+		user.passwordChangeOTP = otp;
+		user.passwordChangeOTPExpires = Date.now() + 5 * 60 * 1000; // 5 minutes
+		await user.save({ validateBeforeSave: false });
+
+		// Send OTP via email
+		const message = `
+      <h1>Password Change Verification</h1>
+      <p>You requested to change your password. Your verification OTP is:</p>
+      <h2 style="color: #6366f1; font-size: 32px; letter-spacing: 5px;">${otp}</h2>
+      <p><strong>This OTP will expire in 5 minutes.</strong></p>
+      <p>If you didn't request this, please ignore this email and secure your account.</p>
+    `;
+
+		try {
+			console.log(`📧 Sending password change OTP to ${user.email}`);
+			await sendEmail(user.email, "Password Change Verification", message);
+			console.log(`✅ OTP sent successfully to ${user.email}`);
+
+			const maskedEmail = user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
+			res.status(200).json({ 
+				message: "OTP sent to your email",
+				email: maskedEmail 
+			});
+		} catch (emailError) {
+			console.error("Email sending error:", emailError);
+			user.passwordChangeOTP = undefined;
+			user.passwordChangeOTPExpires = undefined;
+			await user.save({ validateBeforeSave: false });
+			return res.status(500).json({ message: "Failed to send OTP email" });
+		}
+	} catch (error) {
+		console.error("Send password change OTP error:", error);
+		res.status(500).json({ message: "Server error" });
+	}
+};
+
+// ─── Change Password with OTP ─────────────────────────────────────
+export const changePassword = async (req, res) => {
+	const { otp, currentPassword, newPassword } = req.body;
+	const userId = req.user._id;
+
+	try {
+		if (!otp || !currentPassword || !newPassword) {
+			return res.status(400).json({ message: "OTP, current password and new password are required" });
 		}
 
 		if (newPassword.length < 6) {
@@ -390,6 +440,15 @@ export const changePassword = async (req, res) => {
 			return res.status(404).json({ message: "User not found" });
 		}
 
+		// Verify OTP
+		if (!user.passwordChangeOTP || user.passwordChangeOTP !== otp) {
+			return res.status(400).json({ message: "Invalid OTP" });
+		}
+
+		if (!user.passwordChangeOTPExpires || user.passwordChangeOTPExpires < Date.now()) {
+			return res.status(400).json({ message: "OTP has expired" });
+		}
+
 		// Verify current password
 		const isPasswordCorrect = await bcrypt.compare(currentPassword, user.password);
 		if (!isPasswordCorrect) {
@@ -399,6 +458,10 @@ export const changePassword = async (req, res) => {
 		// Hash new password
 		const salt = await bcrypt.genSalt(10);
 		user.password = await bcrypt.hash(newPassword, salt);
+		
+		// Clear OTP fields
+		user.passwordChangeOTP = undefined;
+		user.passwordChangeOTPExpires = undefined;
 		await user.save();
 
 		res.status(200).json({ message: "Password changed successfully" });

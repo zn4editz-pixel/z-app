@@ -171,6 +171,14 @@ const userSchema = new mongoose.Schema(
 		},
 		pendingEmail: {
 			type: String
+		},
+		
+		// --- Password Change with OTP ---
+		passwordChangeOTP: {
+			type: String
+		},
+		passwordChangeOTPExpires: {
+			type: Date
 		}
 	},
 	{ timestamps: true }

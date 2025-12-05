@@ -9,6 +9,7 @@ import {
 	verifyResetOTP,
 	resetPassword,
 	changePassword,
+	sendPasswordChangeOTP,
 	completeProfileSetup,
 	sendEmailChangeOTP,
 	verifyEmailChangeOTP,
@@ -31,6 +32,9 @@ router.post("/reset-password", authLimiter, resetPassword); // Reset password wi
 router.get("/check", protectRoute, checkAuth);
 router.put("/update-profile", protectRoute, updateProfile);
 router.post("/setup-profile", protectRoute, completeProfileSetup);
+
+// Password change with OTP
+router.post("/send-password-change-otp", protectRoute, sendPasswordChangeOTP);
 router.post("/change-password", protectRoute, changePassword);
 
 // Email change with OTP
