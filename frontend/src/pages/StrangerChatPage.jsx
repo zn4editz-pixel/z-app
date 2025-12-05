@@ -497,11 +497,11 @@ const StrangerChatPage = () => {
 	return (
 		<div className="h-screen pt-14 flex flex-col bg-gradient-to-br from-base-300 via-base-200 to-base-300">
 			<div className="flex-1 flex flex-col md:flex-row gap-3 p-3 md:p-4 overflow-hidden">
-				{/* Video Section */}
-				<div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-b from-black to-gray-900 rounded-2xl shadow-2xl border border-base-content/10">
-					{/* Remote Video */}
-					<div className="w-full h-full relative rounded-2xl overflow-hidden">
-						<video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-contain" />
+				{/* Video Section - Optimized for Remote Video Visibility */}
+				<div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-b from-black to-gray-900 rounded-xl md:rounded-2xl shadow-2xl border border-base-content/10">
+					{/* Remote Video - Full Focus */}
+					<div className="w-full h-full relative rounded-xl md:rounded-2xl overflow-hidden">
+						<video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover md:object-contain" />
 						{status === "waiting" && (
 							<div className="absolute inset-0 flex flex-col items-center justify-center text-white gap-4 bg-gradient-to-b from-black/90 to-black/70 backdrop-blur-sm">
 								<Loader2 className="w-14 h-14 md:w-20 md:h-20 animate-spin text-primary drop-shadow-lg" />
@@ -514,15 +514,15 @@ const StrangerChatPage = () => {
 							</button>
 						)}
 						
-						{/* Self Camera - Improved Design */}
-						<div className="w-28 h-40 md:w-44 md:h-auto md:aspect-video lg:w-52 bg-gradient-to-b from-gray-800 to-black rounded-xl overflow-hidden absolute bottom-4 right-4 border-2 border-primary shadow-2xl z-20 ring-2 ring-primary/20">
+						{/* Self Camera - Smaller on Mobile for Better Remote View */}
+						<div className="w-20 h-28 md:w-44 md:h-auto md:aspect-video lg:w-52 bg-gradient-to-b from-gray-800 to-black rounded-lg md:rounded-xl overflow-hidden absolute bottom-3 right-3 md:bottom-4 md:right-4 border-2 border-primary shadow-2xl z-20 ring-2 ring-primary/20">
 							<video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
 						</div>
 					</div>
 				</div>
 
-				{/* Chat Sidebar */}
-				<div className="w-full md:w-80 lg:w-96 h-[45vh] md:h-full flex flex-col bg-gradient-to-b from-base-100 to-base-200 rounded-2xl shadow-2xl overflow-hidden border border-base-content/10">
+				{/* Chat Sidebar - Compact on Mobile */}
+				<div className="w-full md:w-80 lg:w-96 h-[40vh] md:h-full flex flex-col bg-gradient-to-b from-base-100 to-base-200 rounded-xl md:rounded-2xl shadow-2xl overflow-hidden border border-base-content/10">
 					{/* Action Buttons */}
 					<div className="flex items-center gap-2 p-3 border-b border-base-300 bg-gradient-to-r from-base-200 to-base-100">
 						<button onClick={handleSkip} className="btn btn-primary btn-sm flex-1 gap-1 shadow-md hover:shadow-lg transition-all" disabled={status === "idle"}>
