@@ -56,12 +56,7 @@ const ChangePasswordSection = () => {
   };
 
   return (
-    <div className="border-t border-base-300 pt-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Lock className="w-5 h-5 text-primary" />
-        <h3 className="text-base sm:text-lg font-semibold">Change Password</h3>
-      </div>
-      <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+      <form onSubmit={handleChangePassword} className="space-y-4 max-w-2xl">
         {/* Current Password */}
         <div>
           <label className="label">
@@ -145,17 +140,22 @@ const ChangePasswordSection = () => {
 
         <button
           type="submit"
-          className="btn btn-primary"
+          className="btn btn-primary w-full sm:w-auto shadow-md hover:shadow-lg transition-all"
           disabled={isLoading}
         >
           {isLoading ? (
-            <span className="loading loading-spinner loading-sm"></span>
+            <>
+              <span className="loading loading-spinner loading-sm"></span>
+              <span>Updating...</span>
+            </>
           ) : (
-            "Change Password"
+            <>
+              <Lock className="w-4 h-4" />
+              <span>Change Password</span>
+            </>
           )}
         </button>
       </form>
-    </div>
   );
 };
 
@@ -170,63 +170,105 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-base-200">
-      <div className="container mx-auto px-3 sm:px-4 pt-16 sm:pt-20 pb-10 max-w-5xl">
-        <div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6 space-y-6">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-lg sm:text-xl font-semibold">Theme</h2>
-            <p className="text-xs sm:text-sm text-base-content/70">Choose a theme for your chat interface</p>
-          </div>
-
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-3">
-          {THEMES.map((t) => (
-            <button
-              key={t}
-              className={`
-                group flex flex-col items-center gap-1.5 p-2 rounded-lg transition-colors
-                ${theme === t ? "bg-base-200" : "hover:bg-base-200/50"}
-              `}
-              onClick={() => setTheme(t)}
-            >
-              <div className="relative h-8 w-full rounded-md overflow-hidden" data-theme={t}>
-                <div className="absolute inset-0 grid grid-cols-4 gap-px p-1">
-                  <div className="rounded bg-primary"></div>
-                  <div className="rounded bg-secondary"></div>
-                  <div className="rounded bg-accent"></div>
-                  <div className="rounded bg-neutral"></div>
-                </div>
-              </div>
-              <span className="text-[11px] font-medium truncate w-full text-center">
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </span>
-            </button>
-          ))}
+    <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
+      <div className="container mx-auto px-3 sm:px-4 lg:px-6 pt-16 sm:pt-20 pb-10 max-w-6xl">
+        {/* Page Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-base-content">Settings</h1>
+          <p className="text-sm sm:text-base text-base-content/60 mt-1">Customize your experience</p>
         </div>
 
-          {/* Change Password Section */}
-          <ChangePasswordSection />
+        {/* Settings Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          
+          {/* Theme Section */}
+          <div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 border border-base-300">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary to-secondary"></div>
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Theme</h2>
+                <p className="text-xs text-base-content/60">Choose your style</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent pr-1">
+              {THEMES.map((t) => (
+                <button
+                  key={t}
+                  className={`
+                    group flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all
+                    ${theme === t ? "bg-primary/10 ring-2 ring-primary shadow-md" : "hover:bg-base-200 hover:shadow-sm"}
+                  `}
+                  onClick={() => setTheme(t)}
+                >
+                  <div className="relative h-8 w-full rounded-md overflow-hidden shadow-sm" data-theme={t}>
+                    <div className="absolute inset-0 grid grid-cols-4 gap-px p-1">
+                      <div className="rounded bg-primary"></div>
+                      <div className="rounded bg-secondary"></div>
+                      <div className="rounded bg-accent"></div>
+                      <div className="rounded bg-neutral"></div>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] sm:text-[11px] font-medium truncate w-full text-center ${theme === t ? 'text-primary' : ''}`}>
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Logout Section */}
-          <div className="border-t border-base-300 pt-6">
-            <div className="flex items-center gap-2 mb-4">
-              <LogOut className="w-5 h-5 text-error" />
-              <h3 className="text-base sm:text-lg font-semibold">Logout</h3>
+          <div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 border border-base-300">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center">
+                <LogOut className="w-5 h-5 text-error" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Logout</h2>
+                <p className="text-xs text-base-content/60">Sign out of your account</p>
+              </div>
             </div>
+            
             <p className="text-sm text-base-content/70 mb-4">
-              Sign out of your account on this device
+              You will be signed out from this device. You can always sign back in with your credentials.
             </p>
+            
             <button
               onClick={handleLogout}
-              className="btn btn-error gap-2"
+              className="btn btn-error w-full gap-2 shadow-md hover:shadow-lg transition-all"
             >
               <LogOut className="w-4 h-4" />
-              Logout
+              Logout from Account
             </button>
           </div>
 
-          {/* Preview Section */}
-          <div className="pt-4">
-            <h3 className="text-base sm:text-lg font-semibold mb-3">Preview</h3>
+          {/* Change Password Section - Full Width */}
+          <div className="lg:col-span-2 bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 border border-base-300">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                <Lock className="w-5 h-5 text-warning" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Change Password</h2>
+                <p className="text-xs text-base-content/60">Update your account password</p>
+              </div>
+            </div>
+            <ChangePasswordSection />
+          </div>
+
+          {/* Preview Section - Full Width */}
+          <div className="lg:col-span-2 bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 border border-base-300">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
+                <Send className="w-5 h-5 text-info" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Theme Preview</h2>
+                <p className="text-xs text-base-content/60">See how your theme looks</p>
+              </div>
+            </div>
             <div className="rounded-lg sm:rounded-xl border border-base-300 overflow-hidden bg-base-100 shadow-lg">
               <div className="p-3 sm:p-4 bg-base-200">
                 <div className="max-w-lg mx-auto">
@@ -292,6 +334,7 @@ const SettingsPage = () => {
               </div>
             </div>
           </div>
+          
         </div>
       </div>
     </div>
