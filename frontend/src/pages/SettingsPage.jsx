@@ -210,19 +210,19 @@ const SettingsPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
-      <div className="container mx-auto px-3 sm:px-4 lg:px-6 pt-20 sm:pt-24 pb-10 max-w-6xl">
+      <div className="container mx-auto px-3 sm:px-4 lg:px-6 pt-20 sm:pt-24 lg:pt-28 pb-10 sm:pb-16 max-w-6xl">
         {/* Page Header */}
-        <div className="mb-6 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-base-content">Settings</h1>
-            <p className="text-sm sm:text-base text-base-content/60 mt-1">Customize your experience</p>
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-base-content">Settings</h1>
+            <p className="text-xs sm:text-sm lg:text-base text-base-content/60 mt-0.5 sm:mt-1">Customize your experience</p>
           </div>
           <Link 
             to="/change-password"
-            className="btn btn-outline btn-primary btn-xs h-7 min-h-7 gap-0.5 px-1.5 sm:px-3 sm:h-8 sm:min-h-8"
+            className="btn btn-outline btn-primary btn-xs sm:btn-sm h-7 min-h-7 sm:h-8 sm:min-h-8 gap-1 px-2 sm:px-3 flex-shrink-0"
           >
-            <Lock className="w-3 h-3" />
-            <span className="hidden sm:inline text-[10px] sm:text-xs">Change Password</span>
+            <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span className="text-[10px] sm:text-xs">Change Password</span>
           </Link>
         </div>
 
