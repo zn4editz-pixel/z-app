@@ -1,11 +1,13 @@
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useCallback } from "react";
 import { Toaster, toast } from "react-hot-toast";
+import { AnimatePresence } from "framer-motion";
 
 import Navbar from "./components/Navbar";
 import OfflineIndicator from "./components/OfflineIndicator";
 import PermissionHandler from "./components/PermissionHandler";
 import ConnectionStatus from "./components/ConnectionStatus";
+import PageTransition from "./components/PageTransition";
 
 // Pages
 import HomePage from "./pages/HomePage";
@@ -63,6 +65,7 @@ const App = () => {
 	// ✅ 2. Get the action to update the pending received requests
 	const addPendingReceived = useFriendStore((state) => state.addPendingReceived); 
 	const navigate = useNavigate();
+	const location = useLocation();
 
 	const forceLogout = useCallback(
 		(message, redirect = "/login") => {
@@ -319,24 +322,24 @@ const App = () => {
 			{/* Navbar */}
 			{hasCompletedProfile && window.location.pathname !== "/stranger" && <Navbar />}
 
-			<div className="page-fade">
-				<Routes>
+			<AnimatePresence mode="wait">
+				<Routes location={location} key={location.pathname}>
 				{/* --- Auth Routes --- */}
 				<Route
 					path="/signup"
-					element={!authUser ? <SignUpPage /> : <Navigate to="/" />}
+					element={!authUser ? <PageTransition><SignUpPage /></PageTransition> : <Navigate to="/" />}
 				/>
 				<Route
 					path="/login"
-					element={!authUser ? <LoginPage /> : <Navigate to="/" />}
+					element={!authUser ? <PageTransition><LoginPage /></PageTransition> : <Navigate to="/" />}
 				/>
 				<Route
 					path="/forgot-password"
-					element={!authUser ? <ForgotPassword /> : <Navigate to="/" />}
+					element={!authUser ? <PageTransition><ForgotPassword /></PageTransition> : <Navigate to="/" />}
 				/>
 				<Route
 					path="/reset-password/:token"
-					element={!authUser ? <ResetPassword /> : <Navigate to="/" />}
+					element={!authUser ? <PageTransition><ResetPassword /></PageTransition> : <Navigate to="/" />}
 				/>
 
 				{/* --- Onboarding Route --- */}
@@ -362,7 +365,7 @@ const App = () => {
 						) : !hasCompletedProfile ? (
 							<Navigate to="/setup-profile" />
 						) : (
-							<HomePage />
+							<PageTransition><HomePage /></PageTransition>
 						)
 					}
 				/>
@@ -374,7 +377,7 @@ const App = () => {
 						) : !hasCompletedProfile ? (
 							<Navigate to="/setup-profile" />
 						) : (
-							<SettingsPage />
+							<PageTransition><SettingsPage /></PageTransition>
 						)
 					}
 				/>
@@ -386,7 +389,7 @@ const App = () => {
 						) : !hasCompletedProfile ? (
 							<Navigate to="/setup-profile" />
 						) : (
-							<ChangePasswordPage />
+							<PageTransition><ChangePasswordPage /></PageTransition>
 						)
 					}
 				/>
@@ -398,7 +401,7 @@ const App = () => {
 						) : !hasCompletedProfile ? (
 							<Navigate to="/setup-profile" />
 						) : (
-							<PublicProfilePage />
+							<PageTransition><PublicProfilePage /></PageTransition>
 						)
 					}
 				/>
@@ -410,7 +413,7 @@ const App = () => {
 						) : !hasCompletedProfile ? (
 							<Navigate to="/setup-profile" />
 						) : (
-							<MyProfilePage />
+							<PageTransition><MyProfilePage /></PageTransition>
 						)
 					}
 				/>
@@ -462,7 +465,7 @@ const App = () => {
 				<Route path="/goodbye" element={<GoodbyePage />} />
 				<Route path="/blocked" element={<GoodbyePage />} />
 				</Routes>
-			</div>
+			</AnimatePresence>
 
 			<Toaster position="top-center" />
 		</div>
