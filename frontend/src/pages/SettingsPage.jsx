@@ -219,10 +219,10 @@ const SettingsPage = () => {
           </div>
           <Link 
             to="/change-password"
-            className="btn btn-outline btn-primary btn-xs h-8 min-h-8 gap-1 px-2 sm:px-3"
+            className="btn btn-outline btn-primary btn-xs h-7 min-h-7 gap-0.5 px-1.5 sm:px-3 sm:h-8 sm:min-h-8"
           >
-            <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            <span className="hidden sm:inline text-xs">Change Password</span>
+            <Lock className="w-3 h-3" />
+            <span className="hidden sm:inline text-[10px] sm:text-xs">Change Password</span>
           </Link>
         </div>
 
@@ -290,21 +290,21 @@ const SettingsPage = () => {
                 {cameraStatus === 'granted' ? (
                   <button
                     onClick={() => setCameraStatus('not-tested')}
-                    className="btn btn-outline btn-error btn-xs h-5 min-h-5 px-1.5 sm:px-2 text-[9px] sm:text-[10px] flex-shrink-0"
+                    className="btn btn-outline btn-error btn-xs h-6 min-h-6 px-2 text-[10px] flex-shrink-0"
                   >
                     Revoke
                   </button>
                 ) : cameraStatus === 'denied' ? (
                   <button
                     onClick={testCameraPermission}
-                    className="btn btn-outline btn-success btn-xs h-5 min-h-5 px-1.5 sm:px-2 text-[9px] sm:text-[10px] flex-shrink-0"
+                    className="btn btn-outline btn-success btn-xs h-6 min-h-6 px-2 text-[10px] flex-shrink-0"
                   >
                     Retry
                   </button>
                 ) : (
                   <button
                     onClick={testCameraPermission}
-                    className="btn btn-outline btn-primary btn-xs h-5 min-h-5 px-1.5 sm:px-2 text-[9px] sm:text-[10px] flex-shrink-0"
+                    className="btn btn-outline btn-primary btn-xs h-6 min-h-6 px-2 text-[10px] flex-shrink-0"
                   >
                     Allow
                   </button>
@@ -326,21 +326,21 @@ const SettingsPage = () => {
                 {micStatus === 'granted' ? (
                   <button
                     onClick={() => setMicStatus('not-tested')}
-                    className="btn btn-outline btn-error btn-xs h-5 min-h-5 px-1.5 sm:px-2 text-[9px] sm:text-[10px] flex-shrink-0"
+                    className="btn btn-outline btn-error btn-xs h-6 min-h-6 px-2 text-[10px] flex-shrink-0"
                   >
                     Revoke
                   </button>
                 ) : micStatus === 'denied' ? (
                   <button
                     onClick={testMicPermission}
-                    className="btn btn-outline btn-success btn-xs h-5 min-h-5 px-1.5 sm:px-2 text-[9px] sm:text-[10px] flex-shrink-0"
+                    className="btn btn-outline btn-success btn-xs h-6 min-h-6 px-2 text-[10px] flex-shrink-0"
                   >
                     Retry
                   </button>
                 ) : (
                   <button
                     onClick={testMicPermission}
-                    className="btn btn-outline btn-primary btn-xs h-5 min-h-5 px-1.5 sm:px-2 text-[9px] sm:text-[10px] flex-shrink-0"
+                    className="btn btn-outline btn-primary btn-xs h-6 min-h-6 px-2 text-[10px] flex-shrink-0"
                   >
                     Allow
                   </button>
@@ -351,9 +351,9 @@ const SettingsPage = () => {
               {(cameraStatus !== 'granted' || micStatus !== 'granted') && (
                 <button
                   onClick={testBothPermissions}
-                  className="w-full btn btn-outline btn-primary btn-xs h-5 min-h-5 text-[9px] sm:text-[10px] gap-1 mt-1"
+                  className="w-full btn btn-outline btn-primary btn-xs h-6 min-h-6 text-[10px] gap-1 mt-1"
                 >
-                  <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  <Check className="w-3 h-3" />
                   Allow All
                 </button>
               )}
