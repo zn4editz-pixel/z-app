@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
 import { useAuthStore } from "../store/useAuthStore";
-import { Send, Lock, Eye, EyeOff, LogOut, Video, Mic, Shield } from "lucide-react";
+import { Send, Lock, Eye, EyeOff, LogOut, Video, Mic, Shield, AlertTriangle, ExternalLink } from "lucide-react";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 
