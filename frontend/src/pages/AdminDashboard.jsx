@@ -7,6 +7,7 @@ import {
 	Clock, Ban, FileText
 } from "lucide-react";
 import VerifiedBadge from "../components/VerifiedBadge";
+import AdminNotifications from "../components/AdminNotifications";
 
 const AdminDashboard = () => {
 	// --- Stats State ---
@@ -650,6 +651,11 @@ const AdminDashboard = () => {
 					</div>
 				</div>
 			)}
+
+			{/* Admin Notifications Section */}
+			<section className="mb-6 sm:mb-8">
+				<AdminNotifications users={users} />
+			</section>
 		</div>
 	);
 };
