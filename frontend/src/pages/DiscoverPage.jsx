@@ -121,6 +121,12 @@ const DiscoverPage = () => {
 
 	const { pendingReceived, acceptRequest, rejectRequest, fetchFriendData } = useFriendStore();
 	const { authUser } = useAuthStore();
+	const { notifications } = useNotificationStore();
+
+	// Calculate notification counts for each tab
+	const adminNotifications = notifications.filter(n => n.type === 'admin' || n.type === 'admin_broadcast');
+	const hasVerificationUpdate = authUser?.verificationRequest?.status && authUser.verificationRequest.status !== "none";
+	const notificationCount = adminNotifications.length + (hasVerificationUpdate ? 1 : 0) + (authUser?.isSuspended ? 1 : 0);
 
 	// Fetch friend data on mount
 	useEffect(() => {
@@ -233,7 +239,7 @@ const DiscoverPage = () => {
 						</button>
 						<button
 							onClick={() => setActiveTab("notifications")}
-							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-colors text-xs sm:text-base ${
+							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-colors relative text-xs sm:text-base ${
 								activeTab === "notifications"
 									? "text-primary border-b-2 border-primary"
 									: "text-base-content/60 hover:text-base-content"
@@ -241,6 +247,11 @@ const DiscoverPage = () => {
 						>
 							<Bell className="w-4 h-4 sm:w-5 sm:h-5" />
 							<span>Notifications</span>
+							{notificationCount > 0 && (
+								<span className="absolute top-1 right-1 sm:relative sm:top-0 sm:right-0 badge badge-error badge-xs sm:badge-sm">
+									{notificationCount > 9 ? "9+" : notificationCount}
+								</span>
+							)}
 						</button>
 					</div>
 				</div>

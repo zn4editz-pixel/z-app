@@ -6,6 +6,7 @@ import { useFriendStore } from "../store/useFriendStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
 import { Search, X, Video, Check } from "lucide-react";
 import VerifiedBadge from "./VerifiedBadge";
+import { useNotificationStore } from "../store/useNotificationStore";
 
 const Sidebar = () => {
   const {
@@ -14,12 +15,18 @@ const Sidebar = () => {
     unreadCounts = {},
   } = useChatStore();
 
-  const { onlineUsers = [] } = useAuthStore();
-  const { friends, isLoading: isFriendsLoading } = useFriendStore();
+  const { onlineUsers = [], authUser } = useAuthStore();
+  const { friends, isLoading: isFriendsLoading, pendingReceived } = useFriendStore();
+  const { notifications } = useNotificationStore();
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
+
+  // Calculate if there are any Social Hub updates
+  const adminNotifications = notifications.filter(n => n.type === 'admin' || n.type === 'admin_broadcast');
+  const hasVerificationUpdate = authUser?.verificationRequest?.status && authUser.verificationRequest.status !== "none";
+  const hasSocialHubUpdates = pendingReceived.length > 0 || adminNotifications.length > 0 || hasVerificationUpdate;
 
   const filteredUsers = friends
     .filter((u) => u && u._id)
@@ -72,11 +79,15 @@ const Sidebar = () => {
             {/* Discover Users Button */}
             <Link
               to="/discover"
-              className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-transform"
+              className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-transform relative"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-primary flex items-center justify-center bg-primary/10">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-primary flex items-center justify-center bg-primary/10 relative">
                 <Search className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
+                {/* Red dot notification badge */}
+                {hasSocialHubUpdates && (
+                  <span className="absolute top-0 right-0 w-3 h-3 bg-error rounded-full ring-2 ring-base-100 animate-pulse" />
+                )}
               </div>
               <span className="text-xs sm:text-sm truncate w-14 sm:w-16 text-center font-semibold">
                 Discover
