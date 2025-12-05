@@ -414,14 +414,14 @@ const ChatMessage = ({ message, onReply }) => {
       {/* Long-Press Reaction Picker */}
       {showReactionPicker && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center"
           onClick={() => setShowReactionPicker(false)}
         >
           <div
-            className="bg-base-100 rounded-3xl p-4 shadow-2xl"
+            className="bg-base-100 rounded-t-3xl sm:rounded-3xl p-3 sm:p-4 shadow-2xl w-full sm:w-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex gap-3 mb-3">
+            <div className="flex justify-center gap-2 sm:gap-3 mb-3">
               {REACTION_EMOJIS.map((emoji) => (
                 <button
                   key={emoji}
@@ -429,8 +429,8 @@ const ChatMessage = ({ message, onReply }) => {
                     handleReactionSelect(emoji);
                     setShowReactionPicker(false);
                   }}
-                  className={`text-4xl hover:scale-125 active:scale-110 transition-transform ${
-                    myReaction?.emoji === emoji ? 'scale-125' : ''
+                  className={`text-2xl sm:text-3xl hover:scale-110 active:scale-95 transition-transform p-2 rounded-full hover:bg-base-200 ${
+                    myReaction?.emoji === emoji ? 'scale-110 bg-base-200' : ''
                   }`}
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
@@ -454,32 +454,39 @@ const ChatMessage = ({ message, onReply }) => {
         </div>
       )}
 
-      {/* Reactions Detail Modal */}
+      {/* Reactions Detail Modal - Instagram Style */}
       {showReactions && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center"
           onClick={() => setShowReactions(false)}
         >
           <div
-            className="bg-base-100 rounded-2xl p-4 max-w-sm w-full shadow-2xl"
+            className="bg-base-100 rounded-t-2xl sm:rounded-2xl p-3 sm:p-4 max-w-sm w-full shadow-2xl max-h-[70vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-bold text-lg mb-3">Reactions</h3>
-            {Object.entries(groupedReactions).map(([emoji, users]) => (
-              <div key={emoji} className="mb-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">{emoji}</span>
-                  <span className="text-sm font-semibold">{users.length}</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {users.map((user, idx) => (
-                    <div key={idx} className="flex items-center gap-1 bg-base-200 rounded-full px-2 py-1">
-                      <span className="text-xs">{user?.fullName || "User"}</span>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-sm">Reactions</h3>
+              <button onClick={() => setShowReactions(false)} className="btn btn-ghost btn-xs btn-circle">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-2">
+              {Object.entries(groupedReactions).map(([emoji, users]) => (
+                <div key={emoji} className="flex items-start gap-2 py-1">
+                  <span className="text-xl flex-shrink-0">{emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap gap-1.5">
+                      {users.map((user, idx) => (
+                        <span key={idx} className="text-xs text-base-content/70">
+                          {user?.fullName || "User"}{idx < users.length - 1 ? "," : ""}
+                        </span>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                  <span className="text-xs text-base-content/50 flex-shrink-0">{users.length}</span>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}

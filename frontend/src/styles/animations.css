@@ -596,3 +596,21 @@ html {
     transform: translate(-50%, -120%) scale(0.8);
   }
 }
+
+/* Reply Preview Slide In */
+@keyframes replySlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 100px;
+  }
+}
+
+.reply-slide-in {
+  animation: replySlideIn 0.3s ease-out;
+}

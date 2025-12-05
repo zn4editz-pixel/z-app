@@ -36,7 +36,6 @@ const ChatContainer = ({ onStartCall }) => {
   
   const handleReply = (message) => {
     setReplyingTo(message);
-    toast.success("Replying to message");
   };
 
   useEffect(() => {
@@ -205,7 +204,7 @@ const ChatContainer = ({ onStartCall }) => {
           
           <div ref={bottomRef} />
         </div>
-        <MessageInput />
+        <MessageInput replyingTo={replyingTo} onCancelReply={() => setReplyingTo(null)} />
       </div>
 
       <style>{`

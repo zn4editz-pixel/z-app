@@ -5,7 +5,7 @@ import { Image, Send, X, Smile } from "lucide-react";
 import toast from "react-hot-toast";
 import VoiceRecorder from "./VoiceRecorder";
 
-const MessageInput = () => {
+const MessageInput = ({ replyingTo, onCancelReply }) => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -83,6 +83,7 @@ const MessageInput = () => {
       await sendMessage({
         text: text.trim(),
         image: imagePreview,
+        replyTo: replyingTo?._id || null,
       });
 
       // Clear form
@@ -90,6 +91,7 @@ const MessageInput = () => {
       setImagePreview(null);
       setShowEmojiPicker(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      if (onCancelReply) onCancelReply();
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
@@ -117,6 +119,27 @@ const MessageInput = () => {
 
   return (
     <div className="p-2.5 sm:p-4 w-full bg-base-100 border-t border-base-300 sticky bottom-0 z-10" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
+      {/* Reply Preview */}
+      {replyingTo && (
+        <div className="mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-base-200 rounded-xl border-l-4 border-primary reply-slide-in">
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-semibold text-primary mb-0.5">
+              Replying to {replyingTo.senderId === selectedUser?._id ? selectedUser.fullName : "You"}
+            </div>
+            <div className="text-sm text-base-content/70 truncate">
+              {replyingTo.text || (replyingTo.image ? "📷 Image" : replyingTo.voice ? "🎤 Voice message" : "Message")}
+            </div>
+          </div>
+          <button
+            onClick={onCancelReply}
+            className="btn btn-ghost btn-xs btn-circle flex-shrink-0 hover:bg-error/20 hover:text-error transition-colors"
+            type="button"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {imagePreview && (
         <div className="mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-base-200 rounded-xl">
           <div className="relative">

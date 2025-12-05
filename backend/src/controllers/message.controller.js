@@ -28,7 +28,10 @@ export const getMessages = async (req, res) => {
         { senderId: myId, receiverId: userToChatId },
         { senderId: userToChatId, receiverId: myId }
       ]
-    }).sort({ createdAt: 1 });
+    })
+    .populate('replyTo', 'text image voice senderId')
+    .populate('reactions.userId', 'fullName profilePic')
+    .sort({ createdAt: 1 });
 
     res.status(200).json(messages);
   } catch (error) {
@@ -75,7 +78,7 @@ export const createCallLog = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image, voice, voiceDuration } = req.body;
+    const { text, image, voice, voiceDuration, replyTo } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
@@ -108,10 +111,16 @@ export const sendMessage = async (req, res) => {
       image: imageUrl || null,
       voice: voiceUrl || null,
       voiceDuration: voiceDuration || null,
+      replyTo: replyTo || null,
       status: 'sent'
     });
 
     await newMessage.save();
+    
+    // Populate replyTo if exists
+    if (replyTo) {
+      await newMessage.populate('replyTo', 'text image voice senderId');
+    }
 
     // Fetch sender details for toast
     const sender = await User.findById(senderId).select("fullName profilePic");
@@ -131,6 +140,7 @@ export const sendMessage = async (req, res) => {
         image: newMessage.image,
         voice: newMessage.voice,
         voiceDuration: newMessage.voiceDuration,
+        replyTo: newMessage.replyTo,
         status: newMessage.status,
         deliveredAt: newMessage.deliveredAt,
         createdAt: newMessage.createdAt,
