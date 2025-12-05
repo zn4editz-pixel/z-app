@@ -233,7 +233,9 @@ const ChatMessage = ({ message, onReply }) => {
     <>
       <div 
         id={`message-${message._id}`}
-        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-3 relative`}
+        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${
+          Object.keys(groupedReactions).length > 0 ? "mb-5" : "mb-3"
+        } relative`}
       >
         <div className="flex items-end max-w-[80%] sm:max-w-[70%] gap-2 relative">
           {!isMyMessage && !isEmojiOnly && (
@@ -402,20 +404,20 @@ const ChatMessage = ({ message, onReply }) => {
               )}
             </div>
 
-            {/* Reactions Display - IMPROVED POSITIONING */}
+            {/* Reactions Display - Fixed Positioning */}
             {Object.keys(groupedReactions).length > 0 && (
               <div
-                className={`absolute -bottom-2 ${isMyMessage ? "right-2" : "left-2"} flex gap-1 z-10`}
+                className={`absolute -bottom-3 ${isMyMessage ? "right-1" : "left-1"} flex gap-1 z-10`}
                 onClick={() => setShowReactions(!showReactions)}
               >
                 {Object.entries(groupedReactions).map(([emoji, users]) => (
                   <div
                     key={emoji}
-                    className="flex items-center gap-0.5 bg-base-100 border-2 border-base-300 rounded-full px-1.5 py-0.5 shadow-md cursor-pointer hover:scale-110 transition-transform active:scale-95"
+                    className="flex items-center gap-0.5 bg-base-100 border border-base-300 rounded-full px-1.5 py-0.5 shadow-lg cursor-pointer hover:scale-110 transition-transform active:scale-95"
                   >
-                    <span className="text-sm">{emoji}</span>
+                    <span className="text-xs">{emoji}</span>
                     {users.length > 1 && (
-                      <span className="text-[10px] font-semibold text-base-content/70">{users.length}</span>
+                      <span className="text-[9px] font-bold text-base-content/70">{users.length}</span>
                     )}
                   </div>
                 ))}
