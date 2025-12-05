@@ -14,6 +14,7 @@ const ChatMessage = ({ message, onReply }) => {
   const { authUser } = useAuthStore();
   const { addReaction, removeReaction, deleteMessage, selectedUser } = useChatStore();
   const [showReactions, setShowReactions] = useState(false);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -23,6 +24,7 @@ const ChatMessage = ({ message, onReply }) => {
   const touchStartPos = useRef({ x: 0, y: 0 });
   const touchStartTime = useRef(0);
   const audioRef = useRef(null);
+  const messageRef = useRef(null);
   
   const isMyMessage = message.senderId === authUser._id;
   const myReaction = message.reactions?.find(r => r.userId?._id === authUser._id || r.userId === authUser._id);
@@ -33,12 +35,14 @@ const ChatMessage = ({ message, onReply }) => {
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
     touchStartTime.current = Date.now();
     
-    // Start long press timer for image save
-    if (message.image) {
-      longPressTimer.current = setTimeout(() => {
+    // Start long press timer for reactions or image save
+    longPressTimer.current = setTimeout(() => {
+      if (message.image) {
         handleLongPressImage();
-      }, LONG_PRESS_DURATION);
-    }
+      } else {
+        handleLongPressReaction();
+      }
+    }, LONG_PRESS_DURATION);
   };
 
   // Handle touch move (swipe to reply + cancel long press)
@@ -88,6 +92,12 @@ const ChatMessage = ({ message, onReply }) => {
       if (navigator.vibrate) navigator.vibrate(50);
       setShowImageModal(true);
     }
+  };
+
+  // Long press handler for reactions
+  const handleLongPressReaction = () => {
+    if (navigator.vibrate) navigator.vibrate(50);
+    setShowReactionPicker(true);
   };
 
   // Double tap handler (quick heart)
@@ -282,19 +292,39 @@ const ChatMessage = ({ message, onReply }) => {
                     </div>
                   )}
 
-                  {/* Voice Message */}
+                  {/* Voice Message - Instagram Style */}
                   {message.voice && (
-                    <div className="flex items-center gap-2 min-w-[200px]">
+                    <div className="flex items-center gap-2 min-w-[200px] max-w-[280px]">
                       <button
                         onClick={toggleVoicePlayback}
-                        className="btn btn-circle btn-sm flex-shrink-0"
+                        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                          isPlaying ? 'bg-primary/20' : isMyMessage ? 'bg-primary-content/20' : 'bg-primary/10'
+                        }`}
                       >
-                        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                        {isPlaying ? (
+                          <Pause className="w-4 h-4" fill="currentColor" />
+                        ) : (
+                          <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
+                        )}
                       </button>
-                      <div className="flex-1 h-1 bg-base-300 rounded-full overflow-hidden">
-                        <div className="h-full bg-primary w-1/3"></div>
+                      
+                      {/* Instagram-style Waveform */}
+                      <div className="flex-1 flex items-center gap-0.5 h-8">
+                        {[3, 6, 4, 8, 5, 9, 6, 7, 4, 8, 5, 6, 7, 5, 8, 6, 4, 7, 5, 6].map((height, i) => (
+                          <div
+                            key={i}
+                            className={`w-0.5 rounded-full transition-all ${
+                              isPlaying && i < 10 ? 'bg-primary' : isMyMessage ? 'bg-primary-content/40' : 'bg-base-content/40'
+                            }`}
+                            style={{ height: `${height * 3}px` }}
+                          />
+                        ))}
                       </div>
-                      <span className="text-xs opacity-70">{message.voiceDuration || 0}s</span>
+                      
+                      <span className="text-xs opacity-70 font-medium min-w-[32px] text-right">
+                        {message.voiceDuration || 0}s
+                      </span>
+                      
                       <audio
                         ref={audioRef}
                         src={message.voice}
@@ -347,31 +377,50 @@ const ChatMessage = ({ message, onReply }) => {
           )}
         </div>
 
-        {/* Quick Reaction Bar - INSTAGRAM STYLE */}
-        <div className={`flex gap-1 mt-2 ${isMyMessage ? 'flex-row-reverse' : 'flex-row'}`}>
-          {REACTION_EMOJIS.map((emoji) => (
-            <button
-              key={emoji}
-              onClick={() => handleReactionSelect(emoji)}
-              className={`text-xl sm:text-2xl hover:scale-125 active:scale-110 transition-transform ${
-                myReaction?.emoji === emoji ? 'scale-125' : 'opacity-60 hover:opacity-100'
-              }`}
-              style={{ WebkitTapHighlightColor: 'transparent' }}
-            >
-              {emoji}
-            </button>
-          ))}
-          {isMyMessage && (
-            <button
-              onClick={handleDelete}
-              className="btn btn-ghost btn-xs text-error hover:scale-110 active:scale-95 transition-transform"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
       </div>
+
+      {/* Long-Press Reaction Picker */}
+      {showReactionPicker && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowReactionPicker(false)}
+        >
+          <div
+            className="bg-base-100 rounded-3xl p-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex gap-3 mb-3">
+              {REACTION_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => {
+                    handleReactionSelect(emoji);
+                    setShowReactionPicker(false);
+                  }}
+                  className={`text-4xl hover:scale-125 active:scale-110 transition-transform ${
+                    myReaction?.emoji === emoji ? 'scale-125' : ''
+                  }`}
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            {isMyMessage && (
+              <button
+                onClick={() => {
+                  handleDelete();
+                  setShowReactionPicker(false);
+                }}
+                className="w-full btn btn-error btn-sm gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Message
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Reactions Detail Modal */}
       {showReactions && (
