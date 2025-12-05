@@ -116,7 +116,7 @@ const MessageInput = () => {
   };
 
   return (
-    <div className="p-2.5 sm:p-4 w-full bg-base-100 border-t border-base-300 pb-safe" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
+    <div className="p-2.5 sm:p-4 w-full bg-base-100 border-t border-base-300 sticky bottom-0 z-10" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
       {imagePreview && (
         <div className="mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-base-200 rounded-xl">
           <div className="relative">

@@ -549,11 +549,13 @@ const StrangerChatPage = () => {
 					</div>
 					
 					{/* Chat Area */}
-					<div className="flex-1 flex flex-col p-3 overflow-hidden">
-						<h3 className="text-sm font-bold mb-3 flex items-center gap-2 text-primary shrink-0">
-							<MessageSquare size={18} /> Temp Chat
-						</h3>
-						<div className="flex-1 overflow-y-auto mb-3 space-y-2 scrollbar-thin scrollbar-thumb-primary/40 scrollbar-track-transparent pr-1">
+					<div className="flex-1 flex flex-col overflow-hidden">
+						<div className="p-3 pb-0">
+							<h3 className="text-sm font-bold mb-3 flex items-center gap-2 text-primary">
+								<MessageSquare size={18} /> Temp Chat
+							</h3>
+						</div>
+						<div className="flex-1 overflow-y-auto px-3 space-y-2 scrollbar-thin scrollbar-thumb-primary/40 scrollbar-track-transparent">
 							{tempMessages.map((msg, index) => (
 								<div key={index} className={`chat ${msg.sender === 'You' ? 'chat-end' : 'chat-start'}`}>
 									<div className={`chat-bubble text-xs md:text-sm py-2 px-3 shadow-md ${msg.sender === 'You' ? 'chat-bubble-primary' : (msg.sender === 'System' ? 'chat-bubble-accent' : 'chat-bubble-secondary')}`}>
@@ -562,11 +564,12 @@ const StrangerChatPage = () => {
 								</div>
 							))}
 						</div>
-						<form onSubmit={handleSendTempMessage} className="flex gap-2 mt-auto shrink-0">
+						{/* Sticky Message Input - Moves with Keyboard */}
+						<form onSubmit={handleSendTempMessage} className="flex gap-2 p-3 bg-base-100 border-t border-base-300 sticky bottom-0 z-10" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
 							<input 
 								type="text" 
 								placeholder="Type a message..." 
-								className="input input-sm input-bordered flex-1 text-sm bg-base-100 focus:ring-2 focus:ring-primary/50 transition-all" 
+								className="input input-sm input-bordered flex-1 text-sm bg-base-200 focus:ring-2 focus:ring-primary/50 transition-all" 
 								value={currentMessage} 
 								onChange={(e) => setCurrentMessage(e.target.value)} 
 								disabled={status !== "connected"} 
