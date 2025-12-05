@@ -2,7 +2,7 @@ import { useState } from "react";
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
 import { useAuthStore } from "../store/useAuthStore";
-import { Send, Lock, Eye, EyeOff, LogOut } from "lucide-react";
+import { Send, Lock, Eye, EyeOff, LogOut, Video, Mic, Shield, Info } from "lucide-react";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 
@@ -216,6 +216,49 @@ const SettingsPage = () => {
                   </span>
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Permissions Info Section */}
+          <div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 border border-base-300">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Permissions</h2>
+                <p className="text-xs text-base-content/60">Camera & Microphone access</p>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-base-200 rounded-lg">
+                <Video className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="font-medium text-sm">Camera</div>
+                  <div className="text-xs text-base-content/60 mt-1">
+                    Required for video calls. Permission will be requested when you start a video call.
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-base-200 rounded-lg">
+                <Mic className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="font-medium text-sm">Microphone</div>
+                  <div className="text-xs text-base-content/60 mt-1">
+                    Required for voice/video calls. Permission will be requested when you start a call.
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2 p-3 bg-info/10 rounded-lg border border-info/20">
+                <Info className="w-4 h-4 text-info mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-base-content/70">
+                  Your browser will automatically ask for permission when needed. 
+                  To manage permissions, check your browser settings.
+                </p>
+              </div>
             </div>
           </div>
 
