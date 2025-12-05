@@ -125,14 +125,14 @@ const HomePage = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-base-200">
+    <div className="fixed inset-0 bg-base-200 overflow-hidden">
       {/* Main container */}
-      <div className="h-full w-full flex flex-col">
+      <div className="h-full w-full flex flex-col overflow-hidden">
         {/* Spacer for navbar */}
         <div className="h-14 sm:h-16 flex-shrink-0"></div>
         
         {/* Chat container - Full screen on mobile, contained on desktop */}
-        <div className="flex-1 flex items-center justify-center overflow-hidden">
+        <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0">
           <div className="bg-base-100 w-full h-full max-w-7xl flex overflow-hidden md:border-x border-base-300">
             {/* Sidebar */}
             <Sidebar />

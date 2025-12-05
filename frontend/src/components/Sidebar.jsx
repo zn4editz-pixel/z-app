@@ -49,6 +49,7 @@ const Sidebar = () => {
           border-r border-base-300
           flex-col
           h-full
+          overflow-hidden
         `}
       >
         {/* Header Section - Fixed */}
