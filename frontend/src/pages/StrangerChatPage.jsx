@@ -495,68 +495,83 @@ const StrangerChatPage = () => {
 	};
 
 	return (
-		<div className="h-screen pt-14 flex flex-col bg-base-300">
-			<div className="flex-1 flex flex-col md:flex-row gap-2 md:gap-4 p-2 md:p-4 overflow-hidden">
-				<div className="flex-1 flex flex-col gap-2 md:gap-4 relative overflow-hidden">
-					<div className="w-full flex-1 bg-black rounded-lg overflow-hidden relative aspect-video md:aspect-auto">
+		<div className="h-screen pt-14 flex flex-col bg-gradient-to-br from-base-300 via-base-200 to-base-300">
+			<div className="flex-1 flex flex-col md:flex-row gap-3 p-3 md:p-4 overflow-hidden">
+				{/* Video Section */}
+				<div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-b from-black to-gray-900 rounded-2xl shadow-2xl border border-base-content/10">
+					{/* Remote Video */}
+					<div className="w-full h-full relative rounded-2xl overflow-hidden">
 						<video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-contain" />
 						{status === "waiting" && (
-							<div className="absolute inset-0 flex flex-col items-center justify-center text-white gap-2 md:gap-4 bg-black/70">
-								<Loader2 className="w-12 h-12 md:w-16 md:h-16 animate-spin text-primary" />
-								<p className="text-lg md:text-xl font-semibold">Finding a partner...</p>
+							<div className="absolute inset-0 flex flex-col items-center justify-center text-white gap-4 bg-gradient-to-b from-black/90 to-black/70 backdrop-blur-sm">
+								<Loader2 className="w-14 h-14 md:w-20 md:h-20 animate-spin text-primary drop-shadow-lg" />
+								<p className="text-lg md:text-2xl font-bold drop-shadow-lg">Finding a partner...</p>
 							</div>
 						)}
 						{status === "connected" && (
-							<button onClick={handleReport} className="btn btn-error btn-xs md:btn-sm absolute top-2 right-2 opacity-70 hover:opacity-100 z-10 flex items-center gap-1">
+							<button onClick={handleReport} className="btn btn-error btn-xs md:btn-sm absolute top-3 right-3 opacity-90 hover:opacity-100 z-20 flex items-center gap-1 shadow-xl backdrop-blur-sm">
 								<AlertTriangle size={14} /> Report
 							</button>
 						)}
-					</div>
-					{/* Self Camera - Vertical on Mobile, Horizontal on Desktop */}
-					<div className="w-32 h-48 md:w-48 md:h-auto md:aspect-video lg:w-56 bg-black rounded-lg overflow-hidden absolute bottom-2 right-2 md:bottom-4 md:right-4 border-2 border-base-100 z-10 shadow-lg">
-						<video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
+						
+						{/* Self Camera - Improved Design */}
+						<div className="w-28 h-40 md:w-44 md:h-auto md:aspect-video lg:w-52 bg-gradient-to-b from-gray-800 to-black rounded-xl overflow-hidden absolute bottom-4 right-4 border-2 border-primary shadow-2xl z-20 ring-2 ring-primary/20">
+							<video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
+						</div>
 					</div>
 				</div>
 
-				<div className="w-full md:w-96 h-2/5 md:h-auto flex flex-col bg-base-100 rounded-lg shadow-lg overflow-hidden max-h-[90vh]">
-					<div className="flex items-center gap-2 p-2 md:p-3 border-b border-base-300">
-						<button onClick={handleSkip} className="btn btn-primary btn-sm md:btn-md flex-1" disabled={status === "idle"}>
-							<SkipForward size={16} className="mr-1"/> {status === "connected" ? "Skip" : "Find"}
+				{/* Chat Sidebar */}
+				<div className="w-full md:w-80 lg:w-96 h-[45vh] md:h-full flex flex-col bg-gradient-to-b from-base-100 to-base-200 rounded-2xl shadow-2xl overflow-hidden border border-base-content/10">
+					{/* Action Buttons */}
+					<div className="flex items-center gap-2 p-3 border-b border-base-300 bg-gradient-to-r from-base-200 to-base-100">
+						<button onClick={handleSkip} className="btn btn-primary btn-sm flex-1 gap-1 shadow-md hover:shadow-lg transition-all" disabled={status === "idle"}>
+							<SkipForward size={16} /> {status === "connected" ? "Skip" : "Find"}
 						</button>
-						<button onClick={() => navigate("/")} className="btn btn-error btn-outline btn-sm md:btn-md">
-							<PhoneOff size={16} className="mr-1"/> Leave
+						<button onClick={() => navigate("/")} className="btn btn-error btn-sm gap-1 shadow-md hover:shadow-lg transition-all">
+							<PhoneOff size={16} /> Leave
 						</button>
 					</div>
-					<div className="p-2 md:p-3 border-b border-base-300">
+					
+					{/* Add Friend Button */}
+					<div className="p-3 border-b border-base-300">
 						<button
-							className="btn btn-secondary btn-sm md:btn-md w-full"
-							// ✅ FIX: Disable if already friends, request sent, or not connected
+							className="btn btn-secondary btn-sm w-full gap-1 shadow-md hover:shadow-lg transition-all"
 							disabled={status !== "connected" || friendStatus === "REQUEST_SENT" || friendStatus === "FRIENDS"}
 							onClick={handleAddFriend}
 						>
-							<UserPlus size={16} className="mr-1"/>
+							<UserPlus size={16} />
 							{friendStatus === "NOT_FRIENDS" && "Add Friend"}
 							{friendStatus === "REQUEST_SENT" && "Request Sent"}
-							{friendStatus === "REQUEST_RECEIVED" && "Pending Request"} {/* Added clear text for pending */}
+							{friendStatus === "REQUEST_RECEIVED" && "Pending Request"}
 							{friendStatus === "FRIENDS" && "Friends"}
 						</button>
 					</div>
-					<div className="flex-1 flex flex-col p-2 md:p-3 overflow-hidden">
-						<h3 className="text-md md:text-lg font-semibold mb-2 flex items-center gap-2 shrink-0">
+					
+					{/* Chat Area */}
+					<div className="flex-1 flex flex-col p-3 overflow-hidden">
+						<h3 className="text-sm font-bold mb-3 flex items-center gap-2 text-primary shrink-0">
 							<MessageSquare size={18} /> Temp Chat
 						</h3>
-						<div className="flex-1 overflow-y-auto mb-2 space-y-1 md:space-y-2 scrollbar-thin scrollbar-thumb-primary/50 scrollbar-track-base-200">
+						<div className="flex-1 overflow-y-auto mb-3 space-y-2 scrollbar-thin scrollbar-thumb-primary/40 scrollbar-track-transparent pr-1">
 							{tempMessages.map((msg, index) => (
 								<div key={index} className={`chat ${msg.sender === 'You' ? 'chat-end' : 'chat-start'}`}>
-									<div className={`chat-bubble text-sm ${msg.sender === 'You' ? 'chat-bubble-primary' : (msg.sender === 'System' ? 'chat-bubble-accent text-xs' : 'chat-bubble-secondary')}`}>
+									<div className={`chat-bubble text-xs md:text-sm py-2 px-3 shadow-md ${msg.sender === 'You' ? 'chat-bubble-primary' : (msg.sender === 'System' ? 'chat-bubble-accent' : 'chat-bubble-secondary')}`}>
 										{msg.message}
 									</div>
 								</div>
 							))}
 						</div>
 						<form onSubmit={handleSendTempMessage} className="flex gap-2 mt-auto shrink-0">
-							<input type="text" placeholder="Message..." className="input input-sm md:input-md input-bordered flex-1" value={currentMessage} onChange={(e) => setCurrentMessage(e.target.value)} disabled={status !== "connected"} />
-							<button type="submit" className="btn btn-primary btn-sm md:btn-md" disabled={status !== "connected" || !currentMessage.trim()}>
+							<input 
+								type="text" 
+								placeholder="Type a message..." 
+								className="input input-sm input-bordered flex-1 text-sm bg-base-100 focus:ring-2 focus:ring-primary/50 transition-all" 
+								value={currentMessage} 
+								onChange={(e) => setCurrentMessage(e.target.value)} 
+								disabled={status !== "connected"} 
+							/>
+							<button type="submit" className="btn btn-primary btn-sm btn-circle shadow-md hover:shadow-lg transition-all" disabled={status !== "connected" || !currentMessage.trim()}>
 								<Send size={16} />
 							</button>
 						</form>
