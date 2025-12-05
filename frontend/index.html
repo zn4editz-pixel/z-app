@@ -48,9 +48,9 @@
         margin: 0;
         padding: 0;
         background-color: #1a1a1a;
-        /* Use dvh (dynamic viewport height) for mobile browsers */
-        height: 100dvh;
-        height: 100vh; /* Fallback for older browsers */
+        /* Use svh (small viewport height) for better mobile support */
+        min-height: 100svh;
+        min-height: 100vh; /* Fallback */
       }
       
       /* Prevent scrolling ONLY during initial load */
@@ -58,10 +58,25 @@
         overflow: hidden;
       }
       
-      /* Fix for mobile viewport */
-      @supports (height: 100dvh) {
+      /* Root container should fill viewport */
+      #root {
+        min-height: 100svh;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* Fix for mobile viewport - use svh for smallest viewport */
+      @supports (min-height: 100svh) {
+        html, body, #root {
+          min-height: 100svh;
+        }
+      }
+      
+      /* Ensure proper sizing on very small screens */
+      @media (max-width: 375px) {
         html, body {
-          height: 100dvh;
+          font-size: 14px;
         }
       }
       
