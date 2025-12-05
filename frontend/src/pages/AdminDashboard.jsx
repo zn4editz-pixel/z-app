@@ -10,6 +10,9 @@ import VerifiedBadge from "../components/VerifiedBadge";
 import AdminNotifications from "../components/AdminNotifications";
 
 const AdminDashboard = () => {
+	// --- Active Tab State ---
+	const [activeTab, setActiveTab] = useState("dashboard");
+
 	// --- Stats State ---
 	const [stats, setStats] = useState(null);
 	const [loadingStats, setLoadingStats] = useState(true);
@@ -258,63 +261,126 @@ const AdminDashboard = () => {
 		req => req.verificationRequest?.status === "pending"
 	);
 
+	// Tab configuration
+	const tabs = [
+		{ id: "dashboard", label: "Dashboard", icon: TrendingUp },
+		{ id: "users", label: "Users", icon: Users },
+		{ id: "ai-moderation", label: "AI Moderation", icon: Shield },
+		{ id: "reports", label: "Reports", icon: AlertTriangle },
+		{ id: "verifications", label: "Verifications", icon: BadgeCheck },
+		{ id: "notifications", label: "Notifications", icon: FileText },
+	];
+
 	return (
 		<div className="min-h-screen pt-14 xs:pt-16 sm:pt-18 md:pt-20 px-2 xs:px-3 sm:px-4 lg:px-6 bg-base-200 pb-16 xs:pb-18 sm:pb-20 md:pb-10">
 			<div className="max-w-7xl mx-auto">
-				<h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-center">Admin Dashboard</h1>
-
-				{/* Statistics Cards */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-					{loadingStats ? (
-						<div className="col-span-1 sm:col-span-2 lg:col-span-4 text-center py-8">
-							<span className="loading loading-spinner loading-lg"></span>
-						</div>
-					) : stats && (
-						<>
-							<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
-								<div className="stat-figure text-primary hidden sm:block">
-									<Users className="w-6 h-6 sm:w-8 sm:h-8" />
-								</div>
-								<div className="stat-title text-xs sm:text-sm">Total Users</div>
-								<div className="stat-value text-primary text-2xl sm:text-3xl">{stats.totalUsers}</div>
-								<div className="stat-desc text-xs">{stats.recentUsers} new this week</div>
-							</div>
-
-							<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
-								<div className="stat-figure text-success hidden sm:block">
-									<UserCheck className="w-6 h-6 sm:w-8 sm:h-8" />
-								</div>
-								<div className="stat-title text-xs sm:text-sm">Online Now</div>
-								<div className="stat-value text-success text-2xl sm:text-3xl">{stats.onlineUsers}</div>
-								<div className="stat-desc text-xs">{stats.verifiedUsers} verified</div>
-							</div>
-
-							<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
-								<div className="stat-figure text-warning hidden sm:block">
-									<Clock className="w-6 h-6 sm:w-8 sm:h-8" />
-								</div>
-								<div className="stat-title text-xs sm:text-sm">Pending Verifications</div>
-								<div className="stat-value text-warning text-2xl sm:text-3xl">{stats.pendingVerifications}</div>
-								<div className="stat-desc text-xs">{stats.approvedVerifications} approved</div>
-							</div>
-
-							<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
-								<div className="stat-figure text-error hidden sm:block">
-									<AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8" />
-								</div>
-								<div className="stat-title text-xs sm:text-sm">Pending Reports</div>
-								<div className="stat-value text-error text-2xl sm:text-3xl">{stats.pendingReports}</div>
-								<div className="stat-desc text-xs">{stats.totalReports} total reports</div>
-							</div>
-						</>
-					)}
+				{/* Header */}
+				<div className="mb-4 sm:mb-6">
+					<h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">Admin Panel</h1>
+					<p className="text-sm sm:text-base text-base-content/60">Manage users, content, and platform settings</p>
 				</div>
 
-				{/* Verification Requests Section */}
-				<section className="mb-6 sm:mb-8">
-					<div className="bg-base-100 rounded-xl shadow-lg p-3 sm:p-4 lg:p-6">
-						<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-4">
-							<h2 className="text-lg sm:text-xl lg:text-2xl font-semibold flex items-center gap-2">
+				{/* Tab Navigation */}
+				<div className="bg-base-100 rounded-xl shadow-lg p-2 mb-4 sm:mb-6 overflow-x-auto">
+					<div className="flex gap-1 sm:gap-2 min-w-max sm:min-w-0">
+						{tabs.map((tab) => {
+							const Icon = tab.icon;
+							return (
+								<button
+									key={tab.id}
+									onClick={() => setActiveTab(tab.id)}
+									className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg transition-all duration-200 whitespace-nowrap ${
+										activeTab === tab.id
+											? "bg-primary text-primary-content shadow-md"
+											: "hover:bg-base-200 text-base-content/70"
+									}`}
+								>
+									<Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+									<span className="text-xs sm:text-sm font-medium">{tab.label}</span>
+								</button>
+							);
+						})}
+					</div>
+				</div>
+
+				{/* Tab Content */}
+				<div className="animate-fadeIn">
+					{/* Dashboard Tab */}
+					{activeTab === "dashboard" && (
+						<div className="space-y-4 sm:space-y-6">
+							{/* Statistics Cards */}
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+								{loadingStats ? (
+									<div className="col-span-1 sm:col-span-2 lg:col-span-4 text-center py-8">
+										<span className="loading loading-spinner loading-lg"></span>
+									</div>
+								) : stats && (
+									<>
+										<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
+											<div className="stat-figure text-primary hidden sm:block">
+												<Users className="w-6 h-6 sm:w-8 sm:h-8" />
+											</div>
+											<div className="stat-title text-xs sm:text-sm">Total Users</div>
+											<div className="stat-value text-primary text-2xl sm:text-3xl">{stats.totalUsers}</div>
+											<div className="stat-desc text-xs">{stats.recentUsers} new this week</div>
+										</div>
+
+										<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
+											<div className="stat-figure text-success hidden sm:block">
+												<UserCheck className="w-6 h-6 sm:w-8 sm:h-8" />
+											</div>
+											<div className="stat-title text-xs sm:text-sm">Online Now</div>
+											<div className="stat-value text-success text-2xl sm:text-3xl">{stats.onlineUsers}</div>
+											<div className="stat-desc text-xs">{stats.verifiedUsers} verified</div>
+										</div>
+
+										<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
+											<div className="stat-figure text-warning hidden sm:block">
+												<Clock className="w-6 h-6 sm:w-8 sm:h-8" />
+											</div>
+											<div className="stat-title text-xs sm:text-sm">Pending Verifications</div>
+											<div className="stat-value text-warning text-2xl sm:text-3xl">{stats.pendingVerifications}</div>
+											<div className="stat-desc text-xs">{stats.approvedVerifications} approved</div>
+										</div>
+
+										<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
+											<div className="stat-figure text-error hidden sm:block">
+												<AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8" />
+											</div>
+											<div className="stat-title text-xs sm:text-sm">Pending Reports</div>
+											<div className="stat-value text-error text-2xl sm:text-3xl">{stats.pendingReports}</div>
+											<div className="stat-desc text-xs">{stats.totalReports} total reports</div>
+										</div>
+									</>
+								)}
+							</div>
+
+							{/* Quick Actions */}
+							<div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
+								<h3 className="text-lg sm:text-xl font-semibold mb-4">Quick Actions</h3>
+								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+									{tabs.slice(1).map((tab) => {
+										const Icon = tab.icon;
+										return (
+											<button
+												key={tab.id}
+												onClick={() => setActiveTab(tab.id)}
+												className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-lg bg-base-200 hover:bg-primary hover:text-primary-content transition-all duration-200 group"
+											>
+												<Icon className="w-6 h-6 sm:w-8 sm:h-8" />
+												<span className="text-xs sm:text-sm font-medium text-center">{tab.label}</span>
+											</button>
+										);
+									})}
+								</div>
+							</div>
+						</div>
+					)}
+
+					{/* Users Tab */}
+					{activeTab === "users" && (
+						<div className="bg-base-100 rounded-xl shadow-lg p-3 sm:p-4 lg:p-6">
+							<h2 className="text-lg sm:text-xl lg:text-2xl font-semibold mb-4">User Management</h2>
 								<BadgeCheck className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
 								Verification Requests
 							</h2>
