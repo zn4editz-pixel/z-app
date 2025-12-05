@@ -15,16 +15,17 @@ import {
 } from "../controllers/auth.controller.js";
 // Assuming 'auth.middleware.js' is correct. If it's 'protectRoute.js', let me know.
 import { protectRoute } from "../middleware/auth.middleware.js"; 
+import { authLimiter } from "../middleware/security.js";
 
 const router = express.Router();
 
-// 🔓 Public Routes
-router.post("/signup", signup);
-router.post("/login", login);
+// 🔓 Public Routes (with rate limiting)
+router.post("/signup", authLimiter, signup);
+router.post("/login", authLimiter, login);
 router.post("/logout", logout);
-router.post("/forgot-password", forgotPassword); // Send OTP to email
-router.post("/verify-reset-otp", verifyResetOTP); // Verify OTP
-router.post("/reset-password", resetPassword); // Reset password with OTP
+router.post("/forgot-password", authLimiter, forgotPassword); // Send OTP to email
+router.post("/verify-reset-otp", authLimiter, verifyResetOTP); // Verify OTP
+router.post("/reset-password", authLimiter, resetPassword); // Reset password with OTP
 
 // 🔒 Protected Routes
 router.get("/check", protectRoute, checkAuth);

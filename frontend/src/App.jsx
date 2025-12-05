@@ -5,6 +5,7 @@ import { Toaster, toast } from "react-hot-toast";
 import Navbar from "./components/Navbar";
 import OfflineIndicator from "./components/OfflineIndicator";
 import PermissionHandler from "./components/PermissionHandler";
+import ConnectionStatus from "./components/ConnectionStatus";
 
 // Pages
 import HomePage from "./pages/HomePage";
@@ -299,6 +300,9 @@ const App = () => {
 
 	return (
 		<div data-theme={theme} className="pt-14 md:pt-16">
+			{/* Connection Status */}
+			<ConnectionStatus />
+			
 			{/* Offline Indicator */}
 			<OfflineIndicator />
 			

@@ -10,8 +10,39 @@ import { useNotificationStore } from "../store/useNotificationStore";
 
 // Admin Notifications List Component
 const AdminNotificationsList = () => {
-	const { notifications } = useNotificationStore();
+	const { notifications, addNotification } = useNotificationStore();
 	const [adminNotifications, setAdminNotifications] = useState([]);
+	const [isLoading, setIsLoading] = useState(true);
+
+	// Load notifications from backend on mount
+	useEffect(() => {
+		const loadNotifications = async () => {
+			try {
+				const res = await axiosInstance.get("/users/notifications");
+				const dbNotifications = res.data || [];
+				console.log(`📥 Loaded ${dbNotifications.length} notifications from DB`);
+				
+				// Add each notification to the store
+				dbNotifications.forEach(notif => {
+					addNotification({
+						type: notif.isBroadcast ? 'admin_broadcast' : 'admin',
+						title: notif.title,
+						message: notif.message,
+						color: notif.color,
+						notificationType: notif.type,
+						createdAt: notif.createdAt,
+						id: notif._id,
+					});
+				});
+			} catch (error) {
+				console.error("Error loading notifications:", error);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+		
+		loadNotifications();
+	}, []); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Filter admin notifications
 	useEffect(() => {
@@ -40,6 +71,14 @@ const AdminNotificationsList = () => {
 		return icons[type] || 'ℹ️';
 	};
 
+	if (isLoading) {
+		return (
+			<div className="flex justify-center py-4">
+				<Loader2 className="w-6 h-6 animate-spin text-primary" />
+			</div>
+		);
+	}
+
 	if (adminNotifications.length === 0) return null;
 
 	return (
@@ -50,7 +89,7 @@ const AdminNotificationsList = () => {
 			</div>
 			{adminNotifications.map((notification, index) => (
 				<div
-					key={index}
+					key={notification.id || index}
 					className={`alert shadow-lg ${getColorClass(notification.color)}`}
 				>
 					<div className="flex-1">

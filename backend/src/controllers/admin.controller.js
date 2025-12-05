@@ -501,18 +501,26 @@ export const sendPersonalNotification = async (req, res) => {
 		});
 
 		await notification.save();
+		console.log(`📧 Personal notification saved to DB for user ${userId}`);
 
 		// Emit real-time notification to user
 		const io = req.app.get("io");
 		if (io) {
-			emitToUser(io, userId, "admin-notification", {
+			const notificationData = {
 				id: notification._id,
 				title,
 				message,
 				color: notification.color,
 				type: notification.type,
 				createdAt: notification.createdAt,
-			});
+			};
+			console.log(`📤 Attempting to emit admin-notification to user ${userId}:`, notificationData);
+			const emitted = emitToUser(io, userId, "admin-notification", notificationData);
+			if (emitted) {
+				console.log(`✅ Successfully emitted admin-notification to user ${userId}`);
+			} else {
+				console.log(`⚠️ User ${userId} not online, notification saved to DB only`);
+			}
 		}
 
 		res.status(200).json({ 
@@ -535,8 +543,9 @@ export const sendBroadcastNotification = async (req, res) => {
 			return res.status(400).json({ error: "Title and message are required" });
 		}
 
-		// Get all users
+		// Get all users (excluding admins)
 		const users = await User.find({ isAdmin: false }).select("_id");
+		console.log(`📢 Broadcasting to ${users.length} users`);
 
 		// Create notification for each user
 		const notifications = users.map(user => ({
@@ -550,17 +559,21 @@ export const sendBroadcastNotification = async (req, res) => {
 		}));
 
 		await AdminNotification.insertMany(notifications);
+		console.log(`✅ Saved ${notifications.length} broadcast notifications to DB`);
 
 		// Emit real-time notification to all users
 		const io = req.app.get("io");
 		if (io) {
-			io.emit("admin-broadcast", {
+			const broadcastData = {
 				title,
 				message,
 				color: color || "blue",
 				type: type || "info",
 				createdAt: new Date(),
-			});
+			};
+			console.log(`📤 Emitting admin-broadcast to all connected users:`, broadcastData);
+			io.emit("admin-broadcast", broadcastData);
+			console.log(`✅ Broadcast emitted successfully`);
 		}
 
 		res.status(200).json({ 

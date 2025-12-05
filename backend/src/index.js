@@ -3,11 +3,15 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import bcrypt from "bcryptjs";
+import helmet from "helmet";
+import mongoSanitize from "express-mongo-sanitize";
 import { fileURLToPath } from "url";
 import path from "path";
 
 import { connectDB } from "./lib/db.js";
 import { app, server } from "./lib/socket.js";
+import { apiLimiter } from "./middleware/security.js";
+import { errorHandler, notFound } from "./middleware/errorHandler.js";
 
 // --- Routes Imports ---
 import authRoutes from "./routes/auth.route.js";
@@ -28,9 +32,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // --- Middleware ---
+// Security headers
+app.use(helmet({
+	contentSecurityPolicy: false, // Disable for now to allow inline scripts
+	crossOriginEmbedderPolicy: false, // Allow embedding for WebRTC
+}));
+
+// Sanitize data to prevent MongoDB injection
+app.use(mongoSanitize());
+
+// Body parsing
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cookieParser());
+
+// Apply rate limiting to all API routes
+app.use("/api", apiLimiter);
 
 // CORS configuration
 const allowedOrigins = [
@@ -58,6 +75,16 @@ app.use(
 	})
 );
 // --- End Middleware ---
+
+// --- Health Check Endpoint ---
+app.get("/health", (req, res) => {
+	res.status(200).json({ 
+		status: "ok", 
+		timestamp: new Date().toISOString(),
+		uptime: process.uptime(),
+		environment: process.env.NODE_ENV || "development"
+	});
+});
 
 // --- API Routes ---
 app.use("/api/auth", authRoutes);
@@ -94,6 +121,10 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // --- *** END OF FIXED SECTION *** ---
+
+// --- Error Handling Middleware (must be last) ---
+app.use(notFound);
+app.use(errorHandler);
 
 // --- Default Admin Creation ---
 const createDefaultAdmin = async () => {
