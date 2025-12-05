@@ -322,8 +322,8 @@ const ChatMessage = ({ message, onReply }) => {
                       </button>
                       
                       {/* Instagram-style Animated Waveform */}
-                      <div className="flex-1 flex items-center gap-0.5 h-8">
-                        {[3, 6, 4, 8, 5, 9, 6, 7, 4, 8, 5, 6, 7, 5, 8, 6, 4, 7, 5, 6].map((height, i) => {
+                      <div className="flex-1 flex items-center justify-center gap-[3px] h-8">
+                        {[4, 7, 5, 9, 6, 10, 7, 8, 5, 9, 6, 7, 8, 6, 9, 7, 5, 8, 6, 7].map((height, i) => {
                           const duration = message.voiceDuration || 3;
                           const progress = currentTime / duration;
                           const isActive = isPlaying && (i / 20) <= progress;
@@ -331,12 +331,15 @@ const ChatMessage = ({ message, onReply }) => {
                           return (
                             <div
                               key={i}
-                              className={`w-0.5 rounded-full transition-all duration-200 ${
-                                isActive ? 'bg-primary' : isMyMessage ? 'bg-primary-content/40' : 'bg-base-content/40'
+                              className={`w-[3px] rounded-full transition-all duration-150 ${
+                                isActive 
+                                  ? isMyMessage ? 'bg-primary-content' : 'bg-primary' 
+                                  : isMyMessage ? 'bg-primary-content/30' : 'bg-base-content/30'
                               }`}
                               style={{ 
-                                height: `${height * 3}px`,
-                                transform: isPlaying && isActive ? 'scaleY(1.1)' : 'scaleY(1)'
+                                height: `${height * 2.5}px`,
+                                transform: isPlaying && isActive ? 'scaleY(1.15)' : 'scaleY(1)',
+                                opacity: isActive ? 1 : 0.6
                               }}
                             />
                           );
