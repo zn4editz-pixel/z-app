@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios"; // Keep axiosInstance for getMessages/sendMessage
 import { useAuthStore } from "./useAuthStore"; // Auth store needed for socket & user info
 import { cacheMessages, getCachedMessages, updateLastSync } from "../utils/offlineStorage";
+import { cacheMessagesDB, getCachedMessagesDB } from "../utils/cache";
 
 export const useChatStore = create((set, get) => ({
     // --- Existing Chat State ---
@@ -22,30 +23,42 @@ export const useChatStore = create((set, get) => ({
 
     // --- Existing Chat Actions ---
     getMessages: async (userId) => {
-        set({ isMessagesLoading: true, messages: [] }); // Clear previous messages
+        // DON'T clear messages immediately - prevents flash
+        set({ isMessagesLoading: true });
         
-        // Try to load cached messages first (instant load)
-        const cachedMessages = getCachedMessages(userId);
-        if (cachedMessages && cachedMessages.length > 0) {
-            set({ messages: cachedMessages, isMessagesLoading: false });
+        // Try IndexedDB cache first (instant load)
+        const cachedMessagesDB = await getCachedMessagesDB(userId);
+        if (cachedMessagesDB && cachedMessagesDB.length > 0) {
+            console.log('⚡ Loading messages from IndexedDB cache (instant)');
+            set({ messages: cachedMessagesDB, isMessagesLoading: false });
+        } else {
+            // Fallback to localStorage cache
+            const cachedMessages = getCachedMessages(userId);
+            if (cachedMessages && cachedMessages.length > 0) {
+                console.log('⚡ Loading messages from localStorage cache');
+                set({ messages: cachedMessages, isMessagesLoading: false });
+            }
         }
         
         try {
             const res = await axiosInstance.get(`/messages/${userId}`);
             set({ messages: res.data });
-            // Cache the messages for offline use
+            
+            // Cache in both IndexedDB and localStorage
+            await cacheMessagesDB(userId, res.data);
             cacheMessages(userId, res.data);
             updateLastSync();
-            get().resetUnread(userId); // reset unread when opening chat
-            // Mark messages as read when opening chat
+            
+            get().resetUnread(userId);
             get().markMessagesAsRead(userId);
         } catch (error) {
-            // If online fetch fails but we have cache, keep showing cache
-            if (cachedMessages && cachedMessages.length > 0) {
-                toast.error("Using cached messages - Check your connection");
+            // If fetch fails but we have cache, keep showing cache
+            const hasCache = cachedMessagesDB?.length > 0 || getCachedMessages(userId)?.length > 0;
+            if (hasCache) {
+                console.log('Using cached messages - API failed');
             } else {
                 toast.error(error.response?.data?.message || "Failed to fetch messages");
-                set({ messages: [] }); // Clear messages on error
+                set({ messages: [] });
             }
         } finally {
             set({ isMessagesLoading: false });
