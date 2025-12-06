@@ -234,7 +234,7 @@ const ChatMessage = ({ message, onReply }) => {
       <div 
         id={`message-${message._id}`}
         className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${
-          Object.keys(groupedReactions).length > 0 ? "mb-5" : "mb-3"
+          Object.keys(groupedReactions).length > 0 ? "mb-6" : "mb-3"
         } relative`}
       >
         <div className="flex items-end max-w-[80%] sm:max-w-[70%] gap-2 relative">
@@ -406,20 +406,20 @@ const ChatMessage = ({ message, onReply }) => {
               )}
             </div>
 
-            {/* Reactions Display - Fixed Positioning */}
+            {/* Reactions Display - Instagram/WhatsApp Style */}
             {Object.keys(groupedReactions).length > 0 && (
               <div
-                className={`absolute -bottom-3 ${isMyMessage ? "right-1" : "left-1"} flex gap-1 z-10`}
+                className={`absolute -bottom-4 ${isMyMessage ? "right-0" : "left-0"} flex gap-1 z-10`}
                 onClick={() => setShowReactions(!showReactions)}
               >
                 {Object.entries(groupedReactions).map(([emoji, users]) => (
                   <div
                     key={emoji}
-                    className="flex items-center gap-0.5 bg-base-100 border border-base-300 rounded-full px-1.5 py-0.5 shadow-lg cursor-pointer hover:scale-110 transition-transform active:scale-95"
+                    className="flex items-center gap-1 bg-base-100 border-2 border-base-300 rounded-full px-2 py-1 shadow-xl cursor-pointer hover:scale-110 transition-all active:scale-95 hover:shadow-2xl"
                   >
-                    <span className="text-xs">{emoji}</span>
+                    <span className="text-sm leading-none">{emoji}</span>
                     {users.length > 1 && (
-                      <span className="text-[9px] font-bold text-base-content/70">{users.length}</span>
+                      <span className="text-xs font-bold text-base-content/80 leading-none">{users.length}</span>
                     )}
                   </div>
                 ))}
