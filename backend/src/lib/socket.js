@@ -390,6 +390,65 @@ io.on("connection", (socket) => {
 	});
     // --- *** END OF FIXED FUNCTION *** ---
 
+	// Silent AI Suspicion Report (Low confidence detections for admin review)
+	socket.on("stranger:aiSuspicion", async (payload) => {
+		const { reporterId, reportedUserId, reason, description, category, screenshot, isAIDetected, aiConfidence, aiCategory, isSilentReport } = payload;
+		const partnerSocketId = matchedPairs.get(socket.id);
+		
+		if (partnerSocketId) {
+			const partnerSocket = io.sockets.sockets.get(partnerSocketId);
+			
+			if (partnerSocket && partnerSocket.userId) {
+				try {
+					// Validate screenshot
+					if (!screenshot) {
+						console.warn("⚠️ Silent AI report without screenshot");
+						return;
+					}
+
+					// Upload screenshot to Cloudinary
+					const uploadResponse = await cloudinary.uploader.upload(screenshot, {
+						resource_type: "image",
+						folder: "reports/ai-suspicions",
+					});
+					const screenshotUrl = uploadResponse.secure_url;
+
+					if (!screenshotUrl) {
+						console.error("Failed to upload AI suspicion screenshot");
+						return;
+					}
+
+					// Save as a report with special flag
+					const report = new Report({
+						reporter: reporterId,
+						reportedUser: partnerSocket.userId,
+						reason: reason || 'AI Suspicion - Low Confidence',
+						description: description || 'Low confidence AI detection for admin review',
+						category: category || "stranger_chat",
+						screenshot: screenshotUrl,
+						isAIDetected: true,
+						aiConfidence: aiConfidence || null,
+						aiCategory: aiCategory || null,
+						status: 'pending', // Pending admin review
+						context: {
+							chatType: "stranger",
+							socketIds: [socket.id, partnerSocketId],
+							isSilentReport: true,
+							note: "Low confidence detection - no user action taken"
+						}
+					});
+					
+					await report.save();
+					console.log(`📋 Silent AI suspicion logged: ${aiCategory} at ${(aiConfidence * 100).toFixed(1)}% confidence`);
+					
+					// No response to user - silent
+				} catch (error) {
+					console.error("Error saving AI suspicion:", error.message);
+				}
+			}
+		}
+	});
+
 	// === WEBRTC SIGNALING (STRANGER CHAT) ===
 	socket.on("webrtc:offer", (payload) => {
 		const { sdp } = payload;

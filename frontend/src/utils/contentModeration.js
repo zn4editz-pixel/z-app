@@ -128,8 +128,9 @@ export const captureVideoFrame = (videoElement) => {
 export const MODERATION_CONFIG = {
   enabled: true,
   checkInterval: 10000, // Check every 10 seconds
-  confidenceThreshold: 0.6, // 60% confidence to flag
-  autoReportThreshold: 0.8, // 80% confidence to auto-report
+  silentReportThreshold: 0.1, // 10% confidence - silent report to admin (no user action)
+  confidenceThreshold: 0.6, // 60% confidence to flag and warn user
+  autoReportThreshold: 0.8, // 80% confidence to auto-report and disconnect
   maxViolations: 2, // Auto-disconnect after 2 violations
 };
 

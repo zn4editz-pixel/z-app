@@ -485,19 +485,46 @@ const StrangerChatPage = () => {
 					return;
 				}
 				
+				// Check for ANY suspicious content (even low confidence)
+				const confidence = analysis.highestRisk?.probability || 0;
+				const category = analysis.highestRisk?.className || 'Unknown';
+				
+				// Check if it's potentially inappropriate (Porn, Hentai, or Sexy)
+				const isSuspicious = ['Porn', 'Hentai', 'Sexy'].includes(category);
+				
+				// Silent report to admin for low confidence (10%+) - no user action
+				if (isSuspicious && confidence >= MODERATION_CONFIG.silentReportThreshold && confidence < MODERATION_CONFIG.confidenceThreshold) {
+					console.log(`📋 SILENT REPORT to admin - Low confidence: ${(confidence * 100).toFixed(1)}%`);
+					const screenshot = captureVideoFrame(remoteVideoRef.current);
+					if (screenshot && socket) {
+						socket.emit('stranger:aiSuspicion', {
+							reporterId: authUser._id,
+							reportedUserId: partnerUserId,
+							reason: 'AI Suspicion - Low Confidence',
+							description: `AI detected suspicious content: ${category} (${(confidence * 100).toFixed(1)}% confidence)\n\nThis is a low-confidence detection for admin review only. No action taken against user.`,
+							screenshot,
+							category: 'stranger_chat',
+							isAIDetected: true,
+							aiConfidence: confidence,
+							aiCategory: category,
+							isSilentReport: true
+						});
+					}
+				}
+				
+				// User-facing actions for higher confidence
 				if (!analysis.safe) {
 					violations++;
-					const confidence = analysis.highestRisk?.probability || 0;
 					
 					console.warn('⚠️ AI Moderation Alert:', {
 						violations,
 						confidence: `${(confidence * 100).toFixed(1)}%`,
-						category: analysis.highestRisk?.className,
+						category: category,
 						allPredictions: analysis.predictions
 					});
 
 					if (confidence >= MODERATION_CONFIG.autoReportThreshold) {
-						// High confidence - auto-report
+						// High confidence (80%+) - auto-report and disconnect
 						console.log('🚨 AUTO-REPORTING due to high confidence');
 						const screenshot = captureVideoFrame(remoteVideoRef.current);
 						if (screenshot && socket) {
@@ -505,24 +532,24 @@ const StrangerChatPage = () => {
 								reporterId: authUser._id,
 								reportedUserId: partnerUserId,
 								reason: 'Nudity or Sexual Content',
-								description: `AI detected: ${analysis.highestRisk?.className} (${(confidence * 100).toFixed(1)}% confidence)`,
+								description: `AI detected: ${category} (${(confidence * 100).toFixed(1)}% confidence)`,
 								screenshot,
 								category: 'stranger_chat',
 								isAIDetected: true,
 								aiConfidence: confidence,
-								aiCategory: analysis.highestRisk?.className
+								aiCategory: category
 							});
 						}
 						
 						toast.error('Inappropriate content detected. Disconnecting and reporting.');
 						handleSkip();
 					} else if (violations >= MODERATION_CONFIG.maxViolations) {
-						// Multiple violations - disconnect
+						// Multiple violations (60%+) - disconnect
 						console.log('🚨 DISCONNECTING due to multiple violations');
 						toast.error('Multiple content violations detected. Disconnecting.');
 						handleSkip();
 					} else {
-						// Warning
+						// Warning (60-79%)
 						toast.warning(`Warning: Potentially inappropriate content detected (${violations}/${MODERATION_CONFIG.maxViolations})`);
 					}
 				} else {
