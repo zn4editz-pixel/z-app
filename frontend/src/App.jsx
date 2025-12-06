@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, lazy, Suspense } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import { AnimatePresence } from "framer-motion";
 
@@ -9,22 +9,24 @@ import PermissionHandler from "./components/PermissionHandler";
 import ConnectionStatus from "./components/ConnectionStatus";
 import PageTransition from "./components/PageTransition";
 
-// Pages
+// Core pages (loaded immediately)
 import HomePage from "./pages/HomePage";
 import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
-import SetupProfilePage from "./pages/SetupProfilePage";
-import SettingsPage from "./pages/SettingsPage";
-import ChangePasswordPage from "./pages/ChangePasswordPage";
-import MyProfilePage from "./pages/ProfilePage";
-import PublicProfilePage from "./pages/PublicProfilePage";
-import StrangerChatPage from "./pages/StrangerChatPage"; 
-import AdminDashboard from "./pages/AdminDashboard";
-import DiscoverPage from "./pages/DiscoverPage";
-import SuspendedPage from "./pages/SuspendedPage";
-import GoodbyePage from "./pages/GoodbyePage";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+
+// Lazy load heavy/less-used pages for faster initial load
+const SetupProfilePage = lazy(() => import("./pages/SetupProfilePage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage"));
+const MyProfilePage = lazy(() => import("./pages/ProfilePage"));
+const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
+const StrangerChatPage = lazy(() => import("./pages/StrangerChatPage"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const DiscoverPage = lazy(() => import("./pages/DiscoverPage"));
+const SuspendedPage = lazy(() => import("./pages/SuspendedPage"));
+const GoodbyePage = lazy(() => import("./pages/GoodbyePage"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
@@ -308,6 +310,13 @@ const App = () => {
 
 	const hasCompletedProfile = authUser?.hasCompletedProfile;
 
+	// Loading fallback for lazy-loaded pages
+	const PageLoader = () => (
+		<div className="flex items-center justify-center h-screen">
+			<span className="loading loading-spinner loading-lg text-primary"></span>
+		</div>
+	);
+
 	return (
 		<div data-theme={theme} className="pt-14 md:pt-16">
 			{/* Connection Status */}
@@ -323,7 +332,8 @@ const App = () => {
 			{hasCompletedProfile && window.location.pathname !== "/stranger" && <Navbar />}
 
 			<AnimatePresence mode="wait">
-				<Routes location={location} key={location.pathname}>
+				<Suspense fallback={<PageLoader />}>
+					<Routes location={location} key={location.pathname}>
 				{/* --- Auth Routes --- */}
 				<Route
 					path="/signup"
@@ -464,7 +474,8 @@ const App = () => {
 				<Route path="/suspended" element={<SuspendedPage />} />
 				<Route path="/goodbye" element={<GoodbyePage />} />
 				<Route path="/blocked" element={<GoodbyePage />} />
-				</Routes>
+					</Routes>
+				</Suspense>
 			</AnimatePresence>
 
 			<Toaster position="top-center" />

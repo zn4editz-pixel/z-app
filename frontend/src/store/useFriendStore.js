@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
+import { cacheFriends, getCachedFriends } from "../utils/cache.js";
 
 export const useFriendStore = create((set, get) => ({
     friends: [],
@@ -12,18 +13,42 @@ export const useFriendStore = create((set, get) => ({
 
     // Fetch all friend data (friends and requests)
     fetchFriendData: async () => {
-        set({ isLoading: true });
+        const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+        const userId = authUser._id;
+        
+        // Try cache first for instant load
+        const cached = await getCachedFriends(userId);
+        if (cached) {
+            console.log("⚡ Loading friends from cache (instant)");
+            set({
+                friends: cached.friends || [],
+                pendingReceived: cached.received || [],
+                pendingSent: cached.sent || [],
+                isLoading: false
+            });
+        } else {
+            set({ isLoading: true });
+        }
+        
         try {
             const [friendsRes, requestsRes] = await Promise.all([
                 axiosInstance.get("/friends/all"),
                 axiosInstance.get("/friends/requests"),
             ]);
 
-            console.log("✅ Friends data loaded:", {
+            console.log("✅ Friends data loaded from API:", {
                 friends: friendsRes.data?.length || 0,
                 received: requestsRes.data?.received?.length || 0,
                 sent: requestsRes.data?.sent?.length || 0
             });
+            
+            // Cache the fresh data
+            const freshData = {
+                friends: friendsRes.data || [],
+                received: requestsRes.data?.received || [],
+                sent: requestsRes.data?.sent || []
+            };
+            await cacheFriends(userId, freshData);
 
             // Merge with existing data to preserve real-time additions
             set((state) => {
