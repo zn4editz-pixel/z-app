@@ -5,6 +5,7 @@ import cors from "cors";
 import bcrypt from "bcryptjs";
 import helmet from "helmet";
 import mongoSanitize from "express-mongo-sanitize";
+import compression from "compression";
 import { fileURLToPath } from "url";
 import path from "path";
 
@@ -40,6 +41,9 @@ app.use(helmet({
 
 // Sanitize data to prevent MongoDB injection
 app.use(mongoSanitize());
+
+// ✅ Performance Optimization: Enable gzip compression
+app.use(compression());
 
 // Body parsing
 app.use(express.json({ limit: "50mb" }));

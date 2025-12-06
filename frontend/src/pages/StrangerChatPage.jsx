@@ -43,7 +43,7 @@ const ReportModal = ({ isOpen, onClose, onSubmit, screenshotPreview, isSubmittin
 				<p className="text-sm mb-4 text-base-content/80">A screenshot will be sent for review.</p>
 				{screenshotPreview && (
 					<div className="mb-4 border border-base-300 rounded overflow-hidden">
-						<img src={screenshotPreview} alt="Report Screenshot" className="max-h-40 w-full object-contain bg-black" />
+						<img src={screenshotPreview} alt="Report Screenshot" className="max-h-40 w-full object-contain bg-black" loading="lazy" decoding="async" />
 					</div>
 				)}
 				<form onSubmit={handleSubmit}>

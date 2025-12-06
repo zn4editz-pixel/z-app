@@ -288,18 +288,20 @@ const AdminDashboard = () => {
 	};
 
 	return (
-		<div className="min-h-screen pt-14 xs:pt-16 sm:pt-18 md:pt-20 px-2 xs:px-3 sm:px-4 lg:px-6 bg-base-200 pb-16 xs:pb-18 sm:pb-20 md:pb-10">
+		<div className="min-h-screen pt-14 xs:pt-16 sm:pt-18 md:pt-20 px-2 xs:px-3 sm:px-4 lg:px-6 bg-gradient-to-br from-base-200 via-base-300 to-base-200 pb-16 xs:pb-18 sm:pb-20 md:pb-10">
 			<div className="max-w-7xl mx-auto">
 				{/* Header */}
-				<div className="mb-4 sm:mb-6">
-					<h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">Admin Panel</h1>
-					<p className="text-sm sm:text-base text-base-content/60">
+				<div className="mb-6 sm:mb-8">
+					<h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+						Admin Panel
+					</h1>
+					<p className="text-sm sm:text-base text-base-content/70">
 						Manage users, content, and platform settings
 					</p>
 				</div>
 
 				{/* Tab Navigation */}
-				<div className="bg-base-100 rounded-xl shadow-lg p-2 mb-4 sm:mb-6 overflow-x-auto">
+				<div className="bg-base-100/80 backdrop-blur-sm rounded-2xl shadow-xl p-2 mb-6 sm:mb-8 overflow-x-auto border border-base-300">
 					<div className="flex gap-1 sm:gap-2 min-w-max sm:min-w-0">
 						{tabs.map((tab) => {
 							const Icon = tab.icon;
@@ -307,14 +309,14 @@ const AdminDashboard = () => {
 								<button
 									key={tab.id}
 									onClick={() => setActiveTab(tab.id)}
-									className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg transition-all duration-200 whitespace-nowrap ${
+									className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium ${
 										activeTab === tab.id
-											? "bg-primary text-primary-content shadow-md"
-											: "hover:bg-base-200 text-base-content/70"
+											? "bg-gradient-to-r from-primary/90 to-secondary/90 text-primary-content shadow-lg scale-105"
+											: "hover:bg-base-200 text-base-content/70 hover:text-base-content hover:scale-102"
 									}`}
 								>
 									<Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-									<span className="text-xs sm:text-sm font-medium">{tab.label}</span>
+									<span className="text-xs sm:text-sm">{tab.label}</span>
 								</button>
 							);
 						})}

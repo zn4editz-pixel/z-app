@@ -36,13 +36,15 @@ export const useAuthStore = create((set, get) => ({
 			const token = localStorage.getItem("token");
 			if (!token) {
 				// No token, skip auth check
+				console.log("No token found, skipping auth check");
 				set({ authUser: null, isCheckingAuth: false });
 				return;
 			}
 			
+			// Set token in axios headers
 			axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-			// axiosInstance now uses the correct baseURL from axios.js
+			// Check auth with backend
 			const res = await axiosInstance.get("/auth/check");
 			const user = res.data;
 
@@ -50,30 +52,54 @@ export const useAuthStore = create((set, get) => ({
                  throw new Error("Invalid user data received");
             }
 
+			// Check if user is blocked or suspended
 			if (user.isBlocked) { 
+				console.log("User is blocked");
 				toast.error("Account is blocked"); 
 				set({ authUser: null, isCheckingAuth: false });
+				localStorage.removeItem("authUser");
+				localStorage.removeItem("token");
 				return;
 			}
-			if (user.suspension && new Date(user.suspension.endTime) > new Date()) { 
+			if (user.isSuspended && user.suspendedUntil && new Date(user.suspendedUntil) > new Date()) { 
+				console.log("User is suspended");
 				toast.error("Account is suspended"); 
 				set({ authUser: null, isCheckingAuth: false });
+				localStorage.removeItem("authUser");
+				localStorage.removeItem("token");
 				return;
 			}
 
+			// Auth successful
+			console.log("Auth check successful for user:", user.username);
 			set({ authUser: user });
 			localStorage.setItem("authUser", JSON.stringify(user));
 			get().connectSocket();
 			useFriendStore.getState().fetchFriendData();
 		} catch (error) {
-			console.log("Auth check failed - user not logged in");
-			// Clear state on any auth check failure
-			set({ authUser: null });
-			localStorage.removeItem("authUser");
-			localStorage.removeItem("token");
-			delete axiosInstance.defaults.headers.common['Authorization'];
-			get().disconnectSocket();
-			useFriendStore.getState().clearFriendData();
+			console.log("Auth check failed:", error.response?.status, error.response?.data?.message || error.message);
+			
+			// Only clear auth if it's a real auth failure (401), not network errors
+			if (error.response?.status === 401) {
+				console.log("Token invalid or expired, clearing auth");
+				set({ authUser: null });
+				localStorage.removeItem("authUser");
+				localStorage.removeItem("token");
+				delete axiosInstance.defaults.headers.common['Authorization'];
+				get().disconnectSocket();
+				useFriendStore.getState().clearFriendData();
+			} else {
+				// For network errors, keep the user logged in (offline support)
+				console.log("Network error during auth check, keeping user logged in");
+				const cachedUser = localStorage.getItem("authUser");
+				if (cachedUser) {
+					try {
+						set({ authUser: JSON.parse(cachedUser) });
+					} catch (e) {
+						console.error("Failed to parse cached user:", e);
+					}
+				}
+			}
 		} finally {
 			set({ isCheckingAuth: false });
 		}

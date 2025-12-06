@@ -330,6 +330,8 @@ const ChatMessage = ({ message, onReply }) => {
                         src={message.image}
                         className="rounded-xl max-h-64 sm:max-h-80 object-cover w-full cursor-pointer active:scale-[0.98] transition-transform"
                         alt="attached"
+                        loading="lazy"
+                        decoding="async"
                       />
                     </div>
                   )}
@@ -432,8 +434,16 @@ const ChatMessage = ({ message, onReply }) => {
             {formatMessageTime(message.createdAt)}
           </span>
           {isMyMessage && message.status && (
-            <span className="text-[10px] text-base-content/40">
-              {message.status === 'read' ? '✓✓' : message.status === 'delivered' ? '✓✓' : '✓'}
+            <span className="text-[10px] font-bold">
+              {message.status === 'sending' ? (
+                <span className="text-gray-400 opacity-50 animate-pulse" title="Sending">⏱</span>
+              ) : message.status === 'read' ? (
+                <span className="text-blue-500" title="Read">✓✓</span>
+              ) : message.status === 'delivered' ? (
+                <span className="text-gray-400" title="Delivered">✓✓</span>
+              ) : (
+                <span className="text-gray-400" title="Sent">✓</span>
+              )}
             </span>
           )}
         </div>

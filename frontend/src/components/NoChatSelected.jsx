@@ -5,7 +5,7 @@ const NoChatSelected = () => {
       <div className="max-w-md text-center space-y-6">
         <div className="flex justify-center gap-4 mb-4">
           <div className="w-24 h-24 rounded-2xl bg-primary/10 flex items-center justify-center animate-bounce">
-            <img src="/z-app-logo.png" alt="Z-APP Logo" className="w-12 h-12 object-contain" />
+            <img src="/z-app-logo.png" alt="Z-APP Logo" className="w-12 h-12 object-contain" loading="lazy" decoding="async" />
           </div>
         </div>
 

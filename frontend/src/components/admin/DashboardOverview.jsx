@@ -6,60 +6,71 @@ import {
 
 const DashboardOverview = ({ stats, loadingStats }) => {
 	return (
-		<div className="space-y-4 sm:space-y-6">
+		<div className="space-y-6 sm:space-y-8 animate-fadeIn">
 			{/* Statistics Cards */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
 				{loadingStats ? (
-					<div className="col-span-1 sm:col-span-2 lg:col-span-4 text-center py-8">
-						<span className="loading loading-spinner loading-lg"></span>
+					<div className="col-span-1 sm:col-span-2 lg:col-span-4 flex flex-col items-center justify-center py-12">
+						<span className="loading loading-spinner loading-lg text-primary"></span>
+						<p className="text-sm text-base-content/60 mt-4">Loading statistics...</p>
 					</div>
 				) : stats && (
 					<>
-						<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
-							<div className="stat-figure text-primary hidden sm:block">
-								<Users className="w-6 h-6 sm:w-8 sm:h-8" />
+						<div className="stat bg-gradient-to-br from-blue-500/10 via-blue-600/10 to-purple-600/10 rounded-2xl shadow-xl p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 border border-blue-500/20 hover:border-blue-500/40 hover:scale-105">
+							<div className="stat-figure text-blue-600">
+								<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+									<Users className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+								</div>
 							</div>
-							<div className="stat-title text-xs sm:text-sm">Total Users</div>
-							<div className="stat-value text-primary text-2xl sm:text-3xl">{stats.totalUsers}</div>
-							<div className="stat-desc text-xs">{stats.recentUsers} new this week</div>
+							<div className="stat-title text-xs sm:text-sm font-semibold text-base-content/70">Total Users</div>
+							<div className="stat-value text-blue-600 text-3xl sm:text-4xl font-bold">{stats.totalUsers}</div>
+							<div className="stat-desc text-xs font-medium text-green-600">+{stats.recentUsers} this week</div>
 						</div>
 
-						<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
+						<div className="stat bg-base-100/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 border border-base-300 hover:scale-105">
 							<div className="stat-figure text-success hidden sm:block">
-								<UserCheck className="w-6 h-6 sm:w-8 sm:h-8" />
+								<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-success/20 flex items-center justify-center">
+									<UserCheck className="w-6 h-6 sm:w-7 sm:h-7" />
+								</div>
 							</div>
-							<div className="stat-title text-xs sm:text-sm">Online Now</div>
-							<div className="stat-value text-success text-2xl sm:text-3xl">{stats.onlineUsers}</div>
-							<div className="stat-desc text-xs">{stats.verifiedUsers} verified</div>
+							<div className="stat-title text-xs sm:text-sm font-semibold text-base-content/70">Online Now</div>
+							<div className="stat-value text-success text-3xl sm:text-4xl font-bold">{stats.onlineUsers}</div>
+							<div className="stat-desc text-xs font-medium">{stats.verifiedUsers} verified</div>
 						</div>
 
-						<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
+						<div className="stat bg-base-100/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 border border-base-300 hover:scale-105">
 							<div className="stat-figure text-warning hidden sm:block">
-								<Clock className="w-6 h-6 sm:w-8 sm:h-8" />
+								<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-warning/20 flex items-center justify-center">
+									<Clock className="w-6 h-6 sm:w-7 sm:h-7" />
+								</div>
 							</div>
-							<div className="stat-title text-xs sm:text-sm">Pending Verifications</div>
-							<div className="stat-value text-warning text-2xl sm:text-3xl">{stats.pendingVerifications}</div>
-							<div className="stat-desc text-xs">{stats.approvedVerifications} approved</div>
+							<div className="stat-title text-xs sm:text-sm font-semibold text-base-content/70">Pending Verifications</div>
+							<div className="stat-value text-warning text-3xl sm:text-4xl font-bold">{stats.pendingVerifications}</div>
+							<div className="stat-desc text-xs font-medium">{stats.approvedVerifications} approved</div>
 						</div>
 
-						<div className="stat bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
+						<div className="stat bg-base-100/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 border border-base-300 hover:scale-105">
 							<div className="stat-figure text-error hidden sm:block">
-								<AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8" />
+								<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-error/20 flex items-center justify-center">
+									<AlertTriangle className="w-6 h-6 sm:w-7 sm:h-7" />
+								</div>
 							</div>
-							<div className="stat-title text-xs sm:text-sm">Pending Reports</div>
-							<div className="stat-value text-error text-2xl sm:text-3xl">{stats.pendingReports}</div>
-							<div className="stat-desc text-xs">{stats.totalReports} total reports</div>
+							<div className="stat-title text-xs sm:text-sm font-semibold text-base-content/70">Pending Reports</div>
+							<div className="stat-value text-error text-3xl sm:text-4xl font-bold">{stats.pendingReports}</div>
+							<div className="stat-desc text-xs font-medium">{stats.totalReports} total reports</div>
 						</div>
 					</>
 				)}
 			</div>
 
 			{/* Analytics Charts */}
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 				{/* User Growth Chart */}
-				<div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
-					<h3 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
-						<TrendingUp className="w-5 h-5 text-primary" />
+				<div className="bg-base-100/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 sm:p-6 border border-base-300">
+					<h3 className="text-lg sm:text-xl font-bold mb-6 flex items-center gap-3">
+						<div className="p-2 bg-gradient-to-br from-primary to-secondary rounded-xl">
+							<TrendingUp className="w-5 h-5 text-white" />
+						</div>
 						User Growth (Last 7 Days)
 					</h3>
 					<ResponsiveContainer width="100%" height={250}>

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Black background -->
+  <rect width="512" height="512" fill="#000000"/>
+  
+  <!-- Orange Z - Three diagonal rounded stripes forming speech bubble Z -->
+  <g fill="#FF9933">
+    <!-- Top stripe -->
+    <path d="M 150 120 
+             Q 150 100 170 100
+             L 450 100
+             Q 470 100 470 120
+             L 470 200
+             Q 470 220 450 220
+             L 280 220
+             L 450 320
+             L 450 220
+             Q 470 220 470 200
+             L 470 120
+             Q 470 100 450 100
+             L 170 100
+             Q 150 100 150 120
+             L 150 200
+             Q 150 220 170 220
+             L 280 220
+             L 150 320
+             L 150 200
+             Z"/>
+    
+    <!-- Middle stripe -->
+    <path d="M 200 280
+             L 370 380
+             L 200 480
+             L 200 400
+             L 300 340
+             L 200 280
+             Z"/>
+    
+    <!-- Bottom stripe with speech bubble point -->
+    <path d="M 150 420
+             Q 150 400 170 400
+             L 450 400
+             Q 470 400 470 420
+             L 470 500
+             Q 470 520 450 520
+             L 200 520
+             L 120 580
+             L 170 520
+             Q 150 520 150 500
+             L 150 420
+             Z"/>
+  </g>
+</svg>

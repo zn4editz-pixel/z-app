@@ -39,22 +39,33 @@ axiosInstance.interceptors.response.use(
     console.error("API Error:", {
         message: error.message,
         status: error.response?.status,
-        response: error.response?.data
+        response: error.response?.data,
+        url: error.config?.url
     });
     
-    // Handle 401 Unauthorized - but only for auth-related endpoints
-    // Don't auto-logout for other 401s (like accessing admin routes without permission)
+    // Handle 401 Unauthorized - but be smart about it
     if (error.response?.status === 401) {
       const url = error.config?.url || '';
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || '';
       
-      // Only auto-logout for auth check failures, not for permission issues
-      if (url.includes('/auth/check') || url.includes('/auth/login') || url.includes('/auth/signup')) {
-        console.log("Auth token invalid, logging out");
+      // Only auto-logout for ACTUAL auth failures, not permission issues
+      const isAuthFailure = 
+        url.includes('/auth/check') || 
+        errorMessage.toLowerCase().includes('invalid') ||
+        errorMessage.toLowerCase().includes('expired') ||
+        errorMessage.toLowerCase().includes('no token');
+      
+      if (isAuthFailure) {
+        console.log("Auth token invalid or expired, logging out");
         localStorage.removeItem("token");
         localStorage.removeItem("authUser");
-        window.location.href = "/login";
+        
+        // Only redirect if not already on login page
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = "/login";
+        }
       }
-      // For other 401s (like admin routes), just reject without auto-logout
+      // For other 401s (like admin routes, permission issues), just reject without auto-logout
     }
     
     // Reject the promise so downstream `.catch()` blocks can handle it

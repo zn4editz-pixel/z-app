@@ -19,55 +19,63 @@ const UserManagement = ({
 	);
 
 	return (
-		<div className="bg-base-100 rounded-xl shadow-lg p-3 sm:p-4 lg:p-6">
-			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+		<div className="bg-base-100/90 backdrop-blur-sm rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 border border-base-300">
+			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
 				<div>
-					<h2 className="text-lg sm:text-xl lg:text-2xl font-semibold flex items-center gap-2">
-						<Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+					<h2 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-3">
+						<div className="p-2 bg-gradient-to-br from-primary to-secondary rounded-xl">
+							<Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+						</div>
 						User Management
 					</h2>
-					<p className="text-xs sm:text-sm text-base-content/60 mt-1">
-						{filteredUsers.length} users found
+					<p className="text-sm sm:text-base text-base-content/70 mt-2 ml-1">
+						{loadingUsers ? "Loading..." : `${filteredUsers.length} user${filteredUsers.length !== 1 ? 's' : ''} found`}
 					</p>
 				</div>
 
 				{/* Search */}
 				<div className="relative w-full sm:w-auto">
-					<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/50" />
+					<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-base-content/50 pointer-events-none z-10" />
 					<input
 						type="text"
 						placeholder="Search users..."
 						value={searchTerm}
 						onChange={(e) => setSearchTerm(e.target.value)}
-						className="input input-bordered input-sm sm:input-md w-full sm:w-64 pl-10"
+						className="input input-bordered input-sm sm:input-md w-full sm:w-72 pl-9 sm:pl-10 pr-3 bg-base-200/50 focus:bg-base-100 transition-colors border-base-300 focus:border-primary"
 					/>
 				</div>
 			</div>
 
 			{loadingUsers ? (
-				<div className="text-center py-8">
-					<span className="loading loading-spinner loading-lg"></span>
+				<div className="flex flex-col items-center justify-center py-16">
+					<span className="loading loading-spinner loading-lg text-primary"></span>
+					<p className="text-sm text-base-content/60 mt-4">Loading users...</p>
 				</div>
 			) : filteredUsers.length === 0 ? (
-				<div className="text-center py-8 text-base-content/60">
-					<Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
-					<p>No users found</p>
+				<div className="flex flex-col items-center justify-center py-16 text-base-content/60">
+					<div className="p-4 bg-base-200 rounded-full mb-4">
+						<Users className="w-12 h-12 opacity-50" />
+					</div>
+					<p className="text-lg font-medium">No users found</p>
+					<p className="text-sm mt-1">
+						{searchTerm ? "Try adjusting your search" : "No users in the system yet"}
+					</p>
 				</div>
 			) : (
-				<div className="overflow-x-auto">
-					<table className="table w-full table-zebra">
-						<thead>
-							<tr className="text-xs sm:text-sm">
-								<th>User</th>
-								<th>Email</th>
-								<th>Status</th>
-								<th>Joined</th>
-								<th>Actions</th>
+				<div className="overflow-x-auto rounded-xl border border-base-300">
+					<table className="table w-full">
+						<thead className="bg-base-200">
+							<tr className="text-xs sm:text-sm border-b border-base-300">
+								<th className="bg-base-200">User</th>
+								<th className="bg-base-200">Email</th>
+								<th className="bg-base-200">Status</th>
+								<th className="bg-base-200">Joined</th>
+								<th className="bg-base-200">Actions</th>
 							</tr>
 						</thead>
 						<tbody>
 							{filteredUsers.map((user) => (
-								<tr key={user._id} className="text-xs sm:text-sm">
+								<tr key={user._id} className="text-xs sm:text-sm hover:bg-base-200/50 transition-colors border-b border-base-300 last:border-0">
 									<td>
 										<div className="flex items-center gap-2">
 											<div className="avatar">

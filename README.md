@@ -1,4 +1,4 @@
-# Z-App - Real-Time Chat Application 🚀
+av# Z-App - Real-Time Chat Application 🚀
 
 **A modern, feature-rich chat application with video calls, stranger chat, AI content moderation, and comprehensive admin tools**
 
@@ -279,6 +279,20 @@ export const apiLimiter = rateLimit({
 
 ## 🚀 Deployment
 
+### Quick Start: Get Your Own Domain! 🌐
+
+Want to host on your own domain (like `z-app.com`) instead of Render's subdomain?
+
+**Run this interactive wizard:**
+```bash
+setup-custom-domain.bat
+```
+
+**Or read the quick guide:**
+- [5-Minute Quick Start](DOMAIN_QUICK_START.md) - Get live fast!
+- [Complete Setup Guide](CUSTOM_DOMAIN_SETUP.md) - All options
+- [Deployment Comparison](DEPLOYMENT_OPTIONS.md) - Choose best option
+
 ### Deploy to Render
 
 1. **Prepare for deployment**
@@ -298,6 +312,21 @@ deploy-to-production.bat
 
 4. **Follow the deployment guide**
 See [RENDER_DEPLOYMENT_GUIDE.md](RENDER_DEPLOYMENT_GUIDE.md) for detailed instructions.
+
+### Other Deployment Options
+
+**VPS (DigitalOcean, Linode):**
+```bash
+bash vps-deploy.sh
+```
+
+**Docker:**
+```bash
+deploy-docker.bat
+```
+
+**Vercel + Railway:**
+See [DEPLOYMENT_OPTIONS.md](DEPLOYMENT_OPTIONS.md)
 
 ---
 

@@ -78,6 +78,12 @@ const messageSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ✅ Performance Optimization: Add database indexes for faster queries
+messageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 }); // Conversation queries
+messageSchema.index({ receiverId: 1, status: 1 }); // Unread messages
+messageSchema.index({ senderId: 1, createdAt: -1 }); // Sent messages
+messageSchema.index({ createdAt: -1 }); // Recent messages
+
 const Message = mongoose.model("Message", messageSchema);
 
 export default Message;

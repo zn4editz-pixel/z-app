@@ -4,6 +4,560 @@
   -webkit-touch-callout: none;
 }
 
+/* ===== INSTAGRAM/WHATSAPP STYLE SMOOTH ANIMATIONS ===== */
+
+/* Global Smooth Transitions */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Instagram-Style Page Transitions */
+@keyframes instagram-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.instagram-fade-in {
+  animation: instagram-fade-in 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* WhatsApp-Style Message Slide In */
+@keyframes whatsapp-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.whatsapp-slide-in {
+  animation: whatsapp-slide-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Instagram Story-Style Swipe */
+@keyframes story-swipe {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.story-swipe {
+  animation: story-swipe 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Smooth Elastic Bounce (Instagram Like) */
+@keyframes elastic-bounce {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  75% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.elastic-bounce {
+  animation: elastic-bounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* WhatsApp Check Mark Animation */
+@keyframes check-mark {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(-45deg);
+  }
+  50% {
+    transform: scale(1.2) rotate(-45deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.check-mark-animate {
+  animation: check-mark 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Instagram Heart Pop */
+@keyframes heart-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.heart-pop {
+  animation: heart-pop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Smooth Modal Slide Up (Instagram/WhatsApp) */
+@keyframes modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-slide-up {
+  animation: modal-slide-up 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Smooth Modal Slide Down */
+@keyframes modal-slide-down {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+.modal-slide-down {
+  animation: modal-slide-down 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+}
+
+/* Instagram-Style Button Press */
+.instagram-button {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.instagram-button:active {
+  transform: scale(0.92);
+}
+
+/* WhatsApp-Style Ripple */
+@keyframes whatsapp-ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.whatsapp-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.whatsapp-ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+}
+
+.whatsapp-ripple:active::after {
+  animation: whatsapp-ripple 0.6s ease-out;
+}
+
+/* Smooth Card Hover (Instagram Feed) */
+.instagram-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.instagram-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.instagram-card:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
+/* WhatsApp Message Bubble Appear */
+@keyframes bubble-appear {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  60% {
+    transform: scale(1.05) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.bubble-appear {
+  animation: bubble-appear 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Instagram Story Progress Bar */
+@keyframes story-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.story-progress {
+  transform-origin: left;
+  animation: story-progress 5s linear;
+}
+
+/* Smooth Typing Indicator (WhatsApp) */
+@keyframes typing-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  30% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+
+.typing-bounce {
+  animation: typing-bounce 1.4s ease-in-out infinite;
+}
+
+.typing-bounce:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-bounce:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Instagram Like Button Animation */
+@keyframes like-burst {
+  0% {
+    transform: scale(1);
+  }
+  15% {
+    transform: scale(1.3);
+  }
+  30% {
+    transform: scale(0.9);
+  }
+  45% {
+    transform: scale(1.1);
+  }
+  60% {
+    transform: scale(0.95);
+  }
+  75% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.like-burst {
+  animation: like-burst 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Smooth Avatar Ring Pulse (Instagram Live) */
+@keyframes avatar-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 153, 51, 0.7);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 153, 51, 0);
+    transform: scale(1.05);
+  }
+}
+
+.avatar-pulse {
+  animation: avatar-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* WhatsApp Voice Message Wave */
+@keyframes voice-wave {
+  0%, 100% {
+    transform: scaleY(0.5);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.voice-wave {
+  animation: voice-wave 1s ease-in-out infinite;
+}
+
+.voice-wave:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.voice-wave:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.voice-wave:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.voice-wave:nth-child(5) {
+  animation-delay: 0.4s;
+}
+
+/* Instagram Reel Transition */
+@keyframes reel-transition {
+  from {
+    opacity: 0;
+    transform: translateY(100vh);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reel-transition {
+  animation: reel-transition 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Smooth Skeleton Loading (Instagram) */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 1000px 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+/* WhatsApp Swipe Action */
+@keyframes swipe-action {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-80px);
+  }
+}
+
+.swipe-action {
+  animation: swipe-action 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Instagram Double Tap Heart */
+@keyframes double-tap-heart {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  15% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -60%) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -80%) scale(0.8);
+  }
+}
+
+.double-tap-heart {
+  animation: double-tap-heart 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Smooth Notification Badge */
+@keyframes badge-pop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.badge-pop {
+  animation: badge-pop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Instagram Story Ring */
+@keyframes story-ring {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -628;
+  }
+}
+
+.story-ring {
+  animation: story-ring 5s linear;
+}
+
+/* WhatsApp Status Update */
+@keyframes status-update {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.status-update {
+  animation: status-update 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Smooth List Item Stagger (Instagram Feed) */
+.stagger-instagram {
+  animation: instagram-fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+.stagger-instagram:nth-child(1) { animation-delay: 0.05s; }
+.stagger-instagram:nth-child(2) { animation-delay: 0.1s; }
+.stagger-instagram:nth-child(3) { animation-delay: 0.15s; }
+.stagger-instagram:nth-child(4) { animation-delay: 0.2s; }
+.stagger-instagram:nth-child(5) { animation-delay: 0.25s; }
+.stagger-instagram:nth-child(6) { animation-delay: 0.3s; }
+.stagger-instagram:nth-child(7) { animation-delay: 0.35s; }
+.stagger-instagram:nth-child(8) { animation-delay: 0.4s; }
+.stagger-instagram:nth-child(9) { animation-delay: 0.45s; }
+.stagger-instagram:nth-child(10) { animation-delay: 0.5s; }
+
+/* Smooth Image Load (Instagram) */
+@keyframes image-reveal {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+
+.image-reveal {
+  animation: image-reveal 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* WhatsApp Call Animation */
+@keyframes call-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.call-pulse {
+  animation: call-pulse 1.5s ease-in-out infinite;
+}
+
+/* Instagram Explore Grid Hover */
+.explore-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.explore-hover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.explore-hover:hover::before {
+  opacity: 1;
+}
+
+.explore-hover:hover {
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+/* Smooth Scroll Snap */
+.scroll-snap {
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+}
+
+.scroll-snap-item {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
 /* ===== SMOOTH ANIMATIONS ===== */
 
 /* Fade In Animation */

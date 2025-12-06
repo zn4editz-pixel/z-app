@@ -184,10 +184,14 @@ const userSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
-// Add indexes for new fields (username already has unique: true which creates an index)
-userSchema.index({ friends: 1 });
-userSchema.index({ friendRequestsSent: 1 });
-userSchema.index({ friendRequestsReceived: 1 });
+// ✅ Performance Optimization: Add database indexes for faster queries
+userSchema.index({ email: 1 }); // Login queries
+userSchema.index({ username: 1 }); // Profile lookups
+userSchema.index({ friends: 1 }); // Friend list queries
+userSchema.index({ friendRequestsSent: 1 }); // Sent requests
+userSchema.index({ friendRequestsReceived: 1 }); // Received requests
+userSchema.index({ createdAt: -1 }); // Recent users
+userSchema.index({ isOnline: 1 }); // Online users
 
 const User = mongoose.model("User", userSchema);
 

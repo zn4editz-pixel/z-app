@@ -1,99 +1,191 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
-
-    <link rel="icon" type="image/png" href="/z-app-logo.png" />
-    <link rel="apple-touch-icon" href="/z-app-logo.png" />
-    <link rel="manifest" href="/manifest.json" />
-
+    <link rel="icon" type="image/svg+xml" href="/z-app-logo.png" />
+    <link rel="apple-touch-icon" href="/zn4.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <!-- Google Search Console Verification -->
+    <!-- REPLACE WITH YOUR VERIFICATION CODE FROM GOOGLE SEARCH CONSOLE -->
+    <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE_HERE" /> -->
+    
+    <!-- Primary Meta Tags -->
+    <title>Z-APP - Real-time Chat & Video Calling | Connect Instantly</title>
+    <meta name="title" content="Z-APP - Real-time Chat & Video Calling | Connect Instantly" />
+    <meta name="description" content="Z-APP is a modern real-time chat application with HD video calls, voice messaging, and instant messaging. Connect with friends, discover new people, and enjoy secure communication. Free to use!" />
+    <meta name="keywords" content="chat app, video call app, voice call, instant messaging, real-time chat, video chat, social network, Z-APP, free chat app, secure messaging, online chat, stranger chat, random video chat" />
+    <meta name="author" content="Z-APP Team" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
+    <meta name="revisit-after" content="7 days" />
+    <link rel="canonical" href="https://z-app-beta-z.onrender.com/" />
+    
+    <!-- Theme Color - Orange -->
+    <meta name="theme-color" content="#FF9933" />
+    <meta name="msapplication-TileColor" content="#FF9933" />
+    
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#6366f1" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Z-App" />
-
-    <title>Z-APP</title>
-    <meta name="description" content="Z-APP — Your modern realtime chat experience." />
+    <meta name="apple-mobile-web-app-title" content="Z-APP" />
     
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://z-app-beta-z.onrender.com/" />
+    <meta property="og:title" content="Z-APP - Real-time Chat & Video Calling | Connect Instantly" />
+    <meta property="og:description" content="Modern real-time chat with HD video calls, voice messaging, and instant messaging. Connect with friends securely. Free to use!" />
+    <meta property="og:image" content="https://z-app-beta-z.onrender.com/z-logo-orange.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Z-APP" />
+    <meta property="og:locale" content="en_US" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://z-app-beta-z.onrender.com/" />
+    <meta name="twitter:title" content="Z-APP - Real-time Chat & Video Calling" />
+    <meta name="twitter:description" content="Modern real-time chat with HD video calls, voice messaging, and instant messaging. Free to use!" />
+    <meta name="twitter:image" content="https://z-app-beta-z.onrender.com/z-logo-orange.png" />
+    <meta name="twitter:creator" content="@ZApp" />
+    
+    <!-- Structured Data (JSON-LD) for Better SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Z-APP",
+      "alternateName": "Z-APP Chat",
+      "url": "https://z-app-beta-z.onrender.com",
+      "description": "Modern real-time chat application with HD video calls, voice messaging, instant messaging, and stranger chat. Connect with friends securely and discover new people.",
+      "applicationCategory": "CommunicationApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "browserRequirements": "Requires JavaScript. Requires HTML5.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Real-time messaging",
+        "HD video calls",
+        "Voice calls",
+        "Stranger chat",
+        "Friend system",
+        "Message reactions",
+        "Image sharing",
+        "Voice messages",
+        "AI content moderation"
+      ],
+      "screenshot": "https://z-app-beta-z.onrender.com/z-logo-orange.png"
+    }
+    </script>
+    
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <style>
-      /* Mobile responsive fixes */
-      * {
-        -webkit-tap-highlight-color: transparent;
-        -webkit-touch-callout: none;
-        box-sizing: border-box;
-      }
-      
+      /* Prevent white flash - set body background immediately */
       html, body {
-        width: 100%;
-        min-height: 100%;
-        overflow-x: hidden;
-        -webkit-text-size-adjust: 100%;
-        overscroll-behavior: none;
+        margin: 0;
+        padding: 0;
+        background-color: #1a1a1a;
+        /* Use svh (small viewport height) for better mobile support */
+        min-height: 100svh;
+        min-height: 100vh; /* Fallback */
       }
       
+      /* Prevent scrolling ONLY during initial load */
+      body:not(.loaded) {
+        overflow: hidden;
+      }
+      
+      /* Root container should fill viewport */
       #root {
-        width: 100%;
+        min-height: 100svh;
         min-height: 100vh;
+        display: flex;
+        flex-direction: column;
       }
       
-      /* Ensure buttons are touchable */
-      button, a {
-        min-height: 44px;
-        min-width: 44px;
+      /* Fix for mobile viewport - use svh for smallest viewport */
+      @supports (min-height: 100svh) {
+        html, body, #root {
+          min-height: 100svh;
+        }
       }
       
-      /* Fix modals for mobile */
-      .modal-box {
-        max-width: 95vw !important;
-        max-height: 90vh !important;
-        overflow-y: auto !important;
-        margin: auto !important;
-        padding: 1rem !important;
+      /* Ensure proper sizing on very small screens */
+      @media (max-width: 375px) {
+        html, body {
+          font-size: 14px;
+        }
       }
       
-      .modal {
-        padding: 1rem !important;
+      /* Loading Screen */
+      #loading-screen {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #1a1a1a;
+        z-index: 9999;
+        transition: opacity 0.3s ease-out;
       }
       
-      /* Fix buttons in modals */
-      .modal-box .btn {
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+      #loading-screen.loaded {
+        opacity: 0;
+        pointer-events: none;
       }
       
-      /* Fix form inputs */
-      input, textarea, select {
-        max-width: 100% !important;
-        font-size: 16px !important; /* Prevents zoom on iOS */
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(255, 153, 51, 0.2);
+        border-top-color: #FF9933;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
       }
       
-      /* Prevent text overflow */
-      p, span, div {
-        word-wrap: break-word !important;
-        overflow-wrap: break-word !important;
+      @keyframes spin {
+        to { transform: rotate(360deg); }
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-Bw8RKcyZ.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-Bzz-iRVI.css">
+    <script type="module" crossorigin src="/assets/index-CUBSQXSf.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C_GUGYpi.css">
   </head>
-  <body></body>
-    <div id="root"></div>
+  <body>
+    <!-- Apply theme before page loads -->
     <script>
-      // Register service worker
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js')
-            .then((registration) => {
-              console.log('SW registered:', registration);
-            })
-            .catch((error) => {
-              console.log('SW registration failed:', error);
-            });
-        });
-      }
+      // Apply saved theme immediately to prevent flash
+      const savedTheme = localStorage.getItem('chat-theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+      <div class="spinner"></div>
+    </div>
+    
+    <!-- App Root -->
+    <div id="root"></div>
+    
+    <!-- Main Script -->
+    
+    <!-- Remove loading screen when app loads -->
+    <script>
+      window.addEventListener('load', () => {
+        const loader = document.getElementById('loading-screen');
+        document.body.classList.add('loaded');
+        setTimeout(() => {
+          loader.classList.add('loaded');
+          setTimeout(() => loader.remove(), 300);
+        }, 100);
+      });
     </script>
   </body>
 </html>

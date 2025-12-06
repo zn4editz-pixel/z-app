@@ -1,0 +1,29 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Black background -->
+  <rect width="512" height="512" fill="#000000"/>
+  
+  <!-- Orange Z - Three diagonal stripes forming Z shape -->
+  <!-- Top stripe -->
+  <path d="M 180 100 
+           Q 160 100 160 120
+           L 160 180
+           Q 160 200 180 200
+           L 380 200
+           L 280 280
+           L 180 280
+           Q 160 280 160 300
+           L 160 360
+           Q 160 380 180 380
+           L 380 380
+           Q 400 380 400 360
+           L 400 300
+           Q 400 280 380 280
+           L 280 280
+           L 380 200
+           L 480 200
+           Q 500 200 500 180
+           L 500 120
+           Q 500 100 480 100
+           Z" 
+        fill="#FF9933"/>
+</svg>

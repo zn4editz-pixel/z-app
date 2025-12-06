@@ -238,7 +238,7 @@ const CallModal = () => {
                 <div className="bg-base-100 rounded-lg p-6 text-center shadow-xl max-w-sm w-full">
                     <div className="avatar mb-4">
                         <div className="w-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                            <img src={partnerAvatar} alt={partnerName} />
+                            <img src={partnerAvatar} alt={partnerName} loading="lazy" decoding="async" />
                         </div>
                     </div>
                     <h2 className="text-xl font-semibold mb-1">{partnerName}</h2>

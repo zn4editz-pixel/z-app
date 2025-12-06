@@ -54,6 +54,7 @@ export const useChatStore = create((set, get) => ({
 
     sendMessage: async (messageData) => {
         const { selectedUser, messages } = get();
+        const { authUser } = useAuthStore.getState();
         if (!selectedUser) return; // Don't send if no user selected
         
         // Check if online
@@ -62,19 +63,42 @@ export const useChatStore = create((set, get) => ({
             return;
         }
         
+        // Create optimistic message (shows immediately)
+        const tempId = `temp-${Date.now()}`;
+        const optimisticMessage = {
+            _id: tempId,
+            senderId: authUser._id,
+            receiverId: selectedUser._id,
+            text: messageData.text || '',
+            image: messageData.image || null,
+            voice: messageData.voice || null,
+            voiceDuration: messageData.voiceDuration || null,
+            replyTo: messageData.replyTo || null,
+            status: 'sending', // Temporary status
+            createdAt: new Date().toISOString(),
+            reactions: [],
+            isOptimistic: true // Flag to identify optimistic messages
+        };
+        
+        // Add optimistic message immediately (instant UI update)
+        set({ messages: [...messages, optimisticMessage] });
+        
         try {
             const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
-            // Append without creating duplicates, check message structure
-             if (res.data && res.data._id && !messages.find((m) => m._id === res.data._id)) {
-                 const newMessages = [...messages, res.data];
-                 set({ messages: newMessages });
-                 // Update cache with new message
-                 cacheMessages(selectedUser._id, newMessages);
-            } else if (res.data && !res.data._id) {
-                 console.warn("Sent message response missing _id:", res.data);
-                 // Handle potentially incomplete response if necessary
+            
+            // Replace optimistic message with real message from server
+            if (res.data && res.data._id) {
+                const updatedMessages = messages
+                    .filter(m => m._id !== tempId) // Remove optimistic message
+                    .concat(res.data); // Add real message
+                
+                set({ messages: updatedMessages });
+                // Update cache with real message
+                cacheMessages(selectedUser._id, updatedMessages);
             }
         } catch (error) {
+            // Remove optimistic message on error
+            set({ messages: messages.filter(m => m._id !== tempId) });
             toast.error(error.response?.data?.message || "Failed to send message");
         }
     },
@@ -121,14 +145,27 @@ export const useChatStore = create((set, get) => ({
 
         const messagesReadHandler = ({ readBy }) => {
             const { messages, selectedUser } = get();
+            console.log(`📘 Received messagesRead event. ReadBy: ${readBy}`);
+            console.log(`📘 Current messages count: ${messages.length}`);
+            
             // Update messages where I am the sender and the other person (readBy) is the receiver
-            const updatedMessages = messages.map(msg => 
-                msg.receiverId === readBy && msg.status !== 'read' 
-                    ? { ...msg, status: 'read', readAt: new Date() } 
-                    : msg
-            );
+            // Handle both string and ObjectId comparison
+            const updatedMessages = messages.map(msg => {
+                const receiverIdStr = typeof msg.receiverId === 'object' ? msg.receiverId._id || msg.receiverId.toString() : msg.receiverId;
+                const readByStr = typeof readBy === 'object' ? readBy._id || readBy.toString() : readBy;
+                const shouldUpdate = receiverIdStr === readByStr && msg.status !== 'read';
+                
+                if (shouldUpdate) {
+                    console.log(`📘 Updating message ${msg._id} to read status`);
+                    console.log(`📘 Message receiverId: ${receiverIdStr}, readBy: ${readByStr}`);
+                }
+                return shouldUpdate ? { ...msg, status: 'read', readAt: new Date() } : msg;
+            });
+            
+            const readCount = updatedMessages.filter(m => m.status === 'read').length;
+            console.log(`📘 Total messages with read status: ${readCount}`);
+            
             set({ messages: updatedMessages });
-            console.log(`Messages read by ${readBy}`);
         };
 
         socket.off("newMessage", messageHandler);
@@ -146,10 +183,11 @@ export const useChatStore = create((set, get) => ({
 
     markMessagesAsRead: async (userId) => {
         try {
+            console.log(`📘 Calling markMessagesAsRead API for user: ${userId}`);
             const response = await axiosInstance.put(`/messages/read/${userId}`);
-            console.log(`Marked ${response.data.count} messages as read from user ${userId}`);
+            console.log(`📘 API Response: Marked ${response.data.count} messages as read from user ${userId}`);
         } catch (error) {
-            console.error("Failed to mark messages as read:", error);
+            console.error("📘 Failed to mark messages as read:", error);
         }
     },
 

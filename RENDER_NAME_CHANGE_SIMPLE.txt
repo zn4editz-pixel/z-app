@@ -1,0 +1,89 @@
+================================================================================
+                    HOW TO CHANGE "RENDER" TO "Z-APP"
+================================================================================
+
+THE PROBLEM:
+------------
+Google shows:  "Render" ← You want this to be "Z-APP"
+
+
+THE SOLUTION:
+-------------
+Change the service name in Render dashboard (only YOU can do this!)
+
+
+STEP-BY-STEP:
+-------------
+
+1. Open Browser
+   └─> Go to: https://dashboard.render.com
+   └─> Login with your account
+
+
+2. Click Your Service
+   ┌─────────────────────────────┐
+   │ z-app-beta-z                │ ← Click this
+   │ Static Site                 │
+   └─────────────────────────────┘
+
+
+3. Click "Settings" Tab
+   ┌──────────┬──────────┬──────────┐
+   │ Overview │ Events   │ Settings │ ← Click here
+   └──────────┴──────────┴──────────┘
+
+
+4. Change Name Field
+   ┌─────────────────────────────┐
+   │ Name:                       │
+   │ ┌─────────────────────────┐ │
+   │ │ z-app-beta-z            │ │ ← Change to: z-app
+   │ └─────────────────────────┘ │
+   │                             │
+   │ [Save Changes]              │ ← Click this
+   └─────────────────────────────┘
+
+
+5. Update Backend URLs
+   - Go to backend service
+   - Click "Environment"
+   - Update:
+     CLIENT_URL=https://z-app.onrender.com
+     FRONTEND_URL=https://z-app.onrender.com
+   - Save Changes
+
+
+6. Deploy Code
+   git add .
+   git commit -m "Update URLs"
+   git push
+
+
+RESULT:
+-------
+Before:  Render → https://z-app-beta-z.onrender.com
+After:   Z-APP → https://z-app.onrender.com
+
+
+WHY I CAN'T DO IT:
+------------------
+❌ I don't have access to your Render account
+❌ I can't login to your dashboard
+❌ Only YOU can change service names
+
+✅ I already updated all the code
+✅ I configured your logo
+✅ Everything is ready - you just need to change the name!
+
+
+TIME NEEDED: 5 minutes
+DIFFICULTY: Easy
+COST: Free
+
+
+OPEN THIS FILE FOR DETAILED GUIDE:
+-----------------------------------
+HOW_TO_CHANGE_RENDER_NAME.md
+
+
+================================================================================

@@ -7,47 +7,48 @@ const AIModerationPanel = ({
 	onUpdateReportStatus 
 }) => {
 	return (
-		<div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl shadow-lg p-4 sm:p-6 border-2 border-purple-500/20">
-			<div className="flex items-center gap-3 mb-4">
-				<div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-					<Shield className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
+		<div className="bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-purple-500/10 rounded-2xl shadow-xl p-5 sm:p-6 lg:p-8 border border-purple-500/30">
+			<div className="flex items-center gap-4 mb-6">
+				<div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg">
+					<Shield className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
 				</div>
 				<div>
-					<h2 className="text-xl sm:text-2xl font-semibold">AI Content Moderation</h2>
-					<p className="text-xs sm:text-sm text-base-content/60">Automatically detected violations</p>
+					<h2 className="text-xl sm:text-2xl lg:text-3xl font-bold">AI Content Moderation</h2>
+					<p className="text-sm sm:text-base text-base-content/70 mt-1">Automatically detected violations</p>
 				</div>
 			</div>
 
 			{loadingAIReports ? (
-				<div className="text-center py-8">
+				<div className="flex flex-col items-center justify-center py-16">
 					<span className="loading loading-spinner loading-lg text-purple-500"></span>
+					<p className="text-sm text-base-content/60 mt-4">Loading AI reports...</p>
 				</div>
 			) : (
 				<>
 					{/* AI Stats Cards */}
 					{aiStats && (
-						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-							<div className="bg-base-100 rounded-lg p-3 text-center">
-								<div className="text-2xl font-bold text-purple-500">{aiStats.total}</div>
-								<div className="text-xs text-base-content/60">Total AI Reports</div>
+						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+							<div className="bg-base-100/90 backdrop-blur-sm rounded-xl p-4 text-center shadow-lg border border-base-300 hover:shadow-xl transition-all">
+								<div className="text-3xl font-bold text-purple-500">{aiStats.total}</div>
+								<div className="text-xs font-medium text-base-content/70 mt-1">Total AI Reports</div>
 							</div>
-							<div className="bg-base-100 rounded-lg p-3 text-center">
-								<div className="text-2xl font-bold text-warning">{aiStats.pending}</div>
-								<div className="text-xs text-base-content/60">Pending</div>
+							<div className="bg-base-100/90 backdrop-blur-sm rounded-xl p-4 text-center shadow-lg border border-base-300 hover:shadow-xl transition-all">
+								<div className="text-3xl font-bold text-warning">{aiStats.pending}</div>
+								<div className="text-xs font-medium text-base-content/70 mt-1">Pending</div>
 							</div>
-							<div className="bg-base-100 rounded-lg p-3 text-center">
-								<div className="text-2xl font-bold text-info">{aiStats.reviewed}</div>
-								<div className="text-xs text-base-content/60">Reviewed</div>
+							<div className="bg-base-100/90 backdrop-blur-sm rounded-xl p-4 text-center shadow-lg border border-base-300 hover:shadow-xl transition-all">
+								<div className="text-3xl font-bold text-info">{aiStats.reviewed}</div>
+								<div className="text-xs font-medium text-base-content/70 mt-1">Reviewed</div>
 							</div>
-							<div className="bg-base-100 rounded-lg p-3 text-center">
-								<div className="text-2xl font-bold text-success">{aiStats.actionTaken}</div>
-								<div className="text-xs text-base-content/60">Action Taken</div>
+							<div className="bg-base-100/90 backdrop-blur-sm rounded-xl p-4 text-center shadow-lg border border-base-300 hover:shadow-xl transition-all">
+								<div className="text-3xl font-bold text-success">{aiStats.actionTaken}</div>
+								<div className="text-xs font-medium text-base-content/70 mt-1">Action Taken</div>
 							</div>
-							<div className="bg-base-100 rounded-lg p-3 text-center">
-								<div className="text-2xl font-bold text-neutral">{aiStats.dismissed}</div>
-								<div className="text-xs text-base-content/60">Dismissed</div>
+							<div className="bg-base-100/90 backdrop-blur-sm rounded-xl p-4 text-center shadow-lg border border-base-300 hover:shadow-xl transition-all">
+								<div className="text-3xl font-bold text-neutral">{aiStats.dismissed}</div>
+								<div className="text-xs font-medium text-base-content/70 mt-1">Dismissed</div>
 							</div>
-							<div className="bg-base-100 rounded-lg p-3 text-center">
+							<div className="bg-base-100/90 backdrop-blur-sm rounded-xl p-4 text-center shadow-lg border border-base-300 hover:shadow-xl transition-all">
 								<div className="text-2xl font-bold text-purple-500">{(aiStats.avgConfidence * 100).toFixed(0)}%</div>
 								<div className="text-xs text-base-content/60">Avg Confidence</div>
 							</div>
