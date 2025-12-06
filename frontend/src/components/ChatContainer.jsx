@@ -22,6 +22,7 @@ const ChatContainer = ({ onStartCall }) => {
 
   const { authUser, socket } = useAuthStore();
   const bottomRef = useRef(null);
+  const scrollContainerRef = useRef(null);
   const isInitialLoad = useRef(true);
   const previousMessagesLength = useRef(0);
   
@@ -43,6 +44,13 @@ const ChatContainer = ({ onStartCall }) => {
   useEffect(() => {
     if (!selectedUser?._id) return;
     isInitialLoad.current = true; // Mark as initial load when switching chats
+    previousMessagesLength.current = 0; // Reset message count
+    
+    // Instantly set scroll to bottom BEFORE loading messages (WhatsApp style - no animation)
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
+    
     getMessages?.(selectedUser._id);
     const unsub = subscribeToMessages?.(selectedUser._id);
     return () => typeof unsub === "function" && unsub();
@@ -51,14 +59,19 @@ const ChatContainer = ({ onStartCall }) => {
   useEffect(() => {
     if (!bottomRef.current) return;
     
-    // Instant scroll on initial load or when switching chats
-    if (isInitialLoad.current) {
-      bottomRef.current.scrollIntoView({ behavior: "auto", block: "end" });
+    // Instant scroll on initial load (when messages first arrive)
+    if (isInitialLoad.current && messages.length > 0) {
+      // Use setTimeout to ensure DOM is updated
+      setTimeout(() => {
+        if (bottomRef.current) {
+          bottomRef.current.scrollIntoView({ behavior: "auto", block: "end" });
+        }
+      }, 0);
       isInitialLoad.current = false;
       previousMessagesLength.current = messages.length;
     } 
-    // Smooth scroll for new messages
-    else if (messages.length > previousMessagesLength.current) {
+    // Smooth scroll for new messages only
+    else if (messages.length > previousMessagesLength.current && !isInitialLoad.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
       previousMessagesLength.current = messages.length;
     }
@@ -163,7 +176,11 @@ const ChatContainer = ({ onStartCall }) => {
     <>
       <div className="flex-1 flex flex-col h-full w-full">
         <ChatHeader onStartCall={handleStartCall} />
-        <div className="flex-1 overflow-y-auto p-2.5 sm:p-4 space-y-2.5 sm:space-y-4 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div 
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto p-2.5 sm:p-4 space-y-2.5 sm:space-y-4 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent" 
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           {isMessagesLoading ? (
             <MessageSkeleton />
           ) : messages.length === 0 ? (
