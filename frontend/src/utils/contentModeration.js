@@ -1,24 +1,40 @@
 // Content Moderation Utility
 // Uses client-side AI to detect inappropriate content
+import * as tf from '@tensorflow/tfjs';
+import * as nsfwjs from 'nsfwjs';
 
 let nsfwModel = null;
 let isModelLoading = false;
+let modelLoadError = null;
 
 // Initialize NSFW model (lazy loading)
 export const initNSFWModel = async () => {
-  if (nsfwModel || isModelLoading) return nsfwModel;
+  if (nsfwModel) {
+    console.log('✅ NSFW model already loaded');
+    return nsfwModel;
+  }
+  
+  if (isModelLoading) {
+    console.log('⏳ NSFW model is loading...');
+    return null;
+  }
   
   isModelLoading = true;
+  console.log('🔄 Loading NSFW detection model...');
+  
   try {
-    // Dynamically import nsfwjs only when needed
-    const nsfwjs = await import('@tensorflow/tfjs');
-    const nsfw = await import('nsfwjs');
+    // Ensure TensorFlow.js backend is ready
+    await tf.ready();
+    console.log('✅ TensorFlow.js backend ready:', tf.getBackend());
     
-    nsfwModel = await nsfw.load();
-    console.log('✅ NSFW detection model loaded');
+    // Load NSFW model
+    nsfwModel = await nsfwjs.load();
+    console.log('✅ NSFW detection model loaded successfully');
+    modelLoadError = null;
     return nsfwModel;
   } catch (error) {
-    console.error('Failed to load NSFW model:', error);
+    console.error('❌ Failed to load NSFW model:', error);
+    modelLoadError = error.message;
     return null;
   } finally {
     isModelLoading = false;
@@ -28,16 +44,35 @@ export const initNSFWModel = async () => {
 // Analyze video frame for inappropriate content
 export const analyzeFrame = async (videoElement) => {
   try {
-    if (!nsfwModel) {
+    // Initialize model if not loaded
+    if (!nsfwModel && !isModelLoading) {
+      console.log('🔄 Model not loaded, initializing...');
       await initNSFWModel();
     }
     
+    // Wait for model to be ready
+    if (isModelLoading) {
+      console.log('⏳ Waiting for model to load...');
+      return { safe: true, confidence: 0, loading: true };
+    }
+    
     if (!nsfwModel) {
-      console.warn('NSFW model not available');
-      return { safe: true, confidence: 0 };
+      console.warn('⚠️ NSFW model not available:', modelLoadError);
+      return { safe: true, confidence: 0, error: modelLoadError };
     }
 
+    // Check if video is ready
+    if (!videoElement || videoElement.readyState < 2) {
+      console.log('⏳ Video not ready yet');
+      return { safe: true, confidence: 0, videoNotReady: true };
+    }
+
+    console.log('🔍 Analyzing frame...');
     const predictions = await nsfwModel.classify(videoElement);
+    
+    console.log('📊 AI Predictions:', predictions.map(p => 
+      `${p.className}: ${(p.probability * 100).toFixed(1)}%`
+    ).join(', '));
     
     // Categories: Neutral, Drawing, Hentai, Porn, Sexy
     const inappropriate = predictions.filter(p => 
@@ -51,7 +86,7 @@ export const analyzeFrame = async (videoElement) => {
     const isInappropriate = inappropriate.length > 0;
     const isSuspicious = suspicious.length > 0;
     
-    return {
+    const result = {
       safe: !isInappropriate && !isSuspicious,
       inappropriate: isInappropriate,
       suspicious: isSuspicious,
@@ -60,8 +95,14 @@ export const analyzeFrame = async (videoElement) => {
         p.probability > max.probability ? p : max
       ),
     };
+    
+    if (!result.safe) {
+      console.warn('⚠️ UNSAFE CONTENT DETECTED:', result.highestRisk);
+    }
+    
+    return result;
   } catch (error) {
-    console.error('Frame analysis error:', error);
+    console.error('❌ Frame analysis error:', error);
     return { safe: true, confidence: 0, error: error.message };
   }
 };

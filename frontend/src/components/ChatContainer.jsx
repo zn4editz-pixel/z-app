@@ -22,6 +22,8 @@ const ChatContainer = ({ onStartCall }) => {
 
   const { authUser, socket } = useAuthStore();
   const bottomRef = useRef(null);
+  const isInitialLoad = useRef(true);
+  const previousMessagesLength = useRef(0);
   
   // Voice message playback
   const [playingVoiceId, setPlayingVoiceId] = useState(null);
@@ -40,13 +42,26 @@ const ChatContainer = ({ onStartCall }) => {
 
   useEffect(() => {
     if (!selectedUser?._id) return;
+    isInitialLoad.current = true; // Mark as initial load when switching chats
     getMessages?.(selectedUser._id);
     const unsub = subscribeToMessages?.(selectedUser._id);
     return () => typeof unsub === "function" && unsub();
   }, [selectedUser?._id, getMessages, subscribeToMessages]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    if (!bottomRef.current) return;
+    
+    // Instant scroll on initial load or when switching chats
+    if (isInitialLoad.current) {
+      bottomRef.current.scrollIntoView({ behavior: "auto", block: "end" });
+      isInitialLoad.current = false;
+      previousMessagesLength.current = messages.length;
+    } 
+    // Smooth scroll for new messages
+    else if (messages.length > previousMessagesLength.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+      previousMessagesLength.current = messages.length;
+    }
   }, [messages.length, isTyping]);
 
   // Handle typing indicator

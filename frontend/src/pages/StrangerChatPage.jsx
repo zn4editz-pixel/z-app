@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import VerifiedBadge from "../components/VerifiedBadge";
-import { analyzeFrame, captureVideoFrame, MODERATION_CONFIG } from "../utils/contentModeration";
+import { analyzeFrame, captureVideoFrame, MODERATION_CONFIG, initNSFWModel } from "../utils/contentModeration";
 
 const REPORT_REASONS = [
 	"Nudity or Sexual Content",
@@ -84,6 +84,7 @@ const StrangerChatPage = () => {
 	const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 	const [reportScreenshot, setReportScreenshot] = useState(null);
 	const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+	const [aiModerationActive, setAiModerationActive] = useState(false);
 
 	const peerConnectionRef = useRef(null);
 	const localStreamRef = useRef(null);
@@ -436,6 +437,21 @@ const StrangerChatPage = () => {
 	// Added fetchFriendData as a dependency
 	}, [socket, authUser, navigate, addMessage, closeConnection, startCall, handleOffer, handleAnswer, handleIceCandidate, fetchFriendData]); 
 
+	// --- Initialize AI Model on Mount ---
+	useEffect(() => {
+		if (MODERATION_CONFIG.enabled) {
+			console.log('🚀 Initializing AI moderation model...');
+			setAiModerationActive(false);
+			initNSFWModel().then(() => {
+				console.log('✅ AI moderation ready');
+				setAiModerationActive(true);
+			}).catch(err => {
+				console.error('❌ Failed to initialize AI moderation:', err);
+				setAiModerationActive(false);
+			});
+		}
+	}, []);
+
 	// --- AI Content Moderation Effect ---
 	useEffect(() => {
 		if (!MODERATION_CONFIG.enabled || status !== 'connected' || !remoteVideoRef.current || !partnerUserId) {
@@ -444,14 +460,30 @@ const StrangerChatPage = () => {
 
 		let violations = 0;
 		let moderationInterval;
+		let checkCount = 0;
 
 		const checkContent = async () => {
 			try {
+				checkCount++;
+				console.log(`🔍 AI Check #${checkCount} - Status: ${status}`);
+				
 				if (!remoteVideoRef.current || remoteVideoRef.current.readyState < 2) {
-					return; // Video not ready yet
+					console.log('⏳ Video not ready yet, skipping check');
+					return;
 				}
 
 				const analysis = await analyzeFrame(remoteVideoRef.current);
+				
+				// Skip if model is still loading or video not ready
+				if (analysis.loading || analysis.videoNotReady) {
+					console.log('⏳ Skipping check - model loading or video not ready');
+					return;
+				}
+				
+				if (analysis.error) {
+					console.error('❌ Analysis error:', analysis.error);
+					return;
+				}
 				
 				if (!analysis.safe) {
 					violations++;
@@ -460,11 +492,13 @@ const StrangerChatPage = () => {
 					console.warn('⚠️ AI Moderation Alert:', {
 						violations,
 						confidence: `${(confidence * 100).toFixed(1)}%`,
-						category: analysis.highestRisk?.className
+						category: analysis.highestRisk?.className,
+						allPredictions: analysis.predictions
 					});
 
 					if (confidence >= MODERATION_CONFIG.autoReportThreshold) {
 						// High confidence - auto-report
+						console.log('🚨 AUTO-REPORTING due to high confidence');
 						const screenshot = captureVideoFrame(remoteVideoRef.current);
 						if (screenshot && socket) {
 							socket.emit('stranger:report', {
@@ -484,24 +518,31 @@ const StrangerChatPage = () => {
 						handleSkip();
 					} else if (violations >= MODERATION_CONFIG.maxViolations) {
 						// Multiple violations - disconnect
+						console.log('🚨 DISCONNECTING due to multiple violations');
 						toast.error('Multiple content violations detected. Disconnecting.');
 						handleSkip();
 					} else {
 						// Warning
 						toast.warning(`Warning: Potentially inappropriate content detected (${violations}/${MODERATION_CONFIG.maxViolations})`);
 					}
+				} else {
+					console.log('✅ Content check passed - safe');
 				}
 			} catch (error) {
-				console.error('AI Moderation error:', error);
+				console.error('❌ AI Moderation error:', error);
 			}
 		};
 
 		// Start checking after a short delay to let video stabilize
+		console.log('⏰ Starting AI moderation checks in 3 seconds...');
 		const startTimeout = setTimeout(() => {
+			console.log(`✅ AI moderation active - checking every ${MODERATION_CONFIG.checkInterval/1000}s`);
+			checkContent(); // Run first check immediately
 			moderationInterval = setInterval(checkContent, MODERATION_CONFIG.checkInterval);
 		}, 3000);
 
 		return () => {
+			console.log('🛑 Stopping AI moderation checks');
 			clearTimeout(startTimeout);
 			if (moderationInterval) {
 				clearInterval(moderationInterval);
@@ -558,13 +599,15 @@ const StrangerChatPage = () => {
 
 	const handleSubmitReport = (reason) => {
 		// ... (handleSubmitReport logic) ...
-		if (!reportScreenshot || !reason) return;
+		if (!reportScreenshot || !reason || !partnerUserId) return;
 		setIsSubmittingReport(true);
 		socket.emit("stranger:report", {
 			reporterId: authUser._id,
+			reportedUserId: partnerUserId,
 			reason,
 			description: "Reported from stranger chat",
-			screenshot: reportScreenshot
+			screenshot: reportScreenshot,
+			category: 'stranger_chat'
 		});
 	};
 
@@ -583,9 +626,17 @@ const StrangerChatPage = () => {
 							</div>
 						)}
 						{status === "connected" && (
-							<button onClick={handleReport} className="btn btn-error btn-xs md:btn-sm absolute top-3 right-3 opacity-90 hover:opacity-100 z-20 flex items-center gap-1 shadow-xl backdrop-blur-sm">
-								<AlertTriangle size={14} /> Report
-							</button>
+							<>
+								<button onClick={handleReport} className="btn btn-error btn-xs md:btn-sm absolute top-3 right-3 opacity-90 hover:opacity-100 z-20 flex items-center gap-1 shadow-xl backdrop-blur-sm">
+									<AlertTriangle size={14} /> Report
+								</button>
+								{MODERATION_CONFIG.enabled && (
+									<div className={`absolute top-3 left-3 z-20 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 backdrop-blur-sm ${aiModerationActive ? 'bg-green-500/90 text-white' : 'bg-yellow-500/90 text-black'}`}>
+										<span className={`w-2 h-2 rounded-full ${aiModerationActive ? 'bg-white animate-pulse' : 'bg-black'}`}></span>
+										{aiModerationActive ? 'AI Protected' : 'AI Loading...'}
+									</div>
+								)}
+							</>
 						)}
 						
 						{/* Self Camera - Smaller on Mobile for Better Remote View */}

@@ -192,11 +192,13 @@ const Sidebar = () => {
                         </div>
                       </div>
 
-                      {/* Unread Badge */}
+                      {/* Unread Badge - Enhanced */}
                       {unread > 0 && (
-                        <span className="badge badge-error badge-xs sm:badge-sm flex-shrink-0"> 
-                          {unread > 9 ? "9+" : unread}
-                        </span>
+                        <div className="flex-shrink-0">
+                          <span className="inline-flex items-center justify-center min-w-[20px] h-5 sm:min-w-[24px] sm:h-6 px-1.5 sm:px-2 bg-error text-error-content rounded-full text-[10px] sm:text-xs font-bold shadow-lg animate-pulse"> 
+                            {unread > 99 ? "99+" : unread}
+                          </span>
+                        </div>
                       )}
                     </button>
                   );
@@ -330,11 +332,11 @@ const Sidebar = () => {
                           </div>
                         </div>
 
-                        {/* Unread Badge */}
+                        {/* Unread Badge - Enhanced */}
                         {unread > 0 && (
                           <div className="flex-shrink-0">
-                            <span className="badge badge-error badge-sm sm:badge-md">
-                              {unread > 9 ? "9+" : unread}
+                            <span className="inline-flex items-center justify-center min-w-[24px] h-6 sm:min-w-[28px] sm:h-7 px-2 bg-error text-error-content rounded-full text-xs sm:text-sm font-bold shadow-lg">
+                              {unread > 99 ? "99+" : unread}
                             </span>
                           </div>
                         )}
