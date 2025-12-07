@@ -269,142 +269,165 @@ const ChatMessage = ({ message, onReply }) => {
               </div>
             )}
 
-            {/* Message Bubble */}
-            <div
-              className={isEmojiOnly ? "" : `relative px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-2xl shadow-sm ${
-                isMyMessage
-                  ? "bg-gradient-to-br from-primary to-primary/90 text-primary-content"
-                  : "bg-base-200 text-base-content"
-              }`}
-            >
-              {/* Reply To Message - WhatsApp/Instagram Style */}
-              {message.replyTo && (
-                <div 
-                  className={`mb-2 border-l-4 pl-2 py-1 rounded-sm cursor-pointer active:scale-[0.98] transition-transform ${
-                    isMyMessage 
-                      ? "bg-primary-content/10 border-primary-content/50" 
-                      : "bg-base-300/40 border-primary/70"
-                  }`}
-                  onClick={() => {
-                    // Scroll to replied message
-                    const replyElement = document.getElementById(`message-${message.replyTo._id}`);
-                    if (replyElement) {
-                      replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      // Highlight effect
-                      replyElement.classList.add('highlight-flash');
-                      setTimeout(() => replyElement.classList.remove('highlight-flash'), 1500);
-                    }
+            {/* Image Only - NO BUBBLE (Instagram/WhatsApp Style) */}
+            {message.image && !message.text && !message.voice ? (
+              <div 
+                className="relative group"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowImageModal(true);
+                }}
+              >
+                <img
+                  src={message.image}
+                  className="rounded-2xl max-h-64 sm:max-h-80 object-cover cursor-pointer active:scale-[0.98] transition-transform shadow-lg"
+                  alt="attached"
+                  loading="lazy"
+                  decoding="async"
+                  onError={(e) => {
+                    console.error('Image failed to load:', message.image);
+                    e.target.src = '/avatar.png';
                   }}
-                >
-                  <div className={`text-[10px] font-bold mb-0.5 ${
-                    isMyMessage ? "text-primary-content" : "text-primary"
-                  }`}>
-                    {message.replyTo.senderId === authUser._id ? "You" : selectedUser?.fullName || "User"}
-                  </div>
-                  <div className={`text-[11px] leading-tight truncate ${
-                    isMyMessage ? "text-primary-content/80" : "text-base-content/70"
-                  }`}>
-                    {message.replyTo.image && "📷 "}
-                    {message.replyTo.voice && "🎤 "}
-                    {message.replyTo.text || (message.replyTo.image ? "Photo" : message.replyTo.voice ? "Voice message" : "Message")}
-                  </div>
-                </div>
-              )}
-
-              {isEmojiOnly && emojiCount > 0 ? (
-                <div className={`${emojiCount === 1 ? 'text-5xl sm:text-6xl' : 'text-4xl sm:text-5xl'} leading-tight`}>
-                  {message.text}
-                </div>
-              ) : (
-                <>
-                  {/* Image Message - NO BORDER */}
-                  {message.image && (
-                    <div 
-                      className="relative group mb-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowImageModal(true);
-                      }}
-                    >
-                      <img
-                        src={message.image}
-                        className="rounded-xl max-h-64 sm:max-h-80 object-cover w-full cursor-pointer active:scale-[0.98] transition-transform"
-                        alt="attached"
-                        loading="lazy"
-                        decoding="async"
-                      />
+                />
+              </div>
+            ) : (
+              /* Message Bubble (for text, voice, or image+text) */
+              <div
+                className={isEmojiOnly ? "" : `relative px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-2xl shadow-sm ${
+                  isMyMessage
+                    ? "bg-gradient-to-br from-primary to-primary/90 text-primary-content"
+                    : "bg-base-200 text-base-content"
+                }`}
+              >
+                {/* Reply To Message */}
+                {message.replyTo && (
+                  <div 
+                    className={`mb-2 border-l-4 pl-2 py-1 rounded-sm cursor-pointer active:scale-[0.98] transition-transform ${
+                      isMyMessage 
+                        ? "bg-primary-content/10 border-primary-content/50" 
+                        : "bg-base-300/40 border-primary/70"
+                    }`}
+                    onClick={() => {
+                      const replyElement = document.getElementById(`message-${message.replyTo._id}`);
+                      if (replyElement) {
+                        replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        replyElement.classList.add('highlight-flash');
+                        setTimeout(() => replyElement.classList.remove('highlight-flash'), 1500);
+                      }
+                    }}
+                  >
+                    <div className={`text-[10px] font-bold mb-0.5 ${
+                      isMyMessage ? "text-primary-content" : "text-primary"
+                    }`}>
+                      {message.replyTo.senderId === authUser._id ? "You" : selectedUser?.fullName || "User"}
                     </div>
-                  )}
+                    <div className={`text-[11px] leading-tight truncate ${
+                      isMyMessage ? "text-primary-content/80" : "text-base-content/70"
+                    }`}>
+                      {message.replyTo.image && "📷 "}
+                      {message.replyTo.voice && "🎤 "}
+                      {message.replyTo.text || (message.replyTo.image ? "Photo" : message.replyTo.voice ? "Voice message" : "Message")}
+                    </div>
+                  </div>
+                )}
 
-                  {/* Voice Message - Instagram Style */}
-                  {message.voice && (
-                    <div className="flex items-center gap-2 min-w-[200px] max-w-[280px]">
-                      <button
-                        onClick={toggleVoicePlayback}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                          isPlaying ? 'bg-primary/20 scale-110' : isMyMessage ? 'bg-primary-content/20' : 'bg-primary/10'
-                        }`}
-                      >
-                        {isPlaying ? (
-                          <Pause className="w-4 h-4" fill="currentColor" />
-                        ) : (
-                          <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
-                        )}
-                      </button>
-                      
-                      {/* Instagram-style Animated Waveform */}
-                      <div className="flex-1 flex items-center justify-center gap-[3px] h-8">
-                        {[4, 7, 5, 9, 6, 10, 7, 8, 5, 9, 6, 7, 8, 6, 9, 7, 5, 8, 6, 7].map((height, i) => {
-                          const duration = message.voiceDuration || 3;
-                          const progress = currentTime / duration;
-                          const isActive = isPlaying && (i / 20) <= progress;
-                          
-                          return (
-                            <div
-                              key={i}
-                              className={`w-[3px] rounded-full transition-all duration-150 ${
-                                isActive 
-                                  ? isMyMessage ? 'bg-primary-content' : 'bg-primary' 
-                                  : isMyMessage ? 'bg-primary-content/30' : 'bg-base-content/30'
-                              }`}
-                              style={{ 
-                                height: `${height * 2.5}px`,
-                                transform: isPlaying && isActive ? 'scaleY(1.15)' : 'scaleY(1)',
-                                opacity: isActive ? 1 : 0.6
-                              }}
-                            />
-                          );
-                        })}
-                      </div>
-                      
-                      {/* Countdown Timer */}
-                      <span className="text-xs opacity-70 font-medium min-w-[32px] text-right">
-                        {isPlaying 
-                          ? `${Math.max(0, Math.ceil((message.voiceDuration || 0) - currentTime))}s`
-                          : `${message.voiceDuration || 0}s`
-                        }
-                      </span>
-                      
-                      <audio
-                        ref={audioRef}
-                        src={message.voice}
-                        onEnded={() => {
-                          setIsPlaying(false);
-                          setCurrentTime(0);
+                {isEmojiOnly && emojiCount > 0 ? (
+                  <div className={`${emojiCount === 1 ? 'text-5xl sm:text-6xl' : 'text-4xl sm:text-5xl'} leading-tight`}>
+                    {message.text}
+                  </div>
+                ) : (
+                  <>
+                    {/* Image with text (inside bubble) */}
+                    {message.image && message.text && (
+                      <div 
+                        className="relative group mb-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowImageModal(true);
                         }}
-                      />
-                    </div>
-                  )}
+                      >
+                        <img
+                          src={message.image}
+                          className="rounded-xl max-h-64 sm:max-h-80 object-cover w-full cursor-pointer active:scale-[0.98] transition-transform"
+                          alt="attached"
+                          loading="lazy"
+                          decoding="async"
+                          onError={(e) => {
+                            console.error('Image failed to load:', message.image);
+                            e.target.src = '/avatar.png';
+                          }}
+                        />
+                      </div>
+                    )}
 
-                  {/* Text Message */}
-                  {message.text && !isEmojiOnly && (
-                    <p className="break-words whitespace-pre-wrap leading-relaxed">
-                      {message.text}
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
+                    {/* Voice Message */}
+                    {message.voice && (
+                      <div className="flex items-center gap-2 min-w-[200px] max-w-[280px]">
+                        <button
+                          onClick={toggleVoicePlayback}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                            isPlaying ? 'bg-primary/20 scale-110' : isMyMessage ? 'bg-primary-content/20' : 'bg-primary/10'
+                          }`}
+                        >
+                          {isPlaying ? (
+                            <Pause className="w-4 h-4" fill="currentColor" />
+                          ) : (
+                            <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
+                          )}
+                        </button>
+                        
+                        <div className="flex-1 flex items-center justify-center gap-[3px] h-8">
+                          {[4, 7, 5, 9, 6, 10, 7, 8, 5, 9, 6, 7, 8, 6, 9, 7, 5, 8, 6, 7].map((height, i) => {
+                            const duration = message.voiceDuration || 3;
+                            const progress = currentTime / duration;
+                            const isActive = isPlaying && (i / 20) <= progress;
+                            
+                            return (
+                              <div
+                                key={i}
+                                className={`w-[3px] rounded-full transition-all duration-150 ${
+                                  isActive 
+                                    ? isMyMessage ? 'bg-primary-content' : 'bg-primary' 
+                                    : isMyMessage ? 'bg-primary-content/30' : 'bg-base-content/30'
+                                }`}
+                                style={{ 
+                                  height: `${height * 2.5}px`,
+                                  transform: isPlaying && isActive ? 'scaleY(1.15)' : 'scaleY(1)',
+                                  opacity: isActive ? 1 : 0.6
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                        
+                        <span className="text-xs opacity-70 font-medium min-w-[32px] text-right">
+                          {isPlaying 
+                            ? `${Math.max(0, Math.ceil((message.voiceDuration || 0) - currentTime))}s`
+                            : `${message.voiceDuration || 0}s`
+                          }
+                        </span>
+                        
+                        <audio
+                          ref={audioRef}
+                          src={message.voice}
+                          onEnded={() => {
+                            setIsPlaying(false);
+                            setCurrentTime(0);
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Text Message */}
+                    {message.text && !isEmojiOnly && (
+                      <p className="break-words whitespace-pre-wrap leading-relaxed">
+                        {message.text}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Reactions Display - Instagram/WhatsApp Style */}
             {Object.keys(groupedReactions).length > 0 && (
