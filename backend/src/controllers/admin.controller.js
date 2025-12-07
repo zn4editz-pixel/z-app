@@ -41,11 +41,15 @@ const emitToUser = (io, userId, event, data) => {
 	}
 };
 
-// --- User Management Functions (no changes) ---
+// --- User Management Functions (OPTIMIZED) ---
 export const getAllUsers = async (req, res) => {
-	// Your existing getAllUsers function...
 	try {
-		const users = await User.find().select("-password");
+		// Optimized: Only fetch essential fields, use lean(), limit to 100 users
+		const users = await User.find()
+			.select('username nickname email profilePic isVerified isOnline isSuspended createdAt')
+			.sort({ createdAt: -1 })
+			.limit(100)
+			.lean();
 		res.status(200).json(users);
 	} catch (err) {
 		console.error("getAllUsers error:", err);

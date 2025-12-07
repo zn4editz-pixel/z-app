@@ -288,8 +288,9 @@ export const unfriendUser = async (req, res) => {
 export const getFriends = async (req, res) => {
 	try {
 		const user = await User.findById(req.user._id)
-			.populate("friends", "username nickname profilePic isOnline") // Select fields
-			.select("friends"); // Only get the friends field
+			.populate("friends", "username nickname profilePic isOnline isVerified")
+			.select("friends")
+			.lean();
 
 		if (!user) return res.status(404).json({ message: "User not found." });
 
@@ -304,9 +305,10 @@ export const getFriends = async (req, res) => {
 export const getPendingRequests = async (req, res) => {
 	try {
 		const user = await User.findById(req.user._id)
-			.populate("friendRequestsSent", "username nickname profilePic")
-			.populate("friendRequestsReceived", "username nickname profilePic")
-			.select("friendRequestsSent friendRequestsReceived");
+			.populate("friendRequestsSent", "username nickname profilePic isVerified")
+			.populate("friendRequestsReceived", "username nickname profilePic isVerified")
+			.select("friendRequestsSent friendRequestsReceived")
+			.lean();
 
 		if (!user) return res.status(404).json({ message: "User not found." });
 
