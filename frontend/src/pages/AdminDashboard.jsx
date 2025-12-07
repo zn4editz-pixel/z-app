@@ -152,54 +152,72 @@ const AdminDashboard = () => {
 				duration: duration || "7d"
 			});
 			
-			// Immediately update the local state
-			setUsers(prevUsers => 
-				prevUsers.map(user => 
+			console.log("Suspend response:", response.data);
+			
+			// Immediately update the local state with response data
+			setUsers(prevUsers => {
+				const updated = prevUsers.map(user => 
 					user._id === userId 
-						? { ...user, isSuspended: true, suspendedUntil: response.data.user?.suspendedUntil, suspensionReason: response.data.user?.suspensionReason }
+						? { 
+							...user, 
+							isSuspended: true, 
+							suspendedUntil: response.data.user?.suspendedUntil, 
+							suspensionReason: response.data.user?.suspensionReason 
+						}
 						: user
-				)
-			);
+				);
+				console.log("Updated users state after suspend");
+				return updated;
+			});
 			
 			toast.success("User suspended successfully");
 			
-			// Force refresh to ensure data is correct
+			// Force refresh after a short delay
 			setTimeout(() => {
+				console.log("Fetching fresh user data...");
 				fetchUsers();
 				fetchStats();
-			}, 500);
+			}, 300);
 		} catch (err) {
 			console.error("Suspend error:", err);
 			toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to suspend user");
-			// Revert on error
 			fetchUsers();
 		}
 	};
 
 	const handleUnsuspendUser = async (userId) => {
 		try {
-			await axiosInstance.put(`/admin/unsuspend/${userId}`);
+			const response = await axiosInstance.put(`/admin/unsuspend/${userId}`);
 			
-			// Immediately update the local state
-			setUsers(prevUsers => 
-				prevUsers.map(user => 
+			console.log("Unsuspend response:", response.data);
+			
+			// Immediately update the local state with response data
+			setUsers(prevUsers => {
+				const updated = prevUsers.map(user => 
 					user._id === userId 
-						? { ...user, isSuspended: false, suspendedUntil: null, suspensionReason: null }
+						? { 
+							...user, 
+							isSuspended: false, 
+							suspendedUntil: null, 
+							suspensionReason: null 
+						}
 						: user
-				)
-			);
+				);
+				console.log("Updated users state after unsuspend");
+				return updated;
+			});
 			
 			toast.success("User unsuspended successfully");
 			
-			// Force refresh to ensure data is correct
+			// Force refresh after a short delay
 			setTimeout(() => {
+				console.log("Fetching fresh user data...");
 				fetchUsers();
 				fetchStats();
-			}, 500);
+			}, 300);
 		} catch (err) {
 			console.error("Unsuspend error:", err);
 			toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to unsuspend user");
-			// Revert on error
 			fetchUsers();
 		}
 	};
