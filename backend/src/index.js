@@ -33,6 +33,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // --- Middleware ---
+// Trust proxy - Required for rate limiting behind Render/Cloudflare
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet({
 	contentSecurityPolicy: false, // Disable for now to allow inline scripts

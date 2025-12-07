@@ -7,6 +7,10 @@ const redisConfig = {
 	password: process.env.REDIS_PASSWORD || undefined,
 	maxRetriesPerRequest: 3,
 	enableReadyCheck: true,
+	// Enable TLS for Upstash and other cloud Redis providers
+	tls: process.env.REDIS_HOST ? {
+		rejectUnauthorized: false, // Required for Upstash
+	} : undefined,
 	retryStrategy: (times) => {
 		const delay = Math.min(times * 50, 2000);
 		return delay;
