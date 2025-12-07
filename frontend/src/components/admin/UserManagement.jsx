@@ -224,87 +224,112 @@ const UserManagement = ({
 				</div>
 			)}
 
-			{/* Suspension Modal */}
+			{/* Suspension Modal - Fixed Centered with Blur */}
 			{suspendModal.open && (
-				<div className="modal modal-open">
-					<div className="modal-box max-w-md">
-						<h3 className="font-bold text-lg mb-4">Suspend User</h3>
-						<p className="text-sm text-base-content/70 mb-4">
-							You are about to suspend <span className="font-semibold">{suspendModal.username}</span>
-						</p>
-
-						{/* Reason Selection */}
-						<div className="form-control mb-4">
-							<label className="label">
-								<span className="label-text font-medium">Reason for Suspension</span>
-							</label>
-							<select 
-								className="select select-bordered w-full"
-								value={suspendReason}
-								onChange={(e) => setSuspendReason(e.target.value)}
-							>
-								{suspendReasons.map(reason => (
-									<option key={reason} value={reason}>{reason}</option>
-								))}
-							</select>
-						</div>
-
-						{/* Custom Reason Input */}
-						{suspendReason === "Other" && (
-							<div className="form-control mb-4">
-								<label className="label">
-									<span className="label-text font-medium">Custom Reason</span>
-								</label>
-								<textarea
-									className="textarea textarea-bordered w-full"
-									placeholder="Enter custom reason..."
-									value={customReason}
-									onChange={(e) => setCustomReason(e.target.value)}
-									rows={3}
-								/>
-							</div>
-						)}
-
-						{/* Duration Selection */}
-						<div className="form-control mb-6">
-							<label className="label">
-								<span className="label-text font-medium">Suspension Duration</span>
-							</label>
-							<select 
-								className="select select-bordered w-full"
-								value={suspendDuration}
-								onChange={(e) => setSuspendDuration(e.target.value)}
-							>
-								{suspendDurations.map(duration => (
-									<option key={duration.value} value={duration.value}>
-										{duration.label}
-									</option>
-								))}
-							</select>
-						</div>
-
-						{/* Actions */}
-						<div className="modal-action">
-							<button 
-								className="btn btn-ghost"
-								onClick={() => setSuspendModal({ open: false, userId: null, username: "" })}
-							>
-								Cancel
-							</button>
-							<button 
-								className="btn btn-warning"
-								onClick={handleSuspendConfirm}
-							>
-								Suspend User
-							</button>
-						</div>
-					</div>
+				<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
 					<div 
-						className="modal-backdrop" 
+						className="absolute inset-0" 
 						onClick={() => setSuspendModal({ open: false, userId: null, username: "" })}
 					/>
+					<div className="relative bg-base-100 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-scaleIn">
+						<div className="p-6">
+							<h3 className="font-bold text-xl mb-2">Suspend User</h3>
+							<p className="text-sm text-base-content/70 mb-6">
+								You are about to suspend <span className="font-semibold text-warning">{suspendModal.username}</span>
+							</p>
+
+							{/* Reason Selection */}
+							<div className="form-control mb-4">
+								<label className="label">
+									<span className="label-text font-medium">Reason for Suspension</span>
+								</label>
+								<select 
+									className="select select-bordered w-full"
+									value={suspendReason}
+									onChange={(e) => setSuspendReason(e.target.value)}
+								>
+									{suspendReasons.map(reason => (
+										<option key={reason} value={reason}>{reason}</option>
+									))}
+								</select>
+							</div>
+
+							{/* Custom Reason Input */}
+							{suspendReason === "Other" && (
+								<div className="form-control mb-4">
+									<label className="label">
+										<span className="label-text font-medium">Custom Reason</span>
+									</label>
+									<textarea
+										className="textarea textarea-bordered w-full"
+										placeholder="Enter custom reason..."
+										value={customReason}
+										onChange={(e) => setCustomReason(e.target.value)}
+										rows={3}
+									/>
+								</div>
+							)}
+
+							{/* Duration Selection */}
+							<div className="form-control mb-6">
+								<label className="label">
+									<span className="label-text font-medium">Suspension Duration</span>
+								</label>
+								<select 
+									className="select select-bordered w-full"
+									value={suspendDuration}
+									onChange={(e) => setSuspendDuration(e.target.value)}
+								>
+									{suspendDurations.map(duration => (
+										<option key={duration.value} value={duration.value}>
+											{duration.label}
+										</option>
+									))}
+								</select>
+							</div>
+
+							{/* Actions */}
+							<div className="flex gap-3 justify-end">
+								<button 
+									className="btn btn-ghost"
+									onClick={() => setSuspendModal({ open: false, userId: null, username: "" })}
+								>
+									Cancel
+								</button>
+								<button 
+									className="btn btn-warning"
+									onClick={handleSuspendConfirm}
+								>
+									Suspend User
+								</button>
+							</div>
+						</div>
+					</div>
 				</div>
 			)}
+
+			<style>{`
+				@keyframes fadeIn {
+					from { opacity: 0; }
+					to { opacity: 1; }
+				}
+				@keyframes scaleIn {
+					from { 
+						opacity: 0;
+						transform: scale(0.95);
+					}
+					to { 
+						opacity: 1;
+						transform: scale(1);
+					}
+				}
+				.animate-fadeIn {
+					animation: fadeIn 0.2s ease-out;
+				}
+				.animate-scaleIn {
+					animation: scaleIn 0.3s ease-out;
+				}
+			`}</style>
 		</div>
 	);
 };
