@@ -280,7 +280,7 @@ const ChatMessage = ({ message, onReply }) => {
               >
                 <img
                   src={message.image}
-                  className="rounded-2xl max-h-64 sm:max-h-80 object-cover cursor-pointer active:scale-[0.98] transition-transform shadow-lg"
+                  className="rounded-2xl max-h-64 sm:max-h-80 min-w-[200px] max-w-[300px] w-auto object-cover cursor-pointer active:scale-[0.98] transition-transform shadow-lg"
                   alt="attached"
                   loading="lazy"
                   decoding="async"
@@ -348,7 +348,7 @@ const ChatMessage = ({ message, onReply }) => {
                       >
                         <img
                           src={message.image}
-                          className="rounded-xl max-h-64 sm:max-h-80 object-cover w-full cursor-pointer active:scale-[0.98] transition-transform"
+                          className="rounded-xl max-h-64 sm:max-h-80 min-w-[200px] object-cover w-full cursor-pointer active:scale-[0.98] transition-transform"
                           alt="attached"
                           loading="lazy"
                           decoding="async"
