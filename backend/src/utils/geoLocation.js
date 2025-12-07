@@ -3,6 +3,35 @@
  * Uses free IP geolocation APIs to detect user location and VPN usage
  */
 
+import https from 'https';
+
+/**
+ * Make HTTPS request
+ * @param {string} url - URL to fetch
+ * @returns {Promise<Object>} JSON response
+ */
+const httpsGet = (url) => {
+  return new Promise((resolve, reject) => {
+    https.get(url, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (error) {
+          reject(new Error('Failed to parse JSON response'));
+        }
+      });
+    }).on('error', (error) => {
+      reject(error);
+    });
+  });
+};
+
 /**
  * Detect country and VPN status from IP address
  * Uses ipapi.co free tier (1,000 requests/day)
@@ -13,6 +42,7 @@ export const detectCountry = async (ip) => {
   try {
     // Skip detection for localhost/private IPs
     if (!ip || ip === '::1' || ip === '127.0.0.1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
+      console.log(`⚠️ Skipping geolocation for localhost/private IP: ${ip}`);
       return {
         country: 'Unknown',
         countryCode: 'XX',
@@ -22,18 +52,14 @@ export const detectCountry = async (ip) => {
       };
     }
 
-    // Use ipapi.co for geolocation (free tier: 1,000 requests/day)
-    const response = await fetch(`https://ipapi.co/${ip}/json/`);
+    console.log(`🌍 Detecting location for IP: ${ip}`);
     
-    if (!response.ok) {
-      throw new Error(`IP API returned ${response.status}`);
-    }
-
-    const data = await response.json();
+    // Use ipapi.co for geolocation (free tier: 1,000 requests/day)
+    const data = await httpsGet(`https://ipapi.co/${ip}/json/`);
 
     // Check if response indicates an error
     if (data.error) {
-      console.error('IP API error:', data.reason);
+      console.error(`❌ IP API error for ${ip}:`, data.reason);
       return {
         country: 'Unknown',
         countryCode: 'XX',
@@ -42,6 +68,8 @@ export const detectCountry = async (ip) => {
         ip: ip
       };
     }
+
+    console.log(`✅ Location detected for ${ip}: ${data.city}, ${data.country_name}`);
 
     return {
       country: data.country_name || 'Unknown',
@@ -53,7 +81,7 @@ export const detectCountry = async (ip) => {
       ip: ip
     };
   } catch (error) {
-    console.error('Geolocation detection error:', error.message);
+    console.error(`❌ Geolocation detection error for ${ip}:`, error.message);
     
     // Return default values on error
     return {
@@ -81,13 +109,7 @@ export const detectVPN = async (ip) => {
     }
 
     // Use vpnapi.io for VPN detection (free tier: 1,000 requests/day)
-    const response = await fetch(`https://vpnapi.io/api/${ip}?key=free`);
-    
-    if (!response.ok) {
-      return false;
-    }
-
-    const data = await response.json();
+    const data = await httpsGet(`https://vpnapi.io/api/${ip}?key=free`);
     
     return data.security?.vpn === true || data.security?.proxy === true || data.security?.tor === true;
   } catch (error) {
