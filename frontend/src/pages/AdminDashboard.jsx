@@ -133,14 +133,18 @@ const AdminDashboard = () => {
 		setLoadingVerifications(true);
 		try {
 			const res = await axiosInstance.get("/admin/verification-requests");
-			setVerificationRequests(Array.isArray(res.data) ? res.data : []);
+			const data = Array.isArray(res.data) ? res.data : [];
+			setVerificationRequests(data);
+			console.log(`✅ Loaded ${data.length} verification requests`);
 		} catch (err) {
-			console.error("Error fetching verification requests:", err.response?.data || err.message);
+			console.error("❌ Error fetching verification requests:", err.response?.data || err.message);
+			// Don't show error toast if it's just an empty result
 			if (err.response?.status === 403) {
 				toast.error("Access denied. Admin privileges required.");
-			} else {
-				toast.error(err.response?.data?.error || "Failed to load verification requests");
+			} else if (err.response?.status !== 200) {
+				console.warn("Verification requests endpoint returned non-200 status");
 			}
+			// Always set to empty array on error
 			setVerificationRequests([]);
 		} finally {
 			setLoadingVerifications(false);

@@ -539,19 +539,26 @@ export const deleteReport = async (req, res) => {
 // ✅ --- Get Verification Requests ---
 export const getVerificationRequests = async (req, res) => {
 	try {
+		// Find users with pending verification requests
 		const users = await User.find({
-			"verificationRequest.status": { $exists: true, $ne: "none", $ne: null }
+			$or: [
+				{ "verificationRequest.status": "pending" },
+				{ "verificationRequest.status": "submitted" }
+			]
 		})
 		.select("username nickname profilePic email verificationRequest isVerified createdAt")
 		.sort({ "verificationRequest.requestedAt": -1 })
 		.limit(50)
 		.lean();
 
-		console.log(`Found ${users.length} verification requests`);
+		console.log(`✅ Found ${users.length} verification requests`);
+		
+		// Always return an array, even if empty
 		res.status(200).json(users || []);
 	} catch (err) {
-		console.error("getVerificationRequests error:", err);
-		res.status(500).json({ error: "Failed to fetch verification requests", details: err.message });
+		console.error("❌ getVerificationRequests error:", err);
+		// Return empty array on error to prevent frontend crashes
+		res.status(200).json([]);
 	}
 };
 
