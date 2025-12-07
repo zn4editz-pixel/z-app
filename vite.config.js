@@ -11,6 +11,12 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+    hmr: {
+      overlay: false, // Disable error overlay for faster dev
+    },
+  },
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' },
   },
   build: {
     target: 'esnext',
