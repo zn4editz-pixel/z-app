@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "build": "cd frontend && npm run build",
-    "start": "cd backend && npm start"
+    "build": "npm install --prefix frontend && npm run build --prefix frontend",
+    "start": "cd backend && npm start",
+    "postinstall": "echo 'Root install complete'"
   },
   "devDependencies": {
     "@svgr/webpack": "^8.1.0",

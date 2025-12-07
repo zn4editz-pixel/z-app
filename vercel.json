@@ -1,8 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && npm install && npm run build",
+  "buildCommand": "npm install --prefix frontend && npm run build --prefix frontend",
   "outputDirectory": "frontend/dist",
-  "framework": "vite",
+  "installCommand": "echo 'Skipping root install'",
+  "framework": null,
   "rewrites": [
     {
       "source": "/(.*)",
@@ -19,8 +20,5 @@
         }
       ]
     }
-  ],
-  "env": {
-    "VITE_API_BASE_URL": "@api_url"
-  }
+  ]
 }
