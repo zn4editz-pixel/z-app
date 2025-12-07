@@ -145,15 +145,39 @@ const matchedPairs = new Map(); // socketId -> partnerSocketId
 const findMatch = (socket) => {
 	console.log(`🔍 Finding match for ${socket.id}. Queue size: ${waitingQueue.length}`);
 	
+	// ✅ Check if this socket is already matched
+	if (matchedPairs.has(socket.id)) {
+		console.log(`⚠️ ${socket.id} is already matched, skipping`);
+		return;
+	}
+	
 	// Remove current socket from queue if present
 	waitingQueue = waitingQueue.filter(id => id !== socket.id);
 	
 	if (waitingQueue.length > 0) {
-		// Match with first person in queue
-		const partnerSocketId = waitingQueue.shift();
-		const partnerSocket = io.sockets.sockets.get(partnerSocketId);
+		// Find first person in queue who is NOT already matched
+		let partnerSocketId = null;
+		let partnerSocket = null;
 		
-		if (partnerSocket) {
+		while (waitingQueue.length > 0) {
+			partnerSocketId = waitingQueue.shift();
+			
+			// Skip if partner is already matched
+			if (matchedPairs.has(partnerSocketId)) {
+				console.log(`⚠️ ${partnerSocketId} is already matched, skipping`);
+				continue;
+			}
+			
+			partnerSocket = io.sockets.sockets.get(partnerSocketId);
+			
+			if (partnerSocket) {
+				break; // Found a valid partner
+			} else {
+				console.log(`⚠️ Partner socket ${partnerSocketId} not found, trying next`);
+			}
+		}
+		
+		if (partnerSocket && partnerSocketId) {
 			// Create match
 			matchedPairs.set(socket.id, partnerSocketId);
 			matchedPairs.set(partnerSocketId, socket.id);
@@ -170,9 +194,10 @@ const findMatch = (socket) => {
 				partnerUserId: socket.strangerData?.userId 
 			});
 		} else {
-			// Partner socket no longer exists, try again
-			console.log(`⚠️ Partner socket ${partnerSocketId} not found, retrying...`);
-			findMatch(socket);
+			// No valid partner found, add to queue
+			waitingQueue.push(socket.id);
+			console.log(`⏳ Added ${socket.id} to queue (no valid partner). Queue size: ${waitingQueue.length}`);
+			socket.emit("stranger:waiting");
 		}
 	} else {
 		// Add to queue
