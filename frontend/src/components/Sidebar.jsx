@@ -16,6 +16,11 @@ const Sidebar = () => {
   } = useChatStore();
 
   const { onlineUsers = [], authUser } = useAuthStore();
+  
+  // Debug online users
+  useEffect(() => {
+    console.log('👥 Online users in Sidebar:', onlineUsers);
+  }, [onlineUsers]);
   const { friends, isLoading: isFriendsLoading, pendingReceived } = useFriendStore();
   const { notifications } = useNotificationStore();
 

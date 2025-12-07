@@ -250,7 +250,10 @@ export const useAuthStore = create((set, get) => ({
             toast.error("Real-time connection failed.");
             get().disconnectSocket(); // Clean up on connection error
         });
-		newSocket.on("getOnlineUsers", (userIds) => set({ onlineUsers: userIds }));
+		newSocket.on("getOnlineUsers", (userIds) => {
+			console.log('📡 Online users updated:', userIds);
+			set({ onlineUsers: userIds });
+		});
 
 		const forceLogout = (msg) => {
 			toast.error(msg);
