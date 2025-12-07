@@ -99,17 +99,21 @@ const StrangerChatPage = () => {
 
 	// --- WebRTC helper functions (unchanged from yours) ---
 	const createPeerConnection = useCallback(() => {
-		// ... (WebRTC connection logic) ...
 		console.log("WebRTC: Creating PeerConnection");
 		const pc = new RTCPeerConnection({
 			iceServers: [
 				{ urls: "stun:stun.l.google.com:19302" },
-				{ urls: "stun:stun1.l.google.com:19302" }
-			]
+				{ urls: "stun:stun1.l.google.com:19302" },
+				{ urls: "stun:stun2.l.google.com:19302" },
+				{ urls: "stun:stun3.l.google.com:19302" },
+				{ urls: "stun:stun4.l.google.com:19302" }
+			],
+			iceCandidatePoolSize: 10
 		});
 
 		pc.onicecandidate = (e) => {
 			if (e.candidate && socket) {
+				console.log("WebRTC: Sending ICE candidate");
 				socket.emit("webrtc:ice-candidate", { candidate: e.candidate });
 			}
 		};
@@ -121,6 +125,23 @@ const StrangerChatPage = () => {
 				if (remoteVideoRef.current) {
 					remoteVideoRef.current.srcObject = e.streams[0];
 				}
+			}
+		};
+
+		pc.onconnectionstatechange = () => {
+			console.log("WebRTC: Connection state:", pc.connectionState);
+			if (pc.connectionState === 'failed') {
+				console.error("WebRTC: Connection failed");
+				toast.error("Connection failed. Trying to reconnect...");
+			} else if (pc.connectionState === 'connected') {
+				console.log("✅ WebRTC: Connected successfully");
+			}
+		};
+
+		pc.oniceconnectionstatechange = () => {
+			console.log("WebRTC: ICE connection state:", pc.iceConnectionState);
+			if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+				console.error("WebRTC: ICE connection issue");
 			}
 		};
 
@@ -264,9 +285,24 @@ const StrangerChatPage = () => {
 		// Request camera and microphone permissions
 		const requestPermissions = async () => {
 			try {
+				console.log("Requesting camera and microphone permissions...");
+				
+				// Check if mediaDevices is supported
+				if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+					throw new Error("Your browser doesn't support camera/microphone access");
+				}
+				
 				const stream = await navigator.mediaDevices.getUserMedia({ 
-					video: true, 
-					audio: true 
+					video: { 
+						width: { ideal: 1280 },
+						height: { ideal: 720 },
+						facingMode: "user"
+					}, 
+					audio: {
+						echoCancellation: true,
+						noiseSuppression: true,
+						autoGainControl: true
+					}
 				});
 				
 				if (!isMounted) {
@@ -274,21 +310,41 @@ const StrangerChatPage = () => {
 					return;
 				}
 				
+				console.log("✅ Permissions granted, stream obtained");
 				localStreamRef.current = stream;
 				if (localVideoRef.current) {
 					localVideoRef.current.srcObject = stream;
 				}
 				
+				setPermissionsGranted(true);
 				setStatus("waiting");
 				
-				if (!hasJoinedQueue) {
-					socket.emit("stranger:joinQueue", { userId: authUser._id });
+				if (!hasJoinedQueue && socket && socket.connected) {
+					console.log("Joining stranger queue...");
+					socket.emit("stranger:joinQueue", { 
+						userId: authUser._id,
+						username: authUser.username,
+						nickname: authUser.nickname,
+						profilePic: authUser.profilePic,
+						isVerified: authUser.isVerified
+					});
 					hasJoinedQueue = true;
+				} else if (!socket || !socket.connected) {
+					console.error("Socket not connected!");
+					toast.error("Connection error. Please refresh the page.");
 				}
 			} catch (error) {
-				console.error("Permission denied:", error);
-				toast.error("Camera and microphone access required for stranger chat");
-				navigate("/");
+				console.error("Permission error:", error);
+				if (error.name === 'NotAllowedError') {
+					toast.error("Camera and microphone access denied. Please allow permissions and refresh.");
+				} else if (error.name === 'NotFoundError') {
+					toast.error("No camera or microphone found on your device.");
+				} else if (error.name === 'NotReadableError') {
+					toast.error("Camera or microphone is already in use by another application.");
+				} else {
+					toast.error(error.message || "Failed to access camera/microphone");
+				}
+				setTimeout(() => navigate("/"), 2000);
 			}
 		};
 		
