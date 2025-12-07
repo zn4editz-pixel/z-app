@@ -147,7 +147,9 @@ const App = () => {
 		});
 
 		socket.on("friendRequest:accepted", ({ user, message }) => {
+			console.log("🎉 Friend request accepted event received:", user);
 			toast.success(message || `${user.nickname || user.username} accepted your friend request!`);
+			console.log("🔄 Fetching updated friend data...");
 			useFriendStore.getState().fetchFriendData();
 		});
 

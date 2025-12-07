@@ -142,24 +142,39 @@ export const useFriendStore = create((set, get) => ({
 
     acceptRequest: async (senderId) => {
         try {
+            console.log("🤝 Accepting friend request from:", senderId);
+            
             // Optimistically update state before API call
             const acceptedUser = get().pendingReceived.find(r => r._id === senderId);
+            console.log("👤 Accepted user data:", acceptedUser);
+            
+            if (!acceptedUser) {
+                console.error("❌ User not found in pending requests");
+                toast.error("Request not found");
+                return false;
+            }
             
             set((state) => ({
                 pendingReceived: state.pendingReceived.filter((r) => r._id !== senderId),
-                friends: acceptedUser ? [...state.friends, acceptedUser] : state.friends,
+                friends: [...state.friends, acceptedUser],
             }));
+            console.log("✅ Optimistic UI update complete");
 
-            await axiosInstance.post(`/friends/accept/${senderId}`);
+            const response = await axiosInstance.post(`/friends/accept/${senderId}`);
+            console.log("✅ API response:", response.data);
             toast.success("Friend request accepted!");
             
-            // Refetch to ensure consistency with backend
-            get().fetchFriendData();
+            // Force refetch to ensure consistency
+            console.log("🔄 Refetching friend data...");
+            await get().fetchFriendData();
+            console.log("✅ Friend data refetched successfully");
+            
             return true;
         } catch (error) {
+            console.error("❌ Accept request error:", error.response?.data || error.message);
             toast.error(error.response?.data?.message || "Failed to accept request.");
             // Revert optimistic update on error
-            get().fetchFriendData();
+            await get().fetchFriendData();
             return false;
         }
     },

@@ -95,6 +95,8 @@ export const acceptFriendRequest = async (req, res) => {
 	const { senderId } = req.params;
 	const receiverId = req.user._id; // The logged-in user
 
+	console.log(`🤝 Accept friend request: ${receiverId} accepting request from ${senderId}`);
+
 	const session = await mongoose.startSession();
 	session.startTransaction();
 
@@ -103,15 +105,20 @@ export const acceptFriendRequest = async (req, res) => {
 		const receiver = await User.findById(receiverId).session(session);
 
 		if (!sender || !receiver) {
+			console.error("❌ User not found - Sender:", !!sender, "Receiver:", !!receiver);
 			await session.abortTransaction();
 			return res.status(404).json({ message: "User not found." });
 		}
 
 		// 1. Check if the request actually exists
 		if (!receiver.friendRequestsReceived.includes(senderId)) {
+			console.error("❌ No friend request found from", senderId, "to", receiverId);
+			console.log("Receiver's pending requests:", receiver.friendRequestsReceived);
 			await session.abortTransaction();
 			return res.status(400).json({ message: "No friend request found from this user." });
 		}
+
+		console.log("✅ Friend request found, proceeding with acceptance");
 
 		// 2. Update both users' arrays atomically
 		// Add to friends lists
@@ -138,6 +145,7 @@ export const acceptFriendRequest = async (req, res) => {
 		// 3. Commit transaction
 		await session.commitTransaction();
 		session.endSession();
+		console.log("✅ Transaction committed successfully");
 
 		// 4. Notify the sender via socket that their request was accepted
 		const io = req.app.get("io");
@@ -151,21 +159,39 @@ export const acceptFriendRequest = async (req, res) => {
 				isVerified: receiver.isVerified
 			};
 			
+			console.log("📡 Looking for sender's socket...");
 			// Emit to sender
 			const sockets = io.sockets.sockets;
+			let socketFound = false;
 			for (const [socketId, socket] of sockets) {
 				if (socket.userId && socket.userId.toString() === senderId.toString()) {
-					console.log(`✅ Notifying ${senderId} that ${receiverId} accepted their friend request`);
+					console.log(`✅ Found sender's socket ${socketId}, emitting friendRequest:accepted`);
 					socket.emit("friendRequest:accepted", {
 						user: receiverInfo,
 						message: `${receiver.nickname || receiver.username} accepted your friend request!`
 					});
+					socketFound = true;
 					break;
 				}
 			}
+			if (!socketFound) {
+				console.log(`⚠️ Sender ${senderId} is not currently connected`);
+			}
+		} else {
+			console.error("❌ Socket.io instance not found!");
 		}
 
-		res.status(200).json({ message: "Friend request accepted." });
+		console.log("✅ Friend request accepted successfully");
+		res.status(200).json({ 
+			message: "Friend request accepted.",
+			friend: {
+				_id: sender._id,
+				username: sender.username,
+				nickname: sender.nickname,
+				profilePic: sender.profilePic,
+				isVerified: sender.isVerified
+			}
+		});
 	} catch (error) {
 		await session.abortTransaction();
 		session.endSession();
