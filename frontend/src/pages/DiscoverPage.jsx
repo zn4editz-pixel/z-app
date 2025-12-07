@@ -196,14 +196,20 @@ const DiscoverPage = () => {
 		const cacheTime = sessionStorage.getItem('suggestedUsersTime');
 		const now = Date.now();
 		
-		// Use cache if less than 5 minutes old
-		if (cached && cacheTime && (now - parseInt(cacheTime)) < 300000) {
+		// Show cached data immediately (stale-while-revalidate pattern)
+		if (cached) {
 			setSuggestedUsers(JSON.parse(cached));
 			setIsLoadingSuggested(false);
-			return;
+			
+			// If cache is fresh (< 5 min), don't refetch
+			if (cacheTime && (now - parseInt(cacheTime)) < 300000) {
+				return;
+			}
+		} else {
+			setIsLoadingSuggested(true);
 		}
 		
-		setIsLoadingSuggested(true);
+		// Fetch fresh data in background
 		try {
 			const res = await axiosInstance.get("/users/suggested");
 			const users = res.data || [];
@@ -213,6 +219,7 @@ const DiscoverPage = () => {
 			sessionStorage.setItem('suggestedUsersTime', now.toString());
 		} catch (error) {
 			console.error("Error fetching suggested users:", error);
+			// Keep showing cached data on error
 		} finally {
 			setIsLoadingSuggested(false);
 		}

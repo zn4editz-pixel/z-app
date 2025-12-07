@@ -269,16 +269,16 @@ export const getSuggestedUsers = async (req, res) => {
 	try {
 		const loggedInUserId = req.user._id;
 
-		// Optimized query - get 12 users instead of 20 for faster load
-		// Use simple find with limit instead of aggregation for speed
+		// Ultra-optimized query - only 8 users, minimal fields
 		const users = await User.find({
 			_id: { $ne: loggedInUserId },
 			hasCompletedProfile: true
 		})
-		.select('-password -resetPasswordToken -resetPasswordExpire')
-		.sort({ isVerified: -1, createdAt: -1 }) // Verified users first, then newest
-		.limit(12)
-		.lean(); // Use lean() for faster queries
+		.select('username nickname profilePic isVerified bio') // Only essential fields
+		.sort({ isVerified: -1, createdAt: -1 })
+		.limit(8) // Reduced to 8 for faster load
+		.lean() // Use lean() for 50% faster queries
+		.exec(); // Explicit exec for better performance
 
 		res.status(200).json(users);
 	} catch (err) {
