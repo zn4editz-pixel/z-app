@@ -205,6 +205,18 @@ const ProfilePage = () => {
           </div>
 
           <div className="space-y-4 sm:space-y-6">
+            {/* Bio Display */}
+            {authUser?.bio && (
+              <div className="bg-base-200 rounded-lg p-4 text-center">
+                <p className="text-sm sm:text-base text-base-content/80 italic">
+                  "{authUser.bio}"
+                </p>
+                <p className="text-xs text-base-content/50 mt-2">
+                  Edit your bio in Settings
+                </p>
+              </div>
+            )}
+
             {/* Full Name Editing */}
             <div className="space-y-2">
               <div className="text-xs sm:text-sm text-base-content/60 flex items-center gap-2">

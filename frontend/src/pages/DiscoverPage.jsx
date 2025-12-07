@@ -4,6 +4,7 @@ import { axiosInstance } from "../lib/axios.js";
 import { Search, Loader2, UserPlus, Users, Bell, UserCheck, CheckCircle, XCircle, BadgeCheck, Mail, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import VerifiedBadge from "../components/VerifiedBadge";
+import CountryFlag from "../components/CountryFlag";
 import { useFriendStore } from "../store/useFriendStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNotificationStore } from "../store/useNotificationStore";

@@ -5,6 +5,7 @@ import { useFriendStore } from "../store/useFriendStore";
 import { useChatStore } from "../store/useChatStore"; // ✅ 1. Import chat store
 import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
+import CountryFlag from "../components/CountryFlag";
 import {
 	Loader2,
 	UserPlus,

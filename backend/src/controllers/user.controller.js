@@ -254,7 +254,7 @@ export const searchUsers = async (req, res) => {
 				],
 				_id: { $ne: loggedInUserId },
 			},
-			"username profilePic nickname bio isVerified"
+			"username profilePic nickname bio isVerified country countryCode city"
 		).limit(10);
 
 		res.status(200).json(users);
@@ -286,7 +286,7 @@ export const getSuggestedUsers = async (req, res) => {
 		const users = await User.find({
 			hasCompletedProfile: true
 		})
-		.select('_id username nickname profilePic isVerified bio') // Only essential fields
+		.select('_id username nickname profilePic isVerified bio country countryCode city') // Only essential fields
 		.sort({ isVerified: -1, createdAt: -1 })
 		.limit(20) // Fetch more for cache, filter logged-in user later
 		.lean() // Use lean() for 50% faster queries

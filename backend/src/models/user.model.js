@@ -134,6 +134,36 @@ const userSchema = new mongoose.Schema(
 			default: Date.now,
 		},
 
+		// --- Location Data ---
+		country: {
+			type: String,
+			default: 'Unknown'
+		},
+		countryCode: {
+			type: String,
+			default: 'XX'
+		},
+		city: {
+			type: String,
+			default: 'Unknown'
+		},
+		region: {
+			type: String,
+			default: ''
+		},
+		timezone: {
+			type: String,
+			default: ''
+		},
+		isVPN: {
+			type: Boolean,
+			default: false
+		},
+		lastIP: {
+			type: String,
+			default: ''
+		},
+
 		// --- Forgot Password Fields ---
 		resetPasswordToken: {
 			type: String,
@@ -196,6 +226,8 @@ userSchema.index({ createdAt: -1 }); // Recent users
 userSchema.index({ isOnline: 1 }); // Online users
 userSchema.index({ lastSeen: -1 }); // Last seen queries
 userSchema.index({ hasCompletedProfile: 1, isVerified: -1, createdAt: -1 }); // Suggested users (compound index)
+userSchema.index({ country: 1 }); // Country-based queries
+userSchema.index({ countryCode: 1 }); // Country code queries
 
 const User = mongoose.model("User", userSchema);
 

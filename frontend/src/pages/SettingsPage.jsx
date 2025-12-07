@@ -1,16 +1,91 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
 import { useAuthStore } from "../store/useAuthStore";
-import { Send, Lock, LogOut, Video, Mic, Shield, Check, X } from "lucide-react";
+import { Send, Lock, LogOut, Video, Mic, Shield, Check, X, User, Edit2, Save } from "lucide-react";
 import toast from "react-hot-toast";
+import { axiosInstance } from "../lib/axios";
 
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
-  const { logout } = useAuthStore();
+  const { logout, authUser, updateProfile } = useAuthStore();
   const [cameraStatus, setCameraStatus] = useState('not-tested');
   const [micStatus, setMicStatus] = useState('not-tested');
+  
+  // Profile editing states
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileData, setProfileData] = useState({
+    username: '',
+    bio: '',
+    fullName: ''
+  });
+  const [usernameAvailable, setUsernameAvailable] = useState(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  useEffect(() => {
+    if (authUser) {
+      setProfileData({
+        username: authUser.username || '',
+        bio: authUser.bio || '',
+        fullName: authUser.fullName || ''
+      });
+    }
+  }, [authUser]);
+
+  // Check username availability
+  const checkUsername = async (username) => {
+    if (username === authUser?.username) {
+      setUsernameAvailable(true);
+      return;
+    }
+    
+    if (username.length < 3) {
+      setUsernameAvailable(false);
+      return;
+    }
+
+    setCheckingUsername(true);
+    try {
+      const res = await axiosInstance.get(`/user/check-username/${username}`);
+      setUsernameAvailable(res.data.available);
+    } catch (error) {
+      console.error('Error checking username:', error);
+    } finally {
+      setCheckingUsername(false);
+    }
+  };
+
+  // Handle profile save
+  const handleSaveProfile = async () => {
+    if (!profileData.username || profileData.username.length < 3) {
+      toast.error('Username must be at least 3 characters');
+      return;
+    }
+
+    if (profileData.bio && profileData.bio.length > 150) {
+      toast.error('Bio cannot exceed 150 characters');
+      return;
+    }
+
+    if (!profileData.fullName || profileData.fullName.trim().length < 2) {
+      toast.error('Full name must be at least 2 characters');
+      return;
+    }
+
+    setSavingProfile(true);
+    try {
+      await updateProfile(profileData);
+      setIsEditingProfile(false);
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error(error.response?.data?.error || 'Failed to update profile');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   const testCameraPermission = async () => {
     try {
@@ -65,6 +140,158 @@ const SettingsPage = () => {
 
         {/* Settings Grid */}
         <div className="space-y-4 sm:space-y-5 md:space-y-6">
+          
+          {/* Profile Section */}
+          <div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-5 md:p-6 border border-base-300">
+            <div className="flex items-center justify-between gap-3 mb-4 sm:mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                  <User className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-lg md:text-xl font-semibold">Profile</h2>
+                  <p className="text-xs sm:text-sm text-base-content/60">Manage your profile information</p>
+                </div>
+              </div>
+              {!isEditingProfile && (
+                <button
+                  onClick={() => setIsEditingProfile(true)}
+                  className="btn btn-sm btn-ghost gap-2"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Edit
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              {/* Profile Picture */}
+              <div className="flex items-center gap-4">
+                <img
+                  src={authUser?.profilePic || "https://api.dicebear.com/7.x/avataaars/svg?seed=default"}
+                  alt="Profile"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-base-300"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-base-content/70">Profile Picture</p>
+                  <p className="text-xs text-base-content/50">Update in profile settings</p>
+                </div>
+              </div>
+
+              {/* Full Name */}
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Full Name</span>
+                </label>
+                <input
+                  type="text"
+                  className={`input input-bordered w-full ${!isEditingProfile ? 'input-disabled' : ''}`}
+                  value={profileData.fullName}
+                  onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
+                  disabled={!isEditingProfile}
+                  placeholder="Enter your full name"
+                />
+              </div>
+
+              {/* Username */}
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Username</span>
+                  {isEditingProfile && profileData.username !== authUser?.username && (
+                    <span className="label-text-alt">
+                      {checkingUsername ? (
+                        <span className="loading loading-spinner loading-xs"></span>
+                      ) : usernameAvailable === true ? (
+                        <span className="text-success flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Available
+                        </span>
+                      ) : usernameAvailable === false ? (
+                        <span className="text-error flex items-center gap-1">
+                          <X className="w-3 h-3" /> Taken
+                        </span>
+                      ) : null}
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  className={`input input-bordered w-full ${!isEditingProfile ? 'input-disabled' : ''}`}
+                  value={profileData.username}
+                  onChange={(e) => {
+                    const newUsername = e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, '');
+                    setProfileData({ ...profileData, username: newUsername });
+                    if (newUsername.length >= 3) {
+                      checkUsername(newUsername);
+                    }
+                  }}
+                  disabled={!isEditingProfile}
+                  placeholder="Enter username"
+                  maxLength={30}
+                />
+                <label className="label">
+                  <span className="label-text-alt text-base-content/50">
+                    3-30 characters, letters, numbers, _ and . only
+                  </span>
+                </label>
+              </div>
+
+              {/* Bio */}
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Bio</span>
+                  <span className="label-text-alt text-base-content/50">
+                    {profileData.bio.length}/150
+                  </span>
+                </label>
+                <textarea
+                  className={`textarea textarea-bordered w-full h-24 ${!isEditingProfile ? 'textarea-disabled' : ''}`}
+                  value={profileData.bio}
+                  onChange={(e) => setProfileData({ ...profileData, bio: e.target.value.slice(0, 150) })}
+                  disabled={!isEditingProfile}
+                  placeholder="Tell us about yourself..."
+                  maxLength={150}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              {isEditingProfile && (
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={savingProfile || (profileData.username !== authUser?.username && !usernameAvailable)}
+                    className="btn btn-primary flex-1 gap-2"
+                  >
+                    {savingProfile ? (
+                      <>
+                        <span className="loading loading-spinner loading-sm"></span>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        Save Changes
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditingProfile(false);
+                      setProfileData({
+                        username: authUser?.username || '',
+                        bio: authUser?.bio || '',
+                        fullName: authUser?.fullName || ''
+                      });
+                      setUsernameAvailable(null);
+                    }}
+                    disabled={savingProfile}
+                    className="btn btn-ghost"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
           
           {/* Theme Section */}
           <div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-5 md:p-6 border border-base-300">

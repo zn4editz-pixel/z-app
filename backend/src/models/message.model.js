@@ -83,6 +83,7 @@ messageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 }); // Conversat
 messageSchema.index({ receiverId: 1, status: 1 }); // Unread messages
 messageSchema.index({ senderId: 1, createdAt: -1 }); // Sent messages
 messageSchema.index({ createdAt: -1 }); // Recent messages
+messageSchema.index({ isDeleted: 1, createdAt: -1 }); // Non-deleted messages
 
 const Message = mongoose.model("Message", messageSchema);
 

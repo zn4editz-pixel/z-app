@@ -1,6 +1,7 @@
-import { Users, Ban, Trash2, BadgeCheck, Search } from "lucide-react";
+import { Users, Ban, Trash2, BadgeCheck, Search, Shield } from "lucide-react";
 import { useState } from "react";
 import VerifiedBadge from "../VerifiedBadge";
+import CountryFlag from "../CountryFlag";
 
 // Format last seen time in a user-friendly way
 const formatLastSeen = (lastSeenDate) => {
@@ -136,6 +137,7 @@ const UserManagement = ({
 							<tr className="text-xs sm:text-sm border-b border-base-300">
 								<th className="bg-base-200">User</th>
 								<th className="bg-base-200">Email</th>
+								<th className="bg-base-200">Location</th>
 								<th className="bg-base-200">Status</th>
 								<th className="bg-base-200">Joined</th>
 								<th className="bg-base-200">Actions</th>
@@ -161,6 +163,35 @@ const UserManagement = ({
 										</div>
 									</td>
 									<td className="text-xs">{user.email}</td>
+									<td>
+										<div className="flex flex-col gap-1">
+											{user.country && user.country !== 'Unknown' ? (
+												<>
+													<div className="flex items-center gap-1">
+														{user.countryCode && user.countryCode !== 'XX' && (
+															<CountryFlag countryCode={user.countryCode} size="sm" />
+														)}
+														<span className="text-xs font-medium">
+															{user.city && user.city !== 'Unknown' ? `${user.city}, ` : ''}{user.country}
+														</span>
+													</div>
+													<div className="flex items-center gap-1">
+														{user.isVPN && (
+															<span className="badge badge-warning badge-xs gap-1">
+																<Shield className="w-3 h-3" />
+																VPN
+															</span>
+														)}
+														{user.lastIP && (
+															<span className="text-xs text-base-content/40 font-mono">{user.lastIP}</span>
+														)}
+													</div>
+												</>
+											) : (
+												<span className="text-xs text-base-content/40">Unknown</span>
+											)}
+										</div>
+									</td>
 									<td>
 										<div className="flex flex-col gap-1">
 											{user.isSuspended ? (

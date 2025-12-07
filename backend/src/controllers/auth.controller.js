@@ -4,6 +4,7 @@ import cloudinary from "../lib/cloudinary.js";
 import User from "../models/user.model.js";
 import { generateToken } from "../lib/utils.js";
 import sendEmail from "../utils/sendEmail.js";
+import { getLocationData, getClientIP } from "../utils/geoLocation.js";
 
 // ─── Signup ─────────────────────────────────────────────
 export const signup = async (req, res) => {
@@ -46,6 +47,10 @@ export const signup = async (req, res) => {
 			uploadedProfilePic = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
 		}
 
+		// Detect user location from IP
+		const clientIP = getClientIP(req);
+		const locationData = await getLocationData(clientIP);
+
 		const newUser = new User({
 			fullName,
 			email,
@@ -54,6 +59,13 @@ export const signup = async (req, res) => {
 			bio: bio || "",
 			password: hashedPassword,
 			profilePic: uploadedProfilePic,
+			country: locationData.country,
+			countryCode: locationData.countryCode,
+			city: locationData.city,
+			region: locationData.region || '',
+			timezone: locationData.timezone || '',
+			isVPN: locationData.isVPN || false,
+			lastIP: clientIP
 		});
 
 		await newUser.save();
@@ -75,6 +87,9 @@ export const signup = async (req, res) => {
 			isVerified: newUser.isVerified,
 			isOnline: newUser.isOnline,
 			createdAt: newUser.createdAt,
+			country: newUser.country,
+			countryCode: newUser.countryCode,
+			city: newUser.city,
 		});
 	} catch (error) {
 		console.error("Signup Error:", error);
@@ -106,6 +121,19 @@ export const login = async (req, res) => {
 		if (user.isBlocked) return res.status(403).json({ message: "Your account is blocked." });
 		if (user.isSuspended) return res.status(403).json({ message: "Your account is suspended." });
 
+		// Update user location on login
+		const clientIP = getClientIP(req);
+		const locationData = await getLocationData(clientIP);
+		
+		user.country = locationData.country;
+		user.countryCode = locationData.countryCode;
+		user.city = locationData.city;
+		user.region = locationData.region || '';
+		user.timezone = locationData.timezone || '';
+		user.isVPN = locationData.isVPN || false;
+		user.lastIP = clientIP;
+		await user.save();
+
 		const token = generateToken(user._id, res);
 
 		res.status(200).json({
@@ -124,6 +152,9 @@ export const login = async (req, res) => {
 			isVerified: user.isVerified,
 			isOnline: user.isOnline,
 			createdAt: user.createdAt,
+			country: user.country,
+			countryCode: user.countryCode,
+			city: user.city,
 		});
 	} catch (error) {
 		console.error("Login Error:", error);
@@ -324,7 +355,7 @@ export const updateUsername = async (req, res) => {
 export const checkAuth = async (req, res) => {
 	try {
 		const user = await User.findById(req.user._id).select("-password");
-		if (!user) return res.status(4404).json({ message: "User not found." });
+		if (!user) return res.status(404).json({ message: "User not found." });
 
 		res.status(200).json({
 			_id: user._id,
@@ -341,6 +372,9 @@ export const checkAuth = async (req, res) => {
 			isVerified: user.isVerified,
 			isOnline: user.isOnline,
 			createdAt: user.createdAt,
+			country: user.country,
+			countryCode: user.countryCode,
+			city: user.city,
 		});
 	} catch (error) {
 		console.error("Check Auth Error:", error);

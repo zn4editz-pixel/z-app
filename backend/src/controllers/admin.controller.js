@@ -67,7 +67,7 @@ export const getAllUsers = async (req, res) => {
 		const onlineUserIds = Object.keys(userSocketMap);
 		
 		const users = await User.find()
-			.select('username nickname email profilePic isVerified isOnline isSuspended suspendedUntil suspensionReason lastSeen createdAt')
+			.select('username nickname email profilePic isVerified isOnline isSuspended suspendedUntil suspensionReason lastSeen createdAt country countryCode city region timezone isVPN lastIP')
 			.sort({ createdAt: -1 })
 			.limit(100)
 			.lean();
