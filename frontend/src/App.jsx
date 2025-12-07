@@ -18,6 +18,7 @@ const SuspendedPage = lazy(() => import("./pages/SuspendedPage"));
 const GoodbyePage = lazy(() => import("./pages/GoodbyePage"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const DebugPage = lazy(() => import("./pages/DebugPage"));
 
 // Lazy load components
 const Navbar = lazy(() => import("./components/Navbar"));
@@ -467,6 +468,7 @@ const App = () => {
 				<Route path="/suspended" element={<SuspendedPage />} />
 				<Route path="/goodbye" element={<GoodbyePage />} />
 				<Route path="/blocked" element={<GoodbyePage />} />
+				<Route path="/debug" element={<DebugPage />} />
 					</Routes>
 			</Suspense>
 
