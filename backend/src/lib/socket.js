@@ -140,6 +140,7 @@ const markPendingMessagesAsDelivered = async (userId) => {
 // === STRANGER CHAT LOGIC ===
 let waitingQueue = [];
 const matchedPairs = new Map(); // socketId -> partnerSocketId
+const recentMatches = new Map(); // socketId -> Set of recent partner socketIds (to prevent immediate re-matching)
 
 // ✅ Find and match strangers
 const findMatch = (socket) => {
@@ -155,9 +156,10 @@ const findMatch = (socket) => {
 	waitingQueue = waitingQueue.filter(id => id !== socket.id);
 	
 	if (waitingQueue.length > 0) {
-		// Find first person in queue who is NOT already matched
+		// Find first person in queue who is NOT already matched and NOT a recent match
 		let partnerSocketId = null;
 		let partnerSocket = null;
+		const myRecentMatches = recentMatches.get(socket.id) || new Set();
 		
 		while (waitingQueue.length > 0) {
 			partnerSocketId = waitingQueue.shift();
@@ -165,6 +167,12 @@ const findMatch = (socket) => {
 			// Skip if partner is already matched
 			if (matchedPairs.has(partnerSocketId)) {
 				console.log(`⚠️ ${partnerSocketId} is already matched, skipping`);
+				continue;
+			}
+			
+			// ✅ Skip if this was a recent match (prevent immediate re-matching)
+			if (myRecentMatches.has(partnerSocketId)) {
+				console.log(`⚠️ ${partnerSocketId} is a recent match, skipping`);
 				continue;
 			}
 			
@@ -181,6 +189,26 @@ const findMatch = (socket) => {
 			// Create match
 			matchedPairs.set(socket.id, partnerSocketId);
 			matchedPairs.set(partnerSocketId, socket.id);
+			
+			// ✅ Add to recent matches to prevent immediate re-matching
+			if (!recentMatches.has(socket.id)) {
+				recentMatches.set(socket.id, new Set());
+			}
+			if (!recentMatches.has(partnerSocketId)) {
+				recentMatches.set(partnerSocketId, new Set());
+			}
+			recentMatches.get(socket.id).add(partnerSocketId);
+			recentMatches.get(partnerSocketId).add(socket.id);
+			
+			// ✅ Limit recent matches to last 10 partners (prevent memory leak)
+			if (recentMatches.get(socket.id).size > 10) {
+				const oldestMatch = Array.from(recentMatches.get(socket.id))[0];
+				recentMatches.get(socket.id).delete(oldestMatch);
+			}
+			if (recentMatches.get(partnerSocketId).size > 10) {
+				const oldestMatch = Array.from(recentMatches.get(partnerSocketId))[0];
+				recentMatches.get(partnerSocketId).delete(oldestMatch);
+			}
 			
 			console.log(`✅ Matched ${socket.id} with ${partnerSocketId}`);
 			
