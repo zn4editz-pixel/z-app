@@ -148,6 +148,49 @@ cd frontend && npm run dev
 
 ---
 
+## 🔴 Redis Setup (For 500K+ Users)
+
+### Why Redis?
+- ✅ Distributed rate limiting across multiple servers
+- ✅ Socket.io scaling for multi-server deployments
+- ✅ Handles 500K+ concurrent users
+- ✅ Persistent rate limits (survive server restarts)
+
+### Quick Setup (5 minutes)
+
+**Option 1: Upstash (Recommended - Free Tier)**
+1. Sign up at https://upstash.com
+2. Create database: `z-app-redis`
+3. Copy connection details
+4. Add to `backend/.env`:
+```env
+REDIS_HOST=your-db.upstash.io
+REDIS_PORT=6379
+REDIS_PASSWORD=your-password
+```
+
+**Option 2: Local Redis (Development)**
+```bash
+# Windows: Download from https://github.com/microsoftarchive/redis/releases
+# Or use Docker:
+docker run -d -p 6379:6379 redis:alpine
+```
+
+### Detailed Guides
+- 📖 **Quick Setup**: See `QUICK_REDIS_SETUP.md`
+- 📋 **Checklist**: See `REDIS_CHECKLIST.md`
+- 📚 **Full Guide**: See `REDIS_SETUP_INSTRUCTIONS.md`
+
+### When Do You Need Redis?
+| Users | Redis Needed? | Why |
+|-------|---------------|-----|
+| 0-10K | ❌ Optional | Single server handles it |
+| 10K-50K | ⚠️ Recommended | Better performance |
+| 50K+ | ✅ Required | Multi-server coordination |
+| 500K+ | ✅ Required | Essential for scaling |
+
+---
+
 ## 📚 Documentation
 
 - **[Quick Start Testing](QUICK_START_TESTING.md)** - Testing guide
