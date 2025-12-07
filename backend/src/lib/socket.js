@@ -1,12 +1,14 @@
 import { Server } from "socket.io";
+import { createAdapter } from "@socket.io/redis-adapter";
 import http from "http";
 import express from "express";
 import jwt from "jsonwebtoken";
 import cloudinary from "./cloudinary.js";
 import Report from "../models/report.model.js";
-import User from "../models/user.model.js"; // <-- ADDED
-import FriendRequest from "../models/friendRequest.model.js"; // <-- ADDED
+import User from "../models/user.model.js";
+import FriendRequest from "../models/friendRequest.model.js";
 import Message from "../models/message.model.js";
+import redisClient from "./redis.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -22,7 +24,40 @@ const io = new Server(server, {
 		],
 		credentials: true,
 	},
+	// Optimize for high concurrency
+	transports: ["websocket", "polling"],
+	pingTimeout: 60000,
+	pingInterval: 25000,
 });
+
+// ============================================
+// REDIS ADAPTER FOR SOCKET.IO SCALING
+// ============================================
+const useRedis = process.env.REDIS_HOST && process.env.NODE_ENV === "production";
+
+if (useRedis) {
+	try {
+		// Create a duplicate Redis client for pub/sub
+		const pubClient = redisClient.duplicate();
+		const subClient = redisClient.duplicate();
+
+		// Wait for both clients to be ready
+		Promise.all([pubClient.connect(), subClient.connect()])
+			.then(() => {
+				io.adapter(createAdapter(pubClient, subClient));
+				console.log("✅ Socket.io: Redis adapter enabled (Multi-server support)");
+			})
+			.catch((err) => {
+				console.error("❌ Socket.io: Redis adapter failed:", err.message);
+				console.log("⚠️ Socket.io: Running in single-server mode");
+			});
+	} catch (error) {
+		console.error("❌ Socket.io: Redis adapter error:", error.message);
+		console.log("⚠️ Socket.io: Running in single-server mode");
+	}
+} else {
+	console.log("⚠️ Socket.io: Running in single-server mode (no Redis)");
+}
 
 // Socket.IO authentication middleware
 io.use((socket, next) => {

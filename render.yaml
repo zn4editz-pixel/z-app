@@ -34,6 +34,13 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
+      # Redis Configuration (Optional - for scaling beyond 50K users)
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false
 
   # Frontend Service
   - type: web

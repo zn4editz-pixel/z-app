@@ -1,8 +1,29 @@
 import rateLimit from "express-rate-limit";
+import { RedisStore } from "rate-limit-redis";
+import redisClient from "../lib/redis.js";
 
 // ============================================
 // PRODUCTION-READY RATE LIMITERS FOR 500K+ USERS
 // ============================================
+
+// Check if Redis is available
+const useRedis = process.env.REDIS_HOST && process.env.NODE_ENV === "production";
+
+// Create Redis store configuration
+const createRedisStore = (prefix) => {
+	if (!useRedis) return undefined;
+	
+	try {
+		return new RedisStore({
+			client: redisClient,
+			prefix: `rl:${prefix}:`,
+			sendCommand: (...args) => redisClient.call(...args),
+		});
+	} catch (error) {
+		console.error(`Failed to create Redis store for ${prefix}:`, error.message);
+		return undefined;
+	}
+};
 
 // General API rate limiter - Very permissive for normal usage
 export const apiLimiter = rateLimit({
@@ -11,8 +32,7 @@ export const apiLimiter = rateLimit({
 	message: "Too many requests from this IP, please try again later.",
 	standardHeaders: true,
 	legacyHeaders: false,
-	// Use Redis store in production for distributed rate limiting
-	// store: new RedisStore({ client: redisClient }), // Uncomment when using Redis
+	store: createRedisStore("api"),
 });
 
 // Auth rate limiter - Balanced security vs usability
@@ -23,7 +43,7 @@ export const authLimiter = rateLimit({
 	standardHeaders: true,
 	legacyHeaders: false,
 	skipSuccessfulRequests: true, // Don't count successful logins
-	// For 500k users: Use Redis store to share rate limit across multiple servers
+	store: createRedisStore("auth"),
 });
 
 // Message rate limiter - Prevent spam while allowing active conversations
@@ -33,6 +53,7 @@ export const messageLimiter = rateLimit({
 	message: "You're sending messages too quickly. Please slow down.",
 	standardHeaders: true,
 	legacyHeaders: false,
+	store: createRedisStore("message"),
 });
 
 // File upload limiter - Prevent abuse while allowing normal usage
@@ -42,6 +63,7 @@ export const uploadLimiter = rateLimit({
 	message: "Too many uploads, please try again later.",
 	standardHeaders: true,
 	legacyHeaders: false,
+	store: createRedisStore("upload"),
 });
 
 // Friend request limiter - Prevent spam
@@ -51,6 +73,7 @@ export const friendRequestLimiter = rateLimit({
 	message: "Too many friend requests, please try again later.",
 	standardHeaders: true,
 	legacyHeaders: false,
+	store: createRedisStore("friend"),
 });
 
 // Report limiter - Prevent abuse
@@ -60,14 +83,23 @@ export const reportLimiter = rateLimit({
 	message: "Too many reports submitted, please try again later.",
 	standardHeaders: true,
 	legacyHeaders: false,
+	store: createRedisStore("report"),
 });
+
+// ============================================
+// REDIS STATUS
+// ============================================
+console.log(`🔐 Rate Limiting: ${useRedis ? "Redis (Distributed)" : "Memory (Single Server)"}`);
 
 // ============================================
 // NOTES FOR SCALING TO 500K+ USERS:
 // ============================================
-// 1. Install Redis: npm install rate-limit-redis redis
-// 2. Use Redis store for distributed rate limiting across multiple servers
-// 3. Consider using a CDN (Cloudflare) for additional DDoS protection
-// 4. Monitor rate limit hits and adjust limits based on real usage patterns
-// 5. Implement user-based rate limiting (not just IP) for authenticated routes
+// ✅ Redis integration: DONE - Distributed rate limiting enabled
+// ✅ Optimized limits: DONE - Balanced security vs usability
+// 🔄 Next steps:
+//    1. Set REDIS_HOST, REDIS_PORT, REDIS_PASSWORD in environment
+//    2. Deploy multiple backend instances with load balancer
+//    3. Enable Socket.io Redis adapter for WebSocket scaling
+//    4. Use CDN (Cloudflare) for DDoS protection
+//    5. Monitor with New Relic/Datadog
 // ============================================
