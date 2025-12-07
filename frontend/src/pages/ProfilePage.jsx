@@ -329,15 +329,20 @@ const ProfilePage = () => {
                     )}
                   </div>
                   
-                  {usernameChangeInfo && (
+                  {usernameChangeInfo && usernameChangeInfo.changesThisWeek > 0 && (
                     <div className="alert alert-info text-xs sm:text-sm py-2">
                       <AlertCircle className="w-4 h-4" />
                       <div>
-                        <p>Changes: {usernameChangeInfo.changesThisWeek}/2 this week</p>
+                        <p>You've changed your username {usernameChangeInfo.changesThisWeek} time{usernameChangeInfo.changesThisWeek > 1 ? 's' : ''} this week</p>
                         {!usernameChangeInfo.canChange && usernameChangeInfo.nextChangeDate && (
                           <p className="flex items-center gap-1 mt-1">
                             <Clock className="w-3 h-3" />
-                            Next change in: {formatTimeRemaining(usernameChangeInfo.nextChangeDate)}
+                            Next change available in: {formatTimeRemaining(usernameChangeInfo.nextChangeDate)}
+                          </p>
+                        )}
+                        {usernameChangeInfo.canChange && (
+                          <p className="text-xs text-base-content/70 mt-1">
+                            {2 - usernameChangeInfo.changesThisWeek} change{2 - usernameChangeInfo.changesThisWeek > 1 ? 's' : ''} remaining this week
                           </p>
                         )}
                       </div>
@@ -505,16 +510,20 @@ const ProfilePage = () => {
           <div className="modal-box">
             <h3 className="font-bold text-lg">Confirm Username Change</h3>
             <p className="py-4">
-              Are you sure you want to change your username to <strong>@{newUsername}</strong>?
-              <br />
-              <br />
-              You have {2 - (usernameChangeInfo?.changesThisWeek || 0)} change(s) remaining this week.
+              Are you sure you want to change your username to <strong className="text-primary">@{newUsername}</strong>?
             </p>
+            {usernameChangeInfo && (
+              <div className="bg-base-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-base-content/70">
+                  After this change, you'll have <strong>{2 - (usernameChangeInfo?.changesThisWeek || 0) - 1}</strong> change{2 - (usernameChangeInfo?.changesThisWeek || 0) - 1 !== 1 ? 's' : ''} remaining this week.
+                </p>
+              </div>
+            )}
             <div className="modal-action">
-              <button onClick={handleUsernameChange} className="btn btn-success">
-                Confirm
+              <button onClick={handleUsernameChange} className="btn btn-primary">
+                Confirm Change
               </button>
-              <button onClick={() => setShowUsernameConfirm(false)} className="btn">
+              <button onClick={() => setShowUsernameConfirm(false)} className="btn btn-ghost">
                 Cancel
               </button>
             </div>

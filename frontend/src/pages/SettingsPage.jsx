@@ -228,20 +228,24 @@ const SettingsPage = () => {
                   placeholder="Enter username"
                   maxLength={30}
                 />
-                <label className="label">
-                  <span className="label-text-alt text-base-content/50">
-                    3-30 characters, letters, numbers, _ and . only
-                  </span>
-                </label>
+                {isEditingProfile && (
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/50">
+                      3-30 characters, letters, numbers, _ and . only
+                    </span>
+                  </label>
+                )}
               </div>
 
               {/* Bio */}
               <div className="form-control">
                 <label className="label">
                   <span className="label-text font-medium">Bio</span>
-                  <span className="label-text-alt text-base-content/50">
-                    {profileData.bio.length}/150
-                  </span>
+                  {isEditingProfile && (
+                    <span className="label-text-alt text-base-content/50">
+                      {profileData.bio.length}/150
+                    </span>
+                  )}
                 </label>
                 <textarea
                   className={`textarea textarea-bordered w-full h-24 ${!isEditingProfile ? 'textarea-disabled' : ''}`}

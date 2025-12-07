@@ -199,8 +199,8 @@ export const useAuthStore = create((set, get) => ({
 	updateProfile: async (data) => {
 		set({ isUpdatingProfile: true });
 		try {
-			// Use the unified user profile endpoint
-			const res = await axiosInstance.put("/user/profile", data);
+			// Use the correct user profile endpoint
+			const res = await axiosInstance.put("/user/me", data);
 			const user = res.data;
 			set({ authUser: user });
 			localStorage.setItem("authUser", JSON.stringify(user));
