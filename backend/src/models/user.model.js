@@ -5,14 +5,12 @@ const userSchema = new mongoose.Schema(
 		email: {
 			type: String,
 			required: [true, "Email is required"],
-			unique: true,
 			lowercase: true,
 			trim: true,
 		},
 		username: {
 			type: String,
 			required: [true, "Username is required"],
-			unique: true,
 			lowercase: true,
 			minlength: [3, "Username must be at least 3 characters long"],
 			maxlength: [30, "Username cannot be more than 30 characters long"],
@@ -185,8 +183,8 @@ const userSchema = new mongoose.Schema(
 );
 
 // ✅ Performance Optimization: Add database indexes for faster queries
-userSchema.index({ email: 1 }); // Login queries
-userSchema.index({ username: 1 }); // Profile lookups
+userSchema.index({ email: 1 }, { unique: true }); // Login queries (unique)
+userSchema.index({ username: 1 }, { unique: true }); // Profile lookups (unique)
 userSchema.index({ friends: 1 }); // Friend list queries
 userSchema.index({ friendRequestsSent: 1 }); // Sent requests
 userSchema.index({ friendRequestsReceived: 1 }); // Received requests
