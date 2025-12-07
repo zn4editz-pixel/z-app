@@ -520,13 +520,18 @@ export const deleteReport = async (req, res) => {
 export const getVerificationRequests = async (req, res) => {
 	try {
 		const users = await User.find({
-			"verificationRequest.status": { $exists: true, $ne: null }
+			$or: [
+				{ "verificationRequest.status": "pending" },
+				{ "verificationRequest.status": "approved" },
+				{ "verificationRequest.status": "rejected" }
+			]
 		})
-		.select("username nickname profilePic email verificationRequest isVerified")
+		.select("username nickname profilePic email verificationRequest isVerified createdAt")
 		.sort({ "verificationRequest.requestedAt": -1 })
 		.limit(50)
 		.lean();
 
+		console.log(`Found ${users.length} verification requests`);
 		res.status(200).json(users);
 	} catch (err) {
 		console.error("getVerificationRequests error:", err);
