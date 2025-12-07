@@ -285,14 +285,33 @@ export const unfriendUser = async (req, res) => {
 };
 
 // ─── Get All Friends ────────────────────────────────────────
+// Cache for friends list (30 seconds TTL)
+let friendsCache = new Map();
+const FRIENDS_CACHE_TTL = 30000;
+
 export const getFriends = async (req, res) => {
 	try {
+		const userId = req.user._id.toString();
+		const now = Date.now();
+		
+		// Check cache
+		const cached = friendsCache.get(userId);
+		if (cached && (now - cached.timestamp) < FRIENDS_CACHE_TTL) {
+			return res.status(200).json(cached.data);
+		}
+		
 		const user = await User.findById(req.user._id)
 			.populate("friends", "username nickname profilePic isOnline isVerified")
 			.select("friends")
 			.lean();
 
 		if (!user) return res.status(404).json({ message: "User not found." });
+
+		// Cache result
+		friendsCache.set(userId, {
+			data: user.friends,
+			timestamp: now
+		});
 
 		res.status(200).json(user.friends);
 	} catch (error) {
@@ -302,8 +321,21 @@ export const getFriends = async (req, res) => {
 };
 
 // ─── Get Pending Requests (Sent & Received) ──────────────────
+// Cache for pending requests (15 seconds TTL)
+let requestsCache = new Map();
+const REQUESTS_CACHE_TTL = 15000;
+
 export const getPendingRequests = async (req, res) => {
 	try {
+		const userId = req.user._id.toString();
+		const now = Date.now();
+		
+		// Check cache
+		const cached = requestsCache.get(userId);
+		if (cached && (now - cached.timestamp) < REQUESTS_CACHE_TTL) {
+			return res.status(200).json(cached.data);
+		}
+		
 		const user = await User.findById(req.user._id)
 			.populate("friendRequestsSent", "username nickname profilePic isVerified")
 			.populate("friendRequestsReceived", "username nickname profilePic isVerified")
@@ -312,10 +344,18 @@ export const getPendingRequests = async (req, res) => {
 
 		if (!user) return res.status(404).json({ message: "User not found." });
 
-		res.status(200).json({
+		const result = {
 			sent: user.friendRequestsSent,
 			received: user.friendRequestsReceived,
+		};
+		
+		// Cache result
+		requestsCache.set(userId, {
+			data: result,
+			timestamp: now
 		});
+
+		res.status(200).json(result);
 	} catch (error) {
 		console.error("Get pending requests error:", error);
 		res.status(500).json({ message: "Server error while fetching pending requests." });

@@ -13,41 +13,33 @@ export default defineConfig({
     },
   },
   build: {
-    // Optimize build output
     target: 'esnext',
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true, // Remove console.logs in production
+        drop_console: true,
         drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info'],
       },
     },
-    // Code splitting for better caching
     rollupOptions: {
       output: {
         manualChunks: {
-          // Vendor chunks
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'ui-vendor': ['framer-motion', 'lucide-react'],
-          'store-vendor': ['zustand'],
+          'store-vendor': ['zustand', 'axios'],
           'ai-vendor': ['@tensorflow/tfjs', 'nsfwjs'],
-          // Feature chunks
-          'chat': [
-            './src/pages/HomePage.jsx',
-            './src/components/ChatContainer.jsx',
-            './src/components/ChatMessage.jsx',
-          ],
-          'stranger': ['./src/pages/StrangerChatPage.jsx'],
-          'admin': ['./src/pages/AdminDashboard.jsx'],
+          'socket-vendor': ['socket.io-client'],
         },
       },
     },
-    // Increase chunk size warning limit
     chunkSizeWarningLimit: 1000,
+    cssCodeSplit: true,
+    sourcemap: false,
+    reportCompressedSize: false,
   },
-  // Optimize dependencies
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'zustand'],
-    exclude: ['@tensorflow/tfjs', 'nsfwjs'], // Load AI libs on demand
+    include: ['react', 'react-dom', 'react-router-dom', 'zustand', 'axios'],
+    exclude: ['@tensorflow/tfjs', 'nsfwjs'],
   },
 });

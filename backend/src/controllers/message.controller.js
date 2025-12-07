@@ -3,16 +3,34 @@ import Message from "../models/message.model.js";
 import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 
+// Cache for sidebar users (1 minute TTL)
+let sidebarUsersCache = new Map();
+const SIDEBAR_CACHE_TTL = 60000; // 1 minute
+
 export const getUsersForSidebar = async (req, res) => {
   try {
-    const loggedInUserId = req.user._id;
+    const loggedInUserId = req.user._id.toString();
+    const now = Date.now();
+    
+    // Check cache
+    const cached = sidebarUsersCache.get(loggedInUserId);
+    if (cached && (now - cached.timestamp) < SIDEBAR_CACHE_TTL) {
+      return res.status(200).json(cached.data);
+    }
 
-    // ✅ Performance: Use lean() for 5x faster queries (read-only data)
-    const filteredUsers = await User.find({
-      _id: { $ne: loggedInUserId }
-    })
-    .select("-password")
-    .lean();
+    // Fetch only friends, not all users
+    const user = await User.findById(loggedInUserId)
+      .select('friends')
+      .populate('friends', 'username nickname profilePic isOnline lastSeen isVerified')
+      .lean();
+
+    const filteredUsers = user?.friends || [];
+    
+    // Cache result
+    sidebarUsersCache.set(loggedInUserId, {
+      data: filteredUsers,
+      timestamp: now
+    });
 
     res.status(200).json(filteredUsers);
   } catch (error) {
@@ -26,9 +44,8 @@ export const getMessages = async (req, res) => {
     const { id: userToChatId } = req.params;
     const myId = req.user._id;
     
-    // ✅ Performance: Add pagination support
     const page = parseInt(req.query.page) || 0;
-    const limit = parseInt(req.query.limit) || 100; // Load 100 messages at a time
+    const limit = parseInt(req.query.limit) || 50; // Reduced to 50 for faster load
 
     const messages = await Message.find({
       $or: [
@@ -36,14 +53,14 @@ export const getMessages = async (req, res) => {
         { senderId: userToChatId, receiverId: myId }
       ]
     })
+    .select('senderId receiverId text image voice voiceDuration messageType callData status deliveredAt readAt createdAt replyTo reactions isDeleted')
     .populate('replyTo', 'text image voice senderId')
     .populate('reactions.userId', 'fullName profilePic')
-    .sort({ createdAt: -1 }) // Get newest first
+    .sort({ createdAt: -1 })
     .limit(limit)
     .skip(page * limit)
-    .lean(); // ✅ 5x faster for read-only data
+    .lean();
 
-    // Reverse to show oldest first in UI
     res.status(200).json(messages.reverse());
   } catch (error) {
     console.error("Error in getMessages:", error.message);

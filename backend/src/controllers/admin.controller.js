@@ -42,14 +42,30 @@ const emitToUser = (io, userId, event, data) => {
 };
 
 // --- User Management Functions (OPTIMIZED) ---
+// Cache for admin users list (30 seconds TTL)
+let adminUsersCache = null;
+let adminUsersCacheTime = 0;
+const ADMIN_USERS_CACHE_TTL = 30000;
+
 export const getAllUsers = async (req, res) => {
 	try {
-		// Optimized: Only fetch essential fields, use lean(), limit to 100 users
+		const now = Date.now();
+		
+		// Return cached data if fresh
+		if (adminUsersCache && (now - adminUsersCacheTime) < ADMIN_USERS_CACHE_TTL) {
+			return res.status(200).json(adminUsersCache);
+		}
+		
 		const users = await User.find()
 			.select('username nickname email profilePic isVerified isOnline isSuspended lastSeen createdAt')
 			.sort({ createdAt: -1 })
 			.limit(100)
 			.lean();
+		
+		// Update cache
+		adminUsersCache = users;
+		adminUsersCacheTime = now;
+		
 		res.status(200).json(users);
 	} catch (err) {
 		console.error("getAllUsers error:", err);
@@ -345,8 +361,10 @@ export const getReports = async (req, res) => {
 	try {
 		const reports = await Report.find()
 			.sort({ createdAt: -1 })
+			.limit(100)
 			.populate("reporter", "username nickname profilePic email")
-			.populate("reportedUser", "username nickname profilePic email");
+			.populate("reportedUser", "username nickname profilePic email")
+			.lean();
 
 		res.status(200).json(reports);
 	} catch (err) {
@@ -505,7 +523,9 @@ export const getVerificationRequests = async (req, res) => {
 			"verificationRequest.status": { $exists: true, $ne: null }
 		})
 		.select("username nickname profilePic email verificationRequest isVerified")
-		.sort({ "verificationRequest.requestedAt": -1 });
+		.sort({ "verificationRequest.requestedAt": -1 })
+		.limit(50)
+		.lean();
 
 		res.status(200).json(users);
 	} catch (err) {
