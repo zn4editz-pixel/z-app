@@ -14,22 +14,32 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info'],
-      },
-    },
+    minify: 'esbuild', // Faster than terser
+    cssMinify: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['framer-motion', 'lucide-react'],
-          'store-vendor': ['zustand', 'axios'],
-          'ai-vendor': ['@tensorflow/tfjs', 'nsfwjs'],
-          'socket-vendor': ['socket.io-client'],
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            if (id.includes('framer-motion')) {
+              return 'framer-motion';
+            }
+            if (id.includes('lucide-react')) {
+              return 'lucide-react';
+            }
+            if (id.includes('@tensorflow') || id.includes('nsfwjs')) {
+              return 'ai-vendor';
+            }
+            if (id.includes('socket.io')) {
+              return 'socket-vendor';
+            }
+            if (id.includes('axios') || id.includes('zustand')) {
+              return 'store-vendor';
+            }
+            return 'vendor';
+          }
         },
       },
     },
@@ -39,7 +49,7 @@ export default defineConfig({
     reportCompressedSize: false,
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'zustand', 'axios'],
+    include: ['react', 'react-dom', 'react-router-dom', 'zustand', 'axios', 'socket.io-client'],
     exclude: ['@tensorflow/tfjs', 'nsfwjs'],
   },
 });

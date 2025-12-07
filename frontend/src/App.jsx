@@ -1,20 +1,11 @@
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useCallback, lazy, Suspense } from "react";
 import { Toaster, toast } from "react-hot-toast";
-import { AnimatePresence } from "framer-motion";
 
-import Navbar from "./components/Navbar";
-import OfflineIndicator from "./components/OfflineIndicator";
-import PermissionHandler from "./components/PermissionHandler";
-import ConnectionStatus from "./components/ConnectionStatus";
-import PageTransition from "./components/PageTransition";
-
-// Core pages (loaded immediately)
-import HomePage from "./pages/HomePage";
-import SignUpPage from "./pages/SignUpPage";
-import LoginPage from "./pages/LoginPage";
-
-// Lazy load heavy/less-used pages for faster initial load
+// Lazy load ALL pages for faster initial load
+const HomePage = lazy(() => import("./pages/HomePage"));
+const SignUpPage = lazy(() => import("./pages/SignUpPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
 const SetupProfilePage = lazy(() => import("./pages/SetupProfilePage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage"));
@@ -27,6 +18,12 @@ const SuspendedPage = lazy(() => import("./pages/SuspendedPage"));
 const GoodbyePage = lazy(() => import("./pages/GoodbyePage"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+
+// Lazy load components
+const Navbar = lazy(() => import("./components/Navbar"));
+const OfflineIndicator = lazy(() => import("./components/OfflineIndicator"));
+const PermissionHandler = lazy(() => import("./components/PermissionHandler"));
+const ConnectionStatus = lazy(() => import("./components/ConnectionStatus"));
 
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
@@ -309,46 +306,43 @@ const App = () => {
 
 	const hasCompletedProfile = authUser?.hasCompletedProfile;
 
-	// Loading fallback for lazy-loaded pages
+	// Minimal loading fallback
 	const PageLoader = () => (
-		<div className="flex items-center justify-center h-screen">
-			<span className="loading loading-spinner loading-lg text-primary"></span>
+		<div className="flex items-center justify-center h-screen bg-base-200">
+			<div className="flex flex-col items-center gap-3">
+				<div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+				<p className="text-sm text-base-content/60">Loading...</p>
+			</div>
 		</div>
 	);
 
 	return (
 		<div data-theme={theme} className="pt-14 md:pt-16">
-			{/* Connection Status */}
-			<ConnectionStatus />
-			
-			{/* Offline Indicator */}
-			<OfflineIndicator />
-			
-			{/* Permission Handler for Camera/Mic */}
-			{authUser && hasCompletedProfile && <PermissionHandler />}
-			
-			{/* Navbar */}
-			{hasCompletedProfile && window.location.pathname !== "/stranger" && <Navbar />}
+			<Suspense fallback={null}>
+				<ConnectionStatus />
+				<OfflineIndicator />
+				{authUser && hasCompletedProfile && <PermissionHandler />}
+				{hasCompletedProfile && window.location.pathname !== "/stranger" && <Navbar />}
+			</Suspense>
 
-			<AnimatePresence mode="wait">
-				<Suspense fallback={<PageLoader />}>
-					<Routes location={location} key={location.pathname}>
+			<Suspense fallback={<PageLoader />}>
+				<Routes location={location} key={location.pathname}>
 				{/* --- Auth Routes --- */}
 				<Route
 					path="/signup"
-					element={!authUser ? <PageTransition><SignUpPage /></PageTransition> : <Navigate to="/" />}
+					element={!authUser ? <SignUpPage /> : <Navigate to="/" />}
 				/>
 				<Route
 					path="/login"
-					element={!authUser ? <PageTransition><LoginPage /></PageTransition> : <Navigate to="/" />}
+					element={!authUser ? <LoginPage /> : <Navigate to="/" />}
 				/>
 				<Route
 					path="/forgot-password"
-					element={!authUser ? <PageTransition><ForgotPassword /></PageTransition> : <Navigate to="/" />}
+					element={!authUser ? <ForgotPassword /> : <Navigate to="/" />}
 				/>
 				<Route
 					path="/reset-password/:token"
-					element={!authUser ? <PageTransition><ResetPassword /></PageTransition> : <Navigate to="/" />}
+					element={!authUser ? <ResetPassword /> : <Navigate to="/" />}
 				/>
 
 				{/* --- Onboarding Route --- */}
@@ -365,7 +359,7 @@ const App = () => {
 					}
 				/>
 
-				{/* --- Protected Routes (unchanged) --- */}
+				{/* --- Protected Routes --- */}
 				<Route
 					path="/"
 					element={
@@ -374,7 +368,7 @@ const App = () => {
 						) : !hasCompletedProfile ? (
 							<Navigate to="/setup-profile" />
 						) : (
-							<PageTransition><HomePage /></PageTransition>
+							<HomePage />
 						)
 					}
 				/>
@@ -386,7 +380,7 @@ const App = () => {
 						) : !hasCompletedProfile ? (
 							<Navigate to="/setup-profile" />
 						) : (
-							<PageTransition><SettingsPage /></PageTransition>
+							<SettingsPage />
 						)
 					}
 				/>
@@ -398,7 +392,7 @@ const App = () => {
 						) : !hasCompletedProfile ? (
 							<Navigate to="/setup-profile" />
 						) : (
-							<PageTransition><ChangePasswordPage /></PageTransition>
+							<ChangePasswordPage />
 						)
 					}
 				/>
@@ -410,7 +404,7 @@ const App = () => {
 						) : !hasCompletedProfile ? (
 							<Navigate to="/setup-profile" />
 						) : (
-							<PageTransition><PublicProfilePage /></PageTransition>
+							<PublicProfilePage />
 						)
 					}
 				/>
@@ -422,7 +416,7 @@ const App = () => {
 						) : !hasCompletedProfile ? (
 							<Navigate to="/setup-profile" />
 						) : (
-							<PageTransition><MyProfilePage /></PageTransition>
+							<MyProfilePage />
 						)
 					}
 				/>
@@ -474,10 +468,14 @@ const App = () => {
 				<Route path="/goodbye" element={<GoodbyePage />} />
 				<Route path="/blocked" element={<GoodbyePage />} />
 					</Routes>
-				</Suspense>
-			</AnimatePresence>
+			</Suspense>
 
-			<Toaster position="top-center" />
+			<Toaster position="top-center" toastOptions={{
+				duration: 3000,
+				style: {
+					maxWidth: '500px',
+				},
+			}} />
 		</div>
 	);
 };
