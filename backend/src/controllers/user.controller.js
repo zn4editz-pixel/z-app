@@ -265,22 +265,40 @@ export const searchUsers = async (req, res) => {
 };
 
 // ─── Get Suggested Users ───────────────────────────────────
+// In-memory cache for suggested users (refreshes every 2 minutes)
+let suggestedUsersCache = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+
 export const getSuggestedUsers = async (req, res) => {
 	try {
 		const loggedInUserId = req.user._id;
+		const now = Date.now();
 
-		// Ultra-optimized query - only 8 users, minimal fields
+		// Return cached data if available and fresh
+		if (suggestedUsersCache && (now - cacheTimestamp) < CACHE_DURATION) {
+			// Filter out the logged-in user from cached results
+			const filteredUsers = suggestedUsersCache.filter(u => u._id.toString() !== loggedInUserId.toString());
+			return res.status(200).json(filteredUsers.slice(0, 8));
+		}
+
+		// Fetch fresh data with ultra-optimized query
 		const users = await User.find({
-			_id: { $ne: loggedInUserId },
 			hasCompletedProfile: true
 		})
-		.select('username nickname profilePic isVerified bio') // Only essential fields
+		.select('_id username nickname profilePic isVerified bio') // Only essential fields
 		.sort({ isVerified: -1, createdAt: -1 })
-		.limit(8) // Reduced to 8 for faster load
+		.limit(20) // Fetch more for cache, filter logged-in user later
 		.lean() // Use lean() for 50% faster queries
-		.exec(); // Explicit exec for better performance
+		.exec();
 
-		res.status(200).json(users);
+		// Update cache
+		suggestedUsersCache = users;
+		cacheTimestamp = now;
+
+		// Filter out logged-in user and return
+		const filteredUsers = users.filter(u => u._id.toString() !== loggedInUserId.toString());
+		res.status(200).json(filteredUsers.slice(0, 8));
 	} catch (err) {
 		console.error("Get suggested users error:", err);
 		res.status(500).json({ error: "Failed to fetch suggested users" });

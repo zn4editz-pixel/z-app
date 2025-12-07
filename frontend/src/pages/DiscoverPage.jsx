@@ -201,8 +201,8 @@ const DiscoverPage = () => {
 			setSuggestedUsers(JSON.parse(cached));
 			setIsLoadingSuggested(false);
 			
-			// If cache is fresh (< 5 min), don't refetch
-			if (cacheTime && (now - parseInt(cacheTime)) < 300000) {
+			// If cache is fresh (< 2 min), don't refetch
+			if (cacheTime && (now - parseInt(cacheTime)) < 120000) {
 				return;
 			}
 		} else {
@@ -214,12 +214,15 @@ const DiscoverPage = () => {
 			const res = await axiosInstance.get("/users/suggested");
 			const users = res.data || [];
 			setSuggestedUsers(users);
-			// Cache for 5 minutes
+			// Cache for 2 minutes (matches backend cache)
 			sessionStorage.setItem('suggestedUsers', JSON.stringify(users));
 			sessionStorage.setItem('suggestedUsersTime', now.toString());
 		} catch (error) {
 			console.error("Error fetching suggested users:", error);
 			// Keep showing cached data on error
+			if (!cached) {
+				toast.error("Failed to load suggested users");
+			}
 		} finally {
 			setIsLoadingSuggested(false);
 		}
@@ -368,7 +371,7 @@ const DiscoverPage = () => {
 
 							{isLoading ? (
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-									{[...Array(6)].map((_, i) => (
+									{[...Array(4)].map((_, i) => (
 										<div key={i} className="card bg-base-200 border border-base-300 animate-pulse">
 											<div className="card-body p-3 sm:p-4">
 												<div className="flex items-start gap-3 sm:gap-4">
