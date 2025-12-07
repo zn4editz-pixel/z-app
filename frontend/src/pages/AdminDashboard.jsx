@@ -5,6 +5,7 @@ import {
 	Users, UserCheck, AlertTriangle, Shield, TrendingUp,
 	BadgeCheck, FileText
 } from "lucide-react";
+import "../styles/admin-custom.css";
 
 // Import tab components
 import DashboardOverview from "../components/admin/DashboardOverview";
@@ -241,7 +242,7 @@ const AdminDashboard = () => {
 	const renderActiveTab = () => {
 		switch (activeTab) {
 			case "dashboard":
-				return <DashboardOverview stats={stats} loadingStats={loadingStats} />;
+				return <DashboardOverview stats={stats} loadingStats={loadingStats} users={users} />;
 			case "users":
 				return (
 					<UserManagement
@@ -283,7 +284,7 @@ const AdminDashboard = () => {
 			case "notifications":
 				return <NotificationsPanel onSendNotification={handleSendNotification} />;
 			default:
-				return <DashboardOverview stats={stats} loadingStats={loadingStats} />;
+				return <DashboardOverview stats={stats} loadingStats={loadingStats} users={users} />;
 		}
 	};
 

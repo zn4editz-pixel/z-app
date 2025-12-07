@@ -23,8 +23,8 @@ export const useChatStore = create((set, get) => ({
 
     // --- Existing Chat Actions ---
     getMessages: async (userId) => {
-        // DON'T clear messages immediately - prevents flash
-        set({ isMessagesLoading: true });
+        // Clear messages immediately to prevent showing wrong chat
+        set({ messages: [], isMessagesLoading: true });
         
         // Try IndexedDB cache first (instant load)
         const cachedMessagesDB = await getCachedMessagesDB(userId);
@@ -212,12 +212,11 @@ export const useChatStore = create((set, get) => ({
     },
 
     setSelectedUser: (user) => { // Renamed param for clarity
-        set({ selectedUser: user });
+        // CRITICAL: Clear messages IMMEDIATELY to prevent flash of previous chat
+        set({ selectedUser: user, messages: [] });
         if (user) {
             get().getMessages(user._id); // Fetch messages for the selected user
             // resetUnread is called within getMessages on success
-        } else {
-            set({ messages: [] }); // Clear messages when deselecting user
         }
     },
 
