@@ -1,178 +1,219 @@
-import { useState, useRef } from "react";
-import { useAuthStore } from "../store/useAuthStore";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/useAuthStore";
+import { Camera, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { Camera, Loader2, User, FileText } from "lucide-react";
-import { axiosInstance } from "../lib/axios.js";
+import { axiosInstance } from "../lib/axios";
 
 const SetupProfilePage = () => {
-	const { authUser, setAuthUser } = useAuthStore();
-	const navigate = useNavigate();
-	const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { authUser, setAuthUser } = useAuthStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedImg, setSelectedImg] = useState(null);
+  const [formData, setFormData] = useState({
+    nickname: authUser?.fullName || "",
+    bio: "",
+  });
 
-	// State for form data
-	const [nickname, setNickname] = useState(authUser?.nickname || authUser?.fullName || "");
-	const [bio, setBio] = useState(authUser?.bio || "");
-	
-	// State for profile picture preview and file
-	const [profilePicFile, setProfilePicFile] = useState(null);
-	const [profilePicPreview, setProfilePicPreview] = useState(authUser?.profilePic || null);
-	
-	const fileInputRef = useRef(null);
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-	const handleImageChange = (e) => {
-		const file = e.target.files[0];
-		if (file) {
-			setProfilePicFile(file);
-			// Create a preview URL
-			const reader = new FileReader();
-			reader.onloadend = () => {
-				setProfilePicPreview(reader.result);
-			};
-			reader.readAsDataURL(file);
-		}
-	};
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setSelectedImg(reader.result);
+    };
+  };
 
-	const handleSubmit = async (e) => {
-		e.preventDefault();
-		if (!nickname.trim()) {
-			return toast.error("Nickname is required.");
-		}
-		
-		setIsLoading(true);
-		
-		let profilePicDataUrl = null;
-		
-		// If a new file was selected, convert it to Data URL for Cloudinary
-		if (profilePicFile) {
-			profilePicDataUrl = profilePicPreview; // This is already a Data URL from FileReader
-		}
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-		try {
-			const res = await axiosInstance.post("/auth/setup-profile", {
-				nickname,
-				bio,
-				// Only send profilePic if it's a new upload
-				profilePic: profilePicDataUrl, 
-			});
+    if (!formData.nickname || formData.nickname.trim().length < 2) {
+      toast.error("Nickname must be at least 2 characters");
+      return;
+    }
 
-			// Update the global authUser state with the new, completed profile
-			setAuthUser(res.data);
-			
-			// Also update localStorage
-			localStorage.setItem("authUser", JSON.stringify(res.data));
+    setIsSubmitting(true);
+    try {
+      const dataToSend = {
+        nickname: formData.nickname.trim(),
+        bio: formData.bio.trim(),
+        profilePic: selectedImg,
+      };
 
-			toast.success("Profile setup complete!");
-			navigate("/"); // Navigate to the homepage
-			
-		} catch (error) {
-			console.error("Profile setup error:", error);
-			toast.error(error.response?.data?.message || "Failed to set up profile.");
-		} finally {
-			setIsLoading(false);
-		}
-	};
+      const res = await axiosInstance.post("/auth/setup-profile", dataToSend);
+      const updatedUser = res.data;
 
-	return (
-		<div className="min-h-screen flex items-center justify-center bg-base-200 px-3 sm:px-4 py-16 sm:py-20">
-			<div className="w-full max-w-md p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 bg-base-100 rounded-lg sm:rounded-xl shadow-lg">
-				<div className="text-center">
-					<h1 className="text-2xl sm:text-3xl font-bold">Welcome!</h1>
-					<p className="text-sm sm:text-base text-base-content/70">Let&#39;s set up your profile.</p>
-				</div>
+      // Update auth store
+      setAuthUser(updatedUser);
+      localStorage.setItem("authUser", JSON.stringify(updatedUser));
 
-				<form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-					{/* Profile Picture Upload */}
-					<div className="flex flex-col items-center">
-						<div className="avatar relative w-28 h-28 sm:w-32 sm:h-32 rounded-full group">
-							<img
-								src={profilePicPreview || "/avatar.png"}
-								alt="Profile Preview"
-								className="w-full h-full rounded-full object-cover ring-4 ring-base-300"
-							/>
-							<button
-								type="button"
-								onClick={() => fileInputRef.current?.click()}
-								className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-								aria-label="Change profile picture"
-							>
-								<Camera className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-							</button>
-						</div>
-						<input
-							type="file"
-							ref={fileInputRef}
-							onChange={handleImageChange}
-							accept="image/png, image/jpeg, image/jpg"
-							className="hidden"
-						/>
-						<button
-							type="button"
-							onClick={() => fileInputRef.current?.click()}
-							className="btn btn-link btn-xs sm:btn-sm mt-2"
-						>
-							Upload Photo
-						</button>
-					</div>
-					
-					{/* Nickname */}
-					<div className="form-control">
-						<label className="label">
-							<span className="label-text font-medium">Nickname (Display Name)</span>
-						</label>
-						<div className="relative">
-							<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-								<User className="w-5 h-5 text-base-content/40" />
-							</div>
-							<input
-								type="text"
-								placeholder="Your display name"
-								className="input input-bordered w-full pl-10"
-								value={nickname}
-								onChange={(e) => setNickname(e.target.value)}
-								required
-							/>
-						</div>
-					</div>
+      toast.success("Profile setup complete!");
+      navigate("/");
+    } catch (error) {
+      console.error("Profile setup error:", error);
+      toast.error(error.response?.data?.message || "Failed to setup profile");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-					{/* Bio */}
-					<div className="form-control">
-						<label className="label">
-							<span className="label-text font-medium">Bio (Optional)</span>
-						</label>
-						<div className="relative">
-							<div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
-								<FileText className="w-5 h-5 text-base-content/40" />
-							</div>
-							<textarea
-								placeholder="Tell everyone a little about yourself..."
-								className="textarea textarea-bordered w-full pl-10 h-24"
-								value={bio}
-								onChange={(e) => setBio(e.target.value)}
-								maxLength={150}
-							/>
-							<span className="absolute bottom-2 right-3 text-xs text-base-content/50">
-								{bio.length} / 150
-							</span>
-						</div>
-					</div>
-					
-					{/* Submit Button */}
-					<button
-						type="submit"
-						className="btn btn-primary w-full btn-sm sm:btn-md"
-						disabled={isLoading}
-					>
-						{isLoading ? (
-							<Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
-						) : (
-							<span className="text-sm sm:text-base">Save and Continue</span>
-						)}
-					</button>
-				</form>
-			</div>
-		</div>
-	);
+  const handleSkip = () => {
+    // Set hasCompletedProfile to true without additional info
+    const skipSetup = async () => {
+      try {
+        const res = await axiosInstance.post("/auth/setup-profile", {
+          nickname: authUser?.fullName || authUser?.username,
+          bio: "",
+        });
+        const updatedUser = res.data;
+        setAuthUser(updatedUser);
+        localStorage.setItem("authUser", JSON.stringify(updatedUser));
+        navigate("/");
+      } catch (error) {
+        console.error("Skip profile setup error:", error);
+        toast.error("Failed to complete setup");
+      }
+    };
+    skipSetup();
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="bg-base-100 rounded-2xl shadow-2xl p-6 sm:p-8 border border-base-300">
+          {/* Header */}
+          <div className="text-center mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Complete Your Profile
+            </h1>
+            <p className="text-sm sm:text-base text-base-content/70 mt-2">
+              Let's personalize your account
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Profile Picture Upload */}
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative">
+                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-base-300 bg-base-200">
+                  {selectedImg ? (
+                    <img
+                      src={selectedImg}
+                      alt="Profile preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-base-content/30">
+                      <Camera className="w-12 h-12" />
+                    </div>
+                  )}
+                </div>
+                <label
+                  htmlFor="avatar-upload"
+                  className="absolute bottom-0 right-0 bg-primary hover:bg-primary/90 p-2.5 rounded-full cursor-pointer transition-all duration-200 shadow-lg hover:scale-105"
+                >
+                  <Camera className="w-5 h-5 text-primary-content" />
+                  <input
+                    type="file"
+                    id="avatar-upload"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={isSubmitting}
+                  />
+                </label>
+              </div>
+              <p className="text-xs text-base-content/60 text-center">
+                Upload a profile picture (optional)
+              </p>
+            </div>
+
+            {/* Nickname Input */}
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">
+                  Nickname <span className="text-error">*</span>
+                </span>
+              </label>
+              <input
+                type="text"
+                className="input input-bordered w-full"
+                placeholder="How should we call you?"
+                value={formData.nickname}
+                onChange={(e) =>
+                  setFormData({ ...formData, nickname: e.target.value })
+                }
+                disabled={isSubmitting}
+                maxLength={50}
+                required
+              />
+              <label className="label">
+                <span className="label-text-alt text-base-content/50">
+                  This is how others will see you
+                </span>
+              </label>
+            </div>
+
+            {/* Bio Input */}
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">Bio (optional)</span>
+                <span className="label-text-alt text-base-content/50">
+                  {formData.bio.length}/150
+                </span>
+              </label>
+              <textarea
+                className="textarea textarea-bordered w-full h-24 resize-none"
+                placeholder="Tell us about yourself..."
+                value={formData.bio}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    bio: e.target.value.slice(0, 150),
+                  })
+                }
+                disabled={isSubmitting}
+                maxLength={150}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <button
+                type="submit"
+                className="btn btn-primary w-full"
+                disabled={isSubmitting || !formData.nickname.trim()}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Setting up...
+                  </>
+                ) : (
+                  "Complete Setup"
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSkip}
+                className="btn btn-ghost w-full"
+                disabled={isSubmitting}
+              >
+                Skip for now
+              </button>
+            </div>
+          </form>
+
+          <p className="text-xs text-center text-base-content/50 mt-6">
+            You can always update your profile later in Settings
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default SetupProfilePage;
