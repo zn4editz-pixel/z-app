@@ -269,33 +269,16 @@ export const getSuggestedUsers = async (req, res) => {
 	try {
 		const loggedInUserId = req.user._id;
 
-		// Get random users excluding the logged-in user
-		// Prioritize verified users and users with complete profiles
-		const users = await User.aggregate([
-			{
-				$match: {
-					_id: { $ne: loggedInUserId },
-					hasCompletedProfile: true
-				}
-			},
-			{
-				$addFields: {
-					// Give verified users higher priority
-					sortScore: {
-						$cond: [{ $eq: ["$isVerified", true] }, 2, 1]
-					}
-				}
-			},
-			{ $sort: { sortScore: -1 } },
-			{ $sample: { size: 20 } }, // Get 20 random users
-			{
-				$project: {
-					password: 0,
-					resetPasswordToken: 0,
-					resetPasswordExpire: 0
-				}
-			}
-		]);
+		// Optimized query - get 12 users instead of 20 for faster load
+		// Use simple find with limit instead of aggregation for speed
+		const users = await User.find({
+			_id: { $ne: loggedInUserId },
+			hasCompletedProfile: true
+		})
+		.select('-password -resetPasswordToken -resetPasswordExpire')
+		.sort({ isVerified: -1, createdAt: -1 }) // Verified users first, then newest
+		.limit(12)
+		.lean(); // Use lean() for faster queries
 
 		res.status(200).json(users);
 	} catch (err) {

@@ -191,10 +191,26 @@ const DiscoverPage = () => {
 	}, [activeTab]);
 
 	const fetchSuggestedUsers = async () => {
+		// Check cache first
+		const cached = sessionStorage.getItem('suggestedUsers');
+		const cacheTime = sessionStorage.getItem('suggestedUsersTime');
+		const now = Date.now();
+		
+		// Use cache if less than 5 minutes old
+		if (cached && cacheTime && (now - parseInt(cacheTime)) < 300000) {
+			setSuggestedUsers(JSON.parse(cached));
+			setIsLoadingSuggested(false);
+			return;
+		}
+		
 		setIsLoadingSuggested(true);
 		try {
 			const res = await axiosInstance.get("/users/suggested");
-			setSuggestedUsers(res.data || []);
+			const users = res.data || [];
+			setSuggestedUsers(users);
+			// Cache for 5 minutes
+			sessionStorage.setItem('suggestedUsers', JSON.stringify(users));
+			sessionStorage.setItem('suggestedUsersTime', now.toString());
 		} catch (error) {
 			console.error("Error fetching suggested users:", error);
 		} finally {
@@ -344,8 +360,21 @@ const DiscoverPage = () => {
 							</h2>
 
 							{isLoading ? (
-								<div className="flex justify-center items-center py-8 sm:py-12">
-									<Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-primary" />
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+									{[...Array(6)].map((_, i) => (
+										<div key={i} className="card bg-base-200 border border-base-300 animate-pulse">
+											<div className="card-body p-3 sm:p-4">
+												<div className="flex items-start gap-3 sm:gap-4">
+													<div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-base-300"></div>
+													<div className="flex-1 space-y-2">
+														<div className="h-4 bg-base-300 rounded w-3/4"></div>
+														<div className="h-3 bg-base-300 rounded w-1/2"></div>
+														<div className="h-8 bg-base-300 rounded w-full mt-2"></div>
+													</div>
+												</div>
+											</div>
+										</div>
+									))}
 								</div>
 							) : displayUsers.length === 0 ? (
 								<div className="text-center py-8 sm:py-12">
