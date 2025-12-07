@@ -64,8 +64,8 @@ export const useChatStore = create((set, get) => ({
 
     sendMessage: async (messageData) => {
         const { selectedUser, messages } = get();
-        const { authUser } = useAuthStore.getState();
-        if (!selectedUser) return; // Don't send if no user selected
+        const { authUser, socket } = useAuthStore.getState();
+        if (!selectedUser) return;
         
         // Check if online
         if (!navigator.onLine) {
@@ -73,8 +73,8 @@ export const useChatStore = create((set, get) => ({
             return;
         }
         
-        // Create optimistic message (shows immediately)
-        const tempId = `temp-${Date.now()}`;
+        // Create optimistic message (shows immediately - WhatsApp style)
+        const tempId = `temp-${Date.now()}-${Math.random()}`;
         const optimisticMessage = {
             _id: tempId,
             senderId: authUser._id,
@@ -84,31 +84,40 @@ export const useChatStore = create((set, get) => ({
             voice: messageData.voice || null,
             voiceDuration: messageData.voiceDuration || null,
             replyTo: messageData.replyTo || null,
-            status: 'sending', // Temporary status
+            status: 'sending',
             createdAt: new Date().toISOString(),
             reactions: [],
-            isOptimistic: true // Flag to identify optimistic messages
+            isOptimistic: true,
+            tempId: tempId // Store temp ID for replacement
         };
         
         // Add optimistic message immediately (instant UI update)
         set({ messages: [...messages, optimisticMessage] });
         
         try {
+            // Send via API
             const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
             
             // Replace optimistic message with real message from server
             if (res.data && res.data._id) {
-                const updatedMessages = messages
-                    .filter(m => m._id !== tempId) // Remove optimistic message
-                    .concat(res.data); // Add real message
+                set(state => ({
+                    messages: state.messages.map(m => 
+                        m.tempId === tempId ? { ...res.data, isOptimistic: false } : m
+                    )
+                }));
                 
-                set({ messages: updatedMessages });
-                // Update cache with real message
-                cacheMessages(selectedUser._id, updatedMessages);
+                // Update cache
+                const currentMessages = get().messages;
+                cacheMessages(selectedUser._id, currentMessages);
+                await cacheMessagesDB(selectedUser._id, currentMessages);
             }
         } catch (error) {
-            // Remove optimistic message on error
-            set({ messages: messages.filter(m => m._id !== tempId) });
+            // Mark message as failed instead of removing it
+            set(state => ({
+                messages: state.messages.map(m => 
+                    m.tempId === tempId ? { ...m, status: 'failed', isOptimistic: false } : m
+                )
+            }));
             toast.error(error.response?.data?.message || "Failed to send message");
         }
     },
@@ -119,21 +128,32 @@ export const useChatStore = create((set, get) => ({
 
         // Define handler separately
         const messageHandler = (newMessage) => {
-            const { selectedUser, messages } = get(); // Get latest state inside handler
+            const { selectedUser, messages } = get();
 
-            // Prevent duplicate messages
-            if (newMessage && newMessage._id && !messages.find((m) => m._id === newMessage._id)) {
-                // Add message to state if it's for the selected user
-                if (selectedUser && (newMessage.senderId === selectedUser._id || newMessage.receiverId === selectedUser._id)) {
-                    set({ messages: [...messages, newMessage] });
-                    // Mark as read if chat is open
-                    get().markMessagesAsRead(selectedUser._id);
-                } else if (newMessage.senderId) { // Check if senderId exists before incrementing
-                    // Increment unread count if chat not open
-                    get().incrementUnread(newMessage.senderId);
-                }
-            } else if (!newMessage || !newMessage._id) {
-                 console.warn("Received invalid message object:", newMessage);
+            if (!newMessage || !newMessage._id) {
+                console.warn("Received invalid message object:", newMessage);
+                return;
+            }
+
+            // Check if message already exists (by real _id or tempId)
+            const isDuplicate = messages.some(m => 
+                m._id === newMessage._id || 
+                (m.isOptimistic && m.text === newMessage.text && m.senderId === newMessage.senderId)
+            );
+
+            if (isDuplicate) {
+                console.log("Duplicate message detected, skipping:", newMessage._id);
+                return;
+            }
+
+            // Add message to state if it's for the selected user
+            if (selectedUser && (newMessage.senderId === selectedUser._id || newMessage.receiverId === selectedUser._id)) {
+                set({ messages: [...messages, newMessage] });
+                // Mark as read if chat is open
+                get().markMessagesAsRead(selectedUser._id);
+            } else if (newMessage.senderId) {
+                // Increment unread count if chat not open
+                get().incrementUnread(newMessage.senderId);
             }
         };
 

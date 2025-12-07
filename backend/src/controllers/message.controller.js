@@ -114,75 +114,98 @@ export const sendMessage = async (req, res) => {
       return res.status(400).json({ error: "Message cannot be empty" });
     }
 
-    let imageUrl;
+    // Process uploads in parallel for speed
+    const uploadPromises = [];
+    
     if (image) {
-      // ✅ Performance: Optimize images with WebP format and compression
-      const uploadResponse = await cloudinary.uploader.upload(image, {
-        folder: "chat_images",
-        resource_type: "image",
-        format: 'webp', // Use WebP for smaller file sizes
-        quality: 'auto:good', // Auto quality optimization
-        transformation: [
-          { width: 1200, crop: 'limit' }, // Max width 1200px
-          { quality: 'auto:good' },
-          { fetch_format: 'auto' }
-        ]
-      });
-      imageUrl = uploadResponse.secure_url;
+      uploadPromises.push(
+        cloudinary.uploader.upload(image, {
+          folder: "chat_images",
+          resource_type: "image",
+          format: 'webp',
+          quality: 'auto:good',
+          transformation: [
+            { width: 1200, crop: 'limit' },
+            { quality: 'auto:good' },
+            { fetch_format: 'auto' }
+          ]
+        })
+      );
+    } else {
+      uploadPromises.push(Promise.resolve(null));
     }
 
-    let voiceUrl;
     if (voice) {
-      const uploadResponse = await cloudinary.uploader.upload(voice, {
-        folder: "chat_voices",
-        resource_type: "video" // Cloudinary uses 'video' for audio files
-      });
-      voiceUrl = uploadResponse.secure_url;
+      uploadPromises.push(
+        cloudinary.uploader.upload(voice, {
+          folder: "chat_voices",
+          resource_type: "video"
+        })
+      );
+    } else {
+      uploadPromises.push(Promise.resolve(null));
     }
 
+    // Wait for uploads to complete
+    const [imageUpload, voiceUpload] = await Promise.all(uploadPromises);
+    const imageUrl = imageUpload?.secure_url || null;
+    const voiceUrl = voiceUpload?.secure_url || null;
+
+    // Create message
     const newMessage = new Message({
       senderId,
       receiverId,
       text: text || "",
-      image: imageUrl || null,
-      voice: voiceUrl || null,
+      image: imageUrl,
+      voice: voiceUrl,
       voiceDuration: voiceDuration || null,
       replyTo: replyTo || null,
       status: 'sent'
     });
 
-    await newMessage.save();
+    // Save message and populate replyTo in parallel
+    const savePromise = newMessage.save();
+    const senderPromise = User.findById(senderId).select("fullName profilePic").lean();
+    
+    await savePromise;
     
     // Populate replyTo if exists
     if (replyTo) {
       await newMessage.populate('replyTo', 'text image voice senderId');
     }
 
-    // Fetch sender details for toast
-    const sender = await User.findById(senderId).select("fullName profilePic");
-
+    const sender = await senderPromise;
     const receiverSocketId = getReceiverSocketId(receiverId);
+    
+    // Prepare message data for socket
+    const messageData = {
+      _id: newMessage._id,
+      senderId,
+      receiverId,
+      text: newMessage.text,
+      image: newMessage.image,
+      voice: newMessage.voice,
+      voiceDuration: newMessage.voiceDuration,
+      replyTo: newMessage.replyTo,
+      status: newMessage.status,
+      createdAt: newMessage.createdAt,
+      reactions: [],
+      senderName: sender?.fullName,
+      senderAvatar: sender?.profilePic
+    };
+
     if (receiverSocketId) {
       // Mark as delivered if receiver is online
       newMessage.status = 'delivered';
       newMessage.deliveredAt = new Date();
-      await newMessage.save();
+      messageData.status = 'delivered';
+      messageData.deliveredAt = newMessage.deliveredAt;
+      
+      // Save status update (non-blocking)
+      newMessage.save().catch(err => console.error('Failed to update message status:', err));
 
-      io.to(receiverSocketId).emit("newMessage", {
-        _id: newMessage._id,
-        senderId,
-        receiverId,
-        text: newMessage.text,
-        image: newMessage.image,
-        voice: newMessage.voice,
-        voiceDuration: newMessage.voiceDuration,
-        replyTo: newMessage.replyTo,
-        status: newMessage.status,
-        deliveredAt: newMessage.deliveredAt,
-        createdAt: newMessage.createdAt,
-        senderName: sender.fullName,
-        senderAvatar: sender.profilePic
-      });
+      // Emit to receiver instantly
+      io.to(receiverSocketId).emit("newMessage", messageData);
 
       // Notify sender that message was delivered
       const senderSocketId = getReceiverSocketId(senderId);
@@ -194,6 +217,7 @@ export const sendMessage = async (req, res) => {
       }
     }
 
+    // Return response immediately
     res.status(201).json(newMessage);
   } catch (error) {
     console.error("Error in sendMessage:", error.message);

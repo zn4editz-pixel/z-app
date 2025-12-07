@@ -72,30 +72,36 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
 
-    setIsSending(true);
-    
-    // Stop typing indicator
+    // Stop typing indicator immediately
     if (socket && selectedUser) {
       socket.emit("stopTyping", { receiverId: selectedUser._id });
     }
 
+    // Store values before clearing (for retry)
+    const messageText = text.trim();
+    const messageImage = imagePreview;
+    const messageReplyTo = replyingTo?._id || null;
+
+    // Clear form IMMEDIATELY for instant feel (WhatsApp style)
+    setText("");
+    setImagePreview(null);
+    setShowEmojiPicker(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (onCancelReply) onCancelReply();
+
+    // Send message in background
+    setIsSending(true);
     try {
       await sendMessage({
-        text: text.trim(),
-        image: imagePreview,
-        replyTo: replyingTo?._id || null,
+        text: messageText,
+        image: messageImage,
+        replyTo: messageReplyTo,
       });
-
-      // Clear form
-      setText("");
-      setImagePreview(null);
-      setShowEmojiPicker(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      if (onCancelReply) onCancelReply();
     } catch (error) {
       console.error("Failed to send message:", error);
+      // Message will show as failed in UI, user can retry
     } finally {
-      setTimeout(() => setIsSending(false), 300);
+      setIsSending(false);
     }
   };
 
