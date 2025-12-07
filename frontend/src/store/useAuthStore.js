@@ -199,14 +199,24 @@ export const useAuthStore = create((set, get) => ({
 	updateProfile: async (data) => {
 		set({ isUpdatingProfile: true });
 		try {
-            // Assuming this is for minor updates like profile pic later
-			const res = await axiosInstance.put("/auth/update-profile", data);
-			const user = res.data;
-			set({ authUser: user });
-			localStorage.setItem("authUser", JSON.stringify(user));
-			toast.success("Profile updated successfully");
+			// Check if updating profile picture or other info
+			if (data.profilePic) {
+				// Update profile picture
+				const res = await axiosInstance.put("/auth/update-profile", data);
+				const user = res.data;
+				set({ authUser: user });
+				localStorage.setItem("authUser", JSON.stringify(user));
+				toast.success("Profile picture updated successfully");
+			} else {
+				// Update profile info (fullName, nickname, bio)
+				const res = await axiosInstance.put("/auth/update-profile-info", data);
+				const user = res.data;
+				set({ authUser: user });
+				localStorage.setItem("authUser", JSON.stringify(user));
+				toast.success("Profile updated successfully");
+			}
 		} catch (error) {
-			toast.error(error.response?.data?.message || "Profile update failed");
+			toast.error(error.response?.data?.message || error.response?.data?.error || "Profile update failed");
 		} finally {
 			set({ isUpdatingProfile: false });
 		}
