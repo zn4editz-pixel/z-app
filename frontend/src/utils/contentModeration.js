@@ -136,11 +136,11 @@ export const captureVideoFrame = (videoElement) => {
 // Auto-moderation configuration
 export const MODERATION_CONFIG = {
   enabled: true,
-  checkInterval: 5000, // Check every 5 seconds (faster detection)
-  silentReportThreshold: 0.05, // 5% confidence - silent report to admin (no user action)
-  confidenceThreshold: 0.4, // 40% confidence to flag and warn user (lowered for better detection)
-  autoReportThreshold: 0.65, // 65% confidence to auto-report and disconnect (lowered for better detection)
-  maxViolations: 2, // Auto-disconnect after 2 violations
+  checkInterval: 5000, // Check every 5 seconds
+  silentReportThreshold: 0.50, // 50% confidence - silent report to admin for review (no user action)
+  confidenceThreshold: 0.70, // 70% confidence to flag and warn user
+  autoReportThreshold: 0.85, // 85% confidence to auto-report and disconnect (high confidence only)
+  maxViolations: 3, // Auto-disconnect after 3 violations (more lenient)
 };
 
 // Format AI analysis for report

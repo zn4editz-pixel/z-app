@@ -195,7 +195,7 @@ export const completeProfileSetup = async (req, res) => {
 	}
 };
 
-// ─── Update Profile ─────────────────────────────────────
+// ─── Update Profile Picture ─────────────────────────────────────
 export const updateProfile = async (req, res) => {
 	try {
 		const { profilePic } = req.body;
@@ -216,6 +216,107 @@ export const updateProfile = async (req, res) => {
 	} catch (error) {
 		console.error("Update Profile Error:", error);
 		res.status(500).json({ message: "Failed to update profile picture." });
+	}
+};
+
+// ─── Update Profile Info (fullName, nickname, bio) ─────────────────────────────────────
+export const updateProfileInfo = async (req, res) => {
+	try {
+		const { fullName, nickname, bio } = req.body;
+		const userId = req.user._id;
+
+		const updateData = {};
+		if (fullName !== undefined) updateData.fullName = fullName;
+		if (nickname !== undefined) updateData.nickname = nickname;
+		if (bio !== undefined) updateData.bio = bio;
+
+		const updatedUser = await User.findByIdAndUpdate(
+			userId,
+			updateData,
+			{ new: true }
+		).select("-password");
+
+		res.status(200).json(updatedUser);
+	} catch (error) {
+		console.error("Update Profile Info Error:", error);
+		res.status(500).json({ message: "Failed to update profile information." });
+	}
+};
+
+// ─── Check Username Availability ─────────────────────────────────────
+export const checkUsernameAvailability = async (req, res) => {
+	try {
+		const { username } = req.params;
+		const userId = req.user._id;
+
+		// Check if username is valid format
+		if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+			return res.status(400).json({ 
+				available: false, 
+				message: "Username must be 3-20 characters (letters, numbers, underscore only)" 
+			});
+		}
+
+		// Check if username is taken by another user
+		const existingUser = await User.findOne({ 
+			username: username.toLowerCase(),
+			_id: { $ne: userId } // Exclude current user
+		});
+
+		if (existingUser) {
+			return res.status(200).json({ 
+				available: false, 
+				message: "Username is already taken" 
+			});
+		}
+
+		res.status(200).json({ 
+			available: true, 
+			message: "Username is available" 
+		});
+	} catch (error) {
+		console.error("Check Username Error:", error);
+		res.status(500).json({ message: "Failed to check username availability." });
+	}
+};
+
+// ─── Update Username ─────────────────────────────────────
+export const updateUsername = async (req, res) => {
+	try {
+		const { username } = req.body;
+		const userId = req.user._id;
+
+		if (!username) {
+			return res.status(400).json({ message: "Username is required." });
+		}
+
+		// Validate username format
+		if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+			return res.status(400).json({ 
+				message: "Username must be 3-20 characters (letters, numbers, underscore only)" 
+			});
+		}
+
+		// Check if username is already taken
+		const existingUser = await User.findOne({ 
+			username: username.toLowerCase(),
+			_id: { $ne: userId }
+		});
+
+		if (existingUser) {
+			return res.status(400).json({ message: "Username is already taken." });
+		}
+
+		const updatedUser = await User.findByIdAndUpdate(
+			userId,
+			{ username: username.toLowerCase() },
+			{ new: true }
+		).select("-password");
+
+		res.status(200).json(updatedUser);
+	} catch (error) {
+		console.error("Update Username Error:", error);
+		res.status(500).json({ message: "Failed to update username." });
 	}
 };
 

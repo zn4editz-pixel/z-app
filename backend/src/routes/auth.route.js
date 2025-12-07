@@ -4,6 +4,9 @@ import {
 	login,
 	logout,
 	updateProfile,
+	updateProfileInfo,
+	checkUsernameAvailability,
+	updateUsername,
 	checkAuth,
 	forgotPassword,
 	verifyResetOTP,
@@ -31,6 +34,9 @@ router.post("/reset-password", authLimiter, resetPassword); // Reset password wi
 // 🔒 Protected Routes
 router.get("/check", protectRoute, checkAuth);
 router.put("/update-profile", protectRoute, updateProfile);
+router.put("/update-profile-info", protectRoute, updateProfileInfo);
+router.get("/check-username/:username", protectRoute, checkUsernameAvailability);
+router.put("/update-username", protectRoute, updateUsername);
 router.post("/setup-profile", protectRoute, completeProfileSetup);
 
 // Password change with OTP
