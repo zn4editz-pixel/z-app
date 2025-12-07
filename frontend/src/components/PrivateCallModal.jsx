@@ -2,6 +2,13 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Video, PhoneOff, Mic, MicOff, VideoOff as VideoOffIcon, Maximize2, Minimize2 } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import toast from "react-hot-toast";
+import { 
+  initNSFWModel, 
+  analyzeFrame, 
+  captureVideoFrame, 
+  MODERATION_CONFIG,
+  formatAIReport 
+} from "../utils/contentModeration";
 
 const PrivateCallModal = ({ 
   isOpen, 
@@ -17,6 +24,11 @@ const PrivateCallModal = ({
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
+  
+  // AI Moderation state
+  const [violations, setViolations] = useState(0);
+  const moderationIntervalRef = useRef(null);
+  const lastReportTimeRef = useRef(0);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);

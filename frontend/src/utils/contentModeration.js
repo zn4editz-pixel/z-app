@@ -70,17 +70,26 @@ export const analyzeFrame = async (videoElement) => {
     console.log('🔍 Analyzing frame...');
     const predictions = await nsfwModel.classify(videoElement);
     
+    // Always log predictions for debugging
     console.log('📊 AI Predictions:', predictions.map(p => 
       `${p.className}: ${(p.probability * 100).toFixed(1)}%`
     ).join(', '));
     
+    // Log video element state
+    console.log('📹 Video state:', {
+      width: videoElement.videoWidth,
+      height: videoElement.videoHeight,
+      readyState: videoElement.readyState,
+      paused: videoElement.paused
+    });
+    
     // Categories: Neutral, Drawing, Hentai, Porn, Sexy
     const inappropriate = predictions.filter(p => 
-      ['Hentai', 'Porn'].includes(p.className) && p.probability > 0.6
+      ['Hentai', 'Porn'].includes(p.className) && p.probability > 0.3 // Lowered threshold
     );
     
     const suspicious = predictions.filter(p => 
-      p.className === 'Sexy' && p.probability > 0.7
+      p.className === 'Sexy' && p.probability > 0.4 // Lowered threshold
     );
 
     const isInappropriate = inappropriate.length > 0;
@@ -127,10 +136,10 @@ export const captureVideoFrame = (videoElement) => {
 // Auto-moderation configuration
 export const MODERATION_CONFIG = {
   enabled: true,
-  checkInterval: 10000, // Check every 10 seconds
-  silentReportThreshold: 0.1, // 10% confidence - silent report to admin (no user action)
-  confidenceThreshold: 0.6, // 60% confidence to flag and warn user
-  autoReportThreshold: 0.8, // 80% confidence to auto-report and disconnect
+  checkInterval: 5000, // Check every 5 seconds (faster detection)
+  silentReportThreshold: 0.05, // 5% confidence - silent report to admin (no user action)
+  confidenceThreshold: 0.4, // 40% confidence to flag and warn user (lowered for better detection)
+  autoReportThreshold: 0.65, // 65% confidence to auto-report and disconnect (lowered for better detection)
   maxViolations: 2, // Auto-disconnect after 2 violations
 };
 
