@@ -59,8 +59,12 @@ const AdminDashboard = () => {
 			const res = await axiosInstance.get("/admin/stats");
 			setStats(res.data);
 		} catch (err) {
-			console.error("Error fetching stats", err);
-			toast.error("Failed to load statistics");
+			console.error("Error fetching stats:", err.response?.data || err.message);
+			if (err.response?.status === 403) {
+				toast.error("Access denied. Admin privileges required.");
+			} else {
+				toast.error(err.response?.data?.error || "Failed to load statistics");
+			}
 		} finally {
 			setLoadingStats(false);
 		}
@@ -72,8 +76,12 @@ const AdminDashboard = () => {
 			const res = await axiosInstance.get("/admin/users");
 			setUsers(Array.isArray(res.data) ? res.data : []);
 		} catch (err) {
-			console.error("Error fetching users", err);
-			toast.error("Failed to load users");
+			console.error("Error fetching users:", err.response?.data || err.message);
+			if (err.response?.status === 403) {
+				toast.error("Access denied. Admin privileges required.");
+			} else {
+				toast.error(err.response?.data?.error || "Failed to load users");
+			}
 			setUsers([]);
 		} finally {
 			setLoadingUsers(false);
@@ -86,8 +94,12 @@ const AdminDashboard = () => {
 			const res = await axiosInstance.get("/admin/reports");
 			setReports(Array.isArray(res.data) ? res.data : []);
 		} catch (err) {
-			console.error("Error fetching reports", err);
-			toast.error("Failed to load reports");
+			console.error("Error fetching reports:", err.response?.data || err.message);
+			if (err.response?.status === 403) {
+				toast.error("Access denied. Admin privileges required.");
+			} else {
+				toast.error(err.response?.data?.error || "Failed to load reports");
+			}
 			setReports([]);
 		} finally {
 			setLoadingReports(false);
@@ -101,8 +113,12 @@ const AdminDashboard = () => {
 			setAIReports(Array.isArray(res.data.reports) ? res.data.reports : []);
 			setAIStats(res.data.stats || null);
 		} catch (err) {
-			console.error("Error fetching AI reports", err);
-			toast.error("Failed to load AI moderation data");
+			console.error("Error fetching AI reports:", err.response?.data || err.message);
+			if (err.response?.status === 403) {
+				toast.error("Access denied. Admin privileges required.");
+			} else {
+				toast.error(err.response?.data?.error || "Failed to load AI moderation data");
+			}
 			setAIReports([]);
 			setAIStats(null);
 		} finally {
@@ -116,8 +132,12 @@ const AdminDashboard = () => {
 			const res = await axiosInstance.get("/admin/verification-requests");
 			setVerificationRequests(Array.isArray(res.data) ? res.data : []);
 		} catch (err) {
-			console.error("Error fetching verification requests", err);
-			toast.error("Failed to load verification requests");
+			console.error("Error fetching verification requests:", err.response?.data || err.message);
+			if (err.response?.status === 403) {
+				toast.error("Access denied. Admin privileges required.");
+			} else {
+				toast.error(err.response?.data?.error || "Failed to load verification requests");
+			}
 			setVerificationRequests([]);
 		} finally {
 			setLoadingVerifications(false);
