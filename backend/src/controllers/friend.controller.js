@@ -50,18 +50,37 @@ export const sendFriendRequest = async (req, res) => {
 			});
 		}
 
-		// 4. Update both users
+		// 4. Create FriendRequest document
+		const friendRequest = new FriendRequest({
+			sender: senderId,
+			receiver: receiverId,
+		});
+		await friendRequest.save({ session });
+
+		// 5. Update both users
 		sender.friendRequestsSent.push(receiverId);
 		receiver.friendRequestsReceived.push(senderId);
 
 		await sender.save({ session });
 		await receiver.save({ session });
 
-		// 5. Commit the transaction
+		// 6. Commit the transaction
 		await session.commitTransaction();
 		session.endSession();
 
-		// We will add socket.io logic here later to notify the receiver
+		// 7. Notify receiver via socket
+		const io = req.app.get("io");
+		if (io) {
+			const senderInfo = await User.findById(senderId).select("_id username nickname profilePic isVerified");
+			const sockets = io.sockets.sockets;
+			for (const [socketId, socket] of sockets) {
+				if (socket.userId && socket.userId.toString() === receiverId.toString()) {
+					socket.emit("friendRequest:received", senderInfo);
+					break;
+				}
+			}
+		}
+
 		res.status(200).json({ message: "Friend request sent successfully." });
 	} catch (error) {
 		await session.abortTransaction();

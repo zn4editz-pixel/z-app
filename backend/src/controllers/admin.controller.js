@@ -329,7 +329,9 @@ export const deleteUser = async (req, res) => {
 		
 		// 7. Emit socket event to disconnect user if online
 		const io = req.app.get("io");
-		emitToUser(io, userId, "user-action", { type: "deleted" });
+		if (io) {
+			emitToUser(io, userId, "admin-action", { action: "account-deleted", payload: { reason: "Account deleted by admin" } });
+		}
 		
 		res.status(200).json({ 
 			message: "User and all related data deleted successfully",
