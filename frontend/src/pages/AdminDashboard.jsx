@@ -125,51 +125,96 @@ const AdminDashboard = () => {
 	};
 
 	// Action Handlers
-	const handleSuspendUser = async (userId) => {
+	const handleSuspendUser = async (userId, reason, duration) => {
 		try {
-			await axiosInstance.put(`/admin/suspend/${userId}`, {
-				reason: "Violation of terms",
-				duration: "7d"
+			const response = await axiosInstance.put(`/admin/suspend/${userId}`, {
+				reason: reason || "Violation of terms",
+				duration: duration || "7d"
 			});
-			toast.success("User suspended");
+			
+			// Immediately update the local state
+			setUsers(prevUsers => 
+				prevUsers.map(user => 
+					user._id === userId 
+						? { ...user, isSuspended: true, suspendedUntil: response.data.user?.suspendedUntil, suspensionReason: response.data.user?.suspensionReason }
+						: user
+				)
+			);
+			
+			toast.success("User suspended successfully");
+			
+			// Refresh data from server
 			fetchUsers();
 			fetchStats();
 		} catch (err) {
-			toast.error(err.response?.data?.message || "Failed to suspend user");
+			console.error("Suspend error:", err);
+			toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to suspend user");
 		}
 	};
 
 	const handleUnsuspendUser = async (userId) => {
 		try {
-			await axiosInstance.put(`/admin/unsuspend/${userId}`);
-			toast.success("User unsuspended");
+			const response = await axiosInstance.put(`/admin/unsuspend/${userId}`);
+			
+			// Immediately update the local state
+			setUsers(prevUsers => 
+				prevUsers.map(user => 
+					user._id === userId 
+						? { ...user, isSuspended: false, suspendedUntil: null, suspensionReason: null }
+						: user
+				)
+			);
+			
+			toast.success("User unsuspended successfully");
+			
+			// Refresh data from server
 			fetchUsers();
 			fetchStats();
 		} catch (err) {
-			toast.error(err.response?.data?.message || "Failed to unsuspend user");
+			console.error("Unsuspend error:", err);
+			toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to unsuspend user");
 		}
 	};
 
 	const handleDeleteUser = async (userId) => {
-		if (!confirm("Are you sure you want to delete this user?")) return;
+		if (!confirm("Are you sure you want to permanently delete this user? This will delete all their messages, friend requests, and related data. This action cannot be undone.")) return;
 		try {
-			await axiosInstance.delete(`/admin/delete/${userId}`);
-			toast.success("User deleted");
-			fetchUsers();
+			const response = await axiosInstance.delete(`/admin/delete/${userId}`);
+			
+			// Immediately remove from local state
+			setUsers(prevUsers => prevUsers.filter(user => user._id !== userId));
+			
+			toast.success(response.data?.message || "User deleted successfully");
+			
+			// Refresh stats
 			fetchStats();
 		} catch (err) {
-			toast.error(err.response?.data?.message || "Failed to delete user");
+			console.error("Delete error:", err);
+			toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to delete user");
 		}
 	};
 
 	const handleToggleVerification = async (userId) => {
 		try {
-			await axiosInstance.put(`/admin/verify/${userId}`);
-			toast.success("Verification status updated");
+			const response = await axiosInstance.put(`/admin/verify/${userId}`);
+			
+			// Immediately update the local state
+			setUsers(prevUsers => 
+				prevUsers.map(user => 
+					user._id === userId 
+						? { ...user, isVerified: !user.isVerified }
+						: user
+				)
+			);
+			
+			toast.success(response.data?.message || "Verification status updated successfully");
+			
+			// Refresh data from server
 			fetchUsers();
 			fetchStats();
 		} catch (err) {
-			toast.error(err.response?.data?.message || "Failed to update verification");
+			console.error("Toggle verification error:", err);
+			toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to update verification");
 		}
 	};
 

@@ -22,8 +22,15 @@ const DashboardOverview = ({ stats, loadingStats, users = [] }) => {
 		return matchesSearch && matchesStatus;
 	});
 
+	// Use stats.onlineUsers for accurate count from socket connections
+	// But filter users array for display
 	const onlineUsers = users.filter(u => u.isOnline);
 	const offlineUsers = users.filter(u => !u.isOnline);
+	
+	// Debug: Log the mismatch
+	if (stats && onlineUsers.length !== stats.onlineUsers) {
+		console.log(`⚠️ Online user count mismatch: DB shows ${onlineUsers.length}, Socket shows ${stats.onlineUsers}`);
+	}
 
 	return (
 		<div className="space-y-6 sm:space-y-8 animate-fadeIn">

@@ -129,6 +129,10 @@ const userSchema = new mongoose.Schema(
 			type: Boolean,
 			default: false,
 		},
+		lastSeen: {
+			type: Date,
+			default: Date.now,
+		},
 
 		// --- Forgot Password Fields ---
 		resetPasswordToken: {
@@ -190,6 +194,7 @@ userSchema.index({ friendRequestsSent: 1 }); // Sent requests
 userSchema.index({ friendRequestsReceived: 1 }); // Received requests
 userSchema.index({ createdAt: -1 }); // Recent users
 userSchema.index({ isOnline: 1 }); // Online users
+userSchema.index({ lastSeen: -1 }); // Last seen queries
 userSchema.index({ hasCompletedProfile: 1, isVerified: -1, createdAt: -1 }); // Suggested users (compound index)
 
 const User = mongoose.model("User", userSchema);

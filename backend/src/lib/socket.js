@@ -190,6 +190,16 @@ io.on("connection", (socket) => {
 		console.log(`User ${initialUserId} connected with socket ${socket.id}`);
 		userSocketMap[initialUserId] = socket.id;
 		socket.userId = initialUserId;
+		
+		// Update user's online status in database (await to ensure it completes)
+		User.findByIdAndUpdate(initialUserId, { isOnline: true }, { new: true })
+			.then(user => {
+				if (user) {
+					console.log(`✅ User ${initialUserId} marked as online in database`);
+				}
+			})
+			.catch(err => console.error('Failed to update online status:', err));
+		
 		io.emit("getOnlineUsers", Object.keys(userSocketMap));
 		
 		// Mark pending messages as delivered when user comes online
@@ -202,6 +212,16 @@ io.on("connection", (socket) => {
 			userSocketMap[userId] = socket.id;
 			socket.userId = userId;
 			console.log(`✅ Registered user ${userId} → socket ${socket.id}`);
+			
+			// Update user's online status in database (await to ensure it completes)
+			User.findByIdAndUpdate(userId, { isOnline: true }, { new: true })
+				.then(user => {
+					if (user) {
+						console.log(`✅ User ${userId} marked as online in database`);
+					}
+				})
+				.catch(err => console.error('Failed to update online status:', err));
+			
 			io.emit("getOnlineUsers", Object.keys(userSocketMap));
 		}
 	});
@@ -625,6 +645,19 @@ io.on("connection", (socket) => {
 		if (disconnectedUserId) {
 			console.log(`User ${disconnectedUserId} disconnected fully.`);
 			delete userSocketMap[disconnectedUserId];
+			
+			// Update user's online status and last seen in database (await to ensure it completes)
+			User.findByIdAndUpdate(disconnectedUserId, { 
+				isOnline: false,
+				lastSeen: new Date()
+			}, { new: true })
+				.then(user => {
+					if (user) {
+						console.log(`✅ User ${disconnectedUserId} marked as offline in database, last seen: ${user.lastSeen}`);
+					}
+				})
+				.catch(err => console.error('Failed to update offline status:', err));
+			
 			io.emit("getOnlineUsers", Object.keys(userSocketMap));
 		}
 	});

@@ -46,7 +46,7 @@ export const getAllUsers = async (req, res) => {
 	try {
 		// Optimized: Only fetch essential fields, use lean(), limit to 100 users
 		const users = await User.find()
-			.select('username nickname email profilePic isVerified isOnline isSuspended createdAt')
+			.select('username nickname email profilePic isVerified isOnline isSuspended lastSeen createdAt')
 			.sort({ createdAt: -1 })
 			.limit(100)
 			.lean();
@@ -57,88 +57,285 @@ export const getAllUsers = async (req, res) => {
 	}
 };
 export const suspendUser = async (req, res) => {
-	// Your existing suspendUser function...
 	const { userId } = req.params;
-	const { until, reason } = req.body;
-	if (!until || !reason) return res.status(400).json({ error: "Reason and duration required" });
+	const { until, duration, reason } = req.body;
+	
+	if (!reason) {
+		return res.status(400).json({ error: "Reason is required" });
+	}
+	
 	try {
 		const user = await User.findById(userId);
 		if (!user) return res.status(404).json({ error: "User not found" });
-		const suspendUntilDate = new Date(until);
-		if (isNaN(suspendUntilDate.getTime())) return res.status(400).json({ error: "Invalid date" });
-		user.isSuspended = true; user.suspendedUntil = suspendUntilDate; user.suspensionReason = reason;
+		
+		// Calculate suspension end date
+		let suspendUntilDate;
+		
+		if (until) {
+			// If 'until' date is provided, use it
+			suspendUntilDate = new Date(until);
+		} else if (duration) {
+			// If 'duration' is provided (e.g., "7d", "30d", "1h"), calculate the date
+			const now = new Date();
+			const durationMatch = duration.match(/^(\d+)([dhm])$/); // e.g., "7d", "24h", "30m"
+			
+			if (durationMatch) {
+				const value = parseInt(durationMatch[1]);
+				const unit = durationMatch[2];
+				
+				switch (unit) {
+					case 'd': // days
+						suspendUntilDate = new Date(now.getTime() + value * 24 * 60 * 60 * 1000);
+						break;
+					case 'h': // hours
+						suspendUntilDate = new Date(now.getTime() + value * 60 * 60 * 1000);
+						break;
+					case 'm': // minutes
+						suspendUntilDate = new Date(now.getTime() + value * 60 * 1000);
+						break;
+					default:
+						return res.status(400).json({ error: "Invalid duration format" });
+				}
+			} else {
+				return res.status(400).json({ error: "Invalid duration format. Use format like '7d', '24h', or '30m'" });
+			}
+		} else {
+			return res.status(400).json({ error: "Either 'until' date or 'duration' is required" });
+		}
+		
+		if (isNaN(suspendUntilDate.getTime())) {
+			return res.status(400).json({ error: "Invalid date" });
+		}
+		
+		// Update user suspension status
+		user.isSuspended = true;
+		user.suspendedUntil = suspendUntilDate;
+		user.suspensionReason = reason;
 		await user.save();
+		
+		console.log(`🚫 User ${userId} suspended until ${suspendUntilDate}`);
+		
+		// Emit socket event
 		const io = req.app.get("io");
-		emitToUser(io, userId, "user-action", { type: "suspended", reason, until: suspendUntilDate });
+		emitToUser(io, userId, "user-action", { 
+			type: "suspended", 
+			reason, 
+			until: suspendUntilDate 
+		});
 		
 		// Send email notification
-		await sendAccountSuspendedEmail(
-			user.email,
-			user.nickname || user.username,
-			reason,
-			suspendUntilDate
-		);
+		try {
+			await sendAccountSuspendedEmail(
+				user.email,
+				user.nickname || user.username,
+				reason,
+				suspendUntilDate
+			);
+		} catch (emailErr) {
+			console.error("Failed to send suspension email:", emailErr);
+			// Don't fail the request if email fails
+		}
 		
-		res.status(200).json({ message: "User suspended", user });
-	} catch (err) { console.error("suspendUser error:", err); res.status(500).json({ error: "Failed" }); }
+		res.status(200).json({ 
+			message: "User suspended successfully", 
+			user: {
+				_id: user._id,
+				username: user.username,
+				isSuspended: user.isSuspended,
+				suspendedUntil: user.suspendedUntil,
+				suspensionReason: user.suspensionReason
+			}
+		});
+	} catch (err) { 
+		console.error("suspendUser error:", err); 
+		res.status(500).json({ error: "Failed to suspend user: " + err.message }); 
+	}
 };
 export const unsuspendUser = async (req, res) => {
-	// Your existing unsuspendUser function...
 	const { userId } = req.params;
 	try {
 		const user = await User.findById(userId);
 		if (!user) return res.status(404).json({ error: "User not found" });
-		user.isSuspended = false; user.suspendedUntil = null; user.suspensionReason = null;
+		
+		user.isSuspended = false;
+		user.suspendedUntil = null;
+		user.suspensionReason = null;
 		await user.save();
+		
+		console.log(`✅ User ${userId} unsuspended`);
+		
 		const io = req.app.get("io");
 		emitToUser(io, userId, "user-action", { type: "unsuspended" });
-		res.status(200).json({ message: "User unsuspended", user });
-	} catch (err) { console.error("unsuspendUser error:", err); res.status(500).json({ error: "Failed" }); }
+		
+		res.status(200).json({ 
+			message: "User unsuspended successfully", 
+			user: {
+				_id: user._id,
+				username: user.username,
+				isSuspended: user.isSuspended
+			}
+		});
+	} catch (err) { 
+		console.error("unsuspendUser error:", err); 
+		res.status(500).json({ error: "Failed to unsuspend user: " + err.message }); 
+	}
 };
 export const blockUser = async (req, res) => {
-	// Your existing blockUser function...
 	const { userId } = req.params;
 	try {
 		const user = await User.findById(userId);
 		if (!user) return res.status(404).json({ error: "User not found" });
-		user.isBlocked = true; await user.save();
+		
+		user.isBlocked = true;
+		await user.save();
+		
+		console.log(`🚫 User ${userId} blocked`);
+		
 		const io = req.app.get("io");
 		emitToUser(io, userId, "user-action", { type: "blocked" });
-		res.status(200).json({ message: "User blocked", user });
-	} catch (err) { console.error("blockUser error:", err); res.status(500).json({ error: "Failed" }); }
+		
+		res.status(200).json({ 
+			message: "User blocked successfully", 
+			user: {
+				_id: user._id,
+				username: user.username,
+				isBlocked: user.isBlocked
+			}
+		});
+	} catch (err) { 
+		console.error("blockUser error:", err); 
+		res.status(500).json({ error: "Failed to block user: " + err.message }); 
+	}
 };
 export const unblockUser = async (req, res) => {
-	// Your existing unblockUser function...
 	const { userId } = req.params;
 	try {
 		const user = await User.findById(userId);
 		if (!user) return res.status(404).json({ error: "User not found" });
-		user.isBlocked = false; await user.save();
+		
+		user.isBlocked = false;
+		await user.save();
+		
+		console.log(`✅ User ${userId} unblocked`);
+		
 		const io = req.app.get("io");
 		emitToUser(io, userId, "user-action", { type: "unblocked" });
-		res.status(200).json({ message: "User unblocked", user });
-	} catch (err) { console.error("unblockUser error:", err); res.status(500).json({ error: "Failed" }); }
+		
+		res.status(200).json({ 
+			message: "User unblocked successfully", 
+			user: {
+				_id: user._id,
+				username: user.username,
+				isBlocked: user.isBlocked
+			}
+		});
+	} catch (err) { 
+		console.error("unblockUser error:", err); 
+		res.status(500).json({ error: "Failed to unblock user: " + err.message }); 
+	}
 };
 export const deleteUser = async (req, res) => {
-	// Your existing deleteUser function...
-	const { userId } = req.params;
-	try {
-		const user = await User.findByIdAndDelete(userId);
-		if (!user) return res.status(404).json({ error: "User not found" });
-		const io = req.app.get("io");
-		emitToUser(io, userId, "user-action", { type: "deleted" });
-		res.status(200).json({ message: "User deleted" });
-	} catch (err) { console.error("deleteUser error:", err); res.status(500).json({ error: "Failed" }); }
-};
-export const toggleVerification = async (req, res) => {
-	// Your existing toggleVerification function...
 	const { userId } = req.params;
 	try {
 		const user = await User.findById(userId);
 		if (!user) return res.status(404).json({ error: "User not found" });
-		user.isVerified = !user.isVerified; await user.save();
-		res.status(200).json({ message: `Verify ${user.isVerified ? "enabled" : "disabled"}`, user });
-	} catch (err) { console.error("toggleVerify error:", err); res.status(500).json({ error: "Failed" }); }
+		
+		// Import required models
+		const Message = (await import("../models/message.model.js")).default;
+		const FriendRequest = (await import("../models/friendRequest.model.js")).default;
+		const AdminNotification = (await import("../models/adminNotification.model.js")).default;
+		
+		console.log(`🗑️ Starting deletion process for user ${userId}`);
+		
+		// 1. Delete all messages sent by or received by this user
+		const deletedMessages = await Message.deleteMany({
+			$or: [{ senderId: userId }, { receiverId: userId }]
+		});
+		console.log(`✅ Deleted ${deletedMessages.deletedCount} messages`);
+		
+		// 2. Delete all friend requests involving this user
+		const deletedFriendRequests = await FriendRequest.deleteMany({
+			$or: [{ sender: userId }, { receiver: userId }]
+		});
+		console.log(`✅ Deleted ${deletedFriendRequests.deletedCount} friend requests`);
+		
+		// 3. Remove user from other users' friend lists and request arrays
+		await User.updateMany(
+			{ friends: userId },
+			{ $pull: { friends: userId } }
+		);
+		await User.updateMany(
+			{ friendRequestsSent: userId },
+			{ $pull: { friendRequestsSent: userId } }
+		);
+		await User.updateMany(
+			{ friendRequestsReceived: userId },
+			{ $pull: { friendRequestsReceived: userId } }
+		);
+		console.log(`✅ Removed user from all friend lists and requests`);
+		
+		// 4. Update reports (keep for record but mark user as deleted)
+		await Report.updateMany(
+			{ $or: [{ reporter: userId }, { reportedUser: userId }] },
+			{ $set: { userDeleted: true } }
+		);
+		console.log(`✅ Updated reports`);
+		
+		// 5. Delete admin notifications for this user
+		const deletedNotifications = await AdminNotification.deleteMany({
+			$or: [{ recipient: userId }, { sender: userId }]
+		});
+		console.log(`✅ Deleted ${deletedNotifications.deletedCount} notifications`);
+		
+		// 6. Finally, delete the user
+		await User.findByIdAndDelete(userId);
+		console.log(`✅ User ${userId} deleted successfully`);
+		
+		// 7. Emit socket event to disconnect user if online
+		const io = req.app.get("io");
+		emitToUser(io, userId, "user-action", { type: "deleted" });
+		
+		res.status(200).json({ 
+			message: "User and all related data deleted successfully",
+			deletedData: {
+				messages: deletedMessages.deletedCount,
+				friendRequests: deletedFriendRequests.deletedCount,
+				notifications: deletedNotifications.deletedCount
+			}
+		});
+	} catch (err) { 
+		console.error("deleteUser error:", err); 
+		res.status(500).json({ error: "Failed to delete user: " + err.message }); 
+	}
+};
+export const toggleVerification = async (req, res) => {
+	const { userId } = req.params;
+	try {
+		const user = await User.findById(userId);
+		if (!user) return res.status(404).json({ error: "User not found" });
+		
+		user.isVerified = !user.isVerified;
+		await user.save();
+		
+		console.log(`${user.isVerified ? '✅' : '❌'} User ${userId} verification toggled to ${user.isVerified}`);
+		
+		const io = req.app.get("io");
+		emitToUser(io, userId, "verification-status-changed", { 
+			isVerified: user.isVerified 
+		});
+		
+		res.status(200).json({ 
+			message: `Verification ${user.isVerified ? "enabled" : "disabled"} successfully`, 
+			user: {
+				_id: user._id,
+				username: user.username,
+				isVerified: user.isVerified
+			}
+		});
+	} catch (err) { 
+		console.error("toggleVerify error:", err); 
+		res.status(500).json({ error: "Failed to toggle verification: " + err.message }); 
+	}
 };
 // --- End User Management ---
 

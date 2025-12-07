@@ -19,7 +19,6 @@ export const useFriendStore = create((set, get) => ({
         // Try cache first for instant load
         const cached = await getCachedFriends(userId);
         if (cached) {
-            console.log("⚡ Loading friends from cache (instant)");
             set({
                 friends: cached.friends || [],
                 pendingReceived: cached.received || [],
@@ -35,12 +34,6 @@ export const useFriendStore = create((set, get) => ({
                 axiosInstance.get("/friends/all"),
                 axiosInstance.get("/friends/requests"),
             ]);
-
-            console.log("✅ Friends data loaded from API:", {
-                friends: friendsRes.data?.length || 0,
-                received: requestsRes.data?.received?.length || 0,
-                sent: requestsRes.data?.sent?.length || 0
-            });
             
             // Cache the fresh data
             const freshData = {

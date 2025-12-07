@@ -94,6 +94,11 @@ const reportSchema = new mongoose.Schema(
 		reviewedAt: {
 			type: Date,
 		},
+		// Track if user was deleted (for record keeping)
+		userDeleted: {
+			type: Boolean,
+			default: false,
+		},
 	},
 	{ timestamps: true } // Adds createdAt and updatedAt fields automatically
 );

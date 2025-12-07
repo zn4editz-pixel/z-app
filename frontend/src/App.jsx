@@ -65,7 +65,8 @@ const App = () => {
 	const { authUser, checkAuth, isCheckingAuth, socket, setAuthUser } = useAuthStore();
 	const { theme } = useThemeStore();
 	// ✅ 2. Get the action to update the pending received requests
-	const addPendingReceived = useFriendStore((state) => state.addPendingReceived); 
+	const addPendingReceived = useFriendStore((state) => state.addPendingReceived);
+	const fetchFriendData = useFriendStore((state) => state.fetchFriendData);
 	const navigate = useNavigate();
 	const location = useLocation();
 
@@ -81,6 +82,13 @@ const App = () => {
 	useEffect(() => {
 		checkAuth();
 	}, []); // eslint-disable-line react-hooks/exhaustive-deps
+	
+	// Fetch friend data when user is authenticated
+	useEffect(() => {
+		if (authUser?._id) {
+			fetchFriendData();
+		}
+	}, [authUser?._id, fetchFriendData]);
 	
 	useEffect(() => {
 		if (authUser?.isSuspended && window.location.pathname !== "/suspended") {
@@ -137,29 +145,21 @@ const App = () => {
 
 		// 3. Friend request listeners
 		socket.on("friendRequest:received", (senderProfileData) => {
-			console.log("📥 Received friendRequest:received event:", senderProfileData);
-			console.log("Current pendingReceived before add:", useFriendStore.getState().pendingReceived);
 			addPendingReceived(senderProfileData);
-			console.log("Current pendingReceived after add:", useFriendStore.getState().pendingReceived);
 		});
 
 		socket.on("friendRequest:accepted", ({ user, message }) => {
-			console.log("✅ Friend request accepted:", user);
 			toast.success(message || `${user.nickname || user.username} accepted your friend request!`);
-			// Refresh friend data to update sidebar
 			useFriendStore.getState().fetchFriendData();
 		});
 
 		socket.on("friendRequest:rejected", ({ message }) => {
-			console.log("❌ Friend request rejected");
 			toast.error(message || "Your friend request was declined");
-			// Refresh friend data to update sent requests
 			useFriendStore.getState().fetchFriendData();
 		});
 
 		// Admin notification listeners
 		socket.on("admin-notification", (notification) => {
-			console.log("📬 Received admin notification:", notification);
 			toast(notification.message, {
 				icon: notification.type === 'success' ? '✅' : 
 					  notification.type === 'error' ? '❌' : 
@@ -182,7 +182,6 @@ const App = () => {
 		});
 
 		socket.on("admin-broadcast", (notification) => {
-			console.log("📢 Received admin broadcast:", notification);
 			toast(notification.message, {
 				icon: notification.type === 'success' ? '✅' : 
 					  notification.type === 'error' ? '❌' : 

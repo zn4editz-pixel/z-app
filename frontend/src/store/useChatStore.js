@@ -29,13 +29,10 @@ export const useChatStore = create((set, get) => ({
         // Try IndexedDB cache first (instant load)
         const cachedMessagesDB = await getCachedMessagesDB(userId);
         if (cachedMessagesDB && cachedMessagesDB.length > 0) {
-            console.log('⚡ Loading messages from IndexedDB cache (instant)');
             set({ messages: cachedMessagesDB, isMessagesLoading: false });
         } else {
-            // Fallback to localStorage cache
             const cachedMessages = getCachedMessages(userId);
             if (cachedMessages && cachedMessages.length > 0) {
-                console.log('⚡ Loading messages from localStorage cache');
                 set({ messages: cachedMessages, isMessagesLoading: false });
             }
         }
@@ -190,25 +187,20 @@ export const useChatStore = create((set, get) => ({
         socket.on("messageDelivered", messageDeliveredHandler);
         socket.on("messagesDelivered", messagesDeliveredHandler);
         socket.on("messagesRead", messagesReadHandler);
-        
-        console.log("Subscribed to message events");
     },
 
     markMessagesAsRead: async (userId) => {
         try {
-            console.log(`📘 Calling markMessagesAsRead API for user: ${userId}`);
-            const response = await axiosInstance.put(`/messages/read/${userId}`);
-            console.log(`📘 API Response: Marked ${response.data.count} messages as read from user ${userId}`);
+            await axiosInstance.put(`/messages/read/${userId}`);
         } catch (error) {
-            console.error("📘 Failed to mark messages as read:", error);
+            console.error("Failed to mark messages as read:", error);
         }
     },
 
     unsubscribeFromMessages: () => {
         const { socket } = useAuthStore.getState();
         if (!socket) return;
-        socket.off("newMessage"); // Remove all listeners for 'newMessage'
-        console.log("Unsubscribed from newMessage events");
+        socket.off("newMessage");
     },
 
     setSelectedUser: (user) => { // Renamed param for clarity
@@ -289,8 +281,6 @@ export const useChatStore = create((set, get) => ({
         
         socket.on("messageReaction", reactionHandler);
         socket.on("messageDeleted", deleteHandler);
-        
-        console.log("Subscribed to reaction events");
     },
 
 
@@ -304,8 +294,6 @@ export const useChatStore = create((set, get) => ({
             isMuted: false,
             isCameraOff: false,
         });
-        console.log("Call state reset to idle.");
-        // WebRTC cleanup should be triggered in the component using this state
     },
 
     initiateCall: (partner, type) => {
@@ -317,7 +305,6 @@ export const useChatStore = create((set, get) => ({
         }
         const { authUser, socket } = useAuthStore.getState();
         if (!socket || !authUser || !partner || !partner._id) {
-             console.error("Initiate call failed: Missing socket, authUser, or partner info.");
              return toast.error("Cannot initiate call. Connection error.");
         }
 
@@ -328,7 +315,6 @@ export const useChatStore = create((set, get) => ({
             isCameraOff: type === 'audio',
         });
 
-        console.log(`Initiating ${type} call to ${partner.nickname || partner.username} (${partner._id})`);
         socket.emit("private:initiate-call", {
             receiverId: partner._id,
             callerInfo: {
@@ -344,11 +330,9 @@ export const useChatStore = create((set, get) => ({
         const { incomingCallData } = get();
         const { authUser, socket } = useAuthStore.getState();
         if (!incomingCallData || !socket || !authUser) {
-             console.error("Accept call failed: Missing call data, socket, or authUser.");
              return;
         }
 
-        console.log(`Accepting ${incomingCallData.callType} call from ${incomingCallData.callerInfo?.nickname}`);
         set({
             callState: "connecting", // Move to connecting
             callPartner: incomingCallData.callerInfo, // Caller is the partner
