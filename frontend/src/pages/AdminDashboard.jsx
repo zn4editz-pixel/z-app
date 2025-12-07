@@ -70,11 +70,14 @@ const AdminDashboard = () => {
 		}
 	};
 
-	const fetchUsers = async () => {
+	const fetchUsers = async (forceRefresh = false) => {
 		setLoadingUsers(true);
 		try {
-			const res = await axiosInstance.get("/admin/users");
+			// Add timestamp to bypass cache if force refresh
+			const url = forceRefresh ? `/admin/users?t=${Date.now()}` : "/admin/users";
+			const res = await axiosInstance.get(url);
 			setUsers(Array.isArray(res.data) ? res.data : []);
+			console.log(`Fetched ${res.data?.length || 0} users${forceRefresh ? ' (force refresh)' : ''}`);
 		} catch (err) {
 			console.error("Error fetching users:", err.response?.data || err.message);
 			if (err.response?.status === 403) {
