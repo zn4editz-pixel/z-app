@@ -16,13 +16,6 @@ const Sidebar = () => {
   } = useChatStore();
 
   const { onlineUsers = [], authUser } = useAuthStore();
-  
-  // Force re-render when online users change
-  const [, forceUpdate] = useState({});
-  useEffect(() => {
-    console.log('👥 Online users updated in Sidebar:', onlineUsers);
-    forceUpdate({}); // Force component to re-render
-  }, [onlineUsers]);
   const { friends, isLoading: isFriendsLoading, pendingReceived } = useFriendStore();
   const { notifications } = useNotificationStore();
 
@@ -197,7 +190,7 @@ const Sidebar = () => {
                           />
                         </div>
                         {isOnline && (
-                          <span className="absolute right-0 bottom-0 w-3 h-3 rounded-full ring-2 ring-base-100 bg-success animate-pulse-glow" /> 
+                          <span className="absolute right-0 bottom-0 w-3 h-3 rounded-full ring-2 ring-base-100 bg-success animate-pulse" /> 
                         )}
                       </div>
 

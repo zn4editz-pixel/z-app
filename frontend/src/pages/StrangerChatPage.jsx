@@ -132,9 +132,14 @@ const StrangerChatPage = () => {
 			console.log("WebRTC: Connection state:", pc.connectionState);
 			if (pc.connectionState === 'failed') {
 				console.error("WebRTC: Connection failed");
-				toast.error("Connection failed. Trying to reconnect...");
+				toast.error("Video connection failed. Click Skip to try another partner.");
+				addMessage("System", "Video connection failed. Try skipping.");
 			} else if (pc.connectionState === 'connected') {
-				console.log("✅ WebRTC: Connected successfully");
+				console.log("✅ WebRTC: Connected successfully!");
+				toast.success("Video connected!");
+				addMessage("System", "Video connected! Say hi!");
+			} else if (pc.connectionState === 'connecting') {
+				console.log("🔄 WebRTC: Connecting...");
 			}
 		};
 
@@ -176,11 +181,22 @@ const StrangerChatPage = () => {
 	}, [createPeerConnection, socket]);
 
 	const handleOffer = useCallback(async (sdp) => {
-		// ... (handleOffer logic) ...
 		console.log("WebRTC: Received offer, creating answer");
+		
+		// Wait for local stream if not ready yet
 		if (!localStreamRef.current) {
-			console.error("No local stream for answer!");
-			return;
+			console.log("⏳ Waiting for local stream...");
+			let attempts = 0;
+			while (!localStreamRef.current && attempts < 10) {
+				await new Promise(resolve => setTimeout(resolve, 500));
+				attempts++;
+			}
+			
+			if (!localStreamRef.current) {
+				console.error("❌ No local stream after waiting!");
+				toast.error("Camera not ready. Please refresh and try again.");
+				return;
+			}
 		}
 
 		try {
@@ -188,7 +204,7 @@ const StrangerChatPage = () => {
 			await pc.setRemoteDescription(new RTCSessionDescription(sdp));
 			const answer = await pc.createAnswer();
 			await pc.setLocalDescription(answer);
-			console.log("WebRTC: Sending answer");
+			console.log("✅ WebRTC: Sending answer");
 			socket.emit("webrtc:answer", { sdp: answer });
 
 			// Process queued ICE candidates
@@ -197,7 +213,8 @@ const StrangerChatPage = () => {
 			});
 			iceCandidateQueueRef.current = [];
 		} catch (err) {
-			console.error("Error handling offer:", err);
+			console.error("❌ Error handling offer:", err);
+			toast.error("Connection failed. Click Skip to try again.");
 		}
 	}, [createPeerConnection, socket]);
 
@@ -273,10 +290,42 @@ const StrangerChatPage = () => {
 
 	// --- Main Socket Effect ---
 	useEffect(() => {
-		if (!socket || !authUser) {
-			toast.error("Connection error.");
+		if (!socket) {
+			console.error("❌ Socket not available!");
+			toast.error("Connection error. Please refresh the page.");
+			setTimeout(() => navigate("/"), 2000);
+			return;
+		}
+
+		if (!authUser) {
+			toast.error("Authentication error.");
 			navigate("/");
 			return;
+		}
+
+		// If socket is not connected yet, wait for it
+		if (!socket.connected) {
+			console.log("⏳ Socket not connected yet, waiting...");
+			const connectTimeout = setTimeout(() => {
+				if (!socket.connected) {
+					console.error("❌ Socket connection timeout");
+					toast.error("Connection failed. Please refresh the page.");
+					navigate("/");
+				}
+			}, 10000); // Increased to 10 seconds
+			
+			const onConnect = () => {
+				clearTimeout(connectTimeout);
+				console.log("✅ Socket connected successfully");
+				toast.success("Connected! Finding a partner...");
+			};
+			
+			socket.once('connect', onConnect);
+			
+			return () => {
+				clearTimeout(connectTimeout);
+				socket.off('connect', onConnect);
+			};
 		}
 
 		let isMounted = true;
@@ -314,13 +363,24 @@ const StrangerChatPage = () => {
 				localStreamRef.current = stream;
 				if (localVideoRef.current) {
 					localVideoRef.current.srcObject = stream;
+					// Wait for video to be ready
+					await new Promise(resolve => {
+						if (localVideoRef.current.readyState >= 2) {
+							resolve();
+						} else {
+							localVideoRef.current.onloadedmetadata = resolve;
+						}
+					});
 				}
 				
 				setPermissionsGranted(true);
 				setStatus("waiting");
 				
+				// Small delay to ensure stream is fully ready
+				await new Promise(resolve => setTimeout(resolve, 500));
+				
 				if (!hasJoinedQueue && socket && socket.connected) {
-					console.log("Joining stranger queue...");
+					console.log("✅ Joining stranger queue...");
 					socket.emit("stranger:joinQueue", { 
 						userId: authUser._id,
 						username: authUser.username,
@@ -329,8 +389,9 @@ const StrangerChatPage = () => {
 						isVerified: authUser.isVerified
 					});
 					hasJoinedQueue = true;
-				} else if (!socket || !socket.connected) {
-					console.error("Socket not connected!");
+					console.log("✅ Queue join request sent");
+				} else {
+					console.error("❌ Cannot join queue - socket not connected");
 					toast.error("Connection error. Please refresh the page.");
 				}
 			} catch (error) {
@@ -357,18 +418,36 @@ const StrangerChatPage = () => {
 
 		const onMatched = (data) => {
 			// ✅ FIX: Store the partner's permanent user ID and full data
-			console.log("Socket: matched with", data.partnerId, "User ID:", data.partnerUserId); 
+			console.log("✅ Socket: matched with", data.partnerId, "User ID:", data.partnerUserId); 
+			console.log("📊 Match data:", data);
+			
 			if (isMounted) {
-				addMessage("System", "Partner found!");
+				addMessage("System", "Partner found! Connecting video...");
 				setStatus("connected");
 				setPartnerUserId(data.partnerUserId); // ✅ Store the permanent ID
 				setPartnerUserData(data.partnerUserData); // ✅ Store full user data (username, nickname, isVerified)
 				
+				// Determine who initiates the call (consistent logic)
 				const shouldInitiate = socket.id < data.partnerId;
-				console.log(`Should I initiate? ${shouldInitiate}`);
+				console.log(`🎯 My socket ID: ${socket.id}`);
+				console.log(`🎯 Partner socket ID: ${data.partnerId}`);
+				console.log(`🎯 Should I initiate WebRTC? ${shouldInitiate}`);
 				
 				if (shouldInitiate) {
-					setTimeout(() => startCall(), 1000);
+					// I initiate the call
+					console.log("🎥 I will initiate WebRTC call in 1.5 seconds...");
+					setTimeout(() => {
+						if (isMounted && localStreamRef.current) {
+							console.log("🎥 Starting WebRTC call now...");
+							startCall();
+						} else {
+							console.error("❌ Cannot start call - no local stream or unmounted");
+						}
+					}, 1500); // Slightly longer delay for stability
+				} else {
+					// Partner initiates, I wait for offer
+					console.log("⏳ Waiting for partner to initiate WebRTC...");
+					addMessage("System", "Waiting for partner's video...");
 				}
 			}
 		};

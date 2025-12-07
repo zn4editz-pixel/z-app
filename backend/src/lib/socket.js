@@ -268,7 +268,7 @@ io.on("connection", (socket) => {
 	
 	const initialUserId = socket.handshake.query.userId;
 	if (initialUserId && initialUserId !== 'undefined') {
-		console.log(`User ${initialUserId} connected with socket ${socket.id}`);
+		console.log(`✅ User ${initialUserId} connected with socket ${socket.id}`);
 		userSocketMap[initialUserId] = socket.id;
 		socket.userId = initialUserId;
 		
@@ -277,9 +277,10 @@ io.on("connection", (socket) => {
 			.then(user => {
 				if (user) {
 					console.log(`✅ User ${initialUserId} marked as online in database`);
-					// Emit immediately after database update
+					// Emit immediately after database update to ALL clients
 					const onlineUserIds = Object.keys(userSocketMap);
-					console.log(`📡 Broadcasting online users: ${onlineUserIds.length} users online`);
+					console.log(`📡 Broadcasting online users to ALL clients: ${onlineUserIds.length} users online`);
+					console.log(`📡 Online user IDs:`, onlineUserIds);
 					io.emit("getOnlineUsers", onlineUserIds);
 				}
 			})
@@ -303,7 +304,8 @@ io.on("connection", (socket) => {
 						console.log(`✅ User ${userId} marked as online in database`);
 						// Emit immediately after database update
 						const onlineUserIds = Object.keys(userSocketMap);
-						console.log(`📡 Broadcasting online users: ${onlineUserIds.length} users online`);
+						console.log(`📡 Broadcasting online users to ALL clients: ${onlineUserIds.length} users online`);
+						console.log(`📡 Online user IDs:`, onlineUserIds);
 						io.emit("getOnlineUsers", onlineUserIds);
 					}
 				})
@@ -728,7 +730,7 @@ io.on("connection", (socket) => {
 
 		// Cleanup Private Chat
 		if (disconnectedUserId) {
-			console.log(`User ${disconnectedUserId} disconnected fully.`);
+			console.log(`❌ User ${disconnectedUserId} disconnected fully.`);
 			delete userSocketMap[disconnectedUserId];
 			
 			// Update user's online status and last seen in database (await to ensure it completes)
@@ -739,9 +741,10 @@ io.on("connection", (socket) => {
 				.then(user => {
 					if (user) {
 						console.log(`✅ User ${disconnectedUserId} marked as offline in database, last seen: ${user.lastSeen}`);
-						// Emit immediately after database update
+						// Emit immediately after database update to ALL clients
 						const onlineUserIds = Object.keys(userSocketMap);
-						console.log(`📡 Broadcasting online users: ${onlineUserIds.length} users online`);
+						console.log(`📡 Broadcasting online users to ALL clients: ${onlineUserIds.length} users online`);
+						console.log(`📡 Online user IDs:`, onlineUserIds);
 						io.emit("getOnlineUsers", onlineUserIds);
 					}
 				})

@@ -23,25 +23,36 @@ export const useChatStore = create((set, get) => ({
 
     // --- Existing Chat Actions ---
     getMessages: async (userId) => {
+        const { selectedUser } = get();
+        
+        // CRITICAL FIX: Verify we're still on the same user
+        const selectedUserId = selectedUser?._id?.toString();
+        const targetUserId = userId?.toString();
+        
+        if (selectedUserId !== targetUserId) {
+            console.log('User changed during fetch, aborting');
+            return;
+        }
+        
         // Clear messages immediately to prevent showing wrong chat
         set({ messages: [], isMessagesLoading: true });
         
-        // Try IndexedDB cache first (instant load)
-        const cachedMessagesDB = await getCachedMessagesDB(userId);
-        if (cachedMessagesDB && cachedMessagesDB.length > 0) {
-            set({ messages: cachedMessagesDB, isMessagesLoading: false });
-        } else {
-            const cachedMessages = getCachedMessages(userId);
-            if (cachedMessages && cachedMessages.length > 0) {
-                set({ messages: cachedMessages, isMessagesLoading: false });
-            }
-        }
-        
         try {
+            // Fetch fresh messages from server
             const res = await axiosInstance.get(`/messages/${userId}`);
-            set({ messages: res.data });
             
-            // Cache in both IndexedDB and localStorage
+            // CRITICAL: Double-check user hasn't changed during fetch
+            const currentUser = get().selectedUser;
+            const currentUserId = currentUser?._id?.toString();
+            
+            if (currentUserId !== targetUserId) {
+                console.log('User changed during fetch, discarding messages');
+                return;
+            }
+            
+            set({ messages: res.data, isMessagesLoading: false });
+            
+            // Cache after successful fetch
             await cacheMessagesDB(userId, res.data);
             cacheMessages(userId, res.data);
             updateLastSync();
@@ -49,22 +60,15 @@ export const useChatStore = create((set, get) => ({
             get().resetUnread(userId);
             get().markMessagesAsRead(userId);
         } catch (error) {
-            // If fetch fails but we have cache, keep showing cache
-            const hasCache = cachedMessagesDB?.length > 0 || getCachedMessages(userId)?.length > 0;
-            if (hasCache) {
-                console.log('Using cached messages - API failed');
-            } else {
-                toast.error(error.response?.data?.message || "Failed to fetch messages");
-                set({ messages: [] });
-            }
-        } finally {
-            set({ isMessagesLoading: false });
+            console.error('Failed to fetch messages:', error);
+            toast.error(error.response?.data?.message || "Failed to load messages");
+            set({ messages: [], isMessagesLoading: false });
         }
     },
 
     sendMessage: async (messageData) => {
         const { selectedUser, messages } = get();
-        const { authUser, socket } = useAuthStore.getState();
+        const { authUser } = useAuthStore.getState();
         if (!selectedUser) return;
         
         // Check if online
@@ -73,7 +77,7 @@ export const useChatStore = create((set, get) => ({
             return;
         }
         
-        // Create optimistic message (shows immediately - WhatsApp style)
+        // Create optimistic message (shows immediately - instant feedback)
         const tempId = `temp-${Date.now()}-${Math.random()}`;
         const optimisticMessage = {
             _id: tempId,
@@ -87,8 +91,7 @@ export const useChatStore = create((set, get) => ({
             status: 'sending',
             createdAt: new Date().toISOString(),
             reactions: [],
-            isOptimistic: true,
-            tempId: tempId // Store temp ID for replacement
+            tempId: tempId
         };
         
         // Add optimistic message immediately (instant UI update)
@@ -98,24 +101,25 @@ export const useChatStore = create((set, get) => ({
             // Send via API
             const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
             
-            // Replace optimistic message with real message from server
+            // CRITICAL: Check if user is still selected
+            const currentUser = get().selectedUser;
+            if (currentUser?._id !== selectedUser._id) {
+                return; // User switched chats, don't update
+            }
+            
+            // Replace optimistic message with real message
             if (res.data && res.data._id) {
                 set(state => ({
                     messages: state.messages.map(m => 
-                        m.tempId === tempId ? { ...res.data, isOptimistic: false } : m
+                        m.tempId === tempId ? res.data : m
                     )
                 }));
-                
-                // Update cache
-                const currentMessages = get().messages;
-                cacheMessages(selectedUser._id, currentMessages);
-                await cacheMessagesDB(selectedUser._id, currentMessages);
             }
         } catch (error) {
-            // Mark message as failed instead of removing it
+            // Mark message as failed
             set(state => ({
                 messages: state.messages.map(m => 
-                    m.tempId === tempId ? { ...m, status: 'failed', isOptimistic: false } : m
+                    m.tempId === tempId ? { ...m, status: 'failed' } : m
                 )
             }));
             toast.error(error.response?.data?.message || "Failed to send message");
@@ -129,30 +133,40 @@ export const useChatStore = create((set, get) => ({
         // Define handler separately
         const messageHandler = (newMessage) => {
             const { selectedUser, messages } = get();
+            const { authUser } = useAuthStore.getState();
 
             if (!newMessage || !newMessage._id) {
                 console.warn("Received invalid message object:", newMessage);
                 return;
             }
 
-            // Check if message already exists (by real _id or tempId)
-            const isDuplicate = messages.some(m => 
-                m._id === newMessage._id || 
-                (m.isOptimistic && m.text === newMessage.text && m.senderId === newMessage.senderId)
-            );
-
+            // CRITICAL: Check if message already exists
+            const isDuplicate = messages.some(m => m._id === newMessage._id);
             if (isDuplicate) {
-                console.log("Duplicate message detected, skipping:", newMessage._id);
                 return;
             }
 
-            // Add message to state if it's for the selected user
-            if (selectedUser && (newMessage.senderId === selectedUser._id || newMessage.receiverId === selectedUser._id)) {
+            // CRITICAL: Only add if message is for current conversation
+            // Convert to strings for comparison (MongoDB ObjectId vs string)
+            const selectedUserId = selectedUser?._id?.toString();
+            const authUserId = authUser?._id?.toString();
+            const msgSenderId = newMessage.senderId?.toString();
+            const msgReceiverId = newMessage.receiverId?.toString();
+            
+            const isForCurrentChat = selectedUser && (
+                (msgSenderId === selectedUserId && msgReceiverId === authUserId) ||
+                (msgSenderId === authUserId && msgReceiverId === selectedUserId)
+            );
+
+            if (isForCurrentChat) {
+                // Add message to current chat
                 set({ messages: [...messages, newMessage] });
-                // Mark as read if chat is open
-                get().markMessagesAsRead(selectedUser._id);
-            } else if (newMessage.senderId) {
-                // Increment unread count if chat not open
+                // Mark as read if I'm the receiver
+                if (newMessage.receiverId === authUser._id) {
+                    get().markMessagesAsRead(selectedUser._id);
+                }
+            } else if (newMessage.senderId !== authUser._id) {
+                // Increment unread count for other chats
                 get().incrementUnread(newMessage.senderId);
             }
         };
