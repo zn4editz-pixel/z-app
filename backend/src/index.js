@@ -45,6 +45,19 @@ app.use(mongoSanitize());
 // ✅ Performance Optimization: Enable gzip compression
 app.use(compression());
 
+// Add caching headers for static assets
+app.use((req, res, next) => {
+	// Cache static assets for 1 year
+	if (req.url.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+		res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+	}
+	// Cache API responses for 5 minutes (except auth)
+	else if (req.url.startsWith('/api') && !req.url.includes('/auth/check')) {
+		res.setHeader('Cache-Control', 'public, max-age=300');
+	}
+	next();
+});
+
 // Body parsing
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));

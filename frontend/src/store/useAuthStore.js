@@ -30,21 +30,33 @@ export const useAuthStore = create((set, get) => ({
 	},
 
 	checkAuth: async () => {
-		set({ isCheckingAuth: true });
 		try {
 			// Restore token from localStorage if exists
 			const token = localStorage.getItem("token");
+			const cachedUser = localStorage.getItem("authUser");
+			
 			if (!token) {
 				// No token, skip auth check
-				console.log("No token found, skipping auth check");
 				set({ authUser: null, isCheckingAuth: false });
 				return;
+			}
+			
+			// Show cached user immediately for instant load
+			if (cachedUser) {
+				try {
+					const parsedUser = JSON.parse(cachedUser);
+					set({ authUser: parsedUser, isCheckingAuth: false });
+				} catch (e) {
+					console.error("Failed to parse cached user");
+				}
+			} else {
+				set({ isCheckingAuth: true });
 			}
 			
 			// Set token in axios headers
 			axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-			// Check auth with backend
+			// Check auth with backend in background
 			const res = await axiosInstance.get("/auth/check");
 			const user = res.data;
 
