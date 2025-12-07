@@ -7,7 +7,7 @@ import redisClient from "../lib/redis.js";
 // ============================================
 
 // Check if Redis is available
-const useRedis = process.env.REDIS_HOST && process.env.NODE_ENV === "production";
+const useRedis = (process.env.REDIS_URL || process.env.REDIS_HOST) && redisClient && process.env.NODE_ENV === "production";
 
 // Create Redis store configuration
 const createRedisStore = (prefix) => {

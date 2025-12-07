@@ -33,7 +33,7 @@ const io = new Server(server, {
 // ============================================
 // REDIS ADAPTER FOR SOCKET.IO SCALING
 // ============================================
-const useRedis = process.env.REDIS_HOST && process.env.NODE_ENV === "production";
+const useRedis = (process.env.REDIS_URL || process.env.REDIS_HOST) && redisClient && process.env.NODE_ENV === "production";
 
 if (useRedis) {
 	try {
