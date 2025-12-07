@@ -62,17 +62,29 @@ export const getAllUsers = async (req, res) => {
 			return res.status(200).json(adminUsersCache);
 		}
 		
+		// Get real-time online users
+		const { userSocketMap } = await import("../lib/socket.js");
+		const onlineUserIds = Object.keys(userSocketMap);
+		
 		const users = await User.find()
 			.select('username nickname email profilePic isVerified isOnline isSuspended suspendedUntil suspensionReason lastSeen createdAt')
 			.sort({ createdAt: -1 })
 			.limit(100)
 			.lean();
 		
+		// Update isOnline status based on socket connections
+		const usersWithOnlineStatus = users.map(user => ({
+			...user,
+			isOnline: onlineUserIds.includes(user._id.toString())
+		}));
+		
 		// Update cache
-		adminUsersCache = users;
+		adminUsersCache = usersWithOnlineStatus;
 		adminUsersCacheTime = now;
 		
-		res.status(200).json(users);
+		console.log(`Fetched ${users.length} users, ${onlineUserIds.length} online`);
+		
+		res.status(200).json(usersWithOnlineStatus);
 	} catch (err) {
 		console.error("getAllUsers error:", err);
 		res.status(500).json({ error: "Failed to fetch users" });
@@ -528,11 +540,7 @@ export const deleteReport = async (req, res) => {
 export const getVerificationRequests = async (req, res) => {
 	try {
 		const users = await User.find({
-			$or: [
-				{ "verificationRequest.status": "pending" },
-				{ "verificationRequest.status": "approved" },
-				{ "verificationRequest.status": "rejected" }
-			]
+			"verificationRequest.status": { $exists: true, $ne: "none", $ne: null }
 		})
 		.select("username nickname profilePic email verificationRequest isVerified createdAt")
 		.sort({ "verificationRequest.requestedAt": -1 })
@@ -540,10 +548,10 @@ export const getVerificationRequests = async (req, res) => {
 		.lean();
 
 		console.log(`Found ${users.length} verification requests`);
-		res.status(200).json(users);
+		res.status(200).json(users || []);
 	} catch (err) {
 		console.error("getVerificationRequests error:", err);
-		res.status(500).json({ error: "Failed to fetch verification requests" });
+		res.status(500).json({ error: "Failed to fetch verification requests", details: err.message });
 	}
 };
 
@@ -708,7 +716,7 @@ export const getDashboardStats = async (req, res) => {
 		
 		const totalUsers = await User.countDocuments();
 		const verifiedUsers = await User.countDocuments({ isVerified: true });
-		const onlineUsers = Object.keys(userSocketMap).length; // Count from socket connections
+		const onlineUsers = Object.keys(userSocketMap).length;
 		const suspendedUsers = await User.countDocuments({ isSuspended: true });
 		const blockedUsers = await User.countDocuments({ isBlocked: true });
 		
@@ -718,19 +726,33 @@ export const getDashboardStats = async (req, res) => {
 		
 		const pendingReports = await Report.countDocuments({ status: "pending" });
 		
-		// Users registered in last 7 days
 		const sevenDaysAgo = new Date();
 		sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 		const newUsersThisWeek = await User.countDocuments({
 			createdAt: { $gte: sevenDaysAgo }
 		});
 		
-		// Users registered in last 30 days
 		const thirtyDaysAgo = new Date();
 		thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 		const newUsersThisMonth = await User.countDocuments({
 			createdAt: { $gte: thirtyDaysAgo }
 		});
+
+		// Get online user IDs for accurate tracking
+		const onlineUserIds = Object.keys(userSocketMap);
+		
+		// Update isOnline status in database for accuracy
+		await User.updateMany(
+			{ _id: { $in: onlineUserIds } },
+			{ $set: { isOnline: true } }
+		);
+		
+		await User.updateMany(
+			{ _id: { $nin: onlineUserIds }, isOnline: true },
+			{ $set: { isOnline: false, lastSeen: new Date() } }
+		);
+
+		console.log(`Dashboard stats: ${onlineUsers} online users, ${totalUsers} total`);
 
 		res.status(200).json({
 			totalUsers,
