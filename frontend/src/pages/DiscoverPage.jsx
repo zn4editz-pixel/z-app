@@ -405,7 +405,7 @@ const DiscoverPage = () => {
 										>
 											<div className="card-body p-3 sm:p-4">
 												<div className="flex items-start gap-3 sm:gap-4">
-													<Link to={`/profile/${user.username}`} className="flex-shrink-0">
+													<Link to={`/profile/${user.username}`} className="flex-shrink-0 relative">
 														<div className="avatar">
 															<div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full ring-2 ring-primary ring-offset-base-100 ring-offset-1 sm:ring-offset-2">
 																<img
@@ -414,6 +414,9 @@ const DiscoverPage = () => {
 																/>
 															</div>
 														</div>
+														{user.isOnline && (
+															<span className="absolute bottom-0 right-0 w-3 h-3 sm:w-4 sm:h-4 bg-success rounded-full ring-2 ring-base-100 animate-pulse" />
+														)}
 													</Link>
 
 													<div className="flex-1 min-w-0">
@@ -474,7 +477,7 @@ const DiscoverPage = () => {
 									>
 										<div className="card-body p-3 sm:p-4">
 											<div className="flex items-center gap-3 sm:gap-4">
-												<Link to={`/profile/${user.username}`} className="flex-shrink-0">
+												<Link to={`/profile/${user.username}`} className="flex-shrink-0 relative">
 													<div className="avatar">
 														<div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full ring-2 ring-primary ring-offset-base-100 ring-offset-1 sm:ring-offset-2">
 															<img
@@ -483,6 +486,9 @@ const DiscoverPage = () => {
 															/>
 														</div>
 													</div>
+													{user.isOnline && (
+														<span className="absolute bottom-0 right-0 w-3 h-3 sm:w-4 sm:h-4 bg-success rounded-full ring-2 ring-base-100 animate-pulse" />
+													)}
 												</Link>
 
 												<div className="flex-1 min-w-0">

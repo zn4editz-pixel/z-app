@@ -254,8 +254,10 @@ export const searchUsers = async (req, res) => {
 				],
 				_id: { $ne: loggedInUserId },
 			},
-			"username profilePic nickname bio isVerified country countryCode city"
-		).limit(10);
+			"username profilePic nickname bio isVerified country countryCode city isOnline lastSeen"
+		)
+		.sort({ isOnline: -1, isVerified: -1 }) // Prioritize online users
+		.limit(10);
 
 		res.status(200).json(users);
 	} catch (err) {
@@ -286,8 +288,8 @@ export const getSuggestedUsers = async (req, res) => {
 		const users = await User.find({
 			hasCompletedProfile: true
 		})
-		.select('_id username nickname profilePic isVerified bio country countryCode city') // Only essential fields
-		.sort({ isVerified: -1, createdAt: -1 })
+		.select('_id username nickname profilePic isVerified bio country countryCode city isOnline lastSeen') // Include online status
+		.sort({ isOnline: -1, isVerified: -1, createdAt: -1 }) // Prioritize online users
 		.limit(20) // Fetch more for cache, filter logged-in user later
 		.lean() // Use lean() for 50% faster queries
 		.exec();
