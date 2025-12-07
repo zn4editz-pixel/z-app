@@ -42,10 +42,16 @@ const emitToUser = (io, userId, event, data) => {
 };
 
 // --- User Management Functions (OPTIMIZED) ---
-// Cache for admin users list (30 seconds TTL)
+// Cache for admin users list (10 seconds TTL - shorter for real-time updates)
 let adminUsersCache = null;
 let adminUsersCacheTime = 0;
-const ADMIN_USERS_CACHE_TTL = 30000;
+const ADMIN_USERS_CACHE_TTL = 10000;
+
+// Function to clear admin cache
+const clearAdminUsersCache = () => {
+	adminUsersCache = null;
+	adminUsersCacheTime = 0;
+};
 
 export const getAllUsers = async (req, res) => {
 	try {
@@ -57,7 +63,7 @@ export const getAllUsers = async (req, res) => {
 		}
 		
 		const users = await User.find()
-			.select('username nickname email profilePic isVerified isOnline isSuspended lastSeen createdAt')
+			.select('username nickname email profilePic isVerified isOnline isSuspended suspendedUntil suspensionReason lastSeen createdAt')
 			.sort({ createdAt: -1 })
 			.limit(100)
 			.lean();
@@ -88,25 +94,23 @@ export const suspendUser = async (req, res) => {
 		let suspendUntilDate;
 		
 		if (until) {
-			// If 'until' date is provided, use it
 			suspendUntilDate = new Date(until);
 		} else if (duration) {
-			// If 'duration' is provided (e.g., "7d", "30d", "1h"), calculate the date
 			const now = new Date();
-			const durationMatch = duration.match(/^(\d+)([dhm])$/); // e.g., "7d", "24h", "30m"
+			const durationMatch = duration.match(/^(\d+)([dhm])$/);
 			
 			if (durationMatch) {
 				const value = parseInt(durationMatch[1]);
 				const unit = durationMatch[2];
 				
 				switch (unit) {
-					case 'd': // days
+					case 'd':
 						suspendUntilDate = new Date(now.getTime() + value * 24 * 60 * 60 * 1000);
 						break;
-					case 'h': // hours
+					case 'h':
 						suspendUntilDate = new Date(now.getTime() + value * 60 * 60 * 1000);
 						break;
-					case 'm': // minutes
+					case 'm':
 						suspendUntilDate = new Date(now.getTime() + value * 60 * 1000);
 						break;
 					default:
@@ -123,15 +127,16 @@ export const suspendUser = async (req, res) => {
 			return res.status(400).json({ error: "Invalid date" });
 		}
 		
-		// Update user suspension status
 		user.isSuspended = true;
 		user.suspendedUntil = suspendUntilDate;
 		user.suspensionReason = reason;
 		await user.save();
 		
+		// Clear cache immediately
+		clearAdminUsersCache();
+		
 		console.log(`🚫 User ${userId} suspended until ${suspendUntilDate}`);
 		
-		// Emit socket event
 		const io = req.app.get("io");
 		emitToUser(io, userId, "user-action", { 
 			type: "suspended", 
@@ -139,7 +144,6 @@ export const suspendUser = async (req, res) => {
 			until: suspendUntilDate 
 		});
 		
-		// Send email notification
 		try {
 			await sendAccountSuspendedEmail(
 				user.email,
@@ -149,7 +153,6 @@ export const suspendUser = async (req, res) => {
 			);
 		} catch (emailErr) {
 			console.error("Failed to send suspension email:", emailErr);
-			// Don't fail the request if email fails
 		}
 		
 		res.status(200).json({ 
@@ -178,6 +181,9 @@ export const unsuspendUser = async (req, res) => {
 		user.suspensionReason = null;
 		await user.save();
 		
+		// Clear cache immediately
+		clearAdminUsersCache();
+		
 		console.log(`✅ User ${userId} unsuspended`);
 		
 		const io = req.app.get("io");
@@ -188,7 +194,9 @@ export const unsuspendUser = async (req, res) => {
 			user: {
 				_id: user._id,
 				username: user.username,
-				isSuspended: user.isSuspended
+				isSuspended: user.isSuspended,
+				suspendedUntil: null,
+				suspensionReason: null
 			}
 		});
 	} catch (err) { 

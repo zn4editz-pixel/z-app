@@ -163,18 +163,22 @@ const AdminDashboard = () => {
 			
 			toast.success("User suspended successfully");
 			
-			// Refresh data from server
-			fetchUsers();
-			fetchStats();
+			// Force refresh to ensure data is correct
+			setTimeout(() => {
+				fetchUsers();
+				fetchStats();
+			}, 500);
 		} catch (err) {
 			console.error("Suspend error:", err);
 			toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to suspend user");
+			// Revert on error
+			fetchUsers();
 		}
 	};
 
 	const handleUnsuspendUser = async (userId) => {
 		try {
-			const response = await axiosInstance.put(`/admin/unsuspend/${userId}`);
+			await axiosInstance.put(`/admin/unsuspend/${userId}`);
 			
 			// Immediately update the local state
 			setUsers(prevUsers => 
@@ -187,12 +191,16 @@ const AdminDashboard = () => {
 			
 			toast.success("User unsuspended successfully");
 			
-			// Refresh data from server
-			fetchUsers();
-			fetchStats();
+			// Force refresh to ensure data is correct
+			setTimeout(() => {
+				fetchUsers();
+				fetchStats();
+			}, 500);
 		} catch (err) {
 			console.error("Unsuspend error:", err);
 			toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to unsuspend user");
+			// Revert on error
+			fetchUsers();
 		}
 	};
 
