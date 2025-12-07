@@ -175,10 +175,10 @@ const AdminDashboard = () => {
 			
 			toast.success("User suspended successfully");
 			
-			// Force refresh after a short delay
+			// Force refresh after a short delay with cache bypass
 			setTimeout(() => {
 				console.log("Fetching fresh user data...");
-				fetchUsers();
+				fetchUsers(true); // Force refresh to bypass cache
 				fetchStats();
 			}, 300);
 		} catch (err) {
@@ -212,10 +212,10 @@ const AdminDashboard = () => {
 			
 			toast.success("User unsuspended successfully");
 			
-			// Force refresh after a short delay
+			// Force refresh after a short delay with cache bypass
 			setTimeout(() => {
 				console.log("Fetching fresh user data...");
-				fetchUsers();
+				fetchUsers(true); // Force refresh to bypass cache
 				fetchStats();
 			}, 300);
 		} catch (err) {
