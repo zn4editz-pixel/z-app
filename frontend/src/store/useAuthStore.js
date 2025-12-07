@@ -246,11 +246,18 @@ export const useAuthStore = create((set, get) => ({
 
 		set({ socket: newSocket });
 
-		newSocket.on("connect", () => console.log("✅ Socket connected:", newSocket.id));
+		newSocket.on("connect", () => {
+			console.log("✅ Socket connected:", newSocket.id);
+			// Clear any previous connection errors
+		});
+		
         newSocket.on("connect_error", (err) => {
-            console.error("Socket connection error:", err.message);
-            toast.error("Real-time connection failed.");
-            get().disconnectSocket(); // Clean up on connection error
+            console.error("Socket connection error:", err.message, err.description);
+            // Only show error after multiple failed attempts
+            if (!newSocket.recovered) {
+				// Don't spam errors - socket will auto-retry
+				console.log("⚠️ Socket connection failed, will retry automatically...");
+			}
         });
 		newSocket.on("getOnlineUsers", (userIds) => {
 			console.log('📡 Online users updated:', userIds);
@@ -282,6 +289,7 @@ export const useAuthStore = create((set, get) => ({
 		// Reconnect logic might be handled automatically by socket.io, but explicit checkAuth can be good
 		newSocket.io.on("reconnect", async (attempt) => {
 			console.log(`🔄 Socket reconnected after ${attempt} attempts`);
+			toast.success("Reconnected to server!");
 			// Re-register user and fetch data upon successful reconnect
             if (get().authUser) { // Check if user is still logged in client-side
                 newSocket.emit("register-user", get().authUser._id); // Re-register
@@ -290,14 +298,18 @@ export const useAuthStore = create((set, get) => ({
 		});
         newSocket.io.on("reconnect_attempt", (attempt) => {
              console.log(`Attempting to reconnect socket... (${attempt})`);
+			 // Only show message after 3 attempts
+			 if (attempt === 3) {
+				toast.loading("Reconnecting to server...", { id: 'reconnecting' });
+			 }
         });
         newSocket.io.on("reconnect_error", (error) => {
             console.error("Socket reconnection error:", error.message);
         });
         newSocket.io.on("reconnect_failed", () => {
              console.error("Socket reconnection failed after multiple attempts.");
-             toast.error("Disconnected from server.");
-             // Maybe force logout or show persistent error here
+			 toast.dismiss('reconnecting');
+             toast.error("Connection lost. Please refresh the page.");
         });
 	},
 
