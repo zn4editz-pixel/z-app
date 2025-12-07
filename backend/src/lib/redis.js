@@ -1,65 +1,92 @@
 import Redis from "ioredis";
 
 // Redis configuration for distributed caching and rate limiting
-const redisConfig = {
-	host: process.env.REDIS_HOST || "localhost",
-	port: parseInt(process.env.REDIS_PORT) || 6379,
-	password: process.env.REDIS_PASSWORD || undefined,
-	maxRetriesPerRequest: 3,
-	enableReadyCheck: true,
-	// Enable TLS for Upstash and other cloud Redis providers
-	tls: process.env.REDIS_HOST ? {
-		rejectUnauthorized: false, // Required for Upstash
-	} : undefined,
-	retryStrategy: (times) => {
-		const delay = Math.min(times * 50, 2000);
-		return delay;
-	},
-	reconnectOnError: (err) => {
-		const targetError = "READONLY";
-		if (err.message.includes(targetError)) {
-			return true;
-		}
-		return false;
-	},
-};
+let redisClient;
 
-// Create Redis client
-export const redisClient = new Redis(redisConfig);
+// Check if we have Redis URL (preferred) or individual credentials
+if (process.env.REDIS_URL) {
+	// Use full Redis URL (e.g., from Upstash)
+	console.log("🔴 Redis: Using REDIS_URL connection");
+	redisClient = new Redis(process.env.REDIS_URL, {
+		maxRetriesPerRequest: 3,
+		enableReadyCheck: true,
+		tls: {
+			rejectUnauthorized: false,
+		},
+		retryStrategy: (times) => {
+			const delay = Math.min(times * 50, 2000);
+			return delay;
+		},
+	});
+} else if (process.env.REDIS_HOST) {
+	// Use individual credentials
+	console.log("🔴 Redis: Using individual credentials");
+	const redisConfig = {
+		host: process.env.REDIS_HOST,
+		port: parseInt(process.env.REDIS_PORT) || 6379,
+		password: process.env.REDIS_PASSWORD,
+		maxRetriesPerRequest: 3,
+		enableReadyCheck: true,
+		tls: {
+			rejectUnauthorized: false,
+		},
+		retryStrategy: (times) => {
+			const delay = Math.min(times * 50, 2000);
+			return delay;
+		},
+		reconnectOnError: (err) => {
+			const targetError = "READONLY";
+			if (err.message.includes(targetError)) {
+				return true;
+			}
+			return false;
+		},
+	};
+	redisClient = new Redis(redisConfig);
+} else {
+	// No Redis configured - create a dummy client
+	console.log("⚠️ Redis: No configuration found, running without Redis");
+	redisClient = null;
+}
 
-// Redis event handlers
-redisClient.on("connect", () => {
-	console.log("🔴 Redis: Connecting...");
-});
+export { redisClient };
 
-redisClient.on("ready", () => {
-	console.log("✅ Redis: Connected and ready");
-});
+// Redis event handlers (only if Redis is configured)
+if (redisClient) {
+	redisClient.on("connect", () => {
+		console.log("🔴 Redis: Connecting...");
+	});
 
-redisClient.on("error", (err) => {
-	console.error("❌ Redis Error:", err.message);
-	// Don't crash the app if Redis is unavailable
-	// Rate limiting will fall back to in-memory store
-});
+	redisClient.on("ready", () => {
+		console.log("✅ Redis: Connected and ready");
+	});
 
-redisClient.on("close", () => {
-	console.log("🔴 Redis: Connection closed");
-});
+	redisClient.on("error", (err) => {
+		console.error("❌ Redis Error:", err.message);
+		// Don't crash the app if Redis is unavailable
+		// Rate limiting will fall back to in-memory store
+	});
 
-redisClient.on("reconnecting", () => {
-	console.log("🔄 Redis: Reconnecting...");
-});
+	redisClient.on("close", () => {
+		console.log("🔴 Redis: Connection closed");
+	});
 
-// Graceful shutdown
-process.on("SIGTERM", async () => {
-	console.log("🔴 Redis: Closing connection...");
-	await redisClient.quit();
-});
+	redisClient.on("reconnecting", () => {
+		console.log("🔄 Redis: Reconnecting...");
+	});
+
+	// Graceful shutdown
+	process.on("SIGTERM", async () => {
+		console.log("🔴 Redis: Closing connection...");
+		await redisClient.quit();
+	});
+}
 
 // Helper functions for caching
 export const cacheHelpers = {
 	// Set cache with TTL (in seconds)
 	async set(key, value, ttl = 300) {
+		if (!redisClient) return false;
 		try {
 			await redisClient.setex(key, ttl, JSON.stringify(value));
 			return true;
@@ -71,6 +98,7 @@ export const cacheHelpers = {
 
 	// Get cached value
 	async get(key) {
+		if (!redisClient) return null;
 		try {
 			const value = await redisClient.get(key);
 			return value ? JSON.parse(value) : null;
@@ -82,6 +110,7 @@ export const cacheHelpers = {
 
 	// Delete cache
 	async del(key) {
+		if (!redisClient) return false;
 		try {
 			await redisClient.del(key);
 			return true;
@@ -93,6 +122,7 @@ export const cacheHelpers = {
 
 	// Delete multiple keys by pattern
 	async delPattern(pattern) {
+		if (!redisClient) return false;
 		try {
 			const keys = await redisClient.keys(pattern);
 			if (keys.length > 0) {
@@ -107,6 +137,7 @@ export const cacheHelpers = {
 
 	// Check if key exists
 	async exists(key) {
+		if (!redisClient) return false;
 		try {
 			const result = await redisClient.exists(key);
 			return result === 1;
@@ -118,6 +149,7 @@ export const cacheHelpers = {
 
 	// Increment counter
 	async incr(key, ttl = 3600) {
+		if (!redisClient) return 0;
 		try {
 			const value = await redisClient.incr(key);
 			if (value === 1 && ttl) {
