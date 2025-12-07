@@ -37,20 +37,13 @@ const useRedis = (process.env.REDIS_URL || process.env.REDIS_HOST) && redisClien
 
 if (useRedis) {
 	try {
-		// Create a duplicate Redis client for pub/sub
+		// Create duplicate Redis clients for pub/sub (ioredis duplicate() returns ready clients)
 		const pubClient = redisClient.duplicate();
 		const subClient = redisClient.duplicate();
 
-		// Wait for both clients to be ready
-		Promise.all([pubClient.connect(), subClient.connect()])
-			.then(() => {
-				io.adapter(createAdapter(pubClient, subClient));
-				console.log("✅ Socket.io: Redis adapter enabled (Multi-server support)");
-			})
-			.catch((err) => {
-				console.error("❌ Socket.io: Redis adapter failed:", err.message);
-				console.log("⚠️ Socket.io: Running in single-server mode");
-			});
+		// ioredis duplicate() returns clients that auto-connect, so just set up the adapter
+		io.adapter(createAdapter(pubClient, subClient));
+		console.log("✅ Socket.io: Redis adapter enabled (Multi-server support)");
 	} catch (error) {
 		console.error("❌ Socket.io: Redis adapter error:", error.message);
 		console.log("⚠️ Socket.io: Running in single-server mode");

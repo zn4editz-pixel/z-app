@@ -35,6 +35,8 @@ services:
       - key: FRONTEND_URL
         sync: false
       # Redis Configuration (Optional - for scaling beyond 50K users)
+      - key: REDIS_URL
+        sync: false
       - key: REDIS_HOST
         sync: false
       - key: REDIS_PORT
