@@ -273,15 +273,21 @@ const AdminDashboard = () => {
 
 	const handleUpdateReportStatus = async (reportId, newStatus) => {
 		try {
-			await axiosInstance.put(`/admin/reports/${reportId}/status`, {
+			console.log(`Updating report ${reportId} to status: ${newStatus}`);
+			const response = await axiosInstance.put(`/admin/reports/${reportId}/status`, {
 				status: newStatus
 			});
+			console.log('Update response:', response.data);
 			toast.success("Report status updated");
-			fetchReports();
-			fetchAIReports();
-			fetchStats();
+			// Refresh all data
+			await Promise.all([
+				fetchReports(),
+				fetchAIReports(),
+				fetchStats()
+			]);
 		} catch (err) {
-			toast.error(err.response?.data?.message || "Failed to update report");
+			console.error('Update report status error:', err);
+			toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to update report");
 		}
 	};
 
