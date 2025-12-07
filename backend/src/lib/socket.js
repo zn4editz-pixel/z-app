@@ -277,11 +277,13 @@ io.on("connection", (socket) => {
 			.then(user => {
 				if (user) {
 					console.log(`✅ User ${initialUserId} marked as online in database`);
+					// Emit immediately after database update
+					const onlineUserIds = Object.keys(userSocketMap);
+					console.log(`📡 Broadcasting online users: ${onlineUserIds.length} users online`);
+					io.emit("getOnlineUsers", onlineUserIds);
 				}
 			})
 			.catch(err => console.error('Failed to update online status:', err));
-		
-		io.emit("getOnlineUsers", Object.keys(userSocketMap));
 		
 		// Mark pending messages as delivered when user comes online
 		markPendingMessagesAsDelivered(initialUserId);
@@ -299,11 +301,13 @@ io.on("connection", (socket) => {
 				.then(user => {
 					if (user) {
 						console.log(`✅ User ${userId} marked as online in database`);
+						// Emit immediately after database update
+						const onlineUserIds = Object.keys(userSocketMap);
+						console.log(`📡 Broadcasting online users: ${onlineUserIds.length} users online`);
+						io.emit("getOnlineUsers", onlineUserIds);
 					}
 				})
 				.catch(err => console.error('Failed to update online status:', err));
-			
-			io.emit("getOnlineUsers", Object.keys(userSocketMap));
 		}
 	});
 
@@ -735,11 +739,13 @@ io.on("connection", (socket) => {
 				.then(user => {
 					if (user) {
 						console.log(`✅ User ${disconnectedUserId} marked as offline in database, last seen: ${user.lastSeen}`);
+						// Emit immediately after database update
+						const onlineUserIds = Object.keys(userSocketMap);
+						console.log(`📡 Broadcasting online users: ${onlineUserIds.length} users online`);
+						io.emit("getOnlineUsers", onlineUserIds);
 					}
 				})
 				.catch(err => console.error('Failed to update offline status:', err));
-			
-			io.emit("getOnlineUsers", Object.keys(userSocketMap));
 		}
 	});
 });

@@ -17,9 +17,11 @@ const Sidebar = () => {
 
   const { onlineUsers = [], authUser } = useAuthStore();
   
-  // Debug online users
+  // Force re-render when online users change
+  const [, forceUpdate] = useState({});
   useEffect(() => {
-    console.log('👥 Online users in Sidebar:', onlineUsers);
+    console.log('👥 Online users updated in Sidebar:', onlineUsers);
+    forceUpdate({}); // Force component to re-render
   }, [onlineUsers]);
   const { friends, isLoading: isFriendsLoading, pendingReceived } = useFriendStore();
   const { notifications } = useNotificationStore();
@@ -43,10 +45,23 @@ const Sidebar = () => {
     })
     .filter((u) => (showOnlineOnly ? onlineUsers.includes(u._id) : true))
     .sort((a, b) => {
-      // Sort: Online users come first
+      // Priority 1: Online users come first
       const aOnline = onlineUsers.includes(a._id);
       const bOnline = onlineUsers.includes(b._id);
-      return aOnline === bOnline ? 0 : aOnline ? -1 : 1;
+      
+      if (aOnline && !bOnline) return -1; // a is online, b is not
+      if (!aOnline && bOnline) return 1;  // b is online, a is not
+      
+      // Priority 2: If both online or both offline, sort by unread messages
+      const aUnread = unreadCounts[a._id] || 0;
+      const bUnread = unreadCounts[b._id] || 0;
+      
+      if (aUnread !== bUnread) return bUnread - aUnread; // Higher unread first
+      
+      // Priority 3: Alphabetical by display name
+      const aName = (a.nickname || a.username || '').toLowerCase();
+      const bName = (b.nickname || b.username || '').toLowerCase();
+      return aName.localeCompare(bName);
     });
 
   return (
@@ -182,7 +197,7 @@ const Sidebar = () => {
                           />
                         </div>
                         {isOnline && (
-                          <span className="absolute right-0 bottom-0 w-3 h-3 rounded-full ring-2 ring-base-100 bg-success animate-pulse" /> 
+                          <span className="absolute right-0 bottom-0 w-3 h-3 rounded-full ring-2 ring-base-100 bg-success animate-pulse-glow" /> 
                         )}
                       </div>
 
@@ -314,7 +329,7 @@ const Sidebar = () => {
                             />
                           </div>
                           {isOnline && (
-                            <span className="absolute right-0 bottom-0 w-3 h-3 sm:w-4 sm:h-4 rounded-full ring-2 ring-base-100 bg-success animate-pulse" />
+                            <span className="absolute right-0 bottom-0 w-3 h-3 sm:w-4 sm:h-4 rounded-full ring-2 ring-base-100 bg-success animate-pulse-glow" />
                           )}
                         </div>
 
@@ -389,11 +404,24 @@ const Sidebar = () => {
             transform: scale(1);
           }
         }
+        @keyframes pulseGlow {
+          0%, 100% { 
+            opacity: 1;
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+          }
+          50% { 
+            opacity: 0.8;
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0);
+          }
+        }
         .animate-fadeIn {
           animation: fadeIn 0.2s ease-out;
         }
         .animate-scaleIn {
           animation: scaleIn 0.3s ease-out;
+        }
+        .animate-pulse-glow {
+          animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
       `}</style>
     </>
