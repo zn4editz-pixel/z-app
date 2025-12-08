@@ -156,20 +156,6 @@ const Sidebar = () => {
 
           {/* Friends Horizontal Bar - Online first, then offline */}
           <div className="flex gap-3 sm:gap-4 overflow-x-auto py-2 -mx-3 sm:-mx-4 px-3 sm:px-4 scrollbar-hide">
-            {/* Discover Users Button */}
-            <Link
-              to="/discover"
-              className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-transform"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
-            >
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-primary flex items-center justify-center bg-primary/10">
-                <Search className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
-              </div>
-              <span className="text-xs sm:text-sm truncate w-14 sm:w-16 text-center font-semibold">
-                Discover
-              </span>
-            </Link>
-
             {/* Stranger Chat Button */}
             <Link
               to="/stranger"
