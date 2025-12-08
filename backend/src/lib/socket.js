@@ -106,6 +106,7 @@ const recentMatches = new Map(); // socketId -> Set of recent partner socketIds 
 // ✅ Find and match strangers
 const findMatch = (socket) => {
 	console.log(`🔍 Finding match for ${socket.id}. Queue size: ${waitingQueue.length}`);
+	console.log(`🔍 Socket has strangerData:`, !!socket.strangerData);
 	
 	// ✅ Check if this socket is already matched
 	if (matchedPairs.has(socket.id)) {
@@ -115,15 +116,18 @@ const findMatch = (socket) => {
 	
 	// Remove current socket from queue if present
 	waitingQueue = waitingQueue.filter(id => id !== socket.id);
+	console.log(`🔍 After removing self from queue, size: ${waitingQueue.length}`);
 	
 	if (waitingQueue.length > 0) {
 		// Find first person in queue who is NOT already matched and NOT a recent match
 		let partnerSocketId = null;
 		let partnerSocket = null;
 		const myRecentMatches = recentMatches.get(socket.id) || new Set();
+		console.log(`🔍 My recent matches count: ${myRecentMatches.size}`);
 		
 		while (waitingQueue.length > 0) {
 			partnerSocketId = waitingQueue.shift();
+			console.log(`🔍 Checking potential partner: ${partnerSocketId}`);
 			
 			// Skip if partner is already matched
 			if (matchedPairs.has(partnerSocketId)) {
@@ -140,6 +144,7 @@ const findMatch = (socket) => {
 			partnerSocket = io.sockets.sockets.get(partnerSocketId);
 			
 			if (partnerSocket) {
+				console.log(`✅ Found valid partner socket: ${partnerSocketId}`);
 				break; // Found a valid partner
 			} else {
 				console.log(`⚠️ Partner socket ${partnerSocketId} not found, trying next`);
@@ -417,9 +422,12 @@ io.on("connection", (socket) => {
 
 	// === STRANGER CHAT (OMEGLE) EVENTS ===
 	socket.on("stranger:joinQueue", (payload) => {
-		console.log(`🚀 ${socket.id} joining stranger queue`, payload);
+		console.log(`🚀 ${socket.id} joining stranger queue with data:`, JSON.stringify(payload));
+		console.log(`📊 Current queue size BEFORE: ${waitingQueue.length}`);
+		console.log(`📊 Current matched pairs: ${matchedPairs.size}`);
 		socket.strangerData = payload; // Store user data on socket
 		findMatch(socket);
+		console.log(`📊 Queue size AFTER: ${waitingQueue.length}`);
 	});
 
 	socket.on("stranger:skip", () => {
