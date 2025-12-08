@@ -38,20 +38,34 @@ const Sidebar = () => {
     })
     .filter((u) => (showOnlineOnly ? onlineUsers.includes(u.id) : true))
     .sort((a, b) => {
-      // Priority 1: Online users come first
+      // Priority 1: Users with unread messages come FIRST (Instagram style)
+      const aUnread = unreadCounts[a.id] || 0;
+      const bUnread = unreadCounts[b.id] || 0;
+      
+      if (aUnread > 0 && bUnread === 0) return -1; // a has unread, b doesn't
+      if (aUnread === 0 && bUnread > 0) return 1;  // b has unread, a doesn't
+      if (aUnread !== bUnread) return bUnread - aUnread; // Both have unread, higher count first
+      
+      // Priority 2: Online users come next
       const aOnline = onlineUsers.includes(a.id);
       const bOnline = onlineUsers.includes(b.id);
       
       if (aOnline && !bOnline) return -1; // a is online, b is not
       if (!aOnline && bOnline) return 1;  // b is online, a is not
       
-      // Priority 2: If both online or both offline, sort by unread messages
-      const aUnread = unreadCounts[a.id] || 0;
-      const bUnread = unreadCounts[b.id] || 0;
+      // Priority 3: Users with last message come before those without
+      const aHasMessage = a.lastMessage?.text || a.lastMessage?.timestamp;
+      const bHasMessage = b.lastMessage?.text || b.lastMessage?.timestamp;
       
-      if (aUnread !== bUnread) return bUnread - aUnread; // Higher unread first
+      if (aHasMessage && !bHasMessage) return -1;
+      if (!aHasMessage && bHasMessage) return 1;
       
-      // Priority 3: Alphabetical by display name
+      // Priority 4: Sort by last message timestamp (most recent first)
+      if (a.lastMessage?.timestamp && b.lastMessage?.timestamp) {
+        return new Date(b.lastMessage.timestamp) - new Date(a.lastMessage.timestamp);
+      }
+      
+      // Priority 5: Alphabetical by display name
       const aName = (a.nickname || a.username || '').toLowerCase();
       const bName = (b.nickname || b.username || '').toLowerCase();
       return aName.localeCompare(bName);
@@ -201,17 +215,36 @@ const Sidebar = () => {
                           <span className="truncate">{user.nickname || user.username}</span>
                           {user.isVerified && <VerifiedBadge size="xs" />}
                         </div>
-                        <div className="text-xs sm:text-sm text-base-content/60 truncate">
-                          {user.lastMessage?.text || "Start a chat!"}
+                        <div className="text-xs sm:text-sm text-base-content/60 truncate flex items-center gap-1">
+                          {unread > 0 && (
+                            <span className="font-semibold text-base-content">
+                              {user.lastMessage?.text || "New message"}
+                            </span>
+                          )}
+                          {unread === 0 && (
+                            <>
+                              {user.lastMessage?.text ? (
+                                <>
+                                  <Check className="w-3 h-3 text-primary flex-shrink-0" />
+                                  <span className="truncate">{user.lastMessage.text}</span>
+                                </>
+                              ) : (
+                                <span className="text-base-content/50">Tap to message</span>
+                              )}
+                            </>
+                          )}
                         </div>
                       </div>
 
-                      {/* Unread Badge - Enhanced */}
+                      {/* Unread Badge - Instagram Style */}
                       {unread > 0 && (
                         <div className="flex-shrink-0">
-                          <span className="inline-flex items-center justify-center min-w-[20px] h-5 sm:min-w-[24px] sm:h-6 px-1.5 sm:px-2 bg-error text-error-content rounded-full text-[10px] sm:text-xs font-bold shadow-lg animate-pulse"> 
-                            {unread > 99 ? "99+" : unread}
-                          </span>
+                          <div className="relative">
+                            <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] sm:min-w-[26px] sm:h-[26px] px-2 bg-primary text-primary-content rounded-full text-[11px] sm:text-xs font-bold shadow-lg ring-2 ring-base-100"> 
+                              {unread > 99 ? "99+" : unread}
+                            </span>
+                            <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-75"></span>
+                          </div>
                         </div>
                       )}
                     </button>

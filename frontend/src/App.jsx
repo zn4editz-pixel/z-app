@@ -282,18 +282,20 @@ const App = () => {
 	// Added addPendingReceived to dependencies
 	}, [socket, authUser, navigate, forceLogout, theme, addPendingReceived]); 
 
-	// Show loading spinner while checking auth to prevent flash
-	if (isCheckingAuth) {
-		return (
-			<div style={{
-				position: 'fixed',
-				inset: 0,
-				display: 'flex',
-				alignItems: 'center',
-				justifyContent: 'center',
-				backgroundColor: '#1a1a1a'
-			}}>
-				<div className="spinner" style={{
+	const hasCompletedProfile = authUser?.hasCompletedProfile;
+
+	// Unified loading component
+	const LoadingScreen = () => (
+		<div style={{
+			position: 'fixed',
+			inset: 0,
+			display: 'flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			backgroundColor: theme === 'dark' ? '#1a1a1a' : '#f5f5f5'
+		}}>
+			<div className="flex flex-col items-center gap-3">
+				<div style={{
 					width: '50px',
 					height: '50px',
 					border: '3px solid rgba(255, 153, 51, 0.2)',
@@ -301,26 +303,23 @@ const App = () => {
 					borderRadius: '50%',
 					animation: 'spin 0.8s linear infinite'
 				}}></div>
-				<style>{`
-					@keyframes spin {
-						to { transform: rotate(360deg); }
-					}
-				`}</style>
+				<p style={{ 
+					color: theme === 'dark' ? '#999' : '#666',
+					fontSize: '14px'
+				}}>Loading...</p>
 			</div>
-		);
-	}
-
-	const hasCompletedProfile = authUser?.hasCompletedProfile;
-
-	// Minimal loading fallback
-	const PageLoader = () => (
-		<div className="flex items-center justify-center h-screen bg-base-200">
-			<div className="flex flex-col items-center gap-3">
-				<div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-				<p className="text-sm text-base-content/60">Loading...</p>
-			</div>
+			<style>{`
+				@keyframes spin {
+					to { transform: rotate(360deg); }
+				}
+			`}</style>
 		</div>
 	);
+
+	// Show loading spinner while checking auth to prevent flash
+	if (isCheckingAuth) {
+		return <LoadingScreen />;
+	}
 
 	return (
 		<div data-theme={theme} className="pt-14 md:pt-16">
@@ -329,7 +328,7 @@ const App = () => {
 				{hasCompletedProfile && window.location.pathname !== "/stranger" && <Navbar />}
 			</Suspense>
 
-			<Suspense fallback={<PageLoader />}>
+			<Suspense fallback={<LoadingScreen />}>
 				<Routes location={location} key={location.pathname}>
 				{/* --- Auth Routes --- */}
 				<Route

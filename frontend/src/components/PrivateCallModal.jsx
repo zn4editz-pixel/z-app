@@ -525,13 +525,13 @@ const PrivateCallModal = ({
               className="w-full h-full object-cover"
             />
             {/* Local Video - Picture in Picture (Top Right) */}
-            <div className="absolute top-4 right-4 z-10">
+            <div className="absolute top-20 sm:top-24 right-3 sm:right-4 z-50">
               <video
                 ref={localVideoRef}
                 autoPlay
                 playsInline
                 muted
-                className="w-32 h-24 rounded-lg border-2 border-primary shadow-lg object-cover"
+                className="w-24 h-32 sm:w-32 sm:h-40 md:w-36 md:h-48 rounded-lg border-2 border-primary shadow-lg object-cover"
                 style={{ transform: 'scaleX(-1)' }}
               />
             </div>
@@ -582,33 +582,33 @@ const PrivateCallModal = ({
         )}
       </div>
 
-      {/* Controls - Exact Stranger Chat Style */}
-      <div className="bg-base-100 border-t border-base-300 p-4">
-        <div className="flex items-center justify-center gap-4">
+      {/* Controls - Mobile & PC Optimized */}
+      <div className="bg-base-100 border-t border-base-300 p-3 sm:p-4 pb-safe">
+        <div className="flex items-center justify-center gap-3 sm:gap-4">
           {/* Mute Button */}
           <button
             onClick={toggleMute}
-            className={`btn btn-circle ${isMuted ? 'btn-error' : 'btn-outline'}`}
+            className={`btn btn-circle btn-sm sm:btn-md ${isMuted ? 'btn-error' : 'btn-outline'}`}
             title={isMuted ? "Unmute" : "Mute"}
           >
-            {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+            {isMuted ? <MicOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Mic className="w-4 h-4 sm:w-5 sm:h-5" />}
           </button>
           {/* End Call Button */}
           <button
             onClick={endCall}
-            className="btn btn-circle btn-error btn-lg"
+            className="btn btn-circle btn-error btn-md sm:btn-lg"
             title="End call"
           >
-            <PhoneOff size={24} />
+            <PhoneOff className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           {/* Video Toggle (only for video calls) */}
           {callType === "video" && (
             <button
               onClick={toggleVideo}
-              className={`btn btn-circle ${isVideoOff ? 'btn-error' : 'btn-outline'}`}
+              className={`btn btn-circle btn-sm sm:btn-md ${isVideoOff ? 'btn-error' : 'btn-outline'}`}
               title={isVideoOff ? "Turn on camera" : "Turn off camera"}
             >
-              {isVideoOff ? <VideoOffIcon size={20} /> : <Video size={20} />}
+              {isVideoOff ? <VideoOffIcon className="w-4 h-4 sm:w-5 sm:h-5" /> : <Video className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
           )}
         </div>

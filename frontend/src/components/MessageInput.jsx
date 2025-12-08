@@ -4,11 +4,14 @@ import { useAuthStore } from "../store/useAuthStore";
 import { Image, Send, X, Smile } from "lucide-react";
 import toast from "react-hot-toast";
 import VoiceRecorder from "./VoiceRecorder";
+import ImageCropper from "./ImageCropper";
 
 const MessageInput = ({ replyingTo, onCancelReply }) => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
+  const [tempImage, setTempImage] = useState(null);
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const inputRef = useRef(null); // ✅ NEW: For instant focus
@@ -58,9 +61,22 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      setImagePreview(reader.result);
+      setTempImage(reader.result);
+      setShowCropper(true);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (croppedImage) => {
+    setImagePreview(croppedImage);
+    setShowCropper(false);
+    setTempImage(null);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setTempImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const removeImage = () => {
@@ -125,8 +141,18 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
   };
 
   return (
-    <div className="p-2.5 sm:p-4 w-full bg-base-100 border-t border-base-300 sticky bottom-0 z-10" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
-      {/* Reply Preview */}
+    <>
+      {/* Image Cropper Modal */}
+      {showCropper && tempImage && (
+        <ImageCropper
+          image={tempImage}
+          onCrop={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
+
+      <div className="p-2.5 sm:p-4 w-full bg-base-100 border-t border-base-300 sticky bottom-0 z-10" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
+        {/* Reply Preview */}
       {replyingTo && (
         <div className="mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-base-200 rounded-xl border-l-4 border-primary reply-slide-in">
           <div className="flex-1 min-w-0">
@@ -191,7 +217,7 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
         className="flex items-center gap-2"
       >
         {/* Text Input Container */}
-        <div className="flex-1 flex items-center gap-1 sm:gap-1.5 bg-base-200 rounded-full px-3 sm:px-4 py-2 sm:py-2.5 min-w-0">
+        <div className="flex-1 flex items-center gap-2.5 bg-base-200 rounded-full px-4 py-2.5 min-w-0">
           <input
             ref={inputRef}
             type="text"
@@ -205,23 +231,23 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
           {/* Emoji Button */}
           <button
             type="button"
-            className={`p-1 sm:p-1.5 rounded-full hover:bg-base-300 active:scale-95 transition flex-shrink-0
-              ${showEmojiPicker ? "text-primary" : "text-base-content/60"}`}
+            className={`w-9 h-9 flex items-center justify-center rounded-full hover:bg-base-300 active:scale-95 transition-all flex-shrink-0
+              ${showEmojiPicker ? "bg-base-300 text-primary" : "bg-base-300/50 text-base-content/70 hover:text-base-content"}`}
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             title="Add emoji"
           >
-            <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
+            <Smile className="w-5 h-5" />
           </button>
           
           {/* Image Upload Button */}
           <button
             type="button"
-            className={`p-1 sm:p-1.5 rounded-full hover:bg-base-300 active:scale-95 transition flex-shrink-0
-              ${imagePreview ? "text-primary" : "text-base-content/60"}`}
+            className={`w-9 h-9 flex items-center justify-center rounded-full hover:bg-base-300 active:scale-95 transition-all flex-shrink-0
+              ${imagePreview ? "bg-base-300 text-primary" : "bg-base-300/50 text-base-content/70 hover:text-base-content"}`}
             onClick={() => fileInputRef.current?.click()}
             title="Attach image"
           >
-            <Image className="w-4 h-4 sm:w-5 sm:h-5" />
+            <Image className="w-5 h-5" />
           </button>
 
           {/* Hidden File Input */}
@@ -249,7 +275,8 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
           </button>
         )}
       </form>
-    </div>
+      </div>
+    </>
   );
 };
 

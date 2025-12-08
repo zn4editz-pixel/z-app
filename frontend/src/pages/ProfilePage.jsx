@@ -3,6 +3,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { Camera, Mail, User, BadgeCheck, Edit2, Check, X, Loader2, AlertCircle, Clock, AtSign } from "lucide-react";
 import VerifiedBadge from "../components/VerifiedBadge";
 import VerificationRequestModal from "../components/VerificationRequestModal";
+import ImageCropper from "../components/ImageCropper";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 
@@ -10,6 +11,10 @@ const ProfilePage = () => {
   const { authUser, isUpdatingProfile, updateProfile } = useAuthStore();
   const [selectedImg, setSelectedImg] = useState(null);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
+  
+  // Image cropper state
+  const [showCropper, setShowCropper] = useState(false);
+  const [tempImage, setTempImage] = useState(null);
   
   // Username editing state
   const [isEditingUsername, setIsEditingUsername] = useState(false);
@@ -78,25 +83,35 @@ const ProfilePage = () => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
 
-    reader.onload = async () => {
-      const base64Image = reader.result;
-      setSelectedImg(base64Image);
-      
-      try {
-        const updatedUser = await updateProfile({ profilePic: base64Image });
-        // Force UI update
-        setSelectedImg(updatedUser.profilePic);
-        toast.success("Profile picture updated!");
-        
-        // Reload page to clear cached images everywhere
-        setTimeout(() => {
-          window.location.reload();
-        }, 800);
-      } catch (error) {
-        toast.error("Failed to update profile picture");
-        setSelectedImg(authUser?.profilePic);
-      }
+    reader.onload = () => {
+      setTempImage(reader.result);
+      setShowCropper(true);
     };
+  };
+
+  const handleCropComplete = async (croppedImage) => {
+    setSelectedImg(croppedImage);
+    setShowCropper(false);
+    setTempImage(null);
+    
+    try {
+      const updatedUser = await updateProfile({ profilePic: croppedImage });
+      setSelectedImg(updatedUser.profilePic);
+      toast.success("Profile picture updated!");
+      
+      // Reload page to clear cached images everywhere
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
+    } catch (error) {
+      toast.error("Failed to update profile picture");
+      setSelectedImg(authUser?.profilePic);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setTempImage(null);
   };
 
   const handleUsernameChange = async () => {
@@ -171,7 +186,17 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-base-200">
+    <>
+      {/* Image Cropper Modal */}
+      {showCropper && tempImage && (
+        <ImageCropper
+          image={tempImage}
+          onCrop={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
+
+      <div className="min-h-screen bg-base-200">
       <div className="max-w-2xl mx-auto px-2 xs:px-3 sm:px-4 pt-14 xs:pt-16 sm:pt-18 md:pt-20 pb-16 xs:pb-18 sm:pb-20 md:pb-10">
         <div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6 space-y-6 sm:space-y-8">
           <div className="text-center">
@@ -553,7 +578,8 @@ const ProfilePage = () => {
           window.location.reload();
         }}
       />
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -1112,43 +1112,67 @@ const StrangerChatPage = () => {
 					</div>
 				)}
 				
-				{/* Reaction Buttons - Top Right Horizontal */}
+				{/* Reaction Buttons - Bottom Horizontal (Instagram/Snapchat Style) */}
 				{status === "connected" && (
-					<div className="absolute top-20 right-4 z-20 flex flex-row gap-1.5 sm:gap-2 bg-base-100/80 backdrop-blur-md rounded-full px-2 py-1.5 shadow-lg border border-base-300">
+					<div className="absolute bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 z-20 
+					            flex flex-row gap-2 sm:gap-3 
+					            bg-base-100/90 backdrop-blur-lg rounded-full 
+					            px-3 sm:px-4 py-2 sm:py-2.5 
+					            shadow-2xl border border-base-300/50
+					            animate-slide-up">
 						<button 
 							onClick={() => sendReaction("❤️")} 
-							className="btn btn-circle btn-xs sm:btn-sm hover:scale-125 transition-transform bg-transparent border-none"
+							className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center
+							         rounded-full hover:bg-base-200 active:scale-90 
+							         transition-all duration-200 hover:scale-110"
 							title="Send Love"
 						>
-							<span className="text-lg sm:text-xl">❤️</span>
+							<span className="text-2xl sm:text-3xl">❤️</span>
 						</button>
 						<button 
 							onClick={() => sendReaction("👍")} 
-							className="btn btn-circle btn-xs sm:btn-sm hover:scale-125 transition-transform bg-transparent border-none"
+							className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center
+							         rounded-full hover:bg-base-200 active:scale-90 
+							         transition-all duration-200 hover:scale-110"
 							title="Thumbs Up"
 						>
-							<span className="text-lg sm:text-xl">👍</span>
+							<span className="text-2xl sm:text-3xl">👍</span>
 						</button>
 						<button 
 							onClick={() => sendReaction("😂")} 
-							className="btn btn-circle btn-xs sm:btn-sm hover:scale-125 transition-transform bg-transparent border-none"
+							className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center
+							         rounded-full hover:bg-base-200 active:scale-90 
+							         transition-all duration-200 hover:scale-110"
 							title="Laugh"
 						>
-							<span className="text-lg sm:text-xl">😂</span>
+							<span className="text-2xl sm:text-3xl">😂</span>
 						</button>
 						<button 
 							onClick={() => sendReaction("🎉")} 
-							className="btn btn-circle btn-xs sm:btn-sm hover:scale-125 transition-transform bg-transparent border-none"
+							className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center
+							         rounded-full hover:bg-base-200 active:scale-90 
+							         transition-all duration-200 hover:scale-110"
 							title="Party"
 						>
-							<span className="text-lg sm:text-xl">🎉</span>
+							<span className="text-2xl sm:text-3xl">🎉</span>
 						</button>
 						<button 
 							onClick={() => sendReaction("😊")} 
-							className="btn btn-circle btn-xs sm:btn-sm hover:scale-125 transition-transform bg-transparent border-none"
+							className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center
+							         rounded-full hover:bg-base-200 active:scale-90 
+							         transition-all duration-200 hover:scale-110"
 							title="Smile"
 						>
-							<span className="text-lg sm:text-xl">😊</span>
+							<span className="text-2xl sm:text-3xl">😊</span>
+						</button>
+						<button 
+							onClick={() => sendReaction("🔥")} 
+							className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center
+							         rounded-full hover:bg-base-200 active:scale-90 
+							         transition-all duration-200 hover:scale-110"
+							title="Fire"
+						>
+							<span className="text-2xl sm:text-3xl">🔥</span>
 						</button>
 					</div>
 				)}

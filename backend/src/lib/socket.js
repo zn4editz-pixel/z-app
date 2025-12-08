@@ -161,15 +161,25 @@ const findMatch = (socket) => {
 			recentMatches.get(socket.id).add(partnerSocketId);
 			recentMatches.get(partnerSocketId).add(socket.id);
 			
-			// ✅ Limit recent matches to last 10 partners (prevent memory leak)
-			if (recentMatches.get(socket.id).size > 10) {
+			// ✅ Limit recent matches to last 3 partners (allow re-matching after 3 skips)
+			if (recentMatches.get(socket.id).size > 3) {
 				const oldestMatch = Array.from(recentMatches.get(socket.id))[0];
 				recentMatches.get(socket.id).delete(oldestMatch);
 			}
-			if (recentMatches.get(partnerSocketId).size > 10) {
+			if (recentMatches.get(partnerSocketId).size > 3) {
 				const oldestMatch = Array.from(recentMatches.get(partnerSocketId))[0];
 				recentMatches.get(partnerSocketId).delete(oldestMatch);
 			}
+			
+			// ✅ Clear recent matches after 30 seconds (allow re-matching after timeout)
+			setTimeout(() => {
+				if (recentMatches.has(socket.id)) {
+					recentMatches.get(socket.id).delete(partnerSocketId);
+				}
+				if (recentMatches.has(partnerSocketId)) {
+					recentMatches.get(partnerSocketId).delete(socket.id);
+				}
+			}, 30000); // 30 seconds
 			
 			console.log(`✅ Matched ${socket.id} with ${partnerSocketId}`);
 			

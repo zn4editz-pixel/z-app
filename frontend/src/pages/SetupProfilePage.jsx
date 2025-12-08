@@ -4,12 +4,15 @@ import { useAuthStore } from "../store/useAuthStore";
 import { Camera, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
+import ImageCropper from "../components/ImageCropper";
 
 const SetupProfilePage = () => {
   const navigate = useNavigate();
   const { authUser, setAuthUser } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImg, setSelectedImg] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [tempImage, setTempImage] = useState(null);
   const [formData, setFormData] = useState({
     nickname: authUser?.fullName || "",
     bio: "",
@@ -22,8 +25,20 @@ const SetupProfilePage = () => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => {
-      setSelectedImg(reader.result);
+      setTempImage(reader.result);
+      setShowCropper(true);
     };
+  };
+
+  const handleCropComplete = (croppedImage) => {
+    setSelectedImg(croppedImage);
+    setShowCropper(false);
+    setTempImage(null);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setTempImage(null);
   };
 
   const handleSubmit = async (e) => {
@@ -80,7 +95,17 @@ const SetupProfilePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200 flex items-center justify-center p-4">
+    <>
+      {/* Image Cropper Modal */}
+      {showCropper && tempImage && (
+        <ImageCropper
+          image={tempImage}
+          onCrop={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
+
+      <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-base-100 rounded-2xl shadow-2xl p-6 sm:p-8 border border-base-300">
           {/* Header */}
@@ -212,7 +237,8 @@ const SetupProfilePage = () => {
           </p>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
