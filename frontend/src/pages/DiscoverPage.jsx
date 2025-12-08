@@ -184,7 +184,7 @@ const AdminNotificationsList = () => {
 
 const DiscoverPage = () => {
 	const [activeTab, setActiveTab] = useState("discover"); // discover, requests, notifications
-	const { viewNotifications } = useNotificationStore();
+	const { viewNotifications, getUnreadAdminCount } = useNotificationStore();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [searchResults, setSearchResults] = useState([]);
 	const [isLoadingSearch, setIsLoadingSearch] = useState(false);
@@ -205,10 +205,9 @@ const DiscoverPage = () => {
 	}, [authUser, suggestedUsers, isLoadingSuggested]);
 
 	// Calculate notification counts for each tab (only unread)
-	const adminNotifications = notifications.filter(n => n.type === 'admin' || n.type === 'admin_broadcast');
-	const unreadAdminNotifications = adminNotifications.filter(n => !n.read);
+	const unreadAdminCount = getUnreadAdminCount();
 	const hasVerificationUpdate = authUser?.verificationRequest?.status && authUser.verificationRequest.status !== "none";
-	const notificationCount = unreadAdminNotifications.length + (hasVerificationUpdate ? 1 : 0) + (authUser?.isSuspended ? 1 : 0);
+	const notificationCount = unreadAdminCount + (hasVerificationUpdate ? 1 : 0) + (authUser?.isSuspended ? 1 : 0);
 
 	// Auto-mark notifications as read when viewing notifications tab
 	useEffect(() => {

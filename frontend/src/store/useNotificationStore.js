@@ -83,4 +83,13 @@ export const useNotificationStore = create((set, get) => ({
 			unreadCount: 0,
 		}));
 	},
+
+	// Get unread admin notifications count
+	getUnreadAdminCount: () => {
+		const state = get();
+		const adminNotifications = state.notifications.filter(
+			n => (n.type === 'admin' || n.type === 'admin_broadcast') && !n.read
+		);
+		return adminNotifications.length;
+	},
 }));
