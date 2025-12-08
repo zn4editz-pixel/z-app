@@ -1082,23 +1082,44 @@ const StrangerChatPage = () => {
 				)}
 
 				{/* Top Bar */}
-				<div className="absolute top-0 left-0 right-0 z-30 bg-base-100/90 backdrop-blur-md border-b border-base-300">
-					<div className="flex items-center justify-between px-4 py-3">
-						{/* AI Protection Badge - Outline Only */}
+				<div className="absolute top-0 left-0 right-0 z-30 bg-base-100/95 backdrop-blur-md border-b border-base-300 shadow-lg">
+					<div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3">
+						{/* Left: AI Protection Badge */}
 						{MODERATION_CONFIG.enabled && status === "connected" && (
 							<div className={`badge badge-outline gap-2 border-2 ${aiModerationActive ? 'border-success text-success' : 'border-warning text-warning'}`}>
 								<span className={`w-2 h-2 rounded-full ${aiModerationActive ? 'bg-success animate-pulse' : 'bg-warning'}`}></span>
-								{aiModerationActive ? 'AI Protected' : 'AI Loading'}
+								<span className="hidden sm:inline">{aiModerationActive ? 'AI Protected' : 'AI Loading'}</span>
 							</div>
 						)}
 						
-						<div className="flex-1"></div>
+						{/* Center: Partner Info */}
+						{status === "connected" && partnerUserData && (
+							<div className="flex-1 flex items-center justify-center gap-2 mx-2">
+								<div className="flex items-center gap-2 bg-base-200/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-base-300">
+									<div className="w-8 h-8 rounded-full overflow-hidden border-2 border-primary">
+										<img 
+											src={partnerUserData.profilePic || "/avatar.png"} 
+											alt={partnerUserData.nickname || partnerUserData.username}
+											className="w-full h-full object-cover"
+										/>
+									</div>
+									<div className="flex items-center gap-1">
+										<span className="font-semibold text-sm sm:text-base">
+											{partnerUserData.nickname || partnerUserData.username || "Stranger"}
+										</span>
+										{partnerUserData.isVerified && (
+											<VerifiedBadge size="sm" />
+										)}
+									</div>
+								</div>
+							</div>
+						)}
 						
-						{/* Report Button - Outline Only */}
+						{/* Right: Report Button */}
 						{status === "connected" && (
 							<button 
 								onClick={handleReport}
-								className="btn btn-outline btn-error btn-sm gap-2 border-2"
+								className="btn btn-outline btn-error btn-sm gap-1 sm:gap-2 border-2"
 							>
 								<AlertTriangle size={16} />
 								<span className="hidden sm:inline">Report</span>

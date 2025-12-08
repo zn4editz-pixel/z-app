@@ -100,9 +100,44 @@ const Sidebar = () => {
             </button>
           </div>
 
-          {/* Stories/Quick Access - Horizontal Scroll */}
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto py-2 -mx-3 sm:-mx-4 px-3 sm:px-4 scrollbar-hide">
-            
+          {/* Active Now - Horizontal Scroll */}
+          <div className="mb-3">
+            <h4 className="text-xs font-semibold text-base-content/60 mb-2 px-1">Active Now</h4>
+            <div className="flex gap-3 overflow-x-auto py-1 -mx-3 sm:-mx-4 px-3 sm:px-4 scrollbar-hide">
+              {/* Show only online friends */}
+              {friends.filter(u => onlineUsers.includes(u.id)).length === 0 ? (
+                <div className="text-xs text-base-content/50 py-2">No friends online</div>
+              ) : (
+                friends
+                  .filter(u => onlineUsers.includes(u.id))
+                  .slice(0, 10)
+                  .map((u) => (
+                    <button
+                      key={u.id}
+                      onClick={() => setSelectedUser(u)}
+                      className="flex-none flex flex-col items-center gap-1 min-w-[56px] active:scale-95 transition-transform focus:outline-none"
+                      style={{ WebkitTapHighlightColor: 'transparent' }}
+                    >
+                      <div className="relative w-14 h-14 rounded-full p-[2px] bg-gradient-to-tr from-green-400 to-green-600 overflow-hidden"> 
+                        <img
+                          src={u.profilePic || "/avatar.png"}
+                          alt={u.nickname || u.username}
+                          className="w-full h-full object-cover rounded-full border-2 border-base-100"
+                        />
+                        {/* Online indicator */}
+                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-base-100"></div>
+                      </div>
+                      <span className="text-xs truncate w-14 text-center">
+                        {(u.nickname || u.username || "User").split(" ")[0]}
+                      </span>
+                    </button>
+                  ))
+              )}
+            </div>
+          </div>
+
+          {/* Quick Access - Horizontal Scroll */}
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto py-2 -mx-3 sm:-mx-4 px-3 sm:px-4 scrollbar-hide border-t border-base-200 pt-3">
             {/* Discover Users Button */}
             <Link
               to="/discover"
@@ -130,27 +165,6 @@ const Sidebar = () => {
                 Stranger
               </span>
             </Link>
-            
-            {/* Friend Stories (Max 8 shown) */}
-            {friends.slice(0, 8).map((u) => (
-              <button
-                key={u.id}
-                onClick={() => setSelectedUser(u)}
-                className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-transform focus:outline-none"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] ring-2 ring-primary overflow-hidden"> 
-                  <img
-                    src={u.profilePic || "/avatar.png"}
-                    alt={u.nickname || u.username}
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                </div>
-                <span className="text-xs sm:text-sm truncate w-14 sm:w-16 text-center">
-                  {(u.nickname || u.username || "User").split(" ")[0]}
-                </span>
-              </button>
-            ))}
           </div>
         </div>
 
