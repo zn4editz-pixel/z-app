@@ -422,7 +422,7 @@ const DiscoverPage = () => {
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
 									{displayUsers.map((user) => (
 										<div
-											key={user._id}
+											key={getId(user)}
 											className="card bg-base-200 hover:bg-base-300 transition-all duration-200 border border-base-300"
 										>
 											<div className="card-body p-3 sm:p-4">
@@ -494,7 +494,7 @@ const DiscoverPage = () => {
 							<div className="space-y-3 sm:space-y-4">
 								{pendingReceived.map((user) => (
 									<div
-										key={user._id}
+										key={getId(user)}
 										className="card bg-base-200 border border-base-300 hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
 									>
 										<div className="card-body p-3 sm:p-4">
@@ -529,11 +529,11 @@ const DiscoverPage = () => {
 
 												<div className="flex flex-col sm:flex-row gap-2">
 													<button
-														onClick={() => handleAccept(user._id)}
-														disabled={loadingRequestId === user._id}
+														onClick={() => handleAccept(getId(user))}
+														disabled={loadingRequestId === getId(user)}
 														className="btn btn-success btn-xs sm:btn-sm hover:scale-105 active:scale-95 transition-transform duration-200"
 													>
-														{loadingRequestId === user._id ? (
+														{loadingRequestId === getId(user) ? (
 															<Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
 														) : (
 															<>
@@ -543,11 +543,11 @@ const DiscoverPage = () => {
 														)}
 													</button>
 													<button
-														onClick={() => handleReject(user._id)}
-														disabled={loadingRequestId === user._id}
+														onClick={() => handleReject(getId(user))}
+														disabled={loadingRequestId === getId(user)}
 														className="btn btn-ghost btn-xs sm:btn-sm hover:scale-105 active:scale-95 transition-transform duration-200"
 													>
-														{loadingRequestId === user._id ? (
+														{loadingRequestId === getId(user) ? (
 															<Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
 														) : (
 															<>

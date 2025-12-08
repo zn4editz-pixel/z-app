@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { cacheFriends, getCachedFriends } from "../utils/cache.js";
+import { getId, includesId, findById, filterOutId } from "../utils/idHelper.js";
 
 export const useFriendStore = create((set, get) => ({
     friends: [],
@@ -16,14 +17,6 @@ export const useFriendStore = create((set, get) => ({
         const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
         const userId = authUser._id;
         
-        // Check if we recently fetched (within 30 seconds)
-        const lastFetch = sessionStorage.getItem('friendDataLastFetch');
-        const now = Date.now();
-        if (lastFetch && (now - parseInt(lastFetch)) < 30000) {
-            console.log("⚡ Skipping friend data fetch - recently fetched");
-            return;
-        }
-        
         // Try cache first for instant load
         const cached = await getCachedFriends(userId);
         if (cached) {
@@ -35,6 +28,14 @@ export const useFriendStore = create((set, get) => ({
             });
         } else {
             set({ isLoading: true });
+        }
+        
+        // Check if we recently fetched (within 30 seconds) - but only skip if we have cached data
+        const lastFetch = sessionStorage.getItem('friendDataLastFetch');
+        const now = Date.now();
+        if (lastFetch && (now - parseInt(lastFetch)) < 30000 && cached) {
+            console.log("⚡ Skipping friend data fetch - recently fetched (using cache)");
+            return;
         }
         
         try {
@@ -61,24 +62,24 @@ export const useFriendStore = create((set, get) => ({
                 const newSent = requestsRes.data?.sent || [];
 
                 // Create ID sets from API data for efficient lookup
-                const apiReceivedIds = new Set(newReceived.map(r => r._id));
-                const apiSentIds = new Set(newSent.map(r => r._id));
+                const apiReceivedIds = new Set(newReceived.map(r => getId(r)));
+                const apiSentIds = new Set(newSent.map(r => getId(r)));
 
                 // Only keep existing requests that are still in the API response
-                const existingReceivedStillValid = state.pendingReceived.filter(r => apiReceivedIds.has(r._id));
-                const existingSentStillValid = state.pendingSent.filter(r => apiSentIds.has(r._id));
+                const existingReceivedStillValid = state.pendingReceived.filter(r => apiReceivedIds.has(getId(r)));
+                const existingSentStillValid = state.pendingSent.filter(r => apiSentIds.has(getId(r)));
 
                 // Add new requests from API that aren't in existing state
                 const mergedReceived = [...existingReceivedStillValid];
                 newReceived.forEach(req => {
-                    if (!mergedReceived.some(r => r._id === req._id)) {
+                    if (!includesId(mergedReceived, getId(req))) {
                         mergedReceived.push(req);
                     }
                 });
 
                 const mergedSent = [...existingSentStillValid];
                 newSent.forEach(req => {
-                    if (!mergedSent.some(r => r._id === req._id)) {
+                    if (!includesId(mergedSent, getId(req))) {
                         mergedSent.push(req);
                     }
                 });
@@ -104,13 +105,13 @@ export const useFriendStore = create((set, get) => ({
     // Get the friendship status with another user
     getFriendshipStatus: (userId) => {
         const { friends, pendingSent, pendingReceived } = get();
-        if (friends.some((f) => f._id === userId)) {
+        if (includesId(friends, userId)) {
             return "FRIENDS";
         }
-        if (pendingSent.some((r) => r._id === userId)) {
+        if (includesId(pendingSent, userId)) {
             return "REQUEST_SENT";
         }
-        if (pendingReceived.some((r) => r._id === userId)) {
+        if (includesId(pendingReceived, userId)) {
             return "REQUEST_RECEIVED";
         }
         return "NOT_FRIENDS";
@@ -198,8 +199,8 @@ export const useFriendStore = create((set, get) => ({
             await axiosInstance.post(`/friends/reject/${userId}`);
             // Remove from both lists for safety
             set((state) => ({
-                pendingReceived: state.pendingReceived.filter((r) => r._id !== userId),
-                pendingSent: state.pendingSent.filter((r) => r._id !== userId),
+                pendingReceived: filterOutId(state.pendingReceived, userId),
+                pendingSent: filterOutId(state.pendingSent, userId),
             }));
             // Clear cache
             sessionStorage.removeItem('friendDataLastFetch');
@@ -215,7 +216,7 @@ export const useFriendStore = create((set, get) => ({
         try {
             await axiosInstance.delete(`/friends/unfriend/${friendId}`);
             set((state) => ({
-                friends: state.friends.filter((f) => f._id !== friendId),
+                friends: filterOutId(state.friends, friendId),
             }));
             // Clear cache
             sessionStorage.removeItem('friendDataLastFetch');

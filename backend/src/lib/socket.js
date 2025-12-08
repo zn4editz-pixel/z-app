@@ -4,6 +4,8 @@ import http from "http";
 import express from "express";
 import jwt from "jsonwebtoken";
 import cloudinary from "./cloudinary.js";
+import prisma from "./prisma.js";
+// Legacy Mongoose models - kept for socket.io compatibility (will be migrated gradually)
 import Report from "../models/report.model.js";
 import User from "../models/user.model.js";
 import FriendRequest from "../models/friendRequest.model.js";
@@ -33,7 +35,7 @@ const io = new Server(server, {
 // ============================================
 // REDIS ADAPTER FOR SOCKET.IO SCALING
 // ============================================
-const useRedis = (process.env.REDIS_URL || process.env.REDIS_HOST) && redisClient && process.env.NODE_ENV === "production";
+const useRedis = (process.env.REDIS_URL || process.env.REDIS_HOST) && redisClient;
 
 if (useRedis) {
 	try {

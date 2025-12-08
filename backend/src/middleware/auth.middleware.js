@@ -48,7 +48,7 @@ export const protectRoute = async (req, res, next) => {
         lastSeen: true,
         isBlocked: true,
         isSuspended: true,
-        suspendedUntil: true,
+        suspensionEndTime: true,
         suspensionReason: true,
         verificationStatus: true,
         verificationReason: true,
@@ -61,8 +61,7 @@ export const protectRoute = async (req, res, next) => {
         friendRequestsSent: true,
         friendRequestsReceived: true,
         createdAt: true,
-        updatedAt: true,
-        password: false
+        updatedAt: true
       }
     });
 
@@ -76,12 +75,12 @@ export const protectRoute = async (req, res, next) => {
 
     if (
       user.isSuspended &&
-      user.suspendedUntil &&
-      new Date(user.suspendedUntil) > new Date()
+      user.suspensionEndTime &&
+      new Date(user.suspensionEndTime) > new Date()
     ) {
       return res.status(403).json({
         message: `Account suspended until ${new Date(
-          user.suspendedUntil
+          user.suspensionEndTime
         ).toLocaleString()} - Reason: ${user.suspensionReason || "No reason provided"}`,
       });
     }
