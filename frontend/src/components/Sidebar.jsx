@@ -92,34 +92,28 @@ const Sidebar = () => {
     })
     .filter((u) => (showOnlineOnly ? onlineUsers.includes(u.id) : true))
     .sort((a, b) => {
-      // Priority 1: Users with unread messages come FIRST (Instagram style)
-      const aUnread = unreadCounts[a.id] || 0;
-      const bUnread = unreadCounts[b.id] || 0;
+      // Priority 1: Sort by most recent interaction (latest message timestamp)
+      // This ensures the person you most recently chatted with appears at the top
+      const aTimestamp = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : 0;
+      const bTimestamp = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
       
-      if (aUnread > 0 && bUnread === 0) return -1; // a has unread, b doesn't
-      if (aUnread === 0 && bUnread > 0) return 1;  // b has unread, a doesn't
-      if (aUnread !== bUnread) return bUnread - aUnread; // Both have unread, higher count first
+      // If both have messages, sort by most recent
+      if (aTimestamp && bTimestamp) {
+        return bTimestamp - aTimestamp; // Most recent first
+      }
       
-      // Priority 2: Online users come next
+      // If only one has messages, that one comes first
+      if (aTimestamp && !bTimestamp) return -1;
+      if (!aTimestamp && bTimestamp) return 1;
+      
+      // Priority 2: If no messages, online users come first
       const aOnline = onlineUsers.includes(a.id);
       const bOnline = onlineUsers.includes(b.id);
       
-      if (aOnline && !bOnline) return -1; // a is online, b is not
-      if (!aOnline && bOnline) return 1;  // b is online, a is not
+      if (aOnline && !bOnline) return -1;
+      if (!aOnline && bOnline) return 1;
       
-      // Priority 3: Users with last message come before those without
-      const aHasMessage = a.lastMessage?.text || a.lastMessage?.timestamp;
-      const bHasMessage = b.lastMessage?.text || b.lastMessage?.timestamp;
-      
-      if (aHasMessage && !bHasMessage) return -1;
-      if (!aHasMessage && bHasMessage) return 1;
-      
-      // Priority 4: Sort by last message timestamp (most recent first)
-      if (a.lastMessage?.timestamp && b.lastMessage?.timestamp) {
-        return new Date(b.lastMessage.timestamp) - new Date(a.lastMessage.timestamp);
-      }
-      
-      // Priority 5: Alphabetical by display name
+      // Priority 3: Alphabetical by display name
       const aName = (a.nickname || a.username || '').toLowerCase();
       const bName = (b.nickname || b.username || '').toLowerCase();
       return aName.localeCompare(bName);
@@ -154,21 +148,28 @@ const Sidebar = () => {
             </button>
           </div>
 
-          {/* Friends Horizontal Bar - Online first, then offline */}
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto py-2 -mx-3 sm:-mx-4 px-3 sm:px-4 scrollbar-hide">
-            {/* Stranger Chat Button */}
-            <Link
-              to="/stranger"
-              className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-transform"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
-            >
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-dashed border-base-content/50 flex items-center justify-center bg-base-200">
-                <Video className="w-6 h-6 sm:w-7 sm:h-7 text-base-content/70" />
+          {/* Friends Horizontal Bar - Stranger button fixed, then scrollable friends */}
+          <div className="flex py-2 -mx-3 sm:-mx-4 relative">
+            {/* Stranger Chat Button - Compact with border */}
+            <div className="flex-none pl-3 sm:pl-4 sticky left-0 z-10 bg-base-100">
+              <div className="flex items-center gap-2 border-r border-base-content/10 pr-2">
+                <Link
+                  to="/stranger"
+                  className="flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-all hover:scale-105"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-dashed border-base-content/30 flex items-center justify-center bg-base-200/50 hover:bg-base-200 transition-colors">
+                    <Video className="w-6 h-6 sm:w-7 sm:h-7 text-base-content/70" />
+                  </div>
+                  <span className="text-xs sm:text-sm truncate w-14 sm:w-16 text-center text-base-content/70 font-medium">
+                    Stranger
+                  </span>
+                </Link>
               </div>
-              <span className="text-xs sm:text-sm truncate w-14 sm:w-16 text-center text-base-content/70 font-semibold">
-                Stranger
-              </span>
-            </Link>
+            </div>
+            
+            {/* Scrollable Friends Container */}
+            <div className="flex gap-3 sm:gap-4 overflow-x-auto pr-3 sm:pr-4 scrollbar-hide pl-3">
             
             {/* All Friends - Online first with green ring, then offline */}
             {friends
@@ -189,53 +190,59 @@ const Sidebar = () => {
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
                     <div className="relative">
-                      {/* Pulsing ring for online users */}
-                      {isOnline && (
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-green-400 to-green-600 animate-pulse opacity-75"></div>
-                      )}
-                      
-                      {/* Avatar container */}
-                      <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[3px] ${
-                        isOnline 
-                          ? 'bg-gradient-to-tr from-green-400 via-green-500 to-green-600 shadow-lg shadow-green-500/50' 
-                          : 'bg-gradient-to-tr from-primary/50 to-primary ring-2 ring-primary/30'
-                      }`}>
-                        <img
-                          src={u.profilePic || "/avatar.png"}
-                          alt={u.nickname || u.username}
-                          className="w-full h-full object-cover rounded-full border-2 border-base-100"
-                        />
-                        
-                        {/* Online indicator dot */}
+                      {/* Avatar with enhanced online indicator */}
+                      <div className="relative">
+                        {/* Outer glow for online users */}
                         {isOnline && (
-                          <div className="absolute bottom-0 right-0 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full border-[3px] border-base-100 shadow-lg animate-pulse"></div>
+                          <div className="absolute inset-0 rounded-full bg-success/20 blur-sm"></div>
                         )}
+                        
+                        {/* Avatar container */}
+                        <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] transition-all ${
+                          isOnline 
+                            ? 'bg-gradient-to-br from-success to-success/80 shadow-lg shadow-success/30' 
+                            : 'bg-base-content/15'
+                        }`}>
+                          <img
+                            src={u.profilePic || "/avatar.png"}
+                            alt={u.nickname || u.username}
+                            className="w-full h-full object-cover rounded-full border-2 border-base-100"
+                          />
+                          
+                          {/* Enhanced online indicator */}
+                          {isOnline && (
+                            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-success rounded-full border-[3px] border-base-100 shadow-md">
+                              <div className="absolute inset-0 rounded-full bg-success animate-ping opacity-75"></div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                     
-                    <span className={`text-xs sm:text-sm truncate w-14 sm:w-16 text-center font-medium ${
-                      isOnline ? 'text-green-500' : 'text-base-content/70'
+                    <span className={`text-xs sm:text-sm truncate w-14 sm:w-16 text-center font-medium transition-colors ${
+                      isOnline ? 'text-success' : 'text-base-content/60'
                     }`}>
                       {(u.nickname || u.username || "User").split(" ")[0]}
                     </span>
                   </button>
                 );
               })}
+            </div>
           </div>
         </div>
 
         {/* Scrollable Chat List - THIS IS THE KEY FIX */}
         <div className="flex-1 min-h-0 flex flex-col">
-          {/* Online Filter */}
-          <div className="flex-shrink-0 px-2 sm:px-4 py-0.5 sm:py-1 border-b border-base-200">
-            <label className="flex items-center gap-1.5 sm:gap-2 cursor-pointer group">
+          {/* Online Filter - Compact for mobile */}
+          <div className="flex-shrink-0 px-2 sm:px-4 py-1 border-b border-base-200">
+            <label className="flex items-center gap-1.5 cursor-pointer group">
               <input
                 type="checkbox"
                 checked={showOnlineOnly}
                 onChange={(e) => setShowOnlineOnly(e.target.checked)}
-                className="checkbox checkbox-primary w-3 h-3 sm:w-4 sm:h-4 rounded-full"
+                className="checkbox checkbox-primary w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-base-content/30"
               />
-              <span className="text-[11px] sm:text-xs font-medium text-base-content/80">Show Active only</span>
+              <span className="text-[10px] sm:text-xs font-medium text-base-content/70">Show Active only</span>
             </label>
           </div>
 
@@ -275,7 +282,7 @@ const Sidebar = () => {
                           />
                         </div>
                         {isOnline && (
-                          <span className="absolute right-0 bottom-0 w-3 h-3 rounded-full ring-2 ring-base-100 bg-success animate-pulse" /> 
+                          <span className="absolute right-0 bottom-0 w-3 h-3 rounded-full ring-2 ring-base-100 bg-success" /> 
                         )}
                       </div>
 

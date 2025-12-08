@@ -228,6 +228,31 @@ export const useFriendStore = create((set, get) => ({
         }
     },
 
+    // Update lastMessage for a friend (called when message is sent/received)
+    updateFriendLastMessage: (friendId, messageData) => {
+        set((state) => {
+            const updatedFriends = state.friends.map(friend => {
+                if (friend.id === friendId) {
+                    return {
+                        ...friend,
+                        lastMessage: {
+                            text: messageData.text || null,
+                            image: messageData.image || null,
+                            voice: messageData.voice || null,
+                            senderId: messageData.senderId,
+                            receiverId: messageData.receiverId,
+                            timestamp: messageData.createdAt || new Date().toISOString(),
+                            reactions: messageData.reactions || []
+                        }
+                    };
+                }
+                return friend;
+            });
+            
+            return { friends: updatedFriends };
+        });
+    },
+
     // Clear data on logout
     clearFriendData: () => {
         set({

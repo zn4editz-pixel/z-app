@@ -4,6 +4,7 @@ import { axiosInstance } from "../lib/axios"; // Keep axiosInstance for getMessa
 import { useAuthStore } from "./useAuthStore"; // Auth store needed for socket & user info
 import { cacheMessages, getCachedMessages, updateLastSync } from "../utils/offlineStorage";
 import { cacheMessagesDB, getCachedMessagesDB } from "../utils/cache";
+import { useFriendStore } from "./useFriendStore"; // Import friend store for real-time updates
 
 export const useChatStore = create((set, get) => ({
     // --- Existing Chat State ---
@@ -97,6 +98,9 @@ export const useChatStore = create((set, get) => ({
         
         // ✅ INSTANT: Add optimistic message IMMEDIATELY (no waiting)
         set({ messages: [...messages, optimisticMessage] });
+        
+        // ✅ Update friend list with this message (for sidebar sorting)
+        useFriendStore.getState().updateFriendLastMessage(selectedUser.id, optimisticMessage);
         
         // ✅ INSTANT: Send in background (fire and forget - NO AWAIT)
         if (socket && socket.connected) {
@@ -211,6 +215,9 @@ export const useChatStore = create((set, get) => ({
                 console.log(`✅ Adding new message to current chat`);
                 set({ messages: [...messages, newMessage] });
                 
+                // ✅ Update friend list with this received message
+                useFriendStore.getState().updateFriendLastMessage(msgSenderId, newMessage);
+                
                 // Mark as read if I'm the receiver
                 if (msgReceiverId === authUserId) {
                     get().markMessagesAsRead(selectedUser.id);
@@ -219,6 +226,9 @@ export const useChatStore = create((set, get) => ({
                 console.log(`📬 Message for different chat, incrementing unread`);
                 // Increment unread count for other chats
                 get().incrementUnread(msgSenderId);
+                
+                // ✅ Update friend list with this received message (even if not in current chat)
+                useFriendStore.getState().updateFriendLastMessage(msgSenderId, newMessage);
             }
         };
 

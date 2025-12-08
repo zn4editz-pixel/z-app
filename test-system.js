@@ -4,7 +4,9 @@
  * Tests all critical components before deployment
  */
 
-import { PrismaClient } from '@prisma/client';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { PrismaClient } = require('./backend/node_modules/@prisma/client');
 import Redis from 'ioredis';
 import { config } from 'dotenv';
 

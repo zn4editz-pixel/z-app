@@ -64,21 +64,6 @@ const VerificationRequests = ({
 										</div>
 									</div>
 
-									{/* Verification Document */}
-									{user.verificationDocument && (
-										<div className="flex-shrink-0">
-											<a
-												href={user.verificationDocument}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="btn btn-sm btn-outline gap-2"
-											>
-												<ExternalLink className="w-4 h-4" />
-												View Document
-											</a>
-										</div>
-									)}
-
 									{/* Actions */}
 									<div className="flex gap-2 flex-shrink-0">
 										<button
@@ -96,6 +81,56 @@ const VerificationRequests = ({
 											Reject
 										</button>
 									</div>
+								</div>
+
+								{/* Verification Details */}
+								<div className="mt-4 space-y-3 border-t border-base-300 pt-4">
+									{/* Reason */}
+									{user.verificationReason && (
+										<div>
+											<p className="text-sm font-semibold text-base-content/70 mb-1">Reason for Verification:</p>
+											<p className="text-sm bg-base-300/50 p-3 rounded-lg">{user.verificationReason}</p>
+										</div>
+									)}
+
+									{/* ID Proof Document */}
+									{user.verificationIdProof && (
+										<div>
+											<p className="text-sm font-semibold text-base-content/70 mb-2">ID Proof Document:</p>
+											<div className="flex flex-col sm:flex-row gap-3">
+												{/* Preview Image */}
+												<div className="flex-shrink-0">
+													<img
+														src={user.verificationIdProof}
+														alt="ID Proof"
+														className="w-full sm:w-48 h-32 object-cover rounded-lg border-2 border-base-300 cursor-pointer hover:border-primary transition-colors"
+														onClick={() => window.open(user.verificationIdProof, '_blank')}
+													/>
+												</div>
+												{/* View Button */}
+												<div className="flex items-center">
+													<a
+														href={user.verificationIdProof}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="btn btn-outline btn-sm gap-2"
+													>
+														<ExternalLink className="w-4 h-4" />
+														View Full Size
+													</a>
+												</div>
+											</div>
+										</div>
+									)}
+
+									{/* Request Date */}
+									{user.verificationRequestedAt && (
+										<div>
+											<p className="text-xs text-base-content/50">
+												Requested: {new Date(user.verificationRequestedAt).toLocaleString()}
+											</p>
+										</div>
+									)}
 								</div>
 
 								{/* Request Date */}
