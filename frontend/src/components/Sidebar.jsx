@@ -185,22 +185,37 @@ const Sidebar = () => {
                   <button
                     key={u.id}
                     onClick={() => setSelectedUser(u)}
-                    className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-transform focus:outline-none"
+                    className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-all duration-200 focus:outline-none hover:scale-105"
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
-                    <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] overflow-hidden ${
-                      isOnline ? 'bg-gradient-to-tr from-green-400 to-green-600' : 'ring-2 ring-primary'
-                    }`}>
-                      <img
-                        src={u.profilePic || "/avatar.png"}
-                        alt={u.nickname || u.username}
-                        className={`w-full h-full object-cover rounded-full ${isOnline ? 'border-2 border-base-100' : ''}`}
-                      />
+                    <div className="relative">
+                      {/* Pulsing ring for online users */}
                       {isOnline && (
-                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-base-100"></div>
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-green-400 to-green-600 animate-pulse opacity-75"></div>
                       )}
+                      
+                      {/* Avatar container */}
+                      <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[3px] ${
+                        isOnline 
+                          ? 'bg-gradient-to-tr from-green-400 via-green-500 to-green-600 shadow-lg shadow-green-500/50' 
+                          : 'bg-gradient-to-tr from-primary/50 to-primary ring-2 ring-primary/30'
+                      }`}>
+                        <img
+                          src={u.profilePic || "/avatar.png"}
+                          alt={u.nickname || u.username}
+                          className="w-full h-full object-cover rounded-full border-2 border-base-100"
+                        />
+                        
+                        {/* Online indicator dot */}
+                        {isOnline && (
+                          <div className="absolute bottom-0 right-0 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full border-[3px] border-base-100 shadow-lg animate-pulse"></div>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-xs sm:text-sm truncate w-14 sm:w-16 text-center">
+                    
+                    <span className={`text-xs sm:text-sm truncate w-14 sm:w-16 text-center font-medium ${
+                      isOnline ? 'text-green-500' : 'text-base-content/70'
+                    }`}>
                       {(u.nickname || u.username || "User").split(" ")[0]}
                     </span>
                   </button>
