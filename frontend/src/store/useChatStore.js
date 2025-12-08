@@ -94,47 +94,45 @@ export const useChatStore = create((set, get) => ({
             tempId: tempId
         };
         
-        // Add optimistic message INSTANTLY (no waiting)
+        // ✅ INSTANT: Add optimistic message IMMEDIATELY (no waiting)
         set({ messages: [...messages, optimisticMessage] });
         
-        try {
-            // Send via Socket.IO for INSTANT delivery (faster than API)
-            if (socket && socket.connected) {
-                console.log('📤 Sending via Socket.IO (INSTANT)');
-                
-                // Emit via socket for instant delivery
-                socket.emit('sendMessage', {
-                    receiverId: selectedUser.id,
-                    ...messageData,
-                    tempId: tempId
-                });
-                
-                // Wait for socket response to replace optimistic message
-                // The socket will emit back with the real message
-                
-            } else {
-                // Fallback to API only if socket not available
-                console.log('📤 Sending via API (fallback)');
-                const res = await axiosInstance.post(`/messages/send/${selectedUser.id}`, messageData);
-                
-                const currentUser = get().selectedUser;
-                if (currentUser?.id === selectedUser.id && res.data?.id) {
+        // ✅ INSTANT: Send in background (fire and forget - NO AWAIT)
+        if (socket && socket.connected) {
+            console.log('📤 Sending via Socket.IO (INSTANT)');
+            
+            // Emit via socket for instant delivery (NO AWAIT - fire and forget)
+            socket.emit('sendMessage', {
+                receiverId: selectedUser.id,
+                ...messageData,
+                tempId: tempId
+            });
+            
+            // Socket will emit back with the real message to replace optimistic one
+        } else {
+            // Fallback to API only if socket not available (also fire and forget)
+            console.log('📤 Sending via API (fallback)');
+            axiosInstance.post(`/messages/send/${selectedUser.id}`, messageData)
+                .then(res => {
+                    const currentUser = get().selectedUser;
+                    if (currentUser?.id === selectedUser.id && res.data?.id) {
+                        set(state => ({
+                            messages: state.messages.map(m => 
+                                m.tempId === tempId ? res.data : m
+                            )
+                        }));
+                    }
+                })
+                .catch(error => {
+                    console.error('Send failed:', error);
+                    // Mark message as failed
                     set(state => ({
                         messages: state.messages.map(m => 
-                            m.tempId === tempId ? res.data : m
+                            m.tempId === tempId ? { ...m, status: 'failed' } : m
                         )
                     }));
-                }
-            }
-        } catch (error) {
-            console.error('Send failed:', error);
-            // Mark message as failed
-            set(state => ({
-                messages: state.messages.map(m => 
-                    m.tempId === tempId ? { ...m, status: 'failed' } : m
-                )
-            }));
-            toast.error("Failed to send");
+                    toast.error("Failed to send");
+                });
         }
     },
 
@@ -166,29 +164,34 @@ export const useChatStore = create((set, get) => ({
             );
 
             if (isForCurrentChat) {
-                // Check if this is replacing an optimistic message
-                const optimisticIndex = messages.findIndex(m => m.tempId && m.status === 'sending');
-                
-                if (optimisticIndex !== -1 && msgSenderId === authUserId) {
-                    // Replace optimistic message with real one
-                    console.log(`✅ Replacing optimistic message with real one`);
-                    set(state => ({
-                        messages: state.messages.map((m, idx) => 
-                            idx === optimisticIndex ? newMessage : m
-                        )
-                    }));
-                } else {
-                    // Check if message already exists
-                    const isDuplicate = messages.some(m => m.id === newMessage.id);
+                // ✅ INSTANT: Check if this is replacing an optimistic message (my own message)
+                if (msgSenderId === authUserId) {
+                    // Find the most recent optimistic message
+                    const optimisticIndex = messages.findIndex(m => m.tempId && m.status === 'sending');
                     
-                    if (isDuplicate) {
-                        console.log(`⚠️ Duplicate message detected, skipping: ${newMessage.id}`);
-                        return;
+                    if (optimisticIndex !== -1) {
+                        // Replace optimistic message with real one INSTANTLY
+                        console.log(`✅ Replacing optimistic message with real one`);
+                        set(state => ({
+                            messages: state.messages.map((m, idx) => 
+                                idx === optimisticIndex ? { ...newMessage, status: 'sent' } : m
+                            )
+                        }));
+                        return; // Exit early - message replaced
                     }
-                    
-                    console.log(`✅ Adding new message to current chat`);
-                    set({ messages: [...messages, newMessage] });
                 }
+                
+                // Check if message already exists (prevent duplicates)
+                const isDuplicate = messages.some(m => m.id === newMessage.id);
+                
+                if (isDuplicate) {
+                    console.log(`⚠️ Duplicate message detected, skipping: ${newMessage.id}`);
+                    return;
+                }
+                
+                // Add new message from other person
+                console.log(`✅ Adding new message to current chat`);
+                set({ messages: [...messages, newMessage] });
                 
                 // Mark as read if I'm the receiver
                 if (msgReceiverId === authUserId) {
