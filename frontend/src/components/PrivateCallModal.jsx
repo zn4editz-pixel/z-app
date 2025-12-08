@@ -512,57 +512,65 @@ const PrivateCallModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900 z-50 flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between p-2.5 sm:p-4 md:p-6 bg-gradient-to-b from-black/90 via-black/50 to-transparent">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="relative">
-            <img
-              src={otherUser?.profilePic || "/avatar.png"}
-              alt={otherUser?.nickname}
-              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full ring-2 ring-primary/50 shadow-lg object-cover"
+    <div className="fixed inset-0 z-50 bg-base-300 flex flex-col overflow-hidden">
+      {/* Main Video Area - Exact Stranger Chat Style */}
+      <div className="flex-1 relative bg-base-300">
+        {callType === "video" ? (
+          <>
+            {/* Remote Video - Fullscreen */}
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              playsInline
+              className="w-full h-full object-cover"
             />
-            {callStatus === "active" && (
-              <span className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-success rounded-full ring-2 ring-black animate-pulse" />
+            {/* Local Video - Picture in Picture (Top Right) */}
+            <div className="absolute top-4 right-4 z-10">
+              <video
+                ref={localVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-32 h-24 rounded-lg border-2 border-primary shadow-lg object-cover"
+                style={{ transform: 'scaleX(-1)' }}
+              />
+            </div>
+            {/* Video Placeholder */}
+            {!remoteVideoRef.current?.srcObject && (
+              <div className="absolute inset-0 flex items-center justify-center bg-base-300">
+                <div className="text-center">
+                  <div className="avatar mb-4">
+                    <div className="w-32 h-32 rounded-full">
+                      <img src={otherUser?.profilePic || "/avatar.png"} alt={otherUser?.nickname} />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-semibold text-base-content mb-2">
+                    {otherUser?.nickname || otherUser?.username}
+                  </h3>
+                  <p className="text-base-content/60">Connecting...</p>
+                </div>
+              </div>
             )}
+          </>
+        ) : (
+          /* Audio Call - Exact Stranger Chat Style */
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="avatar mb-6">
+                <div className="w-40 h-40 rounded-full ring-4 ring-primary ring-offset-4 ring-offset-base-300">
+                  <img src={otherUser?.profilePic || "/avatar.png"} alt={otherUser?.nickname} />
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold text-base-content mb-2">
+                {otherUser?.nickname || otherUser?.username}
+              </h2>
+              <p className="text-base-content/60">
+                {callStatus === "active" ? formatDuration(callDuration) : "Connecting..."}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-white font-bold text-sm sm:text-base md:text-lg truncate max-w-[150px] sm:max-w-none">
-              {otherUser?.nickname || otherUser?.username}
-            </h3>
-            <p className="text-white/70 text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2">
-              {callStatus === "connecting" && (
-                <>
-                  <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-                  Connecting...
-                </>
-              )}
-              {callStatus === "ringing" && (
-                <>
-                  <span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-ping" />
-                  Ringing...
-                </>
-              )}
-              {callStatus === "active" && (
-                <>
-                  <span className="inline-block w-2 h-2 bg-success rounded-full" />
-                  {formatDuration(callDuration)}
-                </>
-              )}
-              {callStatus === "ended" && "Call Ended"}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={toggleFullscreen}
-          className="btn btn-ghost btn-circle btn-sm sm:btn-md text-white hover:bg-white/10"
-        >
-          {isFullscreen ? <Minimize2 className="w-4 h-4 sm:w-5 sm:h-5" /> : <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />}
-        </button>
-      </div>
-
-      {/* Video Container */}
-      <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+        )}
+        
         {/* Audio element for audio calls */}
         {callType === "audio" && (
           <audio
@@ -572,155 +580,39 @@ const PrivateCallModal = ({
             className="hidden"
           />
         )}
-        
-        {callType === "video" ? (
-          <>
-            {/* Remote Video - Full Screen */}
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            
-            {/* No Remote Video Placeholder */}
-            {!remoteStreamRef.current && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
-                <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center mb-4">
-                  <img
-                    src={otherUser?.profilePic || "/avatar.png"}
-                    alt={otherUser?.nickname}
-                    className="w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-full object-cover"
-                  />
-                </div>
-                <p className="text-white/70 text-sm sm:text-base">Waiting for video...</p>
-              </div>
-            )}
-
-            {/* Local Video (Picture-in-Picture) */}
-            <div className="absolute top-3 right-3 sm:top-6 sm:right-6 w-20 h-28 sm:w-28 sm:h-36 md:w-36 md:h-48 lg:w-40 lg:h-52 bg-gray-900 rounded-lg sm:rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 transition-all hover:scale-105">
-              <video
-                ref={localVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover mirror"
-              />
-              {isVideoOff && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900">
-                  <VideoOffIcon className="w-4 h-4 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white/50 mb-1 sm:mb-2" />
-                  <span className="text-white/50 text-[10px] sm:text-xs">Camera Off</span>
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          /* Audio Call UI */
-          <div className="flex flex-col items-center justify-center gap-4 sm:gap-6 p-4">
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-              <img
-                src={otherUser?.profilePic || "/avatar.png"}
-                alt={otherUser?.nickname}
-                className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-full ring-4 ring-primary/30 shadow-2xl object-cover"
-              />
-              {callStatus === "active" && (
-                <span className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-4 h-4 sm:w-6 sm:h-6 bg-success rounded-full ring-4 ring-black animate-pulse" />
-              )}
-            </div>
-            <div className="text-center">
-              <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-bold mb-2">
-                {otherUser?.nickname || otherUser?.username}
-              </h2>
-              <p className="text-white/60 text-sm sm:text-base">
-                {callStatus === "ringing" && "Calling..."}
-                {callStatus === "connecting" && "Connecting..."}
-                {callStatus === "active" && "Voice Call"}
-              </p>
-            </div>
-            {/* Audio Visualizer */}
-            {callStatus === "active" && (
-              <div className="flex items-center gap-1 sm:gap-2 h-12 sm:h-16">
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-1 sm:w-1.5 bg-primary rounded-full animate-pulse"
-                    style={{
-                      height: `${20 + Math.random() * 60}%`,
-                      animationDelay: `${i * 0.1}s`,
-                      animationDuration: `${0.5 + Math.random() * 0.5}s`
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Controls */}
-      <div className="p-3 sm:p-6 md:p-8 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
-        <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-6">
+      {/* Controls - Exact Stranger Chat Style */}
+      <div className="bg-base-100 border-t border-base-300 p-4">
+        <div className="flex items-center justify-center gap-4">
           {/* Mute Button */}
           <button
             onClick={toggleMute}
-            className={`btn btn-circle w-12 h-12 sm:w-14 sm:h-14 md:btn-lg transition-all ${
-              isMuted 
-                ? "btn-error hover:btn-error" 
-                : "bg-white/10 text-white hover:bg-white/20 border-white/20"
-            }`}
+            className={`btn btn-circle ${isMuted ? 'btn-error' : 'btn-outline'}`}
             title={isMuted ? "Unmute" : "Mute"}
           >
-            {isMuted ? <MicOff className="w-5 h-5 sm:w-6 sm:h-6" /> : <Mic className="w-5 h-5 sm:w-6 sm:h-6" />}
+            {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
           </button>
-
           {/* End Call Button */}
           <button
             onClick={endCall}
-            className="btn btn-circle w-14 h-14 sm:w-16 sm:h-16 md:btn-xl bg-error hover:bg-error/80 border-none shadow-2xl"
+            className="btn btn-circle btn-error btn-lg"
             title="End call"
           >
-            <PhoneOff className="w-6 h-6 sm:w-7 sm:h-7" />
+            <PhoneOff size={24} />
           </button>
-
           {/* Video Toggle (only for video calls) */}
           {callType === "video" && (
             <button
               onClick={toggleVideo}
-              className={`btn btn-circle w-12 h-12 sm:w-14 sm:h-14 md:btn-lg transition-all ${
-                isVideoOff 
-                  ? "btn-error hover:btn-error" 
-                  : "bg-white/10 text-white hover:bg-white/20 border-white/20"
-              }`}
+              className={`btn btn-circle ${isVideoOff ? 'btn-error' : 'btn-outline'}`}
               title={isVideoOff ? "Turn on camera" : "Turn off camera"}
             >
-              {isVideoOff ? <VideoOffIcon className="w-5 h-5 sm:w-6 sm:h-6" /> : <Video className="w-5 h-5 sm:w-6 sm:h-6" />}
+              {isVideoOff ? <VideoOffIcon size={20} /> : <Video size={20} />}
             </button>
           )}
         </div>
-        
-        {/* Status Text */}
-        <p className="text-center text-white/50 text-[10px] sm:text-sm mt-3 sm:mt-4">
-          {isMuted && "Microphone muted"}
-          {isVideoOff && callType === "video" && " • Camera off"}
-        </p>
       </div>
-
-      <style>{`
-        .mirror {
-          transform: scaleX(-1);
-        }
-        .btn-xl {
-          width: 4rem;
-          height: 4rem;
-        }
-        @media (min-width: 640px) {
-          .btn-xl {
-            width: 5rem;
-            height: 5rem;
-          }
-        }
-      `}</style>
     </div>
   );
 };

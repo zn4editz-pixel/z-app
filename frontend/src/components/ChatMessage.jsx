@@ -238,13 +238,12 @@ const ChatMessage = ({ message, onReply }) => {
     <>
       <div 
         id={`message-${message.id}`}
-        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-3 relative w-full max-w-full overflow-hidden`}
+        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'mb-5' : 'mb-3'} relative w-full max-w-full`}
       >
         <div 
           className="flex items-end gap-2 relative min-w-0" 
           style={{ 
             maxWidth: 'min(80%, 400px)',
-            overflow: 'hidden',
             wordBreak: 'break-word'
           }}
         >
@@ -259,11 +258,13 @@ const ChatMessage = ({ message, onReply }) => {
           )}
 
           <div
-            className="relative"
+            className="relative max-w-full"
             style={{ 
               WebkitTapHighlightColor: 'transparent',
               transform: `translateX(${swipeOffset}px)`,
-              transition: swipeOffset === 0 ? 'transform 0.2s ease-out' : 'none'
+              transition: swipeOffset === 0 ? 'transform 0.2s ease-out' : 'none',
+              touchAction: 'pan-y',
+              userSelect: 'none'
             }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -317,7 +318,8 @@ const ChatMessage = ({ message, onReply }) => {
                   display: 'inline-block',
                   maxWidth: '100%',
                   wordBreak: 'break-word',
-                  overflowWrap: 'break-word'
+                  overflowWrap: 'break-word',
+                  pointerEvents: 'auto'
                 }}
               >
                 {/* Reply To Message */}
@@ -482,11 +484,10 @@ const ChatMessage = ({ message, onReply }) => {
               </div>
             )}
 
-            {/* Reactions Display - Instagram Style (Floating, No Layout Impact) */}
+            {/* Reactions Display - Instagram Style (Floating, Visible) */}
             {Object.keys(groupedReactions).length > 0 && (
               <div
-                className={`absolute -bottom-3 ${isMyMessage ? "right-2" : "left-2"} flex gap-1 pointer-events-auto`}
-                style={{ zIndex: 5 }}
+                className={`absolute -bottom-2 ${isMyMessage ? "right-2" : "left-2"} flex gap-1 pointer-events-auto z-10`}
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowReactions(!showReactions);

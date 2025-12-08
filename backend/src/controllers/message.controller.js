@@ -84,6 +84,13 @@ export const getMessages = async (req, res) => {
         callDuration: true,
         callStatus: true,
         callInitiator: true,
+        reactions: true,
+        replyToId: true,
+        isDeleted: true,
+        deletedAt: true,
+        status: true,
+        deliveredAt: true,
+        readAt: true,
         createdAt: true
       },
       orderBy: { createdAt: 'desc' },
@@ -293,24 +300,48 @@ export const addReaction = async (req, res) => {
     }
 
     const message = await prisma.message.findUnique({
-      where: { id: messageId }
+      where: { id: messageId },
+      include: {
+        sender: { select: { id: true, fullName: true, nickname: true, profilePic: true } },
+        receiver: { select: { id: true, fullName: true, nickname: true, profilePic: true } }
+      }
     });
 
     if (!message) {
       return res.status(404).json({ error: "Message not found" });
     }
 
-    // Note: The current Prisma schema doesn't have reactions field
-    // This is a placeholder response
-    const reactionData = {
-      messageId,
+    // Get current reactions
+    let reactions = Array.isArray(message.reactions) ? message.reactions : [];
+    
+    // Remove existing reaction from this user (if any)
+    reactions = reactions.filter(r => r.userId !== userId);
+    
+    // Add new reaction
+    reactions.push({
       emoji,
-      userId
-    };
+      userId,
+      createdAt: new Date().toISOString()
+    });
+
+    // Update message with new reactions
+    const updatedMessage = await prisma.message.update({
+      where: { id: messageId },
+      data: { reactions },
+      include: {
+        sender: { select: { id: true, fullName: true, nickname: true, profilePic: true } },
+        receiver: { select: { id: true, fullName: true, nickname: true, profilePic: true } }
+      }
+    });
 
     // Notify both users
     const receiverSocketId = getReceiverSocketId(message.receiverId);
     const senderSocketId = getReceiverSocketId(message.senderId);
+    
+    const reactionData = {
+      messageId,
+      reactions: updatedMessage.reactions
+    };
     
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("messageReaction", reactionData);
@@ -319,7 +350,7 @@ export const addReaction = async (req, res) => {
       io.to(senderSocketId).emit("messageReaction", reactionData);
     }
 
-    res.status(200).json({ message: "Reaction added", ...reactionData });
+    res.status(200).json({ message: "Reaction added", reactions: updatedMessage.reactions });
   } catch (error) {
     console.error("Error in addReaction:", error.message);
     res.status(500).json({ error: "Internal server error" });
@@ -332,23 +363,39 @@ export const removeReaction = async (req, res) => {
     const userId = req.user.id;
 
     const message = await prisma.message.findUnique({
-      where: { id: messageId }
+      where: { id: messageId },
+      include: {
+        sender: { select: { id: true, fullName: true, nickname: true, profilePic: true } },
+        receiver: { select: { id: true, fullName: true, nickname: true, profilePic: true } }
+      }
     });
 
     if (!message) {
       return res.status(404).json({ error: "Message not found" });
     }
 
-    // Note: The current Prisma schema doesn't have reactions field
-    // This is a placeholder response
-    const reactionData = {
-      messageId,
-      removedBy: userId
-    };
+    // Get current reactions and remove this user's reaction
+    let reactions = Array.isArray(message.reactions) ? message.reactions : [];
+    reactions = reactions.filter(r => r.userId !== userId);
+
+    // Update message with new reactions
+    const updatedMessage = await prisma.message.update({
+      where: { id: messageId },
+      data: { reactions },
+      include: {
+        sender: { select: { id: true, fullName: true, nickname: true, profilePic: true } },
+        receiver: { select: { id: true, fullName: true, nickname: true, profilePic: true } }
+      }
+    });
 
     // Notify both users
     const receiverSocketId = getReceiverSocketId(message.receiverId);
     const senderSocketId = getReceiverSocketId(message.senderId);
+    
+    const reactionData = {
+      messageId,
+      reactions: updatedMessage.reactions
+    };
     
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("messageReaction", reactionData);
@@ -357,7 +404,7 @@ export const removeReaction = async (req, res) => {
       io.to(senderSocketId).emit("messageReaction", reactionData);
     }
 
-    res.status(200).json({ message: "Reaction removed", ...reactionData });
+    res.status(200).json({ message: "Reaction removed", reactions: updatedMessage.reactions });
   } catch (error) {
     console.error("Error in removeReaction:", error.message);
     res.status(500).json({ error: "Internal server error" });

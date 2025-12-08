@@ -255,9 +255,6 @@ export const useAuthStore = create((set, get) => ({
 
 		newSocket.on("connect", () => {
 			console.log("✅ Socket connected:", newSocket.id);
-			// Dismiss any reconnecting toasts
-			toast.dismiss('reconnecting');
-			// Clear any previous connection errors
 		});
 		
         newSocket.on("connect_error", (err) => {
@@ -299,7 +296,6 @@ export const useAuthStore = create((set, get) => ({
 		// Reconnect logic might be handled automatically by socket.io, but explicit checkAuth can be good
 		newSocket.io.on("reconnect", async (attempt) => {
 			console.log(`🔄 Socket reconnected after ${attempt} attempts`);
-			toast.success("Reconnected to server!");
 			// Re-register user and fetch data upon successful reconnect
             if (get().authUser) { // Check if user is still logged in client-side
                 newSocket.emit("register-user", get().authUser.id); // Re-register
@@ -308,18 +304,12 @@ export const useAuthStore = create((set, get) => ({
 		});
         newSocket.io.on("reconnect_attempt", (attempt) => {
              console.log(`Attempting to reconnect socket... (${attempt})`);
-			 // Only show message after 3 attempts
-			 if (attempt === 3) {
-				toast.loading("Reconnecting to server...", { id: 'reconnecting' });
-			 }
         });
         newSocket.io.on("reconnect_error", (error) => {
             console.error("Socket reconnection error:", error.message);
         });
         newSocket.io.on("reconnect_failed", () => {
              console.error("Socket reconnection failed after multiple attempts.");
-			 toast.dismiss('reconnecting');
-             toast.error("Connection lost. Please refresh the page.");
         });
 	},
 

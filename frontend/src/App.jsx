@@ -22,9 +22,7 @@ const DebugPage = lazy(() => import("./pages/DebugPage"));
 
 // Lazy load components
 const Navbar = lazy(() => import("./components/Navbar"));
-const OfflineIndicator = lazy(() => import("./components/OfflineIndicator"));
 const PermissionHandler = lazy(() => import("./components/PermissionHandler"));
-const ConnectionStatus = lazy(() => import("./components/ConnectionStatus"));
 
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
@@ -327,8 +325,6 @@ const App = () => {
 	return (
 		<div data-theme={theme} className="pt-14 md:pt-16">
 			<Suspense fallback={null}>
-				<ConnectionStatus />
-				<OfflineIndicator />
 				{authUser && hasCompletedProfile && <PermissionHandler />}
 				{hasCompletedProfile && window.location.pathname !== "/stranger" && <Navbar />}
 			</Suspense>

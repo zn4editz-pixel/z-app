@@ -128,6 +128,14 @@ model Message {
   callStatus     String? // completed, missed, rejected
   callInitiator  String?
 
+  // Reactions
+  reactions Json @default("[]") // Array of {emoji, userId, createdAt}
+
+  // Reply To
+  replyToId String?
+  isDeleted Boolean @default(false)
+  deletedAt DateTime?
+
   @@index([senderId])
   @@index([receiverId])
   @@index([createdAt])

@@ -8,6 +8,7 @@ import CountryFlag from "../components/CountryFlag";
 import { useFriendStore } from "../store/useFriendStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNotificationStore } from "../store/useNotificationStore";
+import { getId } from "../utils/idHelper";
 
 // Admin Notifications List Component
 const AdminNotificationsList = () => {
@@ -195,6 +196,14 @@ const DiscoverPage = () => {
 	const { authUser } = useAuthStore();
 	const { notifications } = useNotificationStore();
 
+	// Debug logging
+	useEffect(() => {
+		console.log('🔍 DiscoverPage mounted');
+		console.log('Auth user:', authUser);
+		console.log('Suggested users:', suggestedUsers);
+		console.log('Is loading:', isLoadingSuggested);
+	}, [authUser, suggestedUsers, isLoadingSuggested]);
+
 	// Calculate notification counts for each tab
 	const adminNotifications = notifications.filter(n => n.type === 'admin' || n.type === 'admin_broadcast');
 	const hasVerificationUpdate = authUser?.verificationRequest?.status && authUser.verificationRequest.status !== "none";
@@ -213,6 +222,7 @@ const DiscoverPage = () => {
 	}, [activeTab]);
 
 	const fetchSuggestedUsers = async () => {
+		console.log('📥 Fetching suggested users...');
 		// Check cache first
 		const cached = sessionStorage.getItem('suggestedUsers');
 		const cacheTime = sessionStorage.getItem('suggestedUsersTime');
@@ -220,11 +230,18 @@ const DiscoverPage = () => {
 		
 		// Show cached data immediately (stale-while-revalidate pattern)
 		if (cached) {
-			setSuggestedUsers(JSON.parse(cached));
-			setIsLoadingSuggested(false);
+			console.log('✅ Using cached suggested users');
+			try {
+				setSuggestedUsers(JSON.parse(cached));
+				setIsLoadingSuggested(false);
+			} catch (e) {
+				console.error('Error parsing cached data:', e);
+				sessionStorage.removeItem('suggestedUsers');
+			}
 			
 			// If cache is fresh (< 2 min), don't refetch
 			if (cacheTime && (now - parseInt(cacheTime)) < 120000) {
+				console.log('✅ Cache is fresh, skipping fetch');
 				return;
 			}
 		} else {
@@ -233,14 +250,17 @@ const DiscoverPage = () => {
 		
 		// Fetch fresh data in background
 		try {
+			console.log('🌐 Fetching from API...');
 			const res = await axiosInstance.get("/users/suggested");
 			const users = res.data || [];
+			console.log(`✅ Received ${users.length} suggested users:`, users);
 			setSuggestedUsers(users);
 			// Cache for 2 minutes (matches backend cache)
 			sessionStorage.setItem('suggestedUsers', JSON.stringify(users));
 			sessionStorage.setItem('suggestedUsersTime', now.toString());
 		} catch (error) {
-			console.error("Error fetching suggested users:", error);
+			console.error("❌ Error fetching suggested users:", error);
+			console.error("Error response:", error.response?.data);
 			// Keep showing cached data on error
 			if (!cached) {
 				toast.error("Failed to load suggested users");

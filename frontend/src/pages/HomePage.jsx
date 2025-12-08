@@ -8,7 +8,6 @@ import NoChatSelected from "../components/NoChatSelected";
 import ChatContainer from "../components/ChatContainer";
 import PrivateCallModal from "../components/PrivateCallModal";
 import IncomingCallModal from "../components/IncomingCallModal";
-import SocketConnectionStatus from "../components/SocketConnectionStatus";
 
 const HomePage = () => {
   const { selectedUser } = useChatStore();
@@ -127,9 +126,6 @@ const HomePage = () => {
 
   return (
     <div className="fixed inset-0 bg-base-200 overflow-hidden">
-      {/* Socket Connection Status */}
-      <SocketConnectionStatus />
-      
       {/* Main container */}
       <div className="h-full w-full flex flex-col overflow-hidden">
         {/* Spacer for navbar */}
