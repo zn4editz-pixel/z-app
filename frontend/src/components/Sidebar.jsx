@@ -23,6 +23,60 @@ const Sidebar = () => {
   const [query, setQuery] = useState("");
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
 
+  // Instagram-style message preview generator
+  const getMessagePreview = (user, unreadCount) => {
+    const lastMsg = user.lastMessage;
+    
+    // No messages yet - show "Tap to chat"
+    if (!lastMsg || (!lastMsg.text && !lastMsg.image && !lastMsg.voice)) {
+      return { text: "Tap to chat", icon: null, bold: false, muted: true };
+    }
+
+    const isFromMe = lastMsg.senderId === authUser?.id;
+    
+    // Handle reactions
+    if (lastMsg.reactions && lastMsg.reactions.length > 0) {
+      const myReaction = lastMsg.reactions.find(r => r.userId === authUser?.id);
+      const theirReaction = lastMsg.reactions.find(r => r.userId === user.id);
+      
+      if (myReaction && isFromMe) {
+        return { text: `You reacted ${myReaction.emoji} to your message`, icon: null, bold: false, muted: false };
+      } else if (myReaction && !isFromMe) {
+        return { text: `You reacted ${myReaction.emoji}`, icon: null, bold: false, muted: false };
+      } else if (theirReaction) {
+        return { text: `Reacted ${theirReaction.emoji} to your message`, icon: null, bold: unreadCount > 0, muted: false };
+      }
+    }
+
+    // Multiple unread messages
+    if (unreadCount > 1) {
+      return { text: "New messages", icon: null, bold: true, muted: false };
+    }
+
+    // Single unread message
+    if (unreadCount === 1) {
+      if (lastMsg.image) {
+        return { text: "Sent a photo", icon: "📷", bold: true, muted: false };
+      }
+      if (lastMsg.voice) {
+        return { text: "Sent a voice message", icon: "🎤", bold: true, muted: false };
+      }
+      return { text: lastMsg.text || "New message", icon: null, bold: true, muted: false };
+    }
+
+    // Read messages (no unread)
+    if (lastMsg.image) {
+      return { text: isFromMe ? "You sent a photo" : "Sent a photo", icon: "📷", bold: false, muted: false };
+    }
+    if (lastMsg.voice) {
+      return { text: isFromMe ? "You sent a voice message" : "Sent a voice message", icon: "🎤", bold: false, muted: false };
+    }
+    
+    // Regular text message
+    const prefix = isFromMe ? "You: " : "";
+    return { text: prefix + (lastMsg.text || ""), icon: isFromMe ? <Check className="w-3 h-3 text-primary flex-shrink-0" /> : null, bold: false, muted: false };
+  };
+
   // Calculate if there are any Social Hub updates
   const adminNotifications = notifications.filter(n => n.type === 'admin' || n.type === 'admin_broadcast');
   const hasVerificationUpdate = authUser?.verificationRequest?.status && authUser.verificationRequest.status !== "none";
@@ -100,44 +154,8 @@ const Sidebar = () => {
             </button>
           </div>
 
-          {/* Active Now - Horizontal Scroll */}
-          <div className="mb-3">
-            <h4 className="text-xs font-semibold text-base-content/60 mb-2 px-1">Active Now</h4>
-            <div className="flex gap-3 overflow-x-auto py-1 -mx-3 sm:-mx-4 px-3 sm:px-4 scrollbar-hide">
-              {/* Show only online friends */}
-              {friends.filter(u => onlineUsers.includes(u.id)).length === 0 ? (
-                <div className="text-xs text-base-content/50 py-2">No friends online</div>
-              ) : (
-                friends
-                  .filter(u => onlineUsers.includes(u.id))
-                  .slice(0, 10)
-                  .map((u) => (
-                    <button
-                      key={u.id}
-                      onClick={() => setSelectedUser(u)}
-                      className="flex-none flex flex-col items-center gap-1 min-w-[56px] active:scale-95 transition-transform focus:outline-none"
-                      style={{ WebkitTapHighlightColor: 'transparent' }}
-                    >
-                      <div className="relative w-14 h-14 rounded-full p-[2px] bg-gradient-to-tr from-green-400 to-green-600 overflow-hidden"> 
-                        <img
-                          src={u.profilePic || "/avatar.png"}
-                          alt={u.nickname || u.username}
-                          className="w-full h-full object-cover rounded-full border-2 border-base-100"
-                        />
-                        {/* Online indicator */}
-                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-base-100"></div>
-                      </div>
-                      <span className="text-xs truncate w-14 text-center">
-                        {(u.nickname || u.username || "User").split(" ")[0]}
-                      </span>
-                    </button>
-                  ))
-              )}
-            </div>
-          </div>
-
-          {/* Quick Access - Horizontal Scroll */}
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto py-2 -mx-3 sm:-mx-4 px-3 sm:px-4 scrollbar-hide border-t border-base-200 pt-3">
+          {/* Friends Horizontal Bar - Online first, then offline */}
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto py-2 -mx-3 sm:-mx-4 px-3 sm:px-4 scrollbar-hide">
             {/* Discover Users Button */}
             <Link
               to="/discover"
@@ -165,6 +183,43 @@ const Sidebar = () => {
                 Stranger
               </span>
             </Link>
+            
+            {/* All Friends - Online first with green ring, then offline */}
+            {friends
+              .sort((a, b) => {
+                const aOnline = onlineUsers.includes(a.id);
+                const bOnline = onlineUsers.includes(b.id);
+                if (aOnline && !bOnline) return -1;
+                if (!aOnline && bOnline) return 1;
+                return 0;
+              })
+              .map((u) => {
+                const isOnline = onlineUsers.includes(u.id);
+                return (
+                  <button
+                    key={u.id}
+                    onClick={() => setSelectedUser(u)}
+                    className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-transform focus:outline-none"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] overflow-hidden ${
+                      isOnline ? 'bg-gradient-to-tr from-green-400 to-green-600' : 'ring-2 ring-primary'
+                    }`}>
+                      <img
+                        src={u.profilePic || "/avatar.png"}
+                        alt={u.nickname || u.username}
+                        className={`w-full h-full object-cover rounded-full ${isOnline ? 'border-2 border-base-100' : ''}`}
+                      />
+                      {isOnline && (
+                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-base-100"></div>
+                      )}
+                    </div>
+                    <span className="text-xs sm:text-sm truncate w-14 sm:w-16 text-center">
+                      {(u.nickname || u.username || "User").split(" ")[0]}
+                    </span>
+                  </button>
+                );
+              })}
           </div>
         </div>
 
@@ -229,25 +284,25 @@ const Sidebar = () => {
                           <span className="truncate">{user.nickname || user.username}</span>
                           {user.isVerified && <VerifiedBadge size="xs" />}
                         </div>
-                        <div className="text-xs sm:text-sm text-base-content/60 truncate flex items-center gap-1">
-                          {unread > 0 && (
-                            <span className="font-semibold text-base-content">
-                              {user.lastMessage?.text || "New message"}
-                            </span>
-                          )}
-                          {unread === 0 && (
-                            <>
-                              {user.lastMessage?.text ? (
-                                <>
-                                  <Check className="w-3 h-3 text-primary flex-shrink-0" />
-                                  <span className="truncate">{user.lastMessage.text}</span>
-                                </>
-                              ) : (
-                                <span className="text-base-content/50">Tap to message</span>
+                        {(() => {
+                          const preview = getMessagePreview(user, unread);
+                          return (
+                            <div className={`text-xs sm:text-sm truncate flex items-center gap-1 ${
+                              preview.bold ? 'font-semibold text-base-content' : 
+                              preview.muted ? 'text-base-content/40' : 
+                              'text-base-content/60'
+                            }`}>
+                              {preview.icon && (
+                                typeof preview.icon === 'string' ? (
+                                  <span className="flex-shrink-0">{preview.icon}</span>
+                                ) : (
+                                  preview.icon
+                                )
                               )}
-                            </>
-                          )}
-                        </div>
+                              <span className="truncate">{preview.text}</span>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Unread Badge - Instagram Style */}
