@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket Connection Diagnostic Tool</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .status-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .status-card h3 {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .status-value {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .status-connected {
+            color: #28a745;
+        }
+        .status-disconnected {
+            color: #dc3545;
+        }
+        .status-warning {
+            color: #ffc107;
+        }
+        .log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 5px;
+            border-left: 3px solid transparent;
+        }
+        .log-success {
+            border-left-color: #28a745;
+            color: #4ade80;
+        }
+        .log-error {
+            border-left-color: #dc3545;
+            color: #f87171;
+        }
+        .log-warning {
+            border-left-color: #ffc107;
+            color: #fbbf24;
+        }
+        .log-info {
+            border-left-color: #17a2b8;
+            color: #60a5fa;
+        }
+        .timestamp {
+            color: #888;
+            font-size: 0.85em;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+        input {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            flex: 1;
+            min-width: 200px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .metric {
+            display: inline-block;
+            margin-right: 20px;
+            padding: 8px 16px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .metric-label {
+            font-size: 0.85em;
+            color: #666;
+        }
+        .metric-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔌 Socket Connection Diagnostic Tool</h1>
+            <p>Real-time socket.io connection monitoring and testing</p>
+        </div>
+        
+        <div class="content">
+            <!-- Connection Status -->
+            <div class="section">
+                <h2>📡 Connection Status</h2>
+                <div class="status-grid">
+                    <div class="status-card">
+                        <h3>Socket Status</h3>
+                        <div id="socketStatus" class="status-value status-disconnected">Disconnected</div>
+                    </div>
+                    <div class="status-card">
+                        <h3>Socket ID</h3>
+                        <div id="socketId" class="status-value">-</div>
+                    </div>
+                    <div class="status-card">
+                        <h3>User ID</h3>
+                        <div id="userId" class="status-value">-</div>
+                    </div>
+                    <div class="status-card">
+                        <h3>Reconnect Attempts</h3>
+                        <div id="reconnectAttempts" class="status-value">0</div>
+                    </div>
+                    <div class="status-card">
+                        <h3>Latency</h3>
+                        <div id="latency" class="status-value">-</div>
+                    </div>
+                    <div class="status-card">
+                        <h3>Transport</h3>
+                        <div id="transport" class="status-value">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connection Metrics -->
+            <div class="section">
+                <h2>📊 Connection Metrics</h2>
+                <div>
+                    <span class="metric">
+                        <span class="metric-label">Messages Sent:</span>
+                        <span class="metric-value" id="messagesSent">0</span>
+                    </span>
+                    <span class="metric">
+                        <span class="metric-label">Messages Received:</span>
+                        <span class="metric-value" id="messagesReceived">0</span>
+                    </span>
+                    <span class="metric">
+                        <span class="metric-label">Avg Latency:</span>
+                        <span class="metric-value" id="avgLatency">-</span>
+                    </span>
+                    <span class="metric">
+                        <span class="metric-label">Uptime:</span>
+                        <span class="metric-value" id="uptime">-</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="section">
+                <h2>🎮 Controls</h2>
+                <div class="controls">
+                    <input type="text" id="serverUrl" placeholder="Server URL (e.g., http://localhost:5001)" value="http://localhost:5001">
+                    <input type="text" id="userIdInput" placeholder="User ID (optional)">
+                    <button class="btn-primary" onclick="connectSocket()">Connect</button>
+                    <button class="btn-danger" onclick="disconnectSocket()">Disconnect</button>
+                    <button class="btn-success" onclick="sendTestMessage()">Send Test Message</button>
+                    <button class="btn-primary" onclick="testPing()">Test Ping</button>
+                    <button class="btn-danger" onclick="clearLogs()">Clear Logs</button>
+                </div>
+            </div>
+
+            <!-- Event Log -->
+            <div class="section">
+                <h2>📝 Event Log</h2>
+                <div id="logContainer" class="log-container">
+                    <div class="log-entry log-info">
+                        <span class="timestamp">[Ready]</span> Diagnostic tool initialized. Click "Connect" to start.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let reconnectAttempts = 0;
+        let messagesSent = 0;
+        let messagesReceived = 0;
+        let latencies = [];
+        let connectionStartTime = null;
+        let uptimeInterval = null;
+
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function updateStatus(elementId, value, statusClass = '') {
+            const element = document.getElementById(elementId);
+            element.textContent = value;
+            if (statusClass) {
+                element.className = `status-value ${statusClass}`;
+            }
+        }
+
+        function updateMetrics() {
+            updateStatus('messagesSent', messagesSent);
+            updateStatus('messagesReceived', messagesReceived);
+            
+            if (latencies.length > 0) {
+                const avg = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+                updateStatus('avgLatency', `${avg.toFixed(0)}ms`);
+            }
+        }
+
+        function startUptimeCounter() {
+            connectionStartTime = Date.now();
+            uptimeInterval = setInterval(() => {
+                if (connectionStartTime) {
+                    const uptime = Math.floor((Date.now() - connectionStartTime) / 1000);
+                    const minutes = Math.floor(uptime / 60);
+                    const seconds = uptime % 60;
+                    updateStatus('uptime', `${minutes}m ${seconds}s`);
+                }
+            }, 1000);
+        }
+
+        function stopUptimeCounter() {
+            if (uptimeInterval) {
+                clearInterval(uptimeInterval);
+                uptimeInterval = null;
+            }
+            connectionStartTime = null;
+            updateStatus('uptime', '-');
+        }
+
+        function connectSocket() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            const userId = document.getElementById('userIdInput').value;
+
+            if (!serverUrl) {
+                log('❌ Please enter a server URL', 'error');
+                return;
+            }
+
+            if (socket && socket.connected) {
+                log('⚠️ Already connected. Disconnect first.', 'warning');
+                return;
+            }
+
+            log(`🔌 Connecting to ${serverUrl}...`, 'info');
+
+            const options = {
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                reconnectionAttempts: 10
+            };
+
+            if (userId) {
+                options.query = { userId };
+                options.auth = { token: 'test-token' };
+            }
+
+            socket = io(serverUrl, options);
+
+            // Connection events
+            socket.on('connect', () => {
+                log('✅ Socket connected successfully!', 'success');
+                updateStatus('socketStatus', 'Connected', 'status-connected');
+                updateStatus('socketId', socket.id);
+                updateStatus('transport', socket.io.engine.transport.name);
+                reconnectAttempts = 0;
+                updateStatus('reconnectAttempts', reconnectAttempts);
+                startUptimeCounter();
+
+                if (userId) {
+                    socket.emit('register-user', userId);
+                    log(`📝 Registered user: ${userId}`, 'success');
+                    updateStatus('userId', userId);
+                }
+            });
+
+            socket.on('disconnect', (reason) => {
+                log(`❌ Disconnected: ${reason}`, 'error');
+                updateStatus('socketStatus', 'Disconnected', 'status-disconnected');
+                updateStatus('socketId', '-');
+                updateStatus('transport', '-');
+                stopUptimeCounter();
+            });
+
+            socket.on('connect_error', (error) => {
+                log(`❌ Connection error: ${error.message}`, 'error');
+                updateStatus('socketStatus', 'Error', 'status-disconnected');
+            });
+
+            socket.io.on('reconnect_attempt', (attempt) => {
+                reconnectAttempts = attempt;
+                log(`🔄 Reconnection attempt ${attempt}...`, 'warning');
+                updateStatus('reconnectAttempts', reconnectAttempts);
+            });
+
+            socket.io.on('reconnect', (attempt) => {
+                log(`✅ Reconnected after ${attempt} attempts`, 'success');
+                reconnectAttempts = 0;
+                updateStatus('reconnectAttempts', reconnectAttempts);
+            });
+
+            socket.io.on('reconnect_failed', () => {
+                log('❌ Reconnection failed', 'error');
+            });
+
+            // Message events
+            socket.on('newMessage', (data) => {
+                messagesReceived++;
+                log(`📨 Received message: ${JSON.stringify(data)}`, 'success');
+                updateMetrics();
+            });
+
+            socket.on('getOnlineUsers', (users) => {
+                log(`👥 Online users updated: ${users.length} users`, 'info');
+            });
+
+            // Pong response
+            socket.on('pong', () => {
+                const latency = Date.now() - lastPingTime;
+                latencies.push(latency);
+                if (latencies.length > 10) latencies.shift();
+                updateStatus('latency', `${latency}ms`);
+                log(`🏓 Pong received: ${latency}ms`, 'success');
+                updateMetrics();
+            });
+        }
+
+        function disconnectSocket() {
+            if (!socket) {
+                log('⚠️ No socket to disconnect', 'warning');
+                return;
+            }
+
+            socket.disconnect();
+            socket = null;
+            log('🔌 Socket disconnected manually', 'info');
+            updateStatus('socketStatus', 'Disconnected', 'status-disconnected');
+            updateStatus('socketId', '-');
+            updateStatus('userId', '-');
+            updateStatus('transport', '-');
+            stopUptimeCounter();
+        }
+
+        let lastPingTime = 0;
+        function testPing() {
+            if (!socket || !socket.connected) {
+                log('❌ Socket not connected', 'error');
+                return;
+            }
+
+            lastPingTime = Date.now();
+            socket.emit('ping');
+            log('🏓 Ping sent...', 'info');
+        }
+
+        function sendTestMessage() {
+            if (!socket || !socket.connected) {
+                log('❌ Socket not connected', 'error');
+                return;
+            }
+
+            const testMessage = {
+                text: 'Test message from diagnostic tool',
+                timestamp: new Date().toISOString()
+            };
+
+            socket.emit('sendMessage', testMessage);
+            messagesSent++;
+            log(`📤 Test message sent: ${JSON.stringify(testMessage)}`, 'success');
+            updateMetrics();
+        }
+
+        function clearLogs() {
+            const logContainer = document.getElementById('logContainer');
+            logContainer.innerHTML = '<div class="log-entry log-info"><span class="timestamp">[Cleared]</span> Logs cleared.</div>';
+        }
+
+        // Auto-detect server URL from current page
+        window.addEventListener('load', () => {
+            const currentUrl = window.location.origin;
+            if (currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1')) {
+                document.getElementById('serverUrl').value = 'http://localhost:5001';
+            }
+        });
+    </script>
+</body>
+</html>

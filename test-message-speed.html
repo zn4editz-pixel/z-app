@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Message Speed Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-box {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .fast { color: #4CAF50; }
+        .slow { color: #f44336; }
+        .warning { color: #ff9800; }
+    </style>
+</head>
+<body>
+    <h1>⚡ Message Speed Test</h1>
+    
+    <div class="test-box">
+        <h2>Test Instructions:</h2>
+        <ol>
+            <li>Open your chat app in another tab</li>
+            <li>Open browser console (F12)</li>
+            <li>Send a message in the chat</li>
+            <li>Look for these logs:</li>
+        </ol>
+        <div class="result">
+            <div>📤 Sending via Socket.IO (INSTANT) ← Should appear IMMEDIATELY</div>
+            <div>✅ Message saved: [id] ← Backend log (check backend terminal)</div>
+            <div>📨 New message received: [id] ← Should be within 100-300ms</div>
+        </div>
+    </div>
+
+    <div class="test-box">
+        <h2>🔍 Diagnosis:</h2>
+        
+        <h3>If you see "Sending via Socket.IO":</h3>
+        <div class="result fast">
+            ✅ Socket is connected - GOOD!
+            <br>Message should appear instantly for YOU
+            <br>Delay is network latency (normal)
+        </div>
+
+        <h3>If you see "Sending via API (fallback)":</h3>
+        <div class="result slow">
+            ❌ Socket is NOT connected - BAD!
+            <br>Messages using slow HTTP API
+            <br>FIX: Refresh the page to reconnect socket
+        </div>
+
+        <h3>If message takes 5 seconds:</h3>
+        <div class="result slow">
+            ❌ CRITICAL ISSUE - Possible causes:
+            <br>1. Database is slow (check backend logs)
+            <br>2. Socket not emitting back to sender
+            <br>3. Network issue
+            <br>4. Backend server overloaded
+        </div>
+    </div>
+
+    <div class="test-box">
+        <h2>🚀 Quick Fixes:</h2>
+        <button onclick="window.location.reload()">Refresh Page (Reconnect Socket)</button>
+        <button onclick="localStorage.clear(); window.location.reload()">Clear Cache & Refresh</button>
+        <button onclick="window.open('http://localhost:5001', '_blank')">Check Backend Status</button>
+    </div>
+
+    <div class="test-box">
+        <h2>📊 Expected Timings:</h2>
+        <div class="result">
+            <div class="fast">✅ Message appears for YOU: 0ms (instant)</div>
+            <div class="fast">✅ Message saved to database: 10-50ms</div>
+            <div class="fast">✅ Message sent via socket: 50-100ms</div>
+            <div class="warning">⚠️ Message received by OTHER: 100-500ms (network)</div>
+            <div class="slow">❌ 5 seconds = PROBLEM!</div>
+        </div>
+    </div>
+
+    <div class="test-box">
+        <h2>🔧 Debug Commands:</h2>
+        <div class="result">
+            <div>// In browser console:</div>
+            <div>console.log('Socket connected:', !!window.socket)</div>
+            <div>console.log('Socket ID:', window.socket?.id)</div>
+            <div></div>
+            <div>// Check if socket is in store:</div>
+            <div>// Open React DevTools → Components → useAuthStore</div>
+            <div>// Look for "socket" property</div>
+        </div>
+    </div>
+
+    <div class="test-box">
+        <h2>🎯 Most Likely Issue:</h2>
+        <div class="result slow">
+            Based on backend logs showing "Could not find socket for user",
+            the OTHER person's socket is NOT connected.
+            <br><br>
+            <strong>This means:</strong>
+            <br>- Your messages ARE being saved instantly
+            <br>- But the other person isn't receiving them in real-time
+            <br>- They need to REFRESH their page
+            <br><br>
+            <strong>For YOU:</strong>
+            <br>- Messages should appear INSTANTLY when you send
+            <br>- If they don't, YOUR socket is disconnected
+            <br>- Refresh your page
+        </div>
+    </div>
+
+    <script>
+        console.log('🧪 Message Speed Test Page Loaded');
+        console.log('📝 Follow the instructions above to diagnose the issue');
+    </script>
+</body>
+</html>

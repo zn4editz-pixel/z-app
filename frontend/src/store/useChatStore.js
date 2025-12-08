@@ -11,6 +11,7 @@ export const useChatStore = create((set, get) => ({
     selectedUser: null, // User object for the currently selected chat partner
     isMessagesLoading: false,
     unreadCounts: {},
+    socketConnected: false, // Track socket connection status
 
     // --- NEW: Call State ---
     callState: "idle", // 'idle' | 'outgoing' | 'incoming' | 'connecting' | 'connected'
@@ -138,7 +139,24 @@ export const useChatStore = create((set, get) => ({
 
     subscribeToMessages: () => {
         const { socket } = useAuthStore.getState(); // Get socket directly
-        if (!socket) return;
+        if (!socket) {
+            set({ socketConnected: false });
+            return;
+        }
+        
+        // Update connection status
+        set({ socketConnected: socket.connected });
+        
+        // Monitor connection status changes
+        socket.on('connect', () => {
+            console.log('📡 Chat Store: Socket connected');
+            set({ socketConnected: true });
+        });
+        
+        socket.on('disconnect', () => {
+            console.log('📡 Chat Store: Socket disconnected');
+            set({ socketConnected: false });
+        });
 
         // Define handler separately
         const messageHandler = (newMessage) => {
@@ -268,6 +286,9 @@ export const useChatStore = create((set, get) => ({
         const { socket } = useAuthStore.getState();
         if (!socket) return;
         socket.off("newMessage");
+        socket.off("connect");
+        socket.off("disconnect");
+        set({ socketConnected: false });
     },
 
     setSelectedUser: (user) => {

@@ -200,6 +200,11 @@ const ChatMessage = ({ message, onReply }) => {
   // Check if emoji-only message
   const isEmojiOnly = message.text && /^[\p{Emoji}\s]+$/u.test(message.text) && !message.image && !message.voice;
   const emojiCount = message.text ? (message.text.match(/\p{Emoji}/gu) || []).length : 0;
+  
+  // Check if number-only message (and length)
+  const isNumberOnly = message.text && /^\d+$/.test(message.text.trim()) && !message.image && !message.voice;
+  const numberLength = message.text ? message.text.trim().length : 0;
+  const isShortNumber = isNumberOnly && numberLength <= 3;
 
   // If message is deleted
   if (message.isDeleted) {
@@ -233,10 +238,17 @@ const ChatMessage = ({ message, onReply }) => {
     <>
       <div 
         id={`message-${message.id}`}
-        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-3 relative`}
+        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-3 relative w-full max-w-full overflow-hidden`}
       >
-        <div className="flex items-end max-w-[80%] sm:max-w-[70%] gap-2 relative">
-          {!isMyMessage && !isEmojiOnly && (
+        <div 
+          className="flex items-end gap-2 relative min-w-0" 
+          style={{ 
+            maxWidth: 'min(80%, 400px)',
+            overflow: 'hidden',
+            wordBreak: 'break-word'
+          }}
+        >
+          {!isMyMessage && !isEmojiOnly && !isShortNumber && (
             <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0">
               <img
                 src={selectedUser?.profilePic || "/avatar.png"}
@@ -294,13 +306,19 @@ const ChatMessage = ({ message, onReply }) => {
                 />
               </div>
             ) : (
-              /* Message Bubble (for text, voice, or image+text) */
+              /* Message Bubble (for text, voice, or image+text) - NO BUBBLE for emoji-only or number-only */
               <div
-                className={isEmojiOnly ? "" : `relative px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-2xl shadow-sm ${
+                className={(isEmojiOnly || isNumberOnly) ? "" : `relative px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-2xl shadow-sm ${
                   isMyMessage
                     ? "bg-gradient-to-br from-primary to-primary/90 text-primary-content"
                     : "bg-base-200 text-base-content"
                 }`}
+                style={(isEmojiOnly || isNumberOnly) ? {} : { 
+                  display: 'inline-block',
+                  maxWidth: '100%',
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word'
+                }}
               >
                 {/* Reply To Message */}
                 {message.replyTo && (
@@ -335,7 +353,34 @@ const ChatMessage = ({ message, onReply }) => {
                 )}
 
                 {isEmojiOnly && emojiCount > 0 ? (
-                  <div className={`${emojiCount === 1 ? 'text-5xl sm:text-6xl' : 'text-4xl sm:text-5xl'} leading-tight`}>
+                  <div 
+                    className={`${emojiCount === 1 ? 'text-5xl sm:text-6xl' : 'text-4xl sm:text-5xl'} leading-tight`}
+                    style={{ maxWidth: '100%', wordBreak: 'break-word' }}
+                  >
+                    {message.text}
+                  </div>
+                ) : isShortNumber ? (
+                  /* Short numbers (1-3 digits) - Large, no bubble */
+                  <div 
+                    className={`${numberLength === 1 ? 'text-5xl sm:text-6xl' : numberLength === 2 ? 'text-4xl sm:text-5xl' : 'text-3xl sm:text-4xl'} font-bold leading-tight ${isMyMessage ? 'text-primary' : 'text-base-content'}`}
+                    style={{ 
+                      maxWidth: '100%', 
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word'
+                    }}
+                  >
+                    {message.text}
+                  </div>
+                ) : isNumberOnly ? (
+                  /* Long numbers (4+ digits) - Normal size, no bubble, but with word break */
+                  <div 
+                    className={`text-2xl sm:text-3xl font-bold leading-tight ${isMyMessage ? 'text-primary' : 'text-base-content'}`}
+                    style={{ 
+                      maxWidth: '100%',
+                      wordBreak: 'break-all',
+                      overflowWrap: 'anywhere'
+                    }}
+                  >
                     {message.text}
                   </div>
                 ) : (
@@ -427,8 +472,8 @@ const ChatMessage = ({ message, onReply }) => {
                     )}
 
                     {/* Text Message */}
-                    {message.text && !isEmojiOnly && (
-                      <p className="break-words whitespace-pre-wrap leading-relaxed">
+                    {message.text && !isEmojiOnly && !isShortNumber && (
+                      <p className="break-words whitespace-pre-wrap leading-relaxed" style={{ textWrap: 'balance', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                         {message.text}
                       </p>
                     )}

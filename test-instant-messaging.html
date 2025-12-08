@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant Messaging Test</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .user-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .panel-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-header h2 {
+            font-size: 1.5em;
+        }
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .status-connected {
+            background: #28a745;
+        }
+        .status-disconnected {
+            background: #dc3545;
+        }
+        .panel-body {
+            padding: 20px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+        .messages {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .message {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85em;
+            color: #666;
+        }
+        .message-text {
+            color: #333;
+            font-size: 1em;
+        }
+        .message-sent {
+            border-left: 4px solid #667eea;
+        }
+        .message-received {
+            border-left: 4px solid #28a745;
+        }
+        .latency {
+            font-weight: bold;
+            color: #667eea;
+        }
+        .latency-fast {
+            color: #28a745;
+        }
+        .latency-slow {
+            color: #ffc107;
+        }
+        .latency-very-slow {
+            color: #dc3545;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .results {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        .results h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .result-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .result-pass {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .result-fail {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        .result-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ Instant Messaging Test</h1>
+            <p>Test socket connections and message delivery speed</p>
+        </div>
+
+        <div class="test-grid">
+            <!-- User 1 Panel -->
+            <div class="user-panel">
+                <div class="panel-header">
+                    <h2>👤 User 1</h2>
+                    <span id="status1" class="status-badge status-disconnected">Disconnected</span>
+                </div>
+                <div class="panel-body">
+                    <div class="controls">
+                        <input type="text" id="userId1" placeholder="User ID (e.g., user1)" value="test-user-1">
+                        <button class="btn-primary" onclick="connectUser1()">Connect</button>
+                        <button class="btn-danger" onclick="disconnectUser1()">Disconnect</button>
+                    </div>
+                    
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-label">Sent</div>
+                            <div class="stat-value" id="sent1">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Received</div>
+                            <div class="stat-value" id="received1">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Avg Latency</div>
+                            <div class="stat-value" id="latency1">-</div>
+                        </div>
+                    </div>
+
+                    <div class="messages" id="messages1"></div>
+
+                    <div class="controls">
+                        <input type="text" id="messageInput1" placeholder="Type a message...">
+                        <button class="btn-success" onclick="sendMessage1()">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User 2 Panel -->
+            <div class="user-panel">
+                <div class="panel-header">
+                    <h2>👤 User 2</h2>
+                    <span id="status2" class="status-badge status-disconnected">Disconnected</span>
+                </div>
+                <div class="panel-body">
+                    <div class="controls">
+                        <input type="text" id="userId2" placeholder="User ID (e.g., user2)" value="test-user-2">
+                        <button class="btn-primary" onclick="connectUser2()">Connect</button>
+                        <button class="btn-danger" onclick="disconnectUser2()">Disconnect</button>
+                    </div>
+                    
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-label">Sent</div>
+                            <div class="stat-value" id="sent2">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Received</div>
+                            <div class="stat-value" id="received2">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Avg Latency</div>
+                            <div class="stat-value" id="latency2">-</div>
+                        </div>
+                    </div>
+
+                    <div class="messages" id="messages2"></div>
+
+                    <div class="controls">
+                        <input type="text" id="messageInput2" placeholder="Type a message...">
+                        <button class="btn-success" onclick="sendMessage2()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="results">
+            <h2>📊 Test Results</h2>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        const SERVER_URL = 'http://localhost:5001';
+        
+        let socket1 = null;
+        let socket2 = null;
+        let stats = {
+            user1: { sent: 0, received: 0, latencies: [] },
+            user2: { sent: 0, received: 0, latencies: [] }
+        };
+
+        function updateStatus(user, connected) {
+            const statusEl = document.getElementById(`status${user}`);
+            statusEl.textContent = connected ? 'Connected' : 'Disconnected';
+            statusEl.className = `status-badge ${connected ? 'status-connected' : 'status-disconnected'}`;
+        }
+
+        function updateStats(user) {
+            const s = stats[`user${user}`];
+            document.getElementById(`sent${user}`).textContent = s.sent;
+            document.getElementById(`received${user}`).textContent = s.received;
+            
+            if (s.latencies.length > 0) {
+                const avg = s.latencies.reduce((a, b) => a + b, 0) / s.latencies.length;
+                const latencyEl = document.getElementById(`latency${user}`);
+                latencyEl.textContent = `${avg.toFixed(0)}ms`;
+                
+                // Color code based on latency
+                latencyEl.className = 'stat-value';
+                if (avg < 100) latencyEl.classList.add('latency-fast');
+                else if (avg < 500) latencyEl.classList.add('latency-slow');
+                else latencyEl.classList.add('latency-very-slow');
+            }
+        }
+
+        function addMessage(user, text, type, latency = null) {
+            const messagesEl = document.getElementById(`messages${user}`);
+            const messageEl = document.createElement('div');
+            messageEl.className = `message message-${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            let latencyText = '';
+            if (latency !== null) {
+                const latencyClass = latency < 100 ? 'latency-fast' : latency < 500 ? 'latency-slow' : 'latency-very-slow';
+                latencyText = `<span class="latency ${latencyClass}">${latency}ms</span>`;
+            }
+            
+            messageEl.innerHTML = `
+                <div class="message-header">
+                    <span>${timestamp}</span>
+                    ${latencyText}
+                </div>
+                <div class="message-text">${text}</div>
+            `;
+            
+            messagesEl.appendChild(messageEl);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function addResult(text, type) {
+            const resultsEl = document.getElementById('results');
+            const resultEl = document.createElement('div');
+            resultEl.className = `result-item result-${type}`;
+            resultEl.innerHTML = `
+                <span>${text}</span>
+                <span>${type === 'pass' ? '✅' : type === 'fail' ? '❌' : '⚠️'}</span>
+            `;
+            resultsEl.appendChild(resultEl);
+        }
+
+        function connectUser1() {
+            const userId = document.getElementById('userId1').value;
+            if (!userId) {
+                alert('Please enter a user ID');
+                return;
+            }
+
+            socket1 = io(SERVER_URL, {
+                query: { userId },
+                auth: { token: 'test-token' },
+                transports: ['websocket', 'polling']
+            });
+
+            socket1.on('connect', () => {
+                updateStatus(1, true);
+                socket1.emit('register-user', userId);
+                addMessage(1, 'Connected to server', 'received');
+                addResult(`User 1 connected (${userId})`, 'pass');
+            });
+
+            socket1.on('disconnect', () => {
+                updateStatus(1, false);
+                addMessage(1, 'Disconnected from server', 'received');
+            });
+
+            socket1.on('newMessage', (data) => {
+                const latency = Date.now() - data.timestamp;
+                stats.user1.received++;
+                stats.user1.latencies.push(latency);
+                updateStats(1);
+                addMessage(1, data.text, 'received', latency);
+                
+                if (latency < 200) {
+                    addResult(`Message received in ${latency}ms (EXCELLENT)`, 'pass');
+                } else if (latency < 500) {
+                    addResult(`Message received in ${latency}ms (GOOD)`, 'warning');
+                } else {
+                    addResult(`Message received in ${latency}ms (SLOW)`, 'fail');
+                }
+            });
+        }
+
+        function connectUser2() {
+            const userId = document.getElementById('userId2').value;
+            if (!userId) {
+                alert('Please enter a user ID');
+                return;
+            }
+
+            socket2 = io(SERVER_URL, {
+                query: { userId },
+                auth: { token: 'test-token' },
+                transports: ['websocket', 'polling']
+            });
+
+            socket2.on('connect', () => {
+                updateStatus(2, true);
+                socket2.emit('register-user', userId);
+                addMessage(2, 'Connected to server', 'received');
+                addResult(`User 2 connected (${userId})`, 'pass');
+            });
+
+            socket2.on('disconnect', () => {
+                updateStatus(2, false);
+                addMessage(2, 'Disconnected from server', 'received');
+            });
+
+            socket2.on('newMessage', (data) => {
+                const latency = Date.now() - data.timestamp;
+                stats.user2.received++;
+                stats.user2.latencies.push(latency);
+                updateStats(2);
+                addMessage(2, data.text, 'received', latency);
+                
+                if (latency < 200) {
+                    addResult(`Message received in ${latency}ms (EXCELLENT)`, 'pass');
+                } else if (latency < 500) {
+                    addResult(`Message received in ${latency}ms (GOOD)`, 'warning');
+                } else {
+                    addResult(`Message received in ${latency}ms (SLOW)`, 'fail');
+                }
+            });
+        }
+
+        function disconnectUser1() {
+            if (socket1) {
+                socket1.disconnect();
+                socket1 = null;
+                updateStatus(1, false);
+            }
+        }
+
+        function disconnectUser2() {
+            if (socket2) {
+                socket2.disconnect();
+                socket2 = null;
+                updateStatus(2, false);
+            }
+        }
+
+        function sendMessage1() {
+            if (!socket1 || !socket1.connected) {
+                alert('User 1 is not connected');
+                return;
+            }
+
+            const input = document.getElementById('messageInput1');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const receiverId = document.getElementById('userId2').value;
+            const message = {
+                receiverId,
+                text,
+                timestamp: Date.now()
+            };
+
+            socket1.emit('sendMessage', message);
+            stats.user1.sent++;
+            updateStats(1);
+            addMessage(1, text, 'sent');
+            input.value = '';
+        }
+
+        function sendMessage2() {
+            if (!socket2 || !socket2.connected) {
+                alert('User 2 is not connected');
+                return;
+            }
+
+            const input = document.getElementById('messageInput2');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const receiverId = document.getElementById('userId1').value;
+            const message = {
+                receiverId,
+                text,
+                timestamp: Date.now()
+            };
+
+            socket2.emit('sendMessage', message);
+            stats.user2.sent++;
+            updateStats(2);
+            addMessage(2, text, 'sent');
+            input.value = '';
+        }
+
+        // Allow Enter key to send messages
+        document.getElementById('messageInput1').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage1();
+        });
+        document.getElementById('messageInput2').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage2();
+        });
+    </script>
+</body>
+</html>

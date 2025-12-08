@@ -3,6 +3,7 @@ import { axiosInstance } from "../lib/axios.js"; // Used for API calls
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 import { useFriendStore } from "./useFriendStore.js";
+import { SocketMonitor } from "../utils/socketMonitor.js";
 
 // ✅ --- CORRECTED BASE_URL ---
 // Get the base URL from the environment variable set during the build process
@@ -24,6 +25,7 @@ export const useAuthStore = create((set, get) => ({
 	isCheckingAuth: true,
 	onlineUsers: [],
 	socket: null,
+	socketMonitor: null,
 
 	setAuthUser: (user) => {
 		set({ authUser: user });
@@ -246,8 +248,15 @@ export const useAuthStore = create((set, get) => ({
 
 		set({ socket: newSocket });
 
+		// Start socket monitoring for auto-reconnection
+		const monitor = new SocketMonitor(newSocket, authUser);
+		monitor.start();
+		set({ socketMonitor: monitor });
+
 		newSocket.on("connect", () => {
 			console.log("✅ Socket connected:", newSocket.id);
+			// Dismiss any reconnecting toasts
+			toast.dismiss('reconnecting');
 			// Clear any previous connection errors
 		});
 		
@@ -315,7 +324,14 @@ export const useAuthStore = create((set, get) => ({
 	},
 
 	disconnectSocket: () => {
-		const socket = get().socket;
+		const { socket, socketMonitor } = get();
+		
+		// Stop socket monitor
+		if (socketMonitor) {
+			socketMonitor.stop();
+			set({ socketMonitor: null });
+		}
+		
 		if (socket) {
             console.log("Disconnecting socket...", socket.id);
 			socket.disconnect();
