@@ -137,19 +137,37 @@ const StrangerChatPage = () => {
 		}
 	}, [isChatOpen]);
 
-	// --- WebRTC helper functions (unchanged from yours) ---
+	// --- WebRTC helper functions ---
 	const createPeerConnection = useCallback(() => {
 		console.log("WebRTC: Creating PeerConnection");
 		const pc = new RTCPeerConnection({
 			iceServers: [
+				// STUN servers for NAT discovery
 				{ urls: "stun:stun.l.google.com:19302" },
 				{ urls: "stun:stun1.l.google.com:19302" },
-				{ urls: "stun:stun2.l.google.com:19302" },
-				{ urls: "stun:stun3.l.google.com:19302" },
-				{ urls: "stun:stun4.l.google.com:19302" }
+				// FREE TURN servers for NAT traversal (Metered.ca free tier)
+				{
+					urls: "turn:a.relay.metered.ca:80",
+					username: "87e69d452a19d7be8c0a6c70",
+					credential: "uBqeBEI+0xKJYEHm"
+				},
+				{
+					urls: "turn:a.relay.metered.ca:80?transport=tcp",
+					username: "87e69d452a19d7be8c0a6c70",
+					credential: "uBqeBEI+0xKJYEHm"
+				},
+				{
+					urls: "turn:a.relay.metered.ca:443",
+					username: "87e69d452a19d7be8c0a6c70",
+					credential: "uBqeBEI+0xKJYEHm"
+				},
+				{
+					urls: "turn:a.relay.metered.ca:443?transport=tcp",
+					username: "87e69d452a19d7be8c0a6c70",
+					credential: "uBqeBEI+0xKJYEHm"
+				}
 			],
 			iceCandidatePoolSize: 10,
-			// ✅ OPTIMIZED: Better connection settings
 			bundlePolicy: 'max-bundle',
 			rtcpMuxPolicy: 'require',
 			iceTransportPolicy: 'all'
@@ -197,8 +215,25 @@ const StrangerChatPage = () => {
 
 		pc.oniceconnectionstatechange = () => {
 			console.log("WebRTC: ICE connection state:", pc.iceConnectionState);
-			if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-				console.error("WebRTC: ICE connection issue");
+			if (pc.iceConnectionState === 'failed') {
+				console.error("WebRTC: ICE connection failed - attempting restart");
+				// Attempt ICE restart
+				pc.restartIce();
+			} else if (pc.iceConnectionState === 'disconnected') {
+				console.warn("WebRTC: ICE disconnected - waiting for reconnection");
+				// Give it 5 seconds to reconnect before showing error
+				setTimeout(() => {
+					if (pc.iceConnectionState === 'disconnected') {
+						console.error("WebRTC: ICE still disconnected after 5s");
+						toast.error("Connection unstable. Try skipping to find a better match.");
+					}
+				}, 5000);
+			} else if (pc.iceConnectionState === 'connected') {
+				console.log("✅ WebRTC: ICE connected");
+				setConnectionQuality("good");
+			} else if (pc.iceConnectionState === 'checking') {
+				console.log("🔍 WebRTC: ICE checking...");
+				setConnectionQuality("fair");
 			}
 		};
 

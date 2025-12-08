@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Stranger Video Chat</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .user-section {
+            border: 2px solid #FF9933;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        video {
+            width: 100%;
+            height: 300px;
+            background: #000;
+            border-radius: 5px;
+        }
+        button {
+            background: #FF9933;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #ff7700;
+        }
+        .log {
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 5px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .log div {
+            margin: 2px 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.waiting { background: #ff9933; }
+        .status.matched { background: #00ff00; color: #000; }
+        .status.idle { background: #666; }
+    </style>
+</head>
+<body>
+    <h1>Stranger Video Chat Test</h1>
+    <p>Open this page in TWO different browsers/tabs to test video connection</p>
+    
+    <div class="container">
+        <!-- User 1 -->
+        <div class="user-section">
+            <h2>User 1</h2>
+            <div class="status idle" id="status1">Status: Idle</div>
+            <video id="localVideo1" autoplay muted playsinline></video>
+            <video id="remoteVideo1" autoplay playsinline></video>
+            <div>
+                <button onclick="startUser1()">Start User 1</button>
+                <button onclick="skipUser1()">Skip</button>
+            </div>
+            <div class="log" id="log1"></div>
+        </div>
+        
+        <!-- User 2 -->
+        <div class="user-section">
+            <h2>User 2</h2>
+            <div class="status idle" id="status2">Status: Idle</div>
+            <video id="localVideo2" autoplay muted playsinline></video>
+            <video id="remoteVideo2" autoplay playsinline></video>
+            <div>
+                <button onclick="startUser2()">Start User 2</button>
+                <button onclick="skipUser2()">Skip</button>
+            </div>
+            <div class="log" id="log2"></div>
+        </div>
+    </div>
+
+    <script>
+        const SOCKET_URL = 'http://localhost:5001';
+        
+        // User 1
+        let socket1 = null;
+        let pc1 = null;
+        let localStream1 = null;
+        
+        // User 2
+        let socket2 = null;
+        let pc2 = null;
+        let localStream2 = null;
+        
+        function log(user, message) {
+            const logEl = document.getElementById(`log${user}`);
+            const div = document.createElement('div');
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEl.appendChild(div);
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(`User ${user}: ${message}`);
+        }
+        
+        function setStatus(user, status, text) {
+            const statusEl = document.getElementById(`status${user}`);
+            statusEl.className = `status ${status}`;
+            statusEl.textContent = `Status: ${text}`;
+        }
+        
+        async function startUser1() {
+            log(1, 'Starting User 1...');
+            
+            // Get camera
+            try {
+                localStream1 = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: true 
+                });
+                document.getElementById('localVideo1').srcObject = localStream1;
+                log(1, 'Camera access granted');
+            } catch (err) {
+                log(1, 'Camera error: ' + err.message);
+                return;
+            }
+            
+            // Connect socket
+            socket1 = io(SOCKET_URL, {
+                query: { userId: 'test-user-1' },
+                auth: { token: 'test-token-1' }
+            });
+            
+            socket1.on('connect', () => {
+                log(1, 'Socket connected: ' + socket1.id);
+                setStatus(1, 'waiting', 'Waiting for partner...');
+                
+                // Join queue
+                socket1.emit('stranger:joinQueue', {
+                    userId: 'test-user-1',
+                    username: 'TestUser1',
+                    nickname: 'Test 1',
+                    profilePic: '/default-avatar.png',
+                    isVerified: false
+                });
+                log(1, 'Joined stranger queue');
+            });
+            
+            socket1.on('stranger:matched', async (data) => {
+                log(1, 'Matched with: ' + data.partnerId);
+                setStatus(1, 'matched', 'Matched! Connecting video...');
+                
+                // Create peer connection
+                pc1 = createPeerConnection(1, socket1, localStream1, 'remoteVideo1');
+                
+                // Create and send offer
+                const offer = await pc1.createOffer();
+                await pc1.setLocalDescription(offer);
+                socket1.emit('webrtc:offer', { sdp: offer });
+                log(1, 'Sent WebRTC offer');
+            });
+            
+            socket1.on('webrtc:answer', async (data) => {
+                log(1, 'Received WebRTC answer');
+                await pc1.setRemoteDescription(new RTCSessionDescription(data.sdp));
+            });
+            
+            socket1.on('webrtc:ice-candidate', async (data) => {
+                log(1, 'Received ICE candidate');
+                await pc1.addIceCandidate(new RTCIceCandidate(data.candidate));
+            });
+            
+            socket1.on('stranger:waiting', () => {
+                log(1, 'Waiting for partner...');
+                setStatus(1, 'waiting', 'Waiting for partner...');
+            });
+        }
+        
+        async function startUser2() {
+            log(2, 'Starting User 2...');
+            
+            // Get camera
+            try {
+                localStream2 = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: true 
+                });
+                document.getElementById('localVideo2').srcObject = localStream2;
+                log(2, 'Camera access granted');
+            } catch (err) {
+                log(2, 'Camera error: ' + err.message);
+                return;
+            }
+            
+            // Connect socket
+            socket2 = io(SOCKET_URL, {
+                query: { userId: 'test-user-2' },
+                auth: { token: 'test-token-2' }
+            });
+            
+            socket2.on('connect', () => {
+                log(2, 'Socket connected: ' + socket2.id);
+                setStatus(2, 'waiting', 'Waiting for partner...');
+                
+                // Join queue
+                socket2.emit('stranger:joinQueue', {
+                    userId: 'test-user-2',
+                    username: 'TestUser2',
+                    nickname: 'Test 2',
+                    profilePic: '/default-avatar.png',
+                    isVerified: false
+                });
+                log(2, 'Joined stranger queue');
+            });
+            
+            socket2.on('stranger:matched', async (data) => {
+                log(2, 'Matched with: ' + data.partnerId);
+                setStatus(2, 'matched', 'Matched! Connecting video...');
+                
+                // Create peer connection
+                pc2 = createPeerConnection(2, socket2, localStream2, 'remoteVideo2');
+            });
+            
+            socket2.on('webrtc:offer', async (data) => {
+                log(2, 'Received WebRTC offer');
+                await pc2.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                
+                // Create and send answer
+                const answer = await pc2.createAnswer();
+                await pc2.setLocalDescription(answer);
+                socket2.emit('webrtc:answer', { sdp: answer });
+                log(2, 'Sent WebRTC answer');
+            });
+            
+            socket2.on('webrtc:ice-candidate', async (data) => {
+                log(2, 'Received ICE candidate');
+                await pc2.addIceCandidate(new RTCIceCandidate(data.candidate));
+            });
+            
+            socket2.on('stranger:waiting', () => {
+                log(2, 'Waiting for partner...');
+                setStatus(2, 'waiting', 'Waiting for partner...');
+            });
+        }
+        
+        function createPeerConnection(user, socket, localStream, remoteVideoId) {
+            log(user, 'Creating peer connection');
+            
+            const pc = new RTCPeerConnection({
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            });
+            
+            // Add local stream
+            localStream.getTracks().forEach(track => {
+                pc.addTrack(track, localStream);
+                log(user, 'Added track: ' + track.kind);
+            });
+            
+            // Handle remote stream
+            pc.ontrack = (event) => {
+                log(user, 'Received remote track: ' + event.track.kind);
+                const remoteVideo = document.getElementById(remoteVideoId);
+                if (!remoteVideo.srcObject) {
+                    remoteVideo.srcObject = event.streams[0];
+                    log(user, 'Remote video connected!');
+                }
+            };
+            
+            // Handle ICE candidates
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('webrtc:ice-candidate', { candidate: event.candidate });
+                    log(user, 'Sent ICE candidate');
+                }
+            };
+            
+            pc.onconnectionstatechange = () => {
+                log(user, 'Connection state: ' + pc.connectionState);
+            };
+            
+            return pc;
+        }
+        
+        function skipUser1() {
+            if (socket1) {
+                socket1.emit('stranger:skip');
+                log(1, 'Skipped partner');
+            }
+        }
+        
+        function skipUser2() {
+            if (socket2) {
+                socket2.emit('stranger:skip');
+                log(2, 'Skipped partner');
+            }
+        }
+    </script>
+</body>
+</html>
