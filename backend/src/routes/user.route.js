@@ -54,20 +54,27 @@ router.post("/request-verification", async (req, res) => {
 		const { reason, idProof } = req.body;
 		const userId = req.user._id;
 
+		console.log(`📝 Verification request from user ${userId}`);
+		console.log(`   Reason: ${reason}`);
+		console.log(`   ID Proof provided: ${!!idProof}`);
+
 		if (!reason || !idProof) {
 			return res.status(400).json({ message: "Reason and ID proof are required" });
 		}
 
 		const user = await User.findById(userId);
 		if (!user) {
+			console.log(`❌ User ${userId} not found`);
 			return res.status(404).json({ message: "User not found" });
 		}
 
 		if (user.isVerified) {
+			console.log(`⚠️ User ${userId} is already verified`);
 			return res.status(400).json({ message: "You are already verified" });
 		}
 
 		if (user.verificationRequest?.status === "pending") {
+			console.log(`⚠️ User ${userId} already has a pending request`);
 			return res.status(400).json({ message: "You already have a pending verification request" });
 		}
 
@@ -79,10 +86,11 @@ router.post("/request-verification", async (req, res) => {
 		};
 
 		await user.save();
+		console.log(`✅ Verification request saved for user ${userId} (${user.username})`);
 
 		res.status(200).json({ message: "Verification request submitted successfully" });
 	} catch (error) {
-		console.error("Verification request error:", error);
+		console.error("❌ Verification request error:", error);
 		res.status(500).json({ message: "Internal server error" });
 	}
 });

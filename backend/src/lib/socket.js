@@ -212,14 +212,28 @@ const findMatch = (socket) => {
 			
 			console.log(`✅ Matched ${socket.id} with ${partnerSocketId}`);
 			
-			// Notify both users with socket IDs AND user IDs
+			// ✅ FIX: Send COMPLETE user data to both partners
 			socket.emit("stranger:matched", { 
 				partnerId: partnerSocketId,
-				partnerUserId: partnerSocket.strangerData?.userId 
+				partnerUserId: partnerSocket.strangerData?.userId,
+				partnerUserData: {
+					userId: partnerSocket.strangerData?.userId,
+					username: partnerSocket.strangerData?.username,
+					nickname: partnerSocket.strangerData?.nickname,
+					profilePic: partnerSocket.strangerData?.profilePic,
+					isVerified: partnerSocket.strangerData?.isVerified
+				}
 			});
 			partnerSocket.emit("stranger:matched", { 
 				partnerId: socket.id,
-				partnerUserId: socket.strangerData?.userId 
+				partnerUserId: socket.strangerData?.userId,
+				partnerUserData: {
+					userId: socket.strangerData?.userId,
+					username: socket.strangerData?.username,
+					nickname: socket.strangerData?.nickname,
+					profilePic: socket.strangerData?.profilePic,
+					isVerified: socket.strangerData?.isVerified
+				}
 			});
 		} else {
 			// No valid partner found, add to queue
@@ -313,6 +327,49 @@ io.on("connection", (socket) => {
 		}
 	});
 
+	// INSTANT MESSAGE SENDING via Socket.IO (faster than API)
+	socket.on("sendMessage", async ({ receiverId, text, image, voice, voiceDuration, replyTo, tempId }) => {
+		try {
+			console.log(`📤 Instant message from ${socket.userId} to ${receiverId}`);
+			
+			// Create message object
+			const newMessage = new Message({
+				senderId: socket.userId,
+				receiverId,
+				text: text || '',
+				image: image || null,
+				voice: voice || null,
+				voiceDuration: voiceDuration || null,
+				replyTo: replyTo || null,
+				status: 'sent',
+			});
+			
+			await newMessage.save();
+			
+			// Populate replyTo if exists
+			if (newMessage.replyTo) {
+				await newMessage.populate('replyTo', 'text image voice senderId');
+			}
+			
+			console.log(`✅ Message saved: ${newMessage._id}`);
+			
+			// Send to receiver INSTANTLY via socket
+			const receiverSocketId = getReceiverSocketId(receiverId);
+			if (receiverSocketId) {
+				io.to(receiverSocketId).emit("newMessage", newMessage);
+				console.log(`📨 Sent to receiver ${receiverId}`);
+			}
+			
+			// Send back to sender with real _id (to replace optimistic message)
+			socket.emit("newMessage", newMessage);
+			console.log(`✅ Sent confirmation to sender ${socket.userId}`);
+			
+		} catch (error) {
+			console.error('❌ Socket sendMessage error:', error);
+			socket.emit("messageError", { error: error.message, tempId });
+		}
+	});
+
 	socket.on("admin-action", ({ targetUserId, action, payload }) => {
 		console.log(`👮 Admin action: ${action} for user ${targetUserId}`);
 		emitToUser(targetUserId, "admin-action", { action, payload });
@@ -352,18 +409,44 @@ io.on("connection", (socket) => {
 		}
 	});
 
-    // --- *** THIS FUNCTION IS NOW FIXED *** ---
-	socket.on("stranger:addFriend", async () => {
+	// Reaction handler - Send emoji reactions
+	socket.on("stranger:reaction", (payload) => {
+		const { emoji } = payload;
 		const partnerSocketId = matchedPairs.get(socket.id);
-		if (!partnerSocketId) return;
+		
+		if (partnerSocketId) {
+			const partnerSocket = io.sockets.sockets.get(partnerSocketId);
+			if (partnerSocket) {
+				console.log(`😊 Reaction ${emoji} from ${socket.id} to ${partnerSocketId}`);
+				partnerSocket.emit("stranger:reaction", { emoji });
+			}
+		}
+	});
+
+    // --- *** THIS FUNCTION IS NOW FIXED *** ---
+	socket.on("stranger:addFriend", async (payload) => {
+		const { partnerUserId } = payload || {}; // ✅ Get from payload
+		const partnerSocketId = matchedPairs.get(socket.id);
+		
+		if (!partnerSocketId) {
+			socket.emit("stranger:addFriendError", { 
+				error: "No active stranger chat connection" 
+			});
+			return;
+		}
 
 		const partnerSocket = io.sockets.sockets.get(partnerSocketId);
-		if (!partnerSocket) return;
+		if (!partnerSocket) {
+			socket.emit("stranger:addFriendError", { 
+				error: "Partner disconnected" 
+			});
+			return;
+		}
 
 		try {
-			// 1. Get both User IDs
+			// ✅ FIX: Use the user IDs from strangerData or payload
 			const senderId = socket.strangerData?.userId;
-			const receiverId = partnerSocket.strangerData?.userId;
+			const receiverId = partnerUserId || partnerSocket.strangerData?.userId;
 
 			if (!senderId || !receiverId) {
 				throw new Error("User data not found for friend request.");

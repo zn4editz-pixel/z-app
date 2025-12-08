@@ -15,28 +15,50 @@ const AdminNotificationsList = () => {
 	const [adminNotifications, setAdminNotifications] = useState([]);
 	const [isLoading, setIsLoading] = useState(true);
 
-	// Load notifications from backend on mount
+	// Load notifications from backend on mount - OPTIMIZED with cache
 	useEffect(() => {
 		const loadNotifications = async () => {
+			// Check cache first for instant load
+			const cached = sessionStorage.getItem('adminNotifications');
+			const cacheTime = sessionStorage.getItem('adminNotificationsTime');
+			const now = Date.now();
+			
+			if (cached && cacheTime && (now - parseInt(cacheTime)) < 60000) {
+				// Use cached data if less than 1 minute old
+				const cachedNotifs = JSON.parse(cached);
+				cachedNotifs.forEach(notif => {
+					addNotification(notif);
+				});
+				setIsLoading(false);
+				return;
+			}
+			
 			try {
 				const res = await axiosInstance.get("/users/notifications");
 				const dbNotifications = res.data || [];
 				console.log(`📥 Loaded ${dbNotifications.length} notifications from DB`);
 				
+				const notificationsToAdd = [];
 				// Add each notification to the store
 				dbNotifications.forEach(notif => {
-					addNotification({
+					const notifData = {
 						type: notif.isBroadcast ? 'admin_broadcast' : 'admin',
 						title: notif.title,
 						message: notif.message,
 						color: notif.color,
 						notificationType: notif.type,
 						createdAt: notif.createdAt,
-						id: notif._id, // Use _id as the main ID
-						dbId: notif._id, // Also store as dbId for deletion
-						_id: notif._id, // Keep original _id
-					});
+						id: notif._id,
+						dbId: notif._id,
+						_id: notif._id,
+					};
+					addNotification(notifData);
+					notificationsToAdd.push(notifData);
 				});
+				
+				// Cache for 1 minute
+				sessionStorage.setItem('adminNotifications', JSON.stringify(notificationsToAdd));
+				sessionStorage.setItem('adminNotificationsTime', now.toString());
 			} catch (error) {
 				console.error("Error loading notifications:", error);
 			} finally {
@@ -179,10 +201,10 @@ const DiscoverPage = () => {
 	const hasVerificationUpdate = authUser?.verificationRequest?.status && authUser.verificationRequest.status !== "none";
 	const notificationCount = adminNotifications.length + (hasVerificationUpdate ? 1 : 0) + (authUser?.isSuspended ? 1 : 0);
 
-	// Fetch friend data on mount
+	// Fetch friend data on mount - OPTIMIZED: only once
 	useEffect(() => {
 		fetchFriendData();
-	}, [fetchFriendData]);
+	}, []); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Fetch suggested users on mount
 	useEffect(() => {

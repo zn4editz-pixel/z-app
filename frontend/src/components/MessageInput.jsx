@@ -9,9 +9,9 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [isSending, setIsSending] = useState(false);
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const inputRef = useRef(null); // ✅ NEW: For instant focus
   const { sendMessage, selectedUser } = useChatStore();
   const { socket } = useAuthStore();
 
@@ -68,8 +68,10 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSendMessage = async (e) => {
+  const handleSendMessage = (e) => {
     e.preventDefault();
+    
+    // ✅ INSTANT: Check and return immediately if empty
     if (!text.trim() && !imagePreview) return;
 
     // Stop typing indicator immediately
@@ -77,32 +79,31 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
       socket.emit("stopTyping", { receiverId: selectedUser._id });
     }
 
-    // Store values before clearing (for retry)
+    // Store values before clearing
     const messageText = text.trim();
     const messageImage = imagePreview;
     const messageReplyTo = replyingTo?._id || null;
 
-    // Clear form IMMEDIATELY for instant feel (WhatsApp style)
+    // ✅ INSTANT: Clear form IMMEDIATELY (no await, no delay)
     setText("");
     setImagePreview(null);
     setShowEmojiPicker(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (onCancelReply) onCancelReply();
-
-    // Send message in background
-    setIsSending(true);
-    try {
-      await sendMessage({
-        text: messageText,
-        image: messageImage,
-        replyTo: messageReplyTo,
-      });
-    } catch (error) {
-      console.error("Failed to send message:", error);
-      // Message will show as failed in UI, user can retry
-    } finally {
-      setIsSending(false);
+    
+    // ✅ INSTANT: Focus back to input for rapid messaging
+    if (inputRef.current) {
+      inputRef.current.focus();
     }
+
+    // ✅ INSTANT: Send in background (fire and forget - NO WAITING)
+    sendMessage({
+      text: messageText,
+      image: messageImage,
+      replyTo: messageReplyTo,
+    }).catch(error => {
+      console.error("Send failed:", error);
+    });
   };
 
   const handleSendVoice = async (audioData, duration) => {
@@ -192,11 +193,13 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
         {/* Text Input Container */}
         <div className="flex-1 flex items-center gap-1 sm:gap-1.5 bg-base-200 rounded-full px-3 sm:px-4 py-2 sm:py-2.5 min-w-0">
           <input
+            ref={inputRef}
             type="text"
             className="flex-1 bg-transparent outline-none border-none text-sm sm:text-base placeholder:text-base-content/50 min-w-0"
             placeholder="Type a message..."
             value={text}
             onChange={(e) => handleTyping(e.target.value)}
+            autoComplete="off"
           />
           
           {/* Emoji Button */}
@@ -236,14 +239,11 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
           <VoiceRecorder onSendVoice={handleSendVoice} />
         )}
 
-        {/* Send Button - Show when typing or image attached */}
+        {/* Send Button - ALWAYS ENABLED for rapid messaging */}
         {(text.trim() || imagePreview) && (
           <button
             type="submit"
-            className={`btn btn-primary btn-circle btn-sm sm:btn-md flex-shrink-0 shadow-lg transition-all ${
-              isSending ? 'scale-90' : 'scale-100 hover:scale-105'
-            }`}
-            disabled={isSending}
+            className="btn btn-primary btn-circle btn-sm sm:btn-md flex-shrink-0 shadow-lg hover:scale-105 active:scale-95 transition-transform"
           >
             <Send className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>

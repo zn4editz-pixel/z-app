@@ -43,8 +43,8 @@
   }
 }
 
-/* Smooth scrolling */
-* {
+/* Native smooth scrolling - works on all devices */
+html {
   scroll-behavior: smooth;
 }
 
@@ -52,4 +52,32 @@
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Enable momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Ensure body can scroll */
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Enable touch scrolling for all scrollable containers */
+[class*="overflow-y-auto"],
+[class*="overflow-x-auto"],
+[class*="overflow-auto"] {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pan-x;
+  overscroll-behavior: contain;
+}
+
+/* Specific fix for vertical scrolling */
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  overscroll-behavior-y: contain;
+}
+
+/* Specific fix for horizontal scrolling */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-x !important;
+  overscroll-behavior-x: contain;
 }

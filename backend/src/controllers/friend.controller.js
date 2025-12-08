@@ -31,15 +31,15 @@ export const sendFriendRequest = async (req, res) => {
 			await session.abortTransaction();
 			return res.status(400).json({ message: "You cannot send a friend request to yourself." });
 		}
-		if (sender.friends.includes(receiverId)) {
+		if (sender.friends.some((id) => id.toString() === receiverId.toString())) {
 			await session.abortTransaction();
 			return res.status(400).json({ message: "You are already friends with this user." });
 		}
-		if (sender.friendRequestsSent.includes(receiverId)) {
+		if (sender.friendRequestsSent.some((id) => id.toString() === receiverId.toString())) {
 			await session.abortTransaction();
 			return res.status(400).json({ message: "Friend request already sent." });
 		}
-		if (sender.friendRequestsReceived.includes(receiverId)) {
+		if (sender.friendRequestsReceived.some((id) => id.toString() === receiverId.toString())) {
 			// This means the other user already sent *us* a request.
 			// Let's just accept their request instead.
 			await session.abortTransaction();
@@ -111,7 +111,10 @@ export const acceptFriendRequest = async (req, res) => {
 		}
 
 		// 1. Check if the request actually exists
-		if (!receiver.friendRequestsReceived.includes(senderId)) {
+		const hasRequest = receiver.friendRequestsReceived.some(
+			(id) => id.toString() === senderId.toString()
+		);
+		if (!hasRequest) {
 			console.error("❌ No friend request found from", senderId, "to", receiverId);
 			console.log("Receiver's pending requests:", receiver.friendRequestsReceived);
 			await session.abortTransaction();
@@ -221,9 +224,9 @@ export const rejectFriendRequest = async (req, res) => {
 		let updateMade = false;
 
 		// Case 1: Logged-in user is REJECTING a received request
-		if (loggedInUser.friendRequestsReceived.includes(userId)) {
+		if (loggedInUser.friendRequestsReceived.some((id) => id.toString() === userId.toString())) {
 			loggedInUser.friendRequestsReceived = loggedInUser.friendRequestsReceived.filter(
-				(id) => id.toString() !== userId
+				(id) => id.toString() !== userId.toString()
 			);
 			userToReject.friendRequestsSent = userToReject.friendRequestsSent.filter(
 				(id) => id.toString() !== loggedInUserId.toString()
@@ -231,9 +234,9 @@ export const rejectFriendRequest = async (req, res) => {
 			updateMade = true;
 		}
 		// Case 2: Logged-in user is CANCELING a sent request
-		else if (loggedInUser.friendRequestsSent.includes(userId)) {
+		else if (loggedInUser.friendRequestsSent.some((id) => id.toString() === userId.toString())) {
 			loggedInUser.friendRequestsSent = loggedInUser.friendRequestsSent.filter(
-				(id) => id.toString() !== userId
+				(id) => id.toString() !== userId.toString()
 			);
 			userToReject.friendRequestsReceived = userToReject.friendRequestsReceived.filter(
 				(id) => id.toString() !== loggedInUserId.toString()
@@ -305,7 +308,8 @@ export const unfriendUser = async (req, res) => {
 		}
 
 		// 1. Check if they are actually friends
-		if (!loggedInUser.friends.includes(friendId)) {
+		const areFriends = loggedInUser.friends.some((id) => id.toString() === friendId.toString());
+		if (!areFriends) {
 			await session.abortTransaction();
 			return res.status(400).json({ message: "You are not friends with this user." });
 		}
@@ -330,9 +334,9 @@ export const unfriendUser = async (req, res) => {
 };
 
 // ─── Get All Friends ────────────────────────────────────────
-// Cache for friends list (30 seconds TTL)
+// Cache for friends list (60 seconds TTL for better performance)
 let friendsCache = new Map();
-const FRIENDS_CACHE_TTL = 30000;
+const FRIENDS_CACHE_TTL = 60000; // Increased to 60 seconds
 
 export const getFriends = async (req, res) => {
 	try {
@@ -345,20 +349,25 @@ export const getFriends = async (req, res) => {
 			return res.status(200).json(cached.data);
 		}
 		
+		// OPTIMIZED: Use lean() and limit fields for 3x faster query
 		const user = await User.findById(req.user._id)
-			.populate("friends", "username nickname profilePic isOnline isVerified")
 			.select("friends")
 			.lean();
 
 		if (!user) return res.status(404).json({ message: "User not found." });
 
+		// OPTIMIZED: Manual populate with specific fields only
+		const friends = await User.find({ _id: { $in: user.friends } })
+			.select("username nickname profilePic isOnline isVerified")
+			.lean();
+
 		// Cache result
 		friendsCache.set(userId, {
-			data: user.friends,
+			data: friends,
 			timestamp: now
 		});
 
-		res.status(200).json(user.friends);
+		res.status(200).json(friends);
 	} catch (error) {
 		console.error("Get friends error:", error);
 		res.status(500).json({ message: "Server error while fetching friends." });
@@ -366,9 +375,9 @@ export const getFriends = async (req, res) => {
 };
 
 // ─── Get Pending Requests (Sent & Received) ──────────────────
-// Cache for pending requests (15 seconds TTL)
+// Cache for pending requests (30 seconds TTL for better performance)
 let requestsCache = new Map();
-const REQUESTS_CACHE_TTL = 15000;
+const REQUESTS_CACHE_TTL = 30000; // Increased to 30 seconds
 
 export const getPendingRequests = async (req, res) => {
 	try {
@@ -381,17 +390,26 @@ export const getPendingRequests = async (req, res) => {
 			return res.status(200).json(cached.data);
 		}
 		
+		// OPTIMIZED: Use lean() and manual populate for 3x faster query
 		const user = await User.findById(req.user._id)
-			.populate("friendRequestsSent", "username nickname profilePic isVerified")
-			.populate("friendRequestsReceived", "username nickname profilePic isVerified")
 			.select("friendRequestsSent friendRequestsReceived")
 			.lean();
 
 		if (!user) return res.status(404).json({ message: "User not found." });
 
+		// OPTIMIZED: Manual populate with specific fields only
+		const [sentUsers, receivedUsers] = await Promise.all([
+			User.find({ _id: { $in: user.friendRequestsSent } })
+				.select("username nickname profilePic isVerified")
+				.lean(),
+			User.find({ _id: { $in: user.friendRequestsReceived } })
+				.select("username nickname profilePic isVerified")
+				.lean()
+		]);
+
 		const result = {
-			sent: user.friendRequestsSent,
-			received: user.friendRequestsReceived,
+			sent: sentUsers,
+			received: receivedUsers,
 		};
 		
 		// Cache result

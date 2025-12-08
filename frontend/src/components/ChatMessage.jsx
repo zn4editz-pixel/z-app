@@ -233,9 +233,7 @@ const ChatMessage = ({ message, onReply }) => {
     <>
       <div 
         id={`message-${message._id}`}
-        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${
-          Object.keys(groupedReactions).length > 0 ? "mb-6" : "mb-3"
-        } relative`}
+        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-3 relative`}
       >
         <div className="flex items-end max-w-[80%] sm:max-w-[70%] gap-2 relative">
           {!isMyMessage && !isEmojiOnly && (
@@ -280,14 +278,19 @@ const ChatMessage = ({ message, onReply }) => {
               >
                 <img
                   src={message.image}
-                  className="rounded-2xl max-h-64 sm:max-h-80 min-w-[200px] max-w-[300px] w-auto object-cover cursor-pointer active:scale-[0.98] transition-transform shadow-lg"
+                  className="rounded-2xl max-h-64 sm:max-h-80 min-w-[200px] max-w-[300px] w-auto object-cover cursor-pointer active:scale-[0.98] transition-transform shadow-lg bg-base-300"
                   alt="attached"
-                  loading="lazy"
-                  decoding="async"
-                  onError={(e) => {
-                    console.error('Image failed to load:', message.image);
-                    e.target.src = '/avatar.png';
+                  loading="eager"
+                  onLoad={(e) => {
+                    console.log('✅ Image loaded:', message.image);
+                    e.target.style.opacity = '1';
                   }}
+                  onError={(e) => {
+                    console.error('❌ Image failed to load:', message.image);
+                    e.target.style.display = 'none';
+                    toast.error('Failed to load image');
+                  }}
+                  style={{ opacity: 0, transition: 'opacity 0.3s' }}
                 />
               </div>
             ) : (
@@ -348,14 +351,19 @@ const ChatMessage = ({ message, onReply }) => {
                       >
                         <img
                           src={message.image}
-                          className="rounded-xl max-h-64 sm:max-h-80 min-w-[200px] object-cover w-full cursor-pointer active:scale-[0.98] transition-transform"
+                          className="rounded-xl max-h-64 sm:max-h-80 min-w-[200px] object-cover w-full cursor-pointer active:scale-[0.98] transition-transform bg-base-300"
                           alt="attached"
-                          loading="lazy"
-                          decoding="async"
-                          onError={(e) => {
-                            console.error('Image failed to load:', message.image);
-                            e.target.src = '/avatar.png';
+                          loading="eager"
+                          onLoad={(e) => {
+                            console.log('✅ Image loaded:', message.image);
+                            e.target.style.opacity = '1';
                           }}
+                          onError={(e) => {
+                            console.error('❌ Image failed to load:', message.image);
+                            e.target.style.display = 'none';
+                            toast.error('Failed to load image');
+                          }}
+                          style={{ opacity: 0, transition: 'opacity 0.3s' }}
                         />
                       </div>
                     )}
@@ -429,20 +437,25 @@ const ChatMessage = ({ message, onReply }) => {
               </div>
             )}
 
-            {/* Reactions Display - Instagram/WhatsApp Style */}
+            {/* Reactions Display - Instagram Style (Floating, No Layout Impact) */}
             {Object.keys(groupedReactions).length > 0 && (
               <div
-                className={`absolute -bottom-4 ${isMyMessage ? "right-0" : "left-0"} flex gap-1 z-10`}
-                onClick={() => setShowReactions(!showReactions)}
+                className={`absolute -bottom-3 ${isMyMessage ? "right-2" : "left-2"} flex gap-1 pointer-events-auto`}
+                style={{ zIndex: 5 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowReactions(!showReactions);
+                }}
               >
                 {Object.entries(groupedReactions).map(([emoji, users]) => (
                   <div
                     key={emoji}
-                    className="flex items-center gap-1 bg-base-100 border-2 border-base-300 rounded-full px-2 py-1 shadow-xl cursor-pointer hover:scale-110 transition-all active:scale-95 hover:shadow-2xl"
+                    className="flex items-center gap-0.5 bg-base-100 border-2 border-base-300 rounded-full px-1.5 py-0.5 shadow-lg cursor-pointer hover:scale-110 transition-all active:scale-95"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
-                    <span className="text-sm leading-none">{emoji}</span>
+                    <span className="text-xs leading-none">{emoji}</span>
                     {users.length > 1 && (
-                      <span className="text-xs font-bold text-base-content/80 leading-none">{users.length}</span>
+                      <span className="text-[10px] font-bold text-base-content/70 leading-none">{users.length}</span>
                     )}
                   </div>
                 ))}

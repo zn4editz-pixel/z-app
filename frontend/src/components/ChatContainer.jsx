@@ -37,19 +37,21 @@ const ChatContainer = ({ onStartCall }) => {
   // Reply to message
   const [replyingTo, setReplyingTo] = useState(null);
   
+  // ✅ NEW: Instagram-style "New message" indicator
+  const [showNewMessageButton, setShowNewMessageButton] = useState(false);
+  const [newMessageCount, setNewMessageCount] = useState(0);
+  
   const handleReply = (message) => {
     setReplyingTo(message);
   };
 
   useEffect(() => {
     if (!selectedUser?._id) return;
-    isInitialLoad.current = true; // Mark as initial load when switching chats
-    previousMessagesLength.current = 0; // Reset message count
     
-    // Instantly set scroll to bottom BEFORE loading messages (WhatsApp style - no animation)
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-    }
+    console.log(`📱 ChatContainer: Loading chat for ${selectedUser.nickname || selectedUser.username}`);
+    
+    isInitialLoad.current = true;
+    previousMessagesLength.current = 0;
     
     getMessages?.(selectedUser._id);
     const unsub = subscribeToMessages?.(selectedUser._id);
@@ -57,25 +59,60 @@ const ChatContainer = ({ onStartCall }) => {
   }, [selectedUser?._id, getMessages, subscribeToMessages]);
 
   useEffect(() => {
-    if (!bottomRef.current) return;
+    if (!bottomRef.current || !scrollContainerRef.current) return;
     
-    // Instant scroll on initial load (when messages first arrive)
-    if (isInitialLoad.current && messages.length > 0) {
-      // Use setTimeout to ensure DOM is updated
-      setTimeout(() => {
-        if (bottomRef.current) {
-          bottomRef.current.scrollIntoView({ behavior: "auto", block: "end" });
-        }
-      }, 0);
-      isInitialLoad.current = false;
-      previousMessagesLength.current = messages.length;
-    } 
-    // Smooth scroll for new messages only
-    else if (messages.length > previousMessagesLength.current && !isInitialLoad.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    const container = scrollContainerRef.current;
+    const isScrolledToBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    
+    // INSTANT scroll to bottom - NO ANIMATION
+    if (messages.length > 0) {
+      // ✅ NEW: If user is scrolled up and new message arrives, show indicator
+      if (!isInitialLoad.current && !isScrolledToBottom && messages.length > previousMessagesLength.current) {
+        const newCount = messages.length - previousMessagesLength.current;
+        setNewMessageCount(prev => prev + newCount);
+        setShowNewMessageButton(true);
+      } else {
+        // Auto-scroll if at bottom or initial load
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+          }
+        });
+        setShowNewMessageButton(false);
+        setNewMessageCount(0);
+      }
+      
+      if (isInitialLoad.current) {
+        console.log(`📜 Initial load: Jumped to bottom (${messages.length} messages)`);
+        isInitialLoad.current = false;
+      }
       previousMessagesLength.current = messages.length;
     }
   }, [messages.length, isTyping]);
+  
+  // ✅ NEW: Handle scroll to bottom button click
+  const scrollToBottom = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+      setShowNewMessageButton(false);
+      setNewMessageCount(0);
+    }
+  };
+  
+  // ✅ NEW: Detect manual scroll
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return;
+    const container = scrollContainerRef.current;
+    const isScrolledToBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    
+    if (isScrolledToBottom) {
+      setShowNewMessageButton(false);
+      setNewMessageCount(0);
+    }
+  };
 
   // Handle typing indicator
   useEffect(() => {
@@ -178,7 +215,8 @@ const ChatContainer = ({ onStartCall }) => {
         <ChatHeader onStartCall={handleStartCall} />
         <div 
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto p-2.5 sm:p-4 space-y-2.5 sm:space-y-4 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent" 
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto p-2.5 sm:p-4 space-y-2.5 sm:space-y-4 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent relative" 
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {isMessagesLoading ? (
@@ -235,6 +273,26 @@ const ChatContainer = ({ onStartCall }) => {
           )}
           
           <div ref={bottomRef} />
+          
+          {/* ✅ NEW: Instagram-style "New message" button */}
+          {showNewMessageButton && (
+            <button
+              onClick={scrollToBottom}
+              className="absolute bottom-4 left-1/2 transform -translate-x-1/2 btn btn-primary btn-sm gap-2 shadow-2xl animate-bounce z-10"
+              style={{ 
+                animation: 'bounce 1s ease-in-out infinite',
+                backdropFilter: 'blur(10px)'
+              }}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+              {newMessageCount > 0 && (
+                <span className="badge badge-sm badge-error">{newMessageCount}</span>
+              )}
+              New message{newMessageCount > 1 ? 's' : ''}
+            </button>
+          )}
         </div>
         <MessageInput replyingTo={replyingTo} onCancelReply={() => setReplyingTo(null)} />
       </div>

@@ -30,7 +30,7 @@ export const useChatStore = create((set, get) => ({
         const targetUserId = userId?.toString();
         
         if (selectedUserId !== targetUserId) {
-            console.log('User changed during fetch, aborting');
+            console.log('⚠️ User changed during fetch, aborting');
             return;
         }
         
@@ -38,7 +38,9 @@ export const useChatStore = create((set, get) => ({
         set({ messages: [], isMessagesLoading: true });
         
         try {
-            // Fetch fresh messages from server
+            console.log(`📥 Fetching messages for user: ${userId}`);
+            
+            // ALWAYS fetch fresh messages from server - NO CACHE
             const res = await axiosInstance.get(`/messages/${userId}`);
             
             // CRITICAL: Double-check user hasn't changed during fetch
@@ -46,21 +48,18 @@ export const useChatStore = create((set, get) => ({
             const currentUserId = currentUser?._id?.toString();
             
             if (currentUserId !== targetUserId) {
-                console.log('User changed during fetch, discarding messages');
+                console.log('⚠️ User changed during fetch, discarding messages');
                 return;
             }
             
+            console.log(`✅ Loaded ${res.data.length} messages`);
             set({ messages: res.data, isMessagesLoading: false });
             
-            // Cache after successful fetch
-            await cacheMessagesDB(userId, res.data);
-            cacheMessages(userId, res.data);
-            updateLastSync();
-            
+            // Mark as read
             get().resetUnread(userId);
             get().markMessagesAsRead(userId);
         } catch (error) {
-            console.error('Failed to fetch messages:', error);
+            console.error('❌ Failed to fetch messages:', error);
             toast.error(error.response?.data?.message || "Failed to load messages");
             set({ messages: [], isMessagesLoading: false });
         }
@@ -68,16 +67,17 @@ export const useChatStore = create((set, get) => ({
 
     sendMessage: async (messageData) => {
         const { selectedUser, messages } = get();
-        const { authUser } = useAuthStore.getState();
+        const { authUser, socket } = useAuthStore.getState();
+        
         if (!selectedUser) return;
         
         // Check if online
         if (!navigator.onLine) {
-            toast.error("You are offline - Cannot send messages");
+            toast.error("You are offline");
             return;
         }
         
-        // Create optimistic message (shows immediately - instant feedback)
+        // Create optimistic message (shows INSTANTLY)
         const tempId = `temp-${Date.now()}-${Math.random()}`;
         const optimisticMessage = {
             _id: tempId,
@@ -94,35 +94,47 @@ export const useChatStore = create((set, get) => ({
             tempId: tempId
         };
         
-        // Add optimistic message immediately (instant UI update)
+        // Add optimistic message INSTANTLY (no waiting)
         set({ messages: [...messages, optimisticMessage] });
         
         try {
-            // Send via API
-            const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
-            
-            // CRITICAL: Check if user is still selected
-            const currentUser = get().selectedUser;
-            if (currentUser?._id !== selectedUser._id) {
-                return; // User switched chats, don't update
-            }
-            
-            // Replace optimistic message with real message
-            if (res.data && res.data._id) {
-                set(state => ({
-                    messages: state.messages.map(m => 
-                        m.tempId === tempId ? res.data : m
-                    )
-                }));
+            // Send via Socket.IO for INSTANT delivery (faster than API)
+            if (socket && socket.connected) {
+                console.log('📤 Sending via Socket.IO (INSTANT)');
+                
+                // Emit via socket for instant delivery
+                socket.emit('sendMessage', {
+                    receiverId: selectedUser._id,
+                    ...messageData,
+                    tempId: tempId
+                });
+                
+                // Wait for socket response to replace optimistic message
+                // The socket will emit back with the real message
+                
+            } else {
+                // Fallback to API only if socket not available
+                console.log('📤 Sending via API (fallback)');
+                const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
+                
+                const currentUser = get().selectedUser;
+                if (currentUser?._id === selectedUser._id && res.data?._id) {
+                    set(state => ({
+                        messages: state.messages.map(m => 
+                            m.tempId === tempId ? res.data : m
+                        )
+                    }));
+                }
             }
         } catch (error) {
+            console.error('Send failed:', error);
             // Mark message as failed
             set(state => ({
                 messages: state.messages.map(m => 
                     m.tempId === tempId ? { ...m, status: 'failed' } : m
                 )
             }));
-            toast.error(error.response?.data?.message || "Failed to send message");
+            toast.error("Failed to send");
         }
     },
 
@@ -136,22 +148,17 @@ export const useChatStore = create((set, get) => ({
             const { authUser } = useAuthStore.getState();
 
             if (!newMessage || !newMessage._id) {
-                console.warn("Received invalid message object:", newMessage);
+                console.warn("⚠️ Received invalid message object:", newMessage);
                 return;
             }
 
-            // CRITICAL: Check if message already exists
-            const isDuplicate = messages.some(m => m._id === newMessage._id);
-            if (isDuplicate) {
-                return;
-            }
+            console.log(`📨 New message received:`, newMessage._id);
 
-            // CRITICAL: Only add if message is for current conversation
-            // Convert to strings for comparison (MongoDB ObjectId vs string)
+            // Convert to strings for comparison
             const selectedUserId = selectedUser?._id?.toString();
             const authUserId = authUser?._id?.toString();
-            const msgSenderId = newMessage.senderId?.toString();
-            const msgReceiverId = newMessage.receiverId?.toString();
+            const msgSenderId = newMessage.senderId?._id?.toString() || newMessage.senderId?.toString();
+            const msgReceiverId = newMessage.receiverId?._id?.toString() || newMessage.receiverId?.toString();
             
             const isForCurrentChat = selectedUser && (
                 (msgSenderId === selectedUserId && msgReceiverId === authUserId) ||
@@ -159,15 +166,38 @@ export const useChatStore = create((set, get) => ({
             );
 
             if (isForCurrentChat) {
-                // Add message to current chat
-                set({ messages: [...messages, newMessage] });
+                // Check if this is replacing an optimistic message
+                const optimisticIndex = messages.findIndex(m => m.tempId && m.status === 'sending');
+                
+                if (optimisticIndex !== -1 && msgSenderId === authUserId) {
+                    // Replace optimistic message with real one
+                    console.log(`✅ Replacing optimistic message with real one`);
+                    set(state => ({
+                        messages: state.messages.map((m, idx) => 
+                            idx === optimisticIndex ? newMessage : m
+                        )
+                    }));
+                } else {
+                    // Check if message already exists
+                    const isDuplicate = messages.some(m => m._id === newMessage._id);
+                    
+                    if (isDuplicate) {
+                        console.log(`⚠️ Duplicate message detected, skipping: ${newMessage._id}`);
+                        return;
+                    }
+                    
+                    console.log(`✅ Adding new message to current chat`);
+                    set({ messages: [...messages, newMessage] });
+                }
+                
                 // Mark as read if I'm the receiver
-                if (newMessage.receiverId === authUser._id) {
+                if (msgReceiverId === authUserId) {
                     get().markMessagesAsRead(selectedUser._id);
                 }
-            } else if (newMessage.senderId !== authUser._id) {
+            } else if (msgSenderId !== authUserId) {
+                console.log(`📬 Message for different chat, incrementing unread`);
                 // Increment unread count for other chats
-                get().incrementUnread(newMessage.senderId);
+                get().incrementUnread(msgSenderId);
             }
         };
 
@@ -237,12 +267,15 @@ export const useChatStore = create((set, get) => ({
         socket.off("newMessage");
     },
 
-    setSelectedUser: (user) => { // Renamed param for clarity
+    setSelectedUser: (user) => {
+        console.log(`👤 Selecting user: ${user?.nickname || user?.username || 'none'}`);
         // CRITICAL: Clear messages IMMEDIATELY to prevent flash of previous chat
-        set({ selectedUser: user, messages: [] });
+        set({ selectedUser: user, messages: [], isMessagesLoading: false });
         if (user) {
-            get().getMessages(user._id); // Fetch messages for the selected user
-            // resetUnread is called within getMessages on success
+            // Small delay to ensure state is updated
+            setTimeout(() => {
+                get().getMessages(user._id);
+            }, 0);
         }
     },
 
@@ -462,13 +495,12 @@ export const useChatStore = create((set, get) => ({
         }
     },
 
-    handleCallEnded: (data) => { // data might contain { userId } of who ended
+    handleCallEnded: (data) => {
         const { callState, callPartner } = get();
         if (callState !== 'idle') {
-            console.log(`Received signal: Call ended by ${data?.userId === callPartner?._id ? callPartner.nickname : 'partner'}.`);
-            toast("Call ended", { icon: "📞" });
+            console.log(`Call ended by ${data?.userId === callPartner?._id ? callPartner.nickname : 'partner'}`);
+            // NO TOAST - just reset state
             get().resetCallState();
-            // WebRTC cleanup should be triggered in the CallModal component
         }
     },
 

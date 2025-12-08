@@ -44,15 +44,24 @@ export default defineConfig({
             if (id.includes('axios') || id.includes('zustand')) {
               return 'store-vendor';
             }
+            if (id.includes('gsap') || id.includes('lenis')) {
+              return 'animation-vendor';
+            }
             return 'vendor';
           }
         },
+        // Optimize chunk sizes
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
     chunkSizeWarningLimit: 1000,
     cssCodeSplit: true,
     sourcemap: false,
     reportCompressedSize: false,
+    // Enable compression
+    assetsInlineLimit: 4096, // Inline assets smaller than 4kb
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'zustand', 'axios', 'socket.io-client'],

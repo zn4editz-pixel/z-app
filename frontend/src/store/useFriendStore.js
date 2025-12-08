@@ -11,10 +11,18 @@ export const useFriendStore = create((set, get) => ({
     pendingSent: [],
     isLoading: false,
 
-    // Fetch all friend data (friends and requests)
+    // Fetch all friend data (friends and requests) - OPTIMIZED
     fetchFriendData: async () => {
         const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
         const userId = authUser._id;
+        
+        // Check if we recently fetched (within 30 seconds)
+        const lastFetch = sessionStorage.getItem('friendDataLastFetch');
+        const now = Date.now();
+        if (lastFetch && (now - parseInt(lastFetch)) < 30000) {
+            console.log("⚡ Skipping friend data fetch - recently fetched");
+            return;
+        }
         
         // Try cache first for instant load
         const cached = await getCachedFriends(userId);
@@ -42,6 +50,9 @@ export const useFriendStore = create((set, get) => ({
                 sent: requestsRes.data?.sent || []
             };
             await cacheFriends(userId, freshData);
+            
+            // Mark fetch time
+            sessionStorage.setItem('friendDataLastFetch', now.toString());
 
             // Merge with existing data to preserve real-time additions
             set((state) => {
@@ -54,7 +65,6 @@ export const useFriendStore = create((set, get) => ({
                 const apiSentIds = new Set(newSent.map(r => r._id));
 
                 // Only keep existing requests that are still in the API response
-                // This ensures accepted/rejected requests are removed
                 const existingReceivedStillValid = state.pendingReceived.filter(r => apiReceivedIds.has(r._id));
                 const existingSentStillValid = state.pendingSent.filter(r => apiSentIds.has(r._id));
 
@@ -81,7 +91,6 @@ export const useFriendStore = create((set, get) => ({
             });
         } catch (error) {
             console.error("❌ Failed to fetch friend data:", error.response?.data || error.message);
-            // Don't show toast error on initial load to avoid spam
             set({
                 friends: [],
                 pendingReceived: [],
@@ -130,8 +139,9 @@ export const useFriendStore = create((set, get) => ({
     sendRequest: async (receiverId) => {
         try {
             await axiosInstance.post(`/friends/send/${receiverId}`);
-            // Note: We should refetch immediately if the server responds with success
-            get().fetchFriendData(); // Full refetch ensures we get the latest sent request data
+            // Clear throttle and refetch
+            sessionStorage.removeItem('friendDataLastFetch');
+            get().fetchFriendData();
             toast.success("Friend request sent!");
             return true;
         } catch (error) {
@@ -164,6 +174,9 @@ export const useFriendStore = create((set, get) => ({
             console.log("✅ API response:", response.data);
             toast.success("Friend request accepted!");
             
+            // Clear fetch throttle to allow immediate refetch
+            sessionStorage.removeItem('friendDataLastFetch');
+            
             // Force refetch to ensure consistency
             console.log("🔄 Refetching friend data...");
             await get().fetchFriendData();
@@ -173,7 +186,8 @@ export const useFriendStore = create((set, get) => ({
         } catch (error) {
             console.error("❌ Accept request error:", error.response?.data || error.message);
             toast.error(error.response?.data?.message || "Failed to accept request.");
-            // Revert optimistic update on error
+            // Clear throttle and revert optimistic update on error
+            sessionStorage.removeItem('friendDataLastFetch');
             await get().fetchFriendData();
             return false;
         }
@@ -187,6 +201,8 @@ export const useFriendStore = create((set, get) => ({
                 pendingReceived: state.pendingReceived.filter((r) => r._id !== userId),
                 pendingSent: state.pendingSent.filter((r) => r._id !== userId),
             }));
+            // Clear cache
+            sessionStorage.removeItem('friendDataLastFetch');
             toast.success("Request rejected.");
             return true;
         } catch (error) {
@@ -201,6 +217,8 @@ export const useFriendStore = create((set, get) => ({
             set((state) => ({
                 friends: state.friends.filter((f) => f._id !== friendId),
             }));
+            // Clear cache
+            sessionStorage.removeItem('friendDataLastFetch');
             toast.success("User unfriended.");
             return true;
         } catch (error) {

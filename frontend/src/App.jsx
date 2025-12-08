@@ -28,6 +28,7 @@ const ConnectionStatus = lazy(() => import("./components/ConnectionStatus"));
 
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
+import { initSmoothScroll, destroySmoothScroll } from "./utils/smoothScroll";
 import { useFriendStore } from "./store/useFriendStore"; // ✅ 1. Import Friend Store
 import { useNotificationStore } from "./store/useNotificationStore";
 
@@ -80,6 +81,12 @@ const App = () => {
 	useEffect(() => {
 		checkAuth();
 	}, []); // eslint-disable-line react-hooks/exhaustive-deps
+	
+	// Initialize Lenis smooth scrolling
+	useEffect(() => {
+		const lenis = initSmoothScroll();
+		return () => destroySmoothScroll();
+	}, []);
 	
 	// Fetch friend data when user is authenticated
 	useEffect(() => {

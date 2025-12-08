@@ -258,72 +258,151 @@ const CallModal = () => {
 
     // Show Outgoing/Connecting/Connected Call UI
     return (
-        <div className="fixed inset-0 z-40 bg-base-300 flex flex-col">
-            {/* Header (Optional Close Button) */}
-             <div className="absolute top-2 right-2 z-50">
-                 <button className="btn btn-ghost btn-circle btn-sm text-base-content/50 hover:bg-base-100/20" onClick={endCall}>
-                     <X size={20}/>
-                 </button>
-             </div>
+        <div className="fixed inset-0 z-50 bg-base-300 flex flex-col overflow-hidden">
+            {/* Main Video Container - Full Screen */}
+            <div className="flex-1 relative overflow-hidden">
+                {/* Remote Video - Full Screen Background */}
+                <video 
+                    ref={remoteVideoRef} 
+                    autoPlay 
+                    playsInline 
+                    className="absolute inset-0 w-full h-full object-cover bg-base-300"
+                />
 
-            {/* Video Feeds */}
-            <div className="flex-1 relative flex items-center justify-center overflow-hidden">
-                {/* Remote Video (Background) */}
-                <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover bg-black" />
+                {/* Status Overlay - Calling/Connecting */}
+                {(callState === 'outgoing' || callState === 'connecting') && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-base-100 z-20">
+                        <div className="avatar mb-4">
+                            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full ring-4 ring-primary ring-offset-4 ring-offset-base-100">
+                                <img src={partnerAvatar} alt={partnerName} />
+                            </div>
+                        </div>
+                        <h2 className="text-2xl sm:text-3xl font-bold text-base-content mb-2">{partnerName}</h2>
+                        <p className="text-base-content/60 mb-4">
+                            {callState === 'outgoing' ? 'Calling...' : 'Connecting...'}
+                        </p>
+                        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                    </div>
+                )}
 
-                 {/* Status Overlay */}
-                 {(callState === 'outgoing' || callState === 'connecting') && (
-                     <div className="absolute inset-0 flex flex-col items-center justify-center text-white gap-2 bg-black/50 z-20">
-                         <div className="avatar mb-2">
-                             <div className="w-16 rounded-full ring ring-primary/50">
-                                 <img src={partnerAvatar} alt={partnerName} />
-                             </div>
-                         </div>
-                         <p>{callState === 'outgoing' ? `Calling ${partnerName}...` : `Connecting...`}</p>
-                         <Loader2 className="animate-spin" />
-                     </div>
-                 )}
-
-                 {/* Call Duration */}
-                 {callState === 'connected' && (
-                     <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/30 text-white px-3 py-1 rounded-full text-sm z-20">
-                         {formatDuration(duration)}
-                     </div>
-                 )}
-
-                {/* Local Video (Picture-in-Picture style) */}
-                <div className={`absolute bottom-4 right-4 w-24 md:w-32 lg:w-40 aspect-video bg-black rounded-md overflow-hidden border-2 border-base-100 shadow-lg z-30 ${callType === 'audio' ? 'hidden' : ''}`}>
-                    <video ref={localVideoRef} autoPlay playsInline muted className={`w-full h-full object-cover ${isCameraOff ? 'hidden' : 'block'}`} />
-                     {/* Show avatar if camera is off during video call */}
-                     {isCameraOff && callType === 'video' && authUser && (
-                         <div className="w-full h-full flex items-center justify-center bg-base-200">
-                              <div className="avatar placeholder">
-                                  <div className="bg-neutral text-neutral-content rounded-full w-12 md:w-16">
-                                      <span className="text-xl md:text-3xl">{authUser?.nickname?.charAt(0) || authUser?.username?.charAt(0) || '?'}</span>
-                                  </div>
-                              </div>
-                         </div>
-                     )}
+                {/* Top Bar - Partner Info & Duration */}
+                <div className="absolute top-0 left-0 right-0 z-30 bg-base-100/90 backdrop-blur-md border-b border-base-300">
+                    <div className="flex items-center justify-between px-4 py-3">
+                        {/* Partner Info */}
+                        <div className="flex items-center gap-3">
+                            <div className="avatar">
+                                <div className="w-10 h-10 rounded-full ring-2 ring-primary">
+                                    <img src={partnerAvatar} alt={partnerName} />
+                                </div>
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-sm">{partnerName}</h3>
+                                {callState === 'connected' && (
+                                    <p className="text-xs text-success flex items-center gap-1">
+                                        <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+                                        {formatDuration(duration)}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        
+                        {/* Close Button */}
+                        <button 
+                            className="btn btn-ghost btn-circle btn-sm" 
+                            onClick={endCall}
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            {/* Controls Footer */}
-            <div className="bg-base-200/80 backdrop-blur-sm p-3 flex justify-center items-center gap-3 z-40">
-                <button className={`btn btn-circle ${isMuted ? 'btn-neutral' : 'btn-ghost'}`} onClick={handleToggleMute}>
-                    {isMuted ? <MicOff /> : <Mic />}
-                </button>
+                {/* Local Video - Picture-in-Picture */}
                 {callType === 'video' && (
-                     <button className={`btn btn-circle ${isCameraOff ? 'btn-neutral' : 'btn-ghost'}`} onClick={handleToggleCamera}>
-                         {isCameraOff ? <VideoOff /> : <Video />}
-                     </button>
-                 )}
-                 {/* Volume control might need libraries like webrtc-adapter for full control, placeholder */}
-                 <button className="btn btn-ghost btn-circle hidden md:inline-flex">
-                     <Volume2 />
-                 </button>
-                <button className="btn btn-error btn-circle btn-lg mx-4" onClick={endCall}>
-                    <PhoneOff />
-                </button>
+                    <div className="absolute top-20 right-4 z-20">
+                        <div className="relative w-32 h-44 sm:w-36 sm:h-48 md:w-40 md:h-56 rounded-xl overflow-hidden shadow-2xl border-2 border-primary bg-base-300">
+                            {!isCameraOff ? (
+                                <video 
+                                    ref={localVideoRef} 
+                                    autoPlay 
+                                    playsInline 
+                                    muted 
+                                    className="w-full h-full object-cover"
+                                    style={{ transform: 'scaleX(-1)' }}
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-base-200">
+                                    <div className="avatar placeholder">
+                                        <div className="bg-neutral text-neutral-content rounded-full w-16">
+                                            <span className="text-2xl">
+                                                {authUser?.nickname?.charAt(0) || authUser?.username?.charAt(0) || '?'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-2">
+                                <p className="text-white text-xs font-bold">You</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Audio Call - Show Avatars */}
+                {callType === 'audio' && callState === 'connected' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20 backdrop-blur-xl">
+                        <div className="text-center">
+                            <div className="avatar mb-6">
+                                <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full ring-4 ring-primary ring-offset-4 ring-offset-base-100 animate-pulse">
+                                    <img src={partnerAvatar} alt={partnerName} />
+                                </div>
+                            </div>
+                            <h2 className="text-3xl sm:text-4xl font-bold text-base-content mb-2">{partnerName}</h2>
+                            <p className="text-lg text-base-content/60">{formatDuration(duration)}</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Bottom Control Bar - Fixed */}
+                <div className="absolute bottom-0 left-0 right-0 z-30 bg-base-100/95 backdrop-blur-md border-t border-base-300">
+                    <div className="px-4 py-3 flex items-center justify-center gap-3">
+                        {/* Mute Button */}
+                        <button 
+                            className={`btn btn-circle ${isMuted ? 'btn-error' : 'btn-outline btn-primary'}`}
+                            onClick={handleToggleMute}
+                            title={isMuted ? 'Unmute' : 'Mute'}
+                        >
+                            {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+                        </button>
+
+                        {/* Camera Toggle (Video Call Only) */}
+                        {callType === 'video' && (
+                            <button 
+                                className={`btn btn-circle ${isCameraOff ? 'btn-error' : 'btn-outline btn-primary'}`}
+                                onClick={handleToggleCamera}
+                                title={isCameraOff ? 'Turn On Camera' : 'Turn Off Camera'}
+                            >
+                                {isCameraOff ? <VideoOff size={20} /> : <Video size={20} />}
+                            </button>
+                        )}
+
+                        {/* End Call Button */}
+                        <button 
+                            className="btn btn-error btn-circle btn-lg mx-2"
+                            onClick={endCall}
+                            title="End Call"
+                        >
+                            <PhoneOff size={24} />
+                        </button>
+
+                        {/* Volume Button (Placeholder) */}
+                        <button 
+                            className="btn btn-circle btn-outline btn-primary hidden sm:flex"
+                            title="Volume"
+                        >
+                            <Volume2 size={20} />
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

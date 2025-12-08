@@ -541,24 +541,37 @@ export const deleteReport = async (req, res) => {
 // ✅ --- Get Verification Requests ---
 export const getVerificationRequests = async (req, res) => {
 	try {
-		// Find users with pending verification requests
+		console.log('📋 Fetching verification requests...');
+		const startTime = Date.now();
+		
+		// Simplified query - remove sort to speed up
 		const users = await User.find({
-			$or: [
-				{ "verificationRequest.status": "pending" },
-				{ "verificationRequest.status": "submitted" }
-			]
+			"verificationRequest.status": "pending"
 		})
 		.select("username nickname profilePic email verificationRequest isVerified createdAt")
-		.sort({ "verificationRequest.requestedAt": -1 })
 		.limit(50)
 		.lean();
 
-		console.log(`✅ Found ${users.length} verification requests`);
+		const queryTime = Date.now() - startTime;
+		console.log(`✅ Found ${users.length} verification requests in ${queryTime}ms`);
+		
+		// Sort in memory (faster than DB sort for small datasets)
+		users.sort((a, b) => {
+			const dateA = a.verificationRequest?.requestedAt || a.createdAt;
+			const dateB = b.verificationRequest?.requestedAt || b.createdAt;
+			return new Date(dateB) - new Date(dateA);
+		});
+		
+		// Log first few for debugging
+		if (users.length > 0) {
+			console.log(`  First request: ${users[0].username}`);
+		}
 		
 		// Always return an array, even if empty
-		res.status(200).json(users || []);
+		res.status(200).json(users);
 	} catch (err) {
 		console.error("❌ getVerificationRequests error:", err);
+		console.error("Error details:", err.message);
 		// Return empty array on error to prevent frontend crashes
 		res.status(200).json([]);
 	}
