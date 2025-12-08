@@ -411,9 +411,18 @@ export const unfriendUser = async (req, res) => {
 };
 
 // ─── Get All Friends ────────────────────────────────────────
-// Cache for friends list (60 seconds TTL for better performance)
+// Cache for friends list (30 seconds TTL for better performance with last messages)
 let friendsCache = new Map();
-const FRIENDS_CACHE_TTL = 60000;
+const FRIENDS_CACHE_TTL = 30000;
+
+// Export function to clear friends cache (called when messages are sent)
+export const clearFriendsCache = (userId) => {
+	if (userId) {
+		friendsCache.delete(userId);
+	} else {
+		friendsCache.clear();
+	}
+};
 
 export const getFriends = async (req, res) => {
 	try {
@@ -434,20 +443,62 @@ export const getFriends = async (req, res) => {
 
 		if (!user) return res.status(404).json({ message: "User not found." });
 
-		// Get friends details
-		const friends = await prisma.user.findMany({
-			where: {
-				id: { in: user.friends }
-			},
-			select: {
-				id: true,
-				username: true,
-				nickname: true,
-				profilePic: true,
-				isOnline: true,
-				isVerified: true
-			}
-		});
+		// Get friends details with last message
+		const friendsData = await Promise.all(
+			user.friends.map(async (friendId) => {
+				// Get friend details
+				const friend = await prisma.user.findUnique({
+					where: { id: friendId },
+					select: {
+						id: true,
+						username: true,
+						nickname: true,
+						profilePic: true,
+						isOnline: true,
+						isVerified: true
+					}
+				});
+
+				if (!friend) return null;
+
+				// Get last message between these two users
+				const lastMessage = await prisma.message.findFirst({
+					where: {
+						OR: [
+							{ senderId: userId, receiverId: friendId },
+							{ senderId: friendId, receiverId: userId }
+						]
+					},
+					orderBy: { createdAt: 'desc' },
+					select: {
+						id: true,
+						text: true,
+						image: true,
+						voice: true,
+						senderId: true,
+						receiverId: true,
+						createdAt: true,
+						reactions: true
+					}
+				});
+
+				return {
+					...friend,
+					lastMessage: lastMessage ? {
+						text: lastMessage.text,
+						image: lastMessage.image,
+						voice: lastMessage.voice,
+						senderId: lastMessage.senderId,
+						receiverId: lastMessage.receiverId,
+						timestamp: lastMessage.createdAt,
+						reactions: lastMessage.reactions || []
+					} : null
+				};
+			})
+		);
+
+		// Filter out null values (deleted friends)
+		const friends = friendsData.filter(f => f !== null);
 
 		// Cache result
 		friendsCache.set(userId, {

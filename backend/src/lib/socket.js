@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import cloudinary from "./cloudinary.js";
 import prisma from "./prisma.js";
 import redisClient from "./redis.js";
+import { clearFriendsCache } from "../controllers/friend.controller.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -343,6 +344,10 @@ io.on("connection", (socket) => {
 			});
 			
 			console.log(`✅ Message saved: ${newMessage.id}`);
+			
+			// Clear friends cache for both users so last message updates
+			clearFriendsCache(senderId);
+			clearFriendsCache(receiverId);
 			
 			// Send to receiver INSTANTLY via socket
 			const receiverSocketId = getReceiverSocketId(receiverId);

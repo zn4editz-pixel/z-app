@@ -3,9 +3,9 @@
 ## Changes Implemented
 
 ### 1. ✅ Sidebar Chat Preview (Instagram-Style)
-**Status:** Already Implemented
+**Status:** Fully Implemented & Fixed
 
-The sidebar already shows Instagram-style message previews instead of "Start Chat" text:
+The sidebar now shows Instagram-style message previews with real-time last message data:
 
 - **Latest Message Preview**: Shows the actual last message text
 - **Media Indicators**: 
@@ -73,6 +73,41 @@ Notifications are now automatically marked as read when viewing them, just like 
 
 ## Technical Details
 
+### Last Message Fetching (Backend):
+```javascript
+// Get friends with last message data
+const friendsData = await Promise.all(
+  user.friends.map(async (friendId) => {
+    const friend = await prisma.user.findUnique({
+      where: { id: friendId },
+      select: { id, username, nickname, profilePic, isOnline, isVerified }
+    });
+
+    // Get last message between these two users
+    const lastMessage = await prisma.message.findFirst({
+      where: {
+        OR: [
+          { senderId: userId, receiverId: friendId },
+          { senderId: friendId, receiverId: userId }
+        ]
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { text, image, voice, senderId, createdAt, reactions }
+    });
+
+    return { ...friend, lastMessage };
+  })
+);
+```
+
+### Cache Clearing (Real-time Updates):
+```javascript
+// Clear cache when message sent (both HTTP and Socket)
+clearFriendsCache(senderId);
+clearFriendsCache(receiverId);
+// Next fetch will get fresh data with new last message
+```
+
 ### Auto-Read Logic:
 ```javascript
 // When user opens notifications tab
@@ -107,6 +142,7 @@ const notificationCount = unreadAdminNotifications.length +
 
 ## Files Modified
 
+### Frontend:
 1. ✅ `frontend/src/store/useNotificationStore.js`
    - Added `viewNotifications()` function
    - Added `hasViewedNotifications` state
@@ -121,9 +157,23 @@ const notificationCount = unreadAdminNotifications.length +
    - Real-time badge updates
 
 4. ✅ `frontend/src/components/Sidebar.jsx`
-   - Already has Instagram-style message previews
+   - Instagram-style message previews
    - Smart sorting with unread first
    - Media type indicators
+
+### Backend:
+5. ✅ `backend/src/controllers/friend.controller.js`
+   - Added `lastMessage` data to friends list
+   - Added `clearFriendsCache()` function
+   - Optimized cache TTL to 30 seconds
+
+6. ✅ `backend/src/controllers/message.controller.js`
+   - Clear friends cache when messages sent
+   - Ensures last message updates instantly
+
+7. ✅ `backend/src/lib/socket.js`
+   - Clear friends cache on socket messages
+   - Real-time last message updates
 
 ---
 

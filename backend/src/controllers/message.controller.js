@@ -1,6 +1,7 @@
 import prisma from "../lib/prisma.js";
 import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
+import { clearFriendsCache } from "./friend.controller.js";
 
 // Cache for sidebar users (1 minute TTL)
 let sidebarUsersCache = new Map();
@@ -198,6 +199,10 @@ export const sendMessage = async (req, res) => {
         voiceDuration: voiceDuration || null
       }
     });
+
+    // Clear friends cache for both users so last message updates
+    clearFriendsCache(senderId);
+    clearFriendsCache(receiverId);
 
     // Get sender info
     const sender = await prisma.user.findUnique({
