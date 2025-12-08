@@ -81,7 +81,21 @@ const ProfilePage = () => {
     reader.onload = async () => {
       const base64Image = reader.result;
       setSelectedImg(base64Image);
-      await updateProfile({ profilePic: base64Image });
+      
+      try {
+        const updatedUser = await updateProfile({ profilePic: base64Image });
+        // Force UI update
+        setSelectedImg(updatedUser.profilePic);
+        toast.success("Profile picture updated!");
+        
+        // Reload page to clear cached images everywhere
+        setTimeout(() => {
+          window.location.reload();
+        }, 800);
+      } catch (error) {
+        toast.error("Failed to update profile picture");
+        setSelectedImg(authUser?.profilePic);
+      }
     };
   };
 

@@ -148,7 +148,7 @@ const ReportsManagement = ({
 						const ai = report.aiAnalysis;
 						return (
 							<div 
-								key={report._id} 
+								key={report.id} 
 								className={`card bg-base-200 shadow-md border-l-4 ${
 									ai.requiresImmediate ? 'border-error animate-pulse' :
 									ai.severity.level >= 4 ? 'border-warning' :
@@ -275,7 +275,7 @@ const ReportsManagement = ({
 										)}
 										{report.status === 'pending' && (
 											<button
-												onClick={() => onUpdateReportStatus(report._id, 'reviewed')}
+												onClick={() => onUpdateReportStatus(report.id, 'reviewed')}
 												className="btn btn-sm btn-info gap-1"
 											>
 												<Eye className="w-4 h-4" /> Review
@@ -284,13 +284,13 @@ const ReportsManagement = ({
 										{report.status === 'reviewed' && (
 											<>
 												<button
-													onClick={() => onUpdateReportStatus(report._id, 'action_taken')}
+													onClick={() => onUpdateReportStatus(report.id, 'action_taken')}
 													className="btn btn-sm btn-success gap-1"
 												>
 													<CheckCircle className="w-4 h-4" /> Take Action
 												</button>
 												<button
-													onClick={() => onUpdateReportStatus(report._id, 'dismissed')}
+													onClick={() => onUpdateReportStatus(report.id, 'dismissed')}
 													className="btn btn-sm btn-neutral gap-1"
 												>
 													<XCircle className="w-4 h-4" /> Dismiss

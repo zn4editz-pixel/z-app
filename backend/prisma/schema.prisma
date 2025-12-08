@@ -68,6 +68,12 @@ model User {
   emailChangeOTPExpires DateTime?
   pendingEmail          String?
 
+  // Username Change Tracking
+  lastUsernameChange       DateTime?
+  usernameChangesThisWeek  Int      @default(0)
+  weekStartDate            DateTime?
+  usernameChangeHistory    Json     @default("[]")
+
   // Password Change
   passwordChangeOTP        String?
   passwordChangeOTPExpires DateTime?
@@ -110,6 +116,11 @@ model Message {
   sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
 
+  // Message status (WhatsApp-style)
+  status        String   @default("sent") // sent, delivered, read
+  deliveredAt   DateTime?
+  readAt        DateTime?
+
   // Call logs
   isCallLog      Boolean @default(false)
   callType       String? // voice, video
@@ -149,11 +160,16 @@ model Report {
   reason     String
   description String?
   status     String   @default("pending") // pending, reviewed, resolved, dismissed
+  screenshot String?  // Screenshot URL for AI-detected reports
   
   // AI Analysis
-  aiAnalysis Json?
-  severity   String?  // low, medium, high, critical
-  category   String?  // harassment, spam, inappropriate, etc.
+  isAIDetected Boolean @default(false)
+  aiCategory   String?  // Category detected by AI
+  aiConfidence Float?   // AI confidence score (0-1)
+  aiAnalysis   Json?
+  severity     String?  // low, medium, high, critical
+  category     String?  // harassment, spam, inappropriate, etc.
+  actionTaken  String?  // Action taken by admin
   
   reviewedBy String?
   reviewedAt DateTime?

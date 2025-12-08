@@ -15,7 +15,7 @@ export const useFriendStore = create((set, get) => ({
     // Fetch all friend data (friends and requests) - OPTIMIZED
     fetchFriendData: async () => {
         const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
-        const userId = authUser._id;
+        const userId = authUser.id;
         
         // Try cache first for instant load
         const cached = await getCachedFriends(userId);
@@ -125,7 +125,7 @@ export const useFriendStore = create((set, get) => ({
     addPendingReceived: (newRequestData) => {
         set((state) => {
             // Ensure the new request object is not already in the list
-            if (!state.pendingReceived.some(r => r._id === newRequestData._id)) {
+            if (!state.pendingReceived.some(r => r.id === newRequestData.id)) {
                 toast.success(`New friend request from ${newRequestData.nickname || newRequestData.username}! 🤝`);
                 return {
                     pendingReceived: [newRequestData, ...state.pendingReceived],
@@ -156,7 +156,7 @@ export const useFriendStore = create((set, get) => ({
             console.log("🤝 Accepting friend request from:", senderId);
             
             // Optimistically update state before API call
-            const acceptedUser = get().pendingReceived.find(r => r._id === senderId);
+            const acceptedUser = get().pendingReceived.find(r => r.id === senderId);
             console.log("👤 Accepted user data:", acceptedUser);
             
             if (!acceptedUser) {
@@ -166,7 +166,7 @@ export const useFriendStore = create((set, get) => ({
             }
             
             set((state) => ({
-                pendingReceived: state.pendingReceived.filter((r) => r._id !== senderId),
+                pendingReceived: state.pendingReceived.filter((r) => r.id !== senderId),
                 friends: [...state.friends, acceptedUser],
             }));
             console.log("✅ Optimistic UI update complete");

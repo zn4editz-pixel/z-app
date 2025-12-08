@@ -26,8 +26,8 @@ const ChatMessage = ({ message, onReply }) => {
   const touchStartTime = useRef(0);
   const audioRef = useRef(null);
   
-  const isMyMessage = message.senderId === authUser._id;
-  const myReaction = message.reactions?.find(r => r.userId?._id === authUser._id || r.userId === authUser._id);
+  const isMyMessage = message.senderId === authUser.id;
+  const myReaction = message.reactions?.find(r => r.userId?.id === authUser.id || r.userId === authUser.id);
 
   // Update current time while playing
   useEffect(() => {
@@ -117,9 +117,9 @@ const ChatMessage = ({ message, onReply }) => {
   const handleDoubleTap = () => {
     if (navigator.vibrate) navigator.vibrate(30);
     if (myReaction?.emoji === "❤️") {
-      removeReaction(message._id);
+      removeReaction(message.id);
     } else {
-      addReaction(message._id, "❤️");
+      addReaction(message.id, "❤️");
       showHeartAnimation();
     }
   };
@@ -145,15 +145,15 @@ const ChatMessage = ({ message, onReply }) => {
   // Handle reaction selection
   const handleReactionSelect = (emoji) => {
     if (myReaction?.emoji === emoji) {
-      removeReaction(message._id);
+      removeReaction(message.id);
     } else {
-      addReaction(message._id, emoji);
+      addReaction(message.id, emoji);
     }
   };
 
   // Handle delete
   const handleDelete = () => {
-    deleteMessage(message._id);
+    deleteMessage(message.id);
   };
 
   // Handle download image
@@ -232,7 +232,7 @@ const ChatMessage = ({ message, onReply }) => {
   return (
     <>
       <div 
-        id={`message-${message._id}`}
+        id={`message-${message.id}`}
         className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-3 relative`}
       >
         <div className="flex items-end max-w-[80%] sm:max-w-[70%] gap-2 relative">
@@ -311,7 +311,7 @@ const ChatMessage = ({ message, onReply }) => {
                         : "bg-base-300/40 border-primary/70"
                     }`}
                     onClick={() => {
-                      const replyElement = document.getElementById(`message-${message.replyTo._id}`);
+                      const replyElement = document.getElementById(`message-${message.replyTo.id}`);
                       if (replyElement) {
                         replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         replyElement.classList.add('highlight-flash');
@@ -322,7 +322,7 @@ const ChatMessage = ({ message, onReply }) => {
                     <div className={`text-[10px] font-bold mb-0.5 ${
                       isMyMessage ? "text-primary-content" : "text-primary"
                     }`}>
-                      {message.replyTo.senderId === authUser._id ? "You" : selectedUser?.fullName || "User"}
+                      {message.replyTo.senderId === authUser.id ? "You" : selectedUser?.fullName || "User"}
                     </div>
                     <div className={`text-[11px] leading-tight truncate ${
                       isMyMessage ? "text-primary-content/80" : "text-base-content/70"
@@ -464,21 +464,36 @@ const ChatMessage = ({ message, onReply }) => {
           </div>
         </div>
 
-        {/* Time + Status */}
-        <div className="flex items-center gap-2 mt-1 px-1">
+        {/* Time + Status Ticks (WhatsApp Style) */}
+        <div className="flex items-center gap-1.5 mt-1 px-1">
           <span className="text-[10px] text-base-content/50">
             {formatMessageTime(message.createdAt)}
           </span>
-          {isMyMessage && message.status && (
-            <span className="text-[10px] font-bold">
-              {message.status === 'sending' ? (
-                <span className="text-gray-400 opacity-50 animate-pulse" title="Sending">⏱</span>
+          {isMyMessage && (
+            <span className="flex items-center">
+              {message.status === 'sending' || message.status === 'failed' ? (
+                // Clock icon for sending
+                <svg className="w-3 h-3 text-base-content/40 animate-pulse" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                  <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                </svg>
               ) : message.status === 'read' ? (
-                <span className="text-blue-500" title="Read">✓✓</span>
+                // Double tick - Blue (Read)
+                <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M12.354 4.354a.5.5 0 0 0-.708-.708L5 10.293 1.854 7.146a.5.5 0 1 0-.708.708l3.5 3.5a.5.5 0 0 0 .708 0l7-7zm-4.208 7-.896-.897.707-.707.543.543 6.646-6.647a.5.5 0 0 1 .708.708l-7 7a.5.5 0 0 1-.708 0z"/>
+                  <path d="m5.354 7.146.896.897-.707.707-.897-.896a.5.5 0 1 1 .708-.708z"/>
+                </svg>
               ) : message.status === 'delivered' ? (
-                <span className="text-gray-400" title="Delivered">✓✓</span>
+                // Double tick - Gray (Delivered)
+                <svg className="w-4 h-4 text-base-content/40" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M12.354 4.354a.5.5 0 0 0-.708-.708L5 10.293 1.854 7.146a.5.5 0 1 0-.708.708l3.5 3.5a.5.5 0 0 0 .708 0l7-7zm-4.208 7-.896-.897.707-.707.543.543 6.646-6.647a.5.5 0 0 1 .708.708l-7 7a.5.5 0 0 1-.708 0z"/>
+                  <path d="m5.354 7.146.896.897-.707.707-.897-.896a.5.5 0 1 1 .708-.708z"/>
+                </svg>
               ) : (
-                <span className="text-gray-400" title="Sent">✓</span>
+                // Single tick - Gray (Sent)
+                <svg className="w-3.5 h-3.5 text-base-content/40" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                </svg>
               )}
             </span>
           )}

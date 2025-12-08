@@ -72,7 +72,7 @@ const PrivateCallModal = ({
     // Notify other user
     if (socket && otherUser) {
       console.log("📤 Notifying other user of call end");
-      socket.emit("private:end-call", { targetUserId: otherUser._id });
+      socket.emit("private:end-call", { targetUserId: otherUser.id });
     }
 
     // Create call log if call was active (duration > 0)
@@ -80,7 +80,7 @@ const PrivateCallModal = ({
       try {
         const { axiosInstance } = await import("../lib/axios.js");
         await axiosInstance.post("/messages/call-log", {
-          receiverId: otherUser._id,
+          receiverId: otherUser.id,
           callType: callType,
           duration: finalDuration
         });
@@ -114,7 +114,7 @@ const PrivateCallModal = ({
       if (e.candidate && socket) {
         console.log("Sending ICE candidate");
         socket.emit("private:ice-candidate", {
-          targetUserId: otherUser._id,
+          targetUserId: otherUser.id,
           candidate: e.candidate,
         });
       }
@@ -265,9 +265,9 @@ const PrivateCallModal = ({
 
     console.log("📤 Sending initiate-call signal");
     socket.emit("private:initiate-call", {
-      receiverId: otherUser._id,
+      receiverId: otherUser.id,
       callerInfo: {
-        _id: authUser._id,
+        id: authUser.id,
         nickname: authUser.nickname,
         profilePic: authUser.profilePic,
       },
@@ -278,7 +278,7 @@ const PrivateCallModal = ({
     console.log("⏳ Call status set to ringing, waiting for receiver to accept");
 
     // Store offer to send later when receiver accepts
-    window.pendingOffer = { receiverId: otherUser._id, sdp: offer };
+    window.pendingOffer = { receiverId: otherUser.id, sdp: offer };
   }, [initializeMedia, createPeerConnection, socket, otherUser, authUser, callType]);
 
   const answerCall = useCallback(async () => {
@@ -321,7 +321,7 @@ const PrivateCallModal = ({
 
       console.log("📤 Sending answer back to caller");
       socket.emit("private:answer", {
-        callerId: otherUser._id,
+        callerId: otherUser.id,
         sdp: answer,
       });
 
@@ -465,7 +465,7 @@ const PrivateCallModal = ({
       }
       
       // Verify this rejection is for our call
-      if (data.rejectorId && data.rejectorId !== otherUser?._id) {
+      if (data.rejectorId && data.rejectorId !== otherUser?.id) {
         console.log("⚠️ Rejection from different user, ignoring");
         return;
       }

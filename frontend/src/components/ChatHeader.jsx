@@ -11,7 +11,7 @@ const ChatHeader = ({ onStartCall }) => {
 
 	if (!selectedUser) return null;
 
-	const isOnline = onlineUsers.includes(selectedUser._id);
+	const isOnline = onlineUsers.includes(selectedUser.id);
 
 	const handleStartCall = (callType) => {
 		if (onStartCall) {

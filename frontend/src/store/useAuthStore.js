@@ -73,7 +73,7 @@ export const useAuthStore = create((set, get) => ({
 				localStorage.removeItem("token");
 				return;
 			}
-			if (user.isSuspended && user.suspendedUntil && new Date(user.suspendedUntil) > new Date()) { 
+			if (user.isSuspended && user.suspensionEndTime && new Date(user.suspensionEndTime) > new Date()) { 
 				console.log("User is suspended");
 				toast.error("Account is suspended"); 
 				set({ authUser: null, isCheckingAuth: false });
@@ -200,7 +200,7 @@ export const useAuthStore = create((set, get) => ({
 		set({ isUpdatingProfile: true });
 		try {
 			// Use the correct user profile endpoint
-			const res = await axiosInstance.put("/user/me", data);
+			const res = await axiosInstance.put("/users/me", data);
 			const user = res.data;
 			set({ authUser: user });
 			localStorage.setItem("authUser", JSON.stringify(user));
@@ -222,7 +222,7 @@ export const useAuthStore = create((set, get) => ({
             return;
         }
 
-        console.log(`Connecting socket to ${SOCKET_URL} for user ${authUser._id}`);
+        console.log(`Connecting socket to ${SOCKET_URL} for user ${authUser.id}`);
 		
 		// Get token for authentication
 		const token = localStorage.getItem("token");
@@ -230,7 +230,7 @@ export const useAuthStore = create((set, get) => ({
 		// ✅ --- USE CORRECT SOCKET_URL WITH TOKEN AUTH ---
 		const newSocket = io(SOCKET_URL, {
 			query: { 
-				userId: authUser._id,
+				userId: authUser.id,
 				token: token // Send token for mobile compatibility
 			},
 			auth: {
@@ -293,7 +293,7 @@ export const useAuthStore = create((set, get) => ({
 			toast.success("Reconnected to server!");
 			// Re-register user and fetch data upon successful reconnect
             if (get().authUser) { // Check if user is still logged in client-side
-                newSocket.emit("register-user", get().authUser._id); // Re-register
+                newSocket.emit("register-user", get().authUser.id); // Re-register
                 await get().checkAuth(); // Re-check auth and fetch friend data
             }
 		});

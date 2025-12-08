@@ -40,7 +40,7 @@ export const getAllUsers = async (req, res) => {
 			select: {
 				id: true, username: true, nickname: true, email: true,
 				profilePic: true, isVerified: true, isOnline: true,
-				isSuspended: true, suspendedUntil: true, suspensionReason: true,
+				isSuspended: true, suspensionEndTime: true, suspensionReason: true,
 				lastSeen: true, createdAt: true, country: true, countryCode: true,
 				city: true, region: true, timezone: true, isVPN: true, lastIP: true
 			},
@@ -86,7 +86,7 @@ export const suspendUser = async (req, res) => {
 		}
 		const updatedUser = await prisma.user.update({
 			where: { id: userId },
-			data: { isSuspended: true, suspendedUntil: suspendUntilDate, suspensionReason: reason }
+			data: { isSuspended: true, suspensionEndTime: suspendUntilDate, suspensionReason: reason }
 		});
 		clearAdminUsersCache();
 		const io = req.app.get("io");
@@ -107,7 +107,7 @@ export const unsuspendUser = async (req, res) => {
 	try {
 		const updatedUser = await prisma.user.update({
 			where: { id: req.params.userId },
-			data: { isSuspended: false, suspendedUntil: null, suspensionReason: null }
+			data: { isSuspended: false, suspensionEndTime: null, suspensionReason: null }
 		});
 		clearAdminUsersCache();
 		emitToUser(req.app.get("io"), req.params.userId, "user-action", { type: "unsuspended" });

@@ -77,7 +77,7 @@ const CallModal = () => {
         const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] };
         const pc = new RTCPeerConnection(servers);
 
-        pc.onicecandidate = (event) => { if (event.candidate && socket && callPartner) { console.log("CallModal: Sending ICE candidate"); socket.emit("private:ice-candidate", { targetUserId: callPartner._id, candidate: event.candidate }); } };
+        pc.onicecandidate = (event) => { if (event.candidate && socket && callPartner) { console.log("CallModal: Sending ICE candidate"); socket.emit("private:ice-candidate", { targetUserId: callPartner.id, candidate: event.candidate }); } };
         pc.ontrack = (event) => {
             if (event.streams && event.streams[0]) {
                 console.log("CallModal: Received remote track");
@@ -175,7 +175,7 @@ const CallModal = () => {
                       console.log("CallModal: Initiating Offer...");
                       pc.createOffer()
                         .then(offer => pc.setLocalDescription(offer))
-                        .then(() => { if (socket && callPartner) socket.emit("private:offer", { receiverId: callPartner._id, sdp: pc.localDescription }); })
+                        .then(() => { if (socket && callPartner) socket.emit("private:offer", { receiverId: callPartner.id, sdp: pc.localDescription }); })
                         .catch(err => { console.error("Error creating offer:", err); cleanupWebRTC(); resetCallState(); });
                   }
              }
@@ -186,9 +186,9 @@ const CallModal = () => {
         }
 
         // --- Socket Event Listeners for Signaling ---
-        const onOffer = (data) => { if (isMounted && data.callerId === callPartner?._id) handleOffer(data.callerId, data.sdp); };
-        const onAnswer = (data) => { if (isMounted && data.acceptorId === callPartner?._id) handleAnswer(data.sdp); };
-        const onIceCandidate = (data) => { if (isMounted && data.senderId === callPartner?._id) handleIceCandidate(data.candidate); };
+        const onOffer = (data) => { if (isMounted && data.callerId === callPartner?.id) handleOffer(data.callerId, data.sdp); };
+        const onAnswer = (data) => { if (isMounted && data.acceptorId === callPartner?.id) handleAnswer(data.sdp); };
+        const onIceCandidate = (data) => { if (isMounted && data.senderId === callPartner?.id) handleIceCandidate(data.candidate); };
 
         socket.on("private:offer", onOffer);
         socket.on("private:answer", onAnswer);

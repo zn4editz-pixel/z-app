@@ -408,7 +408,7 @@ const DashboardOverview = ({ stats, loadingStats, users = [] }) => {
 						) : (
 							onlineUsers.map((user) => (
 								<div 
-									key={user._id} 
+									key={user.id} 
 									className="flex items-center gap-3 p-3 bg-base-100/80 backdrop-blur-sm rounded-xl hover:bg-base-100 transition-all hover:scale-102 border border-green-500/20 hover:border-green-500/40 hover:shadow-lg"
 								>
 									<div className="avatar online">
@@ -458,7 +458,7 @@ const DashboardOverview = ({ stats, loadingStats, users = [] }) => {
 						) : (
 							offlineUsers.slice(0, 20).map((user) => (
 								<div 
-									key={user._id} 
+									key={user.id} 
 									className="flex items-center gap-3 p-3 bg-base-100/80 backdrop-blur-sm rounded-xl hover:bg-base-100 transition-all hover:scale-102 border border-slate-500/20 hover:border-slate-500/40 hover:shadow-lg"
 								>
 									<div className="avatar offline">
@@ -544,7 +544,7 @@ const DashboardOverview = ({ stats, loadingStats, users = [] }) => {
 					) : (
 						filteredUsers.map((user) => (
 							<div 
-								key={user._id} 
+								key={user.id} 
 								className={`flex items-center gap-3 p-3 bg-base-100/80 backdrop-blur-sm rounded-xl hover:bg-base-100 transition-all hover:scale-105 border ${
 									user.isOnline 
 										? 'border-green-500/30 hover:border-green-500/50 hover:shadow-green-500/20' 

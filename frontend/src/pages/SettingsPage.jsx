@@ -48,7 +48,7 @@ const SettingsPage = () => {
 
     setCheckingUsername(true);
     try {
-      const res = await axiosInstance.get(`/user/check-username/${username}`);
+      const res = await axiosInstance.get(`/users/check-username/${username}`);
       setUsernameAvailable(res.data.available);
     } catch (error) {
       console.error('Error checking username:', error);

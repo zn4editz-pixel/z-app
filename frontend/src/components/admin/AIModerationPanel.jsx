@@ -194,7 +194,7 @@ const AIModerationPanel = ({
 							</thead>
 							<tbody>
 								{aiReports.map((report) => (
-									<tr key={report._id} className="text-center text-xs sm:text-sm hover:bg-base-200/50 transition-colors">
+									<tr key={report.id} className="text-center text-xs sm:text-sm hover:bg-base-200/50 transition-colors">
 										<td className="font-medium">{new Date(report.createdAt).toLocaleString()}</td>
 										<td>
 											<div className="flex items-center justify-center gap-2">
@@ -254,7 +254,7 @@ const AIModerationPanel = ({
 											<div className="flex flex-wrap justify-center gap-1">
 												{report.status === 'pending' && (
 													<button
-														onClick={() => onUpdateReportStatus(report._id, 'reviewed')}
+														onClick={() => onUpdateReportStatus(report.id, 'reviewed')}
 														className="btn btn-info btn-xs gap-1"
 													>
 														<Eye size={12} /> Review
@@ -263,13 +263,13 @@ const AIModerationPanel = ({
 												{report.status === 'reviewed' && (
 													<>
 														<button
-															onClick={() => onUpdateReportStatus(report._id, 'action_taken')}
+															onClick={() => onUpdateReportStatus(report.id, 'action_taken')}
 															className="btn btn-success btn-xs gap-1"
 														>
 															<CheckCircle size={12} /> Action
 														</button>
 														<button
-															onClick={() => onUpdateReportStatus(report._id, 'dismissed')}
+															onClick={() => onUpdateReportStatus(report.id, 'dismissed')}
 															className="btn btn-neutral btn-xs gap-1"
 														>
 															<XCircle size={12} /> Dismiss
@@ -290,3 +290,4 @@ const AIModerationPanel = ({
 };
 
 export default AIModerationPanel;
+

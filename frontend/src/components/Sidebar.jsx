@@ -29,25 +29,25 @@ const Sidebar = () => {
   const hasSocialHubUpdates = pendingReceived.length > 0 || adminNotifications.length > 0 || hasVerificationUpdate;
 
   const filteredUsers = friends
-    .filter((u) => u && (u._id || u.id))
+    .filter((u) => u && (u.id))
     .filter((u) => {
       if (!query) return true;
       return `${u.nickname || u.username}`
         .toLowerCase()
         .includes(query.toLowerCase());
     })
-    .filter((u) => (showOnlineOnly ? onlineUsers.includes(u._id || u.id) : true))
+    .filter((u) => (showOnlineOnly ? onlineUsers.includes(u.id) : true))
     .sort((a, b) => {
       // Priority 1: Online users come first
-      const aOnline = onlineUsers.includes(a._id || a.id);
-      const bOnline = onlineUsers.includes(b._id || b.id);
+      const aOnline = onlineUsers.includes(a.id);
+      const bOnline = onlineUsers.includes(b.id);
       
       if (aOnline && !bOnline) return -1; // a is online, b is not
       if (!aOnline && bOnline) return 1;  // b is online, a is not
       
       // Priority 2: If both online or both offline, sort by unread messages
-      const aUnread = unreadCounts[a._id || a.id] || 0;
-      const bUnread = unreadCounts[b._id || b.id] || 0;
+      const aUnread = unreadCounts[a.id] || 0;
+      const bUnread = unreadCounts[b.id] || 0;
       
       if (aUnread !== bUnread) return bUnread - aUnread; // Higher unread first
       
@@ -120,7 +120,7 @@ const Sidebar = () => {
             {/* Friend Stories (Max 8 shown) */}
             {friends.slice(0, 8).map((u) => (
               <button
-                key={u._id || u.id}
+                key={u.id}
                 onClick={() => setSelectedUser(u)}
                 className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-transform focus:outline-none"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -167,7 +167,7 @@ const Sidebar = () => {
                 </div>
               ) : (
                 filteredUsers.map((user) => {
-                  const userId = user._id || user.id;
+                  const userId = user.id;
                   const unread = unreadCounts[userId] || 0;
                   const isOnline = onlineUsers.includes(userId);
                   return (
@@ -178,7 +178,7 @@ const Sidebar = () => {
                         if (searchOpen) setSearchOpen(false); 
                       }}
                       className={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg text-left transition-all hover:bg-base-200 card-touch ${
-                        (selectedUser?._id || selectedUser?.id) === userId ? "bg-base-200 ring-2 ring-primary/20" : ""
+                        (selectedUser?.id || selectedUser?.id) === userId ? "bg-base-200 ring-2 ring-primary/20" : ""
                       }`}
                     >
                       {/* Avatar */}
@@ -301,11 +301,11 @@ const Sidebar = () => {
               ) : filteredUsers.length > 0 ? (
                 <div className="space-y-2">
                   {filteredUsers.map((user) => {
-                    const isOnline = onlineUsers.includes(user._id);
-                    const unread = unreadCounts[user._id] || 0;
+                    const isOnline = onlineUsers.includes(user.id);
+                    const unread = unreadCounts[user.id] || 0;
                     return (
                       <button
-                        key={user._id}
+                        key={user.id}
                         onClick={() => {
                           setSelectedUser(user);
                           setSearchOpen(false);

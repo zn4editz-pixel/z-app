@@ -489,7 +489,7 @@ const StrangerChatPage = () => {
 				if (!hasJoinedQueue && socket && socket.connected) {
 					console.log("✅ Joining stranger queue...");
 					socket.emit("stranger:joinQueue", { 
-						userId: authUser._id,
+						userId: authUser.id,
 						username: authUser.username,
 						nickname: authUser.nickname,
 						profilePic: authUser.profilePic,
@@ -565,7 +565,7 @@ const StrangerChatPage = () => {
 				toast.info("Partner left. Finding a new match...");
 				closeConnection(); 
 				setStatus("waiting");
-				socket.emit("stranger:joinQueue", { userId: authUser._id });
+				socket.emit("stranger:joinQueue", { userId: authUser.id });
 			}
 		};
 		
@@ -764,7 +764,7 @@ const StrangerChatPage = () => {
 					const screenshot = captureVideoFrame(remoteVideoRef.current);
 					if (screenshot && socket) {
 						socket.emit('stranger:aiSuspicion', {
-							reporterId: authUser._id,
+							reporterId: authUser.id,
 							reportedUserId: partnerUserId,
 							reason: 'AI Suspicion - Low Confidence',
 							description: `AI detected suspicious content: ${category} (${(confidence * 100).toFixed(1)}% confidence)\n\nThis is a low-confidence detection for admin review only. No action taken against user.`,
@@ -795,7 +795,7 @@ const StrangerChatPage = () => {
 						const screenshot = captureVideoFrame(remoteVideoRef.current);
 						if (screenshot && socket) {
 							socket.emit('stranger:report', {
-								reporterId: authUser._id,
+								reporterId: authUser.id,
 								reportedUserId: partnerUserId,
 								reason: 'Nudity or Sexual Content',
 								description: `AI detected: ${category} (${(confidence * 100).toFixed(1)}% confidence)`,
@@ -903,7 +903,7 @@ const StrangerChatPage = () => {
 		if (!reportScreenshot || !reason || !partnerUserId) return;
 		setIsSubmittingReport(true);
 		socket.emit("stranger:report", {
-			reporterId: authUser._id,
+			reporterId: authUser.id,
 			reportedUserId: partnerUserId,
 			reason,
 			description: "Reported from stranger chat",

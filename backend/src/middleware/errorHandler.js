@@ -2,20 +2,26 @@
 export const errorHandler = (err, req, res, next) => {
 	console.error("Error:", err);
 
-	// Mongoose validation error
-	if (err.name === "ValidationError") {
-		const errors = Object.values(err.errors).map((e) => e.message);
+	// Prisma validation error
+	if (err.name === "PrismaClientValidationError") {
 		return res.status(400).json({
 			message: "Validation Error",
-			errors,
+			error: err.message,
 		});
 	}
 
-	// Mongoose duplicate key error
-	if (err.code === 11000) {
-		const field = Object.keys(err.keyPattern)[0];
+	// Prisma unique constraint error
+	if (err.code === "P2002") {
+		const field = err.meta?.target?.[0] || "field";
 		return res.status(400).json({
 			message: `${field} already exists`,
+		});
+	}
+
+	// Prisma record not found
+	if (err.code === "P2025") {
+		return res.status(404).json({
+			message: "Record not found",
 		});
 	}
 

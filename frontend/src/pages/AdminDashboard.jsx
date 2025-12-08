@@ -164,11 +164,11 @@ const AdminDashboard = () => {
 			// Immediately update the local state with response data
 			setUsers(prevUsers => {
 				const updated = prevUsers.map(user => 
-					user._id === userId 
+					user.id === userId 
 						? { 
 							...user, 
 							isSuspended: true, 
-							suspendedUntil: response.data.user?.suspendedUntil, 
+							suspensionEndTime: response.data.user?.suspensionEndTime, 
 							suspensionReason: response.data.user?.suspensionReason 
 						}
 						: user
@@ -201,11 +201,11 @@ const AdminDashboard = () => {
 			// Immediately update the local state with response data
 			setUsers(prevUsers => {
 				const updated = prevUsers.map(user => 
-					user._id === userId 
+					user.id === userId 
 						? { 
 							...user, 
 							isSuspended: false, 
-							suspendedUntil: null, 
+							suspensionEndTime: null, 
 							suspensionReason: null 
 						}
 						: user
@@ -235,7 +235,7 @@ const AdminDashboard = () => {
 			const response = await axiosInstance.delete(`/admin/delete/${userId}`);
 			
 			// Immediately remove from local state
-			setUsers(prevUsers => prevUsers.filter(user => user._id !== userId));
+			setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
 			
 			toast.success(response.data?.message || "User deleted successfully");
 			
@@ -254,7 +254,7 @@ const AdminDashboard = () => {
 			// Immediately update the local state
 			setUsers(prevUsers => 
 				prevUsers.map(user => 
-					user._id === userId 
+					user.id === userId 
 						? { ...user, isVerified: !user.isVerified }
 						: user
 				)

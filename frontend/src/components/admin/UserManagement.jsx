@@ -145,7 +145,7 @@ const UserManagement = ({
 						</thead>
 						<tbody>
 							{filteredUsers.map((user) => (
-								<tr key={user._id} className="text-xs sm:text-sm hover:bg-base-200/50 transition-colors border-b border-base-300 last:border-0">
+								<tr key={user.id} className="text-xs sm:text-sm hover:bg-base-200/50 transition-colors border-b border-base-300 last:border-0">
 									<td>
 										<div className="flex items-center gap-2">
 											<div className="avatar">
@@ -217,7 +217,7 @@ const UserManagement = ({
 										<div className="flex flex-wrap gap-1">
 											{user.isSuspended ? (
 												<button
-													onClick={() => onUnsuspend(user._id)}
+													onClick={() => onUnsuspend(user.id)}
 													className="btn btn-success btn-xs"
 													title="Unsuspend"
 												>
@@ -225,7 +225,7 @@ const UserManagement = ({
 												</button>
 											) : (
 												<button
-													onClick={() => handleSuspendClick(user._id, user.nickname || user.username)}
+													onClick={() => handleSuspendClick(user.id, user.nickname || user.username)}
 													className="btn btn-warning btn-xs"
 													title="Suspend"
 												>
@@ -233,14 +233,14 @@ const UserManagement = ({
 												</button>
 											)}
 											<button
-												onClick={() => onToggleVerification(user._id)}
+												onClick={() => onToggleVerification(user.id)}
 												className={`btn btn-xs ${user.isVerified ? 'btn-ghost' : 'btn-info'}`}
 												title={user.isVerified ? "Remove Verification" : "Verify"}
 											>
 												<BadgeCheck className="w-3 h-3" />
 											</button>
 											<button
-												onClick={() => onDelete(user._id)}
+												onClick={() => onDelete(user.id)}
 												className="btn btn-error btn-xs"
 												title="Delete"
 											>

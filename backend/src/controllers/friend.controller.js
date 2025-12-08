@@ -198,7 +198,7 @@ export const acceptFriendRequest = async (req, res) => {
 		const io = req.app.get("io");
 		if (io) {
 			const receiverInfo = {
-				_id: result.receiver.id,
+				id: result.receiver.id,
 				username: result.receiver.username,
 				nickname: result.receiver.nickname,
 				profilePic: result.receiver.profilePic,
@@ -230,7 +230,7 @@ export const acceptFriendRequest = async (req, res) => {
 		res.status(200).json({ 
 			message: "Friend request accepted.",
 			friend: {
-				_id: result.sender.id,
+				id: result.sender.id,
 				username: result.sender.username,
 				nickname: result.sender.nickname,
 				profilePic: result.sender.profilePic,

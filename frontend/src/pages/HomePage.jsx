@@ -30,7 +30,7 @@ const HomePage = () => {
       console.log("📞 Full call data:", { callerInfo, callType, callerId });
       
       // Validate callerInfo
-      if (!callerInfo || !callerInfo._id) {
+      if (!callerInfo || !callerInfo.id) {
         console.error("❌ Invalid caller info received:", callerInfo);
         toast.error("Invalid call data received");
         return;
@@ -41,7 +41,7 @@ const HomePage = () => {
         console.log("📊 Current call state:", prevState);
         if (prevState.isCallActive) {
           console.log("⚠️ Already in a call, rejecting incoming call from:", callerInfo.nickname);
-          socket.emit("private:reject-call", { callerId: callerInfo._id });
+          socket.emit("private:reject-call", { callerId: callerInfo.id });
           return prevState; // Don't update state
         }
         
@@ -87,9 +87,9 @@ const HomePage = () => {
     
     // Immediately notify caller that call was accepted
     socket.emit("private:call-accepted", {
-      callerId: incomingCall.callerInfo._id,
+      callerId: incomingCall.callerInfo.id,
       acceptorInfo: {
-        _id: authUser._id,
+        id: authUser.id,
         nickname: authUser.nickname,
         profilePic: authUser.profilePic,
       },
@@ -108,7 +108,7 @@ const HomePage = () => {
     if (incomingCall && socket) {
       console.log("🚫 Rejecting call from:", incomingCall.callerInfo.nickname);
       socket.emit("private:reject-call", { 
-        callerId: incomingCall.callerInfo._id,
+        callerId: incomingCall.callerInfo.id,
         reason: "declined"
       });
     }

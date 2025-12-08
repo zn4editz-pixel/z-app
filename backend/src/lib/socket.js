@@ -346,6 +346,59 @@ io.on("connection", (socket) => {
 		}
 	});
 
+	// MESSAGE STATUS UPDATES (WhatsApp-style ticks)
+	socket.on("messageDelivered", async ({ messageId }) => {
+		try {
+			const updatedMessage = await prisma.message.update({
+				where: { id: messageId },
+				data: {
+					status: "delivered",
+					deliveredAt: new Date()
+				}
+			});
+
+			// Notify sender that message was delivered
+			const senderSocketId = getReceiverSocketId(updatedMessage.senderId);
+			if (senderSocketId) {
+				io.to(senderSocketId).emit("messageDelivered", {
+					messageId,
+					deliveredAt: updatedMessage.deliveredAt
+				});
+			}
+		} catch (error) {
+			console.error('❌ messageDelivered error:', error);
+		}
+	});
+
+	socket.on("messagesRead", async ({ senderId }) => {
+		try {
+			const receiverId = socket.userId;
+
+			// Update all unread messages from this sender
+			await prisma.message.updateMany({
+				where: {
+					senderId: senderId,
+					receiverId: receiverId,
+					status: { not: "read" }
+				},
+				data: {
+					status: "read",
+					readAt: new Date()
+				}
+			});
+
+			// Notify sender that messages were read
+			const senderSocketId = getReceiverSocketId(senderId);
+			if (senderSocketId) {
+				io.to(senderSocketId).emit("messagesRead", {
+					readBy: receiverId
+				});
+			}
+		} catch (error) {
+			console.error('❌ messagesRead error:', error);
+		}
+	});
+
 	socket.on("admin-action", ({ targetUserId, action, payload }) => {
 		console.log(`👮 Admin action: ${action} for user ${targetUserId}`);
 		emitToUser(targetUserId, "admin-action", { action, payload });
@@ -434,10 +487,10 @@ io.on("connection", (socket) => {
 
 			// 2. Check if they are already friends or a request exists
 			const [sender, receiver, existingRequest, reverseRequest] = await Promise.all([
-				User.findById(senderId),
-				User.findById(receiverId),
-				FriendRequest.findOne({ sender: senderId, receiver: receiverId }),
-				FriendRequest.findOne({ sender: receiverId, receiver: senderId })
+				prisma.user.findUnique({ where: { id: senderId } }),
+				prisma.user.findUnique({ where: { id: receiverId } }),
+				prisma.friendRequest.findFirst({ where: { senderId, receiverId } }),
+				prisma.friendRequest.findFirst({ where: { senderId: receiverId, receiverId: senderId } })
 			]);
 
 			if (!sender || !receiver) throw new Error("User not found.");
@@ -483,7 +536,10 @@ io.on("connection", (socket) => {
                 });
                 
                 // Also emit to Social Hub (for pending requests)
-                const senderProfile = await User.findById(senderId).select("_id username nickname profilePic isVerified");
+                const senderProfile = await prisma.user.findUnique({
+                    where: { id: senderId },
+                    select: { id: true, username: true, nickname: true, profilePic: true, isVerified: true }
+                });
                 console.log(`📤 Emitting friendRequest:received to ${receiverId} with profile:`, senderProfile);
                 partnerSocket.emit("friendRequest:received", senderProfile);
                 console.log(`✅ Friend request event emitted successfully`);

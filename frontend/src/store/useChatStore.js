@@ -26,7 +26,7 @@ export const useChatStore = create((set, get) => ({
         const { selectedUser } = get();
         
         // CRITICAL FIX: Verify we're still on the same user
-        const selectedUserId = selectedUser?._id?.toString();
+        const selectedUserId = selectedUser?.id?.toString();
         const targetUserId = userId?.toString();
         
         if (selectedUserId !== targetUserId) {
@@ -45,7 +45,7 @@ export const useChatStore = create((set, get) => ({
             
             // CRITICAL: Double-check user hasn't changed during fetch
             const currentUser = get().selectedUser;
-            const currentUserId = currentUser?._id?.toString();
+            const currentUserId = currentUser?.id?.toString();
             
             if (currentUserId !== targetUserId) {
                 console.log('⚠️ User changed during fetch, discarding messages');
@@ -80,9 +80,9 @@ export const useChatStore = create((set, get) => ({
         // Create optimistic message (shows INSTANTLY)
         const tempId = `temp-${Date.now()}-${Math.random()}`;
         const optimisticMessage = {
-            _id: tempId,
-            senderId: authUser._id,
-            receiverId: selectedUser._id,
+            id: tempId,
+            senderId: authUser.id,
+            receiverId: selectedUser.id,
             text: messageData.text || '',
             image: messageData.image || null,
             voice: messageData.voice || null,
@@ -104,7 +104,7 @@ export const useChatStore = create((set, get) => ({
                 
                 // Emit via socket for instant delivery
                 socket.emit('sendMessage', {
-                    receiverId: selectedUser._id,
+                    receiverId: selectedUser.id,
                     ...messageData,
                     tempId: tempId
                 });
@@ -115,10 +115,10 @@ export const useChatStore = create((set, get) => ({
             } else {
                 // Fallback to API only if socket not available
                 console.log('📤 Sending via API (fallback)');
-                const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
+                const res = await axiosInstance.post(`/messages/send/${selectedUser.id}`, messageData);
                 
                 const currentUser = get().selectedUser;
-                if (currentUser?._id === selectedUser._id && res.data?._id) {
+                if (currentUser?.id === selectedUser.id && res.data?.id) {
                     set(state => ({
                         messages: state.messages.map(m => 
                             m.tempId === tempId ? res.data : m
@@ -147,18 +147,18 @@ export const useChatStore = create((set, get) => ({
             const { selectedUser, messages } = get();
             const { authUser } = useAuthStore.getState();
 
-            if (!newMessage || !newMessage._id) {
+            if (!newMessage || !newMessage.id) {
                 console.warn("⚠️ Received invalid message object:", newMessage);
                 return;
             }
 
-            console.log(`📨 New message received:`, newMessage._id);
+            console.log(`📨 New message received:`, newMessage.id);
 
             // Convert to strings for comparison
-            const selectedUserId = selectedUser?._id?.toString();
-            const authUserId = authUser?._id?.toString();
-            const msgSenderId = newMessage.senderId?._id?.toString() || newMessage.senderId?.toString();
-            const msgReceiverId = newMessage.receiverId?._id?.toString() || newMessage.receiverId?.toString();
+            const selectedUserId = selectedUser?.id?.toString();
+            const authUserId = authUser?.id?.toString();
+            const msgSenderId = newMessage.senderId?.id?.toString() || newMessage.senderId?.toString();
+            const msgReceiverId = newMessage.receiverId?.id?.toString() || newMessage.receiverId?.toString();
             
             const isForCurrentChat = selectedUser && (
                 (msgSenderId === selectedUserId && msgReceiverId === authUserId) ||
@@ -179,10 +179,10 @@ export const useChatStore = create((set, get) => ({
                     }));
                 } else {
                     // Check if message already exists
-                    const isDuplicate = messages.some(m => m._id === newMessage._id);
+                    const isDuplicate = messages.some(m => m.id === newMessage.id);
                     
                     if (isDuplicate) {
-                        console.log(`⚠️ Duplicate message detected, skipping: ${newMessage._id}`);
+                        console.log(`⚠️ Duplicate message detected, skipping: ${newMessage.id}`);
                         return;
                     }
                     
@@ -192,7 +192,7 @@ export const useChatStore = create((set, get) => ({
                 
                 // Mark as read if I'm the receiver
                 if (msgReceiverId === authUserId) {
-                    get().markMessagesAsRead(selectedUser._id);
+                    get().markMessagesAsRead(selectedUser.id);
                 }
             } else if (msgSenderId !== authUserId) {
                 console.log(`📬 Message for different chat, incrementing unread`);
@@ -204,7 +204,7 @@ export const useChatStore = create((set, get) => ({
         const messageDeliveredHandler = ({ messageId, deliveredAt }) => {
             const { messages } = get();
             const updatedMessages = messages.map(msg => 
-                msg._id === messageId ? { ...msg, status: 'delivered', deliveredAt } : msg
+                msg.id === messageId ? { ...msg, status: 'delivered', deliveredAt } : msg
             );
             set({ messages: updatedMessages });
         };
@@ -212,7 +212,7 @@ export const useChatStore = create((set, get) => ({
         const messagesDeliveredHandler = ({ messageIds, deliveredAt }) => {
             const { messages } = get();
             const updatedMessages = messages.map(msg => 
-                messageIds.includes(msg._id) ? { ...msg, status: 'delivered', deliveredAt } : msg
+                messageIds.includes(msg.id) ? { ...msg, status: 'delivered', deliveredAt } : msg
             );
             set({ messages: updatedMessages });
         };
@@ -225,12 +225,12 @@ export const useChatStore = create((set, get) => ({
             // Update messages where I am the sender and the other person (readBy) is the receiver
             // Handle both string and ObjectId comparison
             const updatedMessages = messages.map(msg => {
-                const receiverIdStr = typeof msg.receiverId === 'object' ? msg.receiverId._id || msg.receiverId.toString() : msg.receiverId;
-                const readByStr = typeof readBy === 'object' ? readBy._id || readBy.toString() : readBy;
+                const receiverIdStr = typeof msg.receiverId === 'object' ? msg.receiverId.id || msg.receiverId.toString() : msg.receiverId;
+                const readByStr = typeof readBy === 'object' ? readBy.id || readBy.toString() : readBy;
                 const shouldUpdate = receiverIdStr === readByStr && msg.status !== 'read';
                 
                 if (shouldUpdate) {
-                    console.log(`📘 Updating message ${msg._id} to read status`);
+                    console.log(`📘 Updating message ${msg.id} to read status`);
                     console.log(`📘 Message receiverId: ${receiverIdStr}, readBy: ${readByStr}`);
                 }
                 return shouldUpdate ? { ...msg, status: 'read', readAt: new Date() } : msg;
@@ -273,8 +273,9 @@ export const useChatStore = create((set, get) => ({
         set({ selectedUser: user, messages: [], isMessagesLoading: false });
         if (user) {
             // Small delay to ensure state is updated
+            const userId = user.id;
             setTimeout(() => {
-                get().getMessages(user._id);
+                get().getMessages(userId);
             }, 0);
         }
     },
@@ -288,7 +289,7 @@ export const useChatStore = create((set, get) => ({
             const res = await axiosInstance.post(`/messages/reaction/${messageId}`, { emoji });
             const { messages } = get();
             const updatedMessages = messages.map(msg => 
-                msg._id === messageId ? { ...msg, reactions: res.data.reactions } : msg
+                msg.id === messageId ? { ...msg, reactions: res.data.reactions } : msg
             );
             set({ messages: updatedMessages });
         } catch (error) {
@@ -301,7 +302,7 @@ export const useChatStore = create((set, get) => ({
             const res = await axiosInstance.delete(`/messages/reaction/${messageId}`);
             const { messages } = get();
             const updatedMessages = messages.map(msg => 
-                msg._id === messageId ? { ...msg, reactions: res.data.reactions } : msg
+                msg.id === messageId ? { ...msg, reactions: res.data.reactions } : msg
             );
             set({ messages: updatedMessages });
         } catch (error) {
@@ -314,7 +315,7 @@ export const useChatStore = create((set, get) => ({
             await axiosInstance.delete(`/messages/message/${messageId}`);
             const { messages } = get();
             const updatedMessages = messages.map(msg => 
-                msg._id === messageId ? { ...msg, isDeleted: true, deletedAt: new Date() } : msg
+                msg.id === messageId ? { ...msg, isDeleted: true, deletedAt: new Date() } : msg
             );
             set({ messages: updatedMessages });
             toast.success("Message deleted");
@@ -330,7 +331,7 @@ export const useChatStore = create((set, get) => ({
         const reactionHandler = ({ messageId, reactions }) => {
             const { messages } = get();
             const updatedMessages = messages.map(msg => 
-                msg._id === messageId ? { ...msg, reactions } : msg
+                msg.id === messageId ? { ...msg, reactions } : msg
             );
             set({ messages: updatedMessages });
         };
@@ -338,7 +339,7 @@ export const useChatStore = create((set, get) => ({
         const deleteHandler = ({ messageId, isDeleted, deletedAt }) => {
             const { messages } = get();
             const updatedMessages = messages.map(msg => 
-                msg._id === messageId ? { ...msg, isDeleted, deletedAt } : msg
+                msg.id === messageId ? { ...msg, isDeleted, deletedAt } : msg
             );
             set({ messages: updatedMessages });
         };
@@ -371,7 +372,7 @@ export const useChatStore = create((set, get) => ({
             return toast.error("Already busy in another call attempt.");
         }
         const { authUser, socket } = useAuthStore.getState();
-        if (!socket || !authUser || !partner || !partner._id) {
+        if (!socket || !authUser || !partner || !partner.id) {
              return toast.error("Cannot initiate call. Connection error.");
         }
 
@@ -383,9 +384,9 @@ export const useChatStore = create((set, get) => ({
         });
 
         socket.emit("private:initiate-call", {
-            receiverId: partner._id,
+            receiverId: partner.id,
             callerInfo: {
-                _id: authUser._id,
+                id: authUser.id,
                 nickname: authUser.nickname || authUser.username,
                 profilePic: authUser.profilePic,
             },
@@ -411,7 +412,7 @@ export const useChatStore = create((set, get) => ({
         socket.emit("private:call-accepted", {
             callerId: incomingCallData.callerId,
             acceptorInfo: {
-                _id: authUser._id,
+                id: authUser.id,
                 nickname: authUser.nickname || authUser.username,
                 profilePic: authUser.profilePic,
             },
@@ -432,7 +433,7 @@ export const useChatStore = create((set, get) => ({
             });
         } else if (callState === "outgoing" && callPartner) {
             console.log(`Cancelling outgoing call to ${callPartner.nickname || callPartner.username}`);
-            socket.emit("private:end-call", { targetUserId: callPartner._id }); // Use end-call to notify
+            socket.emit("private:end-call", { targetUserId: callPartner.id }); // Use end-call to notify
         }
         get().resetCallState(); // Reset state immediately
     },
@@ -444,7 +445,7 @@ export const useChatStore = create((set, get) => ({
 
         console.log(`Ending call with ${callPartner?.nickname || callPartner?.username || 'partner'}`);
         if (callPartner && (callState === 'connected' || callState === 'connecting' || callState === 'outgoing')) {
-            socket.emit("private:end-call", { targetUserId: callPartner._id });
+            socket.emit("private:end-call", { targetUserId: callPartner.id });
         }
         get().resetCallState(); // Reset state immediately
         // WebRTC cleanup should be triggered in the CallModal component
@@ -486,7 +487,7 @@ export const useChatStore = create((set, get) => ({
     handleCallRejected: (data) => {
         const { callState, callPartner } = get();
         // Only act if we were the caller waiting for acceptance
-        if (callState === "outgoing" && callPartner?._id === data.rejectorId) {
+        if (callState === "outgoing" && callPartner?.id === data.rejectorId) {
             console.log(`Call rejected by ${callPartner.nickname}. Reason: ${data.reason}`);
             toast.error(`Call ${data.reason || 'declined'} by user.`);
             get().resetCallState();
@@ -498,7 +499,7 @@ export const useChatStore = create((set, get) => ({
     handleCallEnded: (data) => {
         const { callState, callPartner } = get();
         if (callState !== 'idle') {
-            console.log(`Call ended by ${data?.userId === callPartner?._id ? callPartner.nickname : 'partner'}`);
+            console.log(`Call ended by ${data?.userId === callPartner?.id ? callPartner.nickname : 'partner'}`);
             // NO TOAST - just reset state
             get().resetCallState();
         }

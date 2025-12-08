@@ -78,7 +78,7 @@ export const signup = async (req, res) => {
 
 		res.status(201).json({
 			token, // Return token for mobile apps
-			_id: newUser.id,
+			id: newUser.id,
 			fullName: newUser.fullName,
 			email: newUser.email,
 			username: newUser.username,
@@ -154,7 +154,7 @@ export const login = async (req, res) => {
 
 		res.status(200).json({
 			token, // Return token for mobile apps
-			_id: updatedUser.id,
+			id: updatedUser.id,
 			fullName: updatedUser.fullName,
 			email: updatedUser.email,
 			username: updatedUser.username,
@@ -277,8 +277,7 @@ export const updateProfile = async (req, res) => {
 				countryCode: true,
 				city: true,
 				createdAt: true,
-				updatedAt: true,
-				password: false
+				updatedAt: true
 			}
 		});
 
@@ -318,8 +317,7 @@ export const updateProfileInfo = async (req, res) => {
 				countryCode: true,
 				city: true,
 				createdAt: true,
-				updatedAt: true,
-				password: false
+				updatedAt: true
 			}
 		});
 
@@ -416,8 +414,7 @@ export const updateUsername = async (req, res) => {
 				countryCode: true,
 				city: true,
 				createdAt: true,
-				updatedAt: true,
-				password: false
+				updatedAt: true
 			}
 		});
 
@@ -449,14 +446,13 @@ export const checkAuth = async (req, res) => {
 				country: true,
 				countryCode: true,
 				city: true,
-				createdAt: true,
-				password: false
+				createdAt: true
 			}
 		});
 		if (!user) return res.status(404).json({ message: "User not found." });
 
 		res.status(200).json({
-			_id: user.id,
+			id: user.id,
 			fullName: user.fullName,
 			email: user.email,
 			username: user.username,

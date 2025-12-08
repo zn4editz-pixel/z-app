@@ -20,8 +20,7 @@ export const getAllUsers = async (req, res) => {
 				isOnline: true,
 				lastSeen: true,
 				createdAt: true,
-				updatedAt: true,
-				password: false
+				updatedAt: true
 			}
 		});
 		res.status(200).json(users);
@@ -53,8 +52,7 @@ export const getUserById = async (req, res) => {
 				isOnline: true,
 				lastSeen: true,
 				createdAt: true,
-				updatedAt: true,
-				password: false
+				updatedAt: true
 			}
 		});
 
@@ -88,8 +86,7 @@ export const getUserProfile = async (req, res) => {
 				isOnline: true,
 				lastSeen: true,
 				createdAt: true,
-				updatedAt: true,
-				password: false
+				updatedAt: true
 			}
 		});
 
@@ -129,8 +126,7 @@ export const getUserByUsername = async (req, res) => {
 				friendRequestsSent: true,
 				friendRequestsReceived: true,
 				createdAt: true,
-				updatedAt: true,
-				password: false
+				updatedAt: true
 			}
 		});
 
@@ -244,8 +240,7 @@ export const updateUserProfile = async (req, res) => {
 				isOnline: true,
 				lastSeen: true,
 				createdAt: true,
-				updatedAt: true,
-				password: false
+				updatedAt: true
 			}
 		});
 

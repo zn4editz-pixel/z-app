@@ -81,16 +81,16 @@ const PublicProfilePage = () => {
 		try {
 			switch (friendshipStatus) {
 				case "NOT_FRIENDS":
-					await sendRequest(user._id);
+					await sendRequest(user.id);
 					break;
 				case "REQUEST_SENT":
-					await rejectRequest(user._id);
+					await rejectRequest(user.id);
 					break;
 				case "REQUEST_RECEIVED":
-					await acceptRequest(user._id);
+					await acceptRequest(user.id);
 					break;
 				case "FRIENDS":
-					await unfriend(user._id);
+					await unfriend(user.id);
 					break;
 				default:
 					break;
@@ -120,7 +120,7 @@ const PublicProfilePage = () => {
 		return null;
 	}
 
-	const friendshipStatus = getFriendshipStatus(user._id);
+	const friendshipStatus = getFriendshipStatus(user.id);
 	const isMessageButtonDisabled = friendshipStatus !== "FRIENDS";
 
 	const getFriendButtonProps = () => {
@@ -199,7 +199,7 @@ const PublicProfilePage = () => {
 								className="btn btn-outline btn-error btn-xs sm:btn-sm w-full mt-2"
 								onClick={async () => {
 									setIsButtonLoading(true);
-									await rejectRequest(user._id);
+									await rejectRequest(user.id);
 									setIsButtonLoading(false);
 								}}
 								disabled={isButtonLoading}

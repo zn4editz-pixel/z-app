@@ -46,17 +46,17 @@ const ChatContainer = ({ onStartCall }) => {
   };
 
   useEffect(() => {
-    if (!selectedUser?._id) return;
+    if (!selectedUser?.id) return;
     
     console.log(`📱 ChatContainer: Loading chat for ${selectedUser.nickname || selectedUser.username}`);
     
     isInitialLoad.current = true;
     previousMessagesLength.current = 0;
     
-    getMessages?.(selectedUser._id);
-    const unsub = subscribeToMessages?.(selectedUser._id);
+    getMessages?.(selectedUser.id);
+    const unsub = subscribeToMessages?.(selectedUser.id);
     return () => typeof unsub === "function" && unsub();
-  }, [selectedUser?._id, getMessages, subscribeToMessages]);
+  }, [selectedUser?.id, getMessages, subscribeToMessages]);
 
   useEffect(() => {
     if (!bottomRef.current || !scrollContainerRef.current) return;
@@ -119,7 +119,7 @@ const ChatContainer = ({ onStartCall }) => {
     if (!socket || !selectedUser) return;
 
     const handleTyping = ({ senderId }) => {
-      if (senderId === selectedUser._id) {
+      if (senderId === selectedUser.id) {
         setIsTyping(true);
         
         // Clear previous timeout
@@ -135,7 +135,7 @@ const ChatContainer = ({ onStartCall }) => {
     };
 
     const handleStopTyping = ({ senderId }) => {
-      if (senderId === selectedUser._id) {
+      if (senderId === selectedUser.id) {
         setIsTyping(false);
         if (typingTimeoutRef.current) {
           clearTimeout(typingTimeoutRef.current);
@@ -231,13 +231,13 @@ const ChatContainer = ({ onStartCall }) => {
             </div>
           ) : (
             messages.map((message) => {
-              const mine = message.senderId === authUser?._id;
+              const mine = message.senderId === authUser?.id;
               
               // Render call log message
               if (message.messageType === "call" || message.callData) {
                 return (
                   <div
-                    key={message._id || message.id}
+                    key={message.id || message.id}
                     className="flex justify-center w-full my-2"
                   >
                     <div className="max-w-md w-full">
@@ -248,7 +248,7 @@ const ChatContainer = ({ onStartCall }) => {
               }
               
               // Use new ChatMessage component with reactions and reply
-              return <ChatMessage key={message._id || message.id} message={message} onReply={handleReply} />;
+              return <ChatMessage key={message.id} message={message} onReply={handleReply} />;
             })
           )}
           

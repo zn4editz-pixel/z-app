@@ -19,10 +19,10 @@ const UserListBar = () => {
 			{/* ✅ 5. Map over sortedFriends */}
 			{sortedFriends.map((friend) => (
 				<div
-					key={friend._id}
+					key={friend.id}
 					onClick={() => setSelectedUser(friend)} // This sets the active chat
 					className={`relative cursor-pointer shrink-0 ${
-						selectedUser?._id === friend._id
+						selectedUser?.id === friend.id
 							? "ring-2 ring-primary rounded-full"
 							: ""
 					}`}

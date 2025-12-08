@@ -36,7 +36,7 @@ const VerificationRequests = ({
 				<div className="space-y-4">
 					{verificationRequests.map((user) => (
 						<div
-							key={user._id}
+							key={user.id}
 							className="card bg-base-200 border border-base-300"
 						>
 							<div className="card-body p-4">
@@ -82,14 +82,14 @@ const VerificationRequests = ({
 									{/* Actions */}
 									<div className="flex gap-2 flex-shrink-0">
 										<button
-											onClick={() => onApprove(user._id)}
+											onClick={() => onApprove(user.id)}
 											className="btn btn-success btn-sm gap-2"
 										>
 											<CheckCircle className="w-4 h-4" />
 											Approve
 										</button>
 										<button
-											onClick={() => onReject(user._id)}
+											onClick={() => onReject(user.id)}
 											className="btn btn-error btn-sm gap-2"
 										>
 											<XCircle className="w-4 h-4" />

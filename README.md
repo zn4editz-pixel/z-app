@@ -1,9 +1,10 @@
-av# Z-App - Real-Time Chat Application 🚀
+# Z-App - Real-Time Chat Application 🚀
 
 **A modern, feature-rich chat application with video calls, stranger chat, AI content moderation, and comprehensive admin tools**
 
 [![Node.js](https://img.shields.io/badge/Node.js-20.x-green.svg)](https://nodejs.org/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-6.x-green.svg)](https://www.mongodb.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15.x-blue.svg)](https://www.postgresql.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-5.x-2D3748.svg)](https://www.prisma.io/)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Socket.io](https://img.shields.io/badge/Socket.io-4.x-black.svg)](https://socket.io/)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)](https://github.com)
@@ -86,8 +87,9 @@ av# Z-App - Real-Time Chat Application 🚀
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ and npm
-- MongoDB 6+
+- Node.js 20+ and npm
+- PostgreSQL 15+ (or use Neon/Supabase free tier)
+- Redis (optional, recommended for production)
 - Cloudinary account (for image uploads)
 
 ### Installation
@@ -110,22 +112,29 @@ cd ../frontend && npm install
 
 Create `backend/.env`:
 ```env
-PORT=5001
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
-NODE_ENV=development
+# Database (PostgreSQL)
+DATABASE_URL="postgresql://user:password@localhost:5432/zapp?schema=public"
 
+# Redis (Optional but recommended)
+REDIS_URL="redis://localhost:6379"
+
+# Server
+PORT=5001
+NODE_ENV=development
+CLIENT_URL=http://localhost:5173
+
+# JWT
+JWT_SECRET=your_jwt_secret_key_change_this
+
+# Cloudinary
 CLOUDINARY_CLOUD_NAME=your_cloudinary_name
 CLOUDINARY_API_KEY=your_cloudinary_key
 CLOUDINARY_API_SECRET=your_cloudinary_secret
 
+# Email
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_app_password
-
-ADMIN_EMAIL=admin@example.com
-ADMIN_USERNAME=admin
-
-FRONTEND_URL=http://localhost:5173
+EMAIL_FROM="Z-APP <noreply@yourapp.com>"
 ```
 
 Create `frontend/.env`:
@@ -133,18 +142,26 @@ Create `frontend/.env`:
 VITE_API_URL=http://localhost:5001
 ```
 
-4. **Start development servers**
+4. **Setup database**
 ```bash
-fix-and-start.bat
-# Or manually:
+cd backend
+npx prisma generate
+npx prisma db push
+```
+
+5. **Start development servers**
+```bash
+# Backend
 cd backend && npm run dev
+
+# Frontend (in new terminal)
 cd frontend && npm run dev
 ```
 
-5. **Access the application**
+6. **Access the application**
 - Frontend: http://localhost:5173
-- Backend: http://localhost:5001
-- Health Check: http://localhost:5001/health
+- Backend API: http://localhost:5001
+- Prisma Studio: `npx prisma studio` (database GUI)
 
 ---
 
@@ -193,37 +210,31 @@ docker run -d -p 6379:6379 redis:alpine
 
 ## 📚 Documentation
 
-- **[Quick Start Testing](QUICK_START_TESTING.md)** - Testing guide
-- **[Deployment Guide](RENDER_DEPLOYMENT_GUIDE.md)** - Deploy to Render
-- **[AI Moderation](AI_CONTENT_MODERATION.md)** - AI moderation details
-- **[Security Guide](SECURITY_IMPROVEMENTS.md)** - Security features
-- **[Production Checklist](PRODUCTION_READINESS_CHECKLIST.md)** - Pre-launch checklist
-- **[Complete Summary](COMPLETE_IMPLEMENTATION_SUMMARY.md)** - All features
+- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Complete deployment instructions
+- **[Cleanup Plan](COMPREHENSIVE_CLEANUP_PLAN.md)** - Migration status & cleanup
+- **[Prisma Schema](backend/prisma/schema.prisma)** - Database schema
 
 ---
 
 ## 🧪 Testing
 
-### Test AI Content Moderation
+### Run System Health Check
 ```bash
-test-ai-moderation.bat
+node test-system.js
 ```
 
-### Test API Endpoints
-```bash
-test-api.bat
-```
-
-### Test Login
-```bash
-test-login.bat
-```
+This will verify:
+- ✅ Database connection (PostgreSQL)
+- ✅ Redis connection (if configured)
+- ✅ Prisma schema
+- ✅ Environment variables
 
 ### Manual Testing
 1. Open two browsers
 2. Login with different accounts
 3. Test messaging, video calls, stranger chat
 4. Check admin dashboard features
+5. Verify message status indicators (WhatsApp-style ticks)
 
 ---
 
@@ -244,8 +255,9 @@ test-login.bat
 ### Backend
 - **Node.js** - Runtime
 - **Express** - Web framework
-- **MongoDB** - Database
-- **Mongoose** - ODM
+- **PostgreSQL** - Database
+- **Prisma** - ORM (replaced Mongoose)
+- **Redis** - Caching & session store
 - **Socket.io** - WebSocket server
 - **JWT** - Authentication
 - **bcrypt** - Password hashing
@@ -322,54 +334,39 @@ export const apiLimiter = rateLimit({
 
 ## 🚀 Deployment
 
-### Quick Start: Get Your Own Domain! 🌐
+### Quick Deploy
 
-Want to host on your own domain (like `z-app.com`) instead of Render's subdomain?
+**See the complete guide:** [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
 
-**Run this interactive wizard:**
+**Recommended platforms:**
+- **Railway** - Easiest, auto-detects everything, free PostgreSQL + Redis
+- **Render** - Great free tier, manual setup
+- **Vercel (Frontend) + Railway (Backend)** - Best performance
+
+### Quick Steps
+
+1. **Test locally first:**
 ```bash
-setup-custom-domain.bat
+node test-system.js
 ```
 
-**Or read the quick guide:**
-- [5-Minute Quick Start](DOMAIN_QUICK_START.md) - Get live fast!
-- [Complete Setup Guide](CUSTOM_DOMAIN_SETUP.md) - All options
-- [Deployment Comparison](DEPLOYMENT_OPTIONS.md) - Choose best option
-
-### Deploy to Render
-
-1. **Prepare for deployment**
+2. **Build for production:**
 ```bash
-pre-deployment-check.bat
+cd backend
+npx prisma generate
+npx prisma db push
+cd ../frontend
+npm run build
 ```
 
-2. **Build the application**
-```bash
-build-all.bat
-```
+3. **Deploy to Railway:**
+   - Connect GitHub repo
+   - Add PostgreSQL database
+   - Add Redis (optional)
+   - Set environment variables
+   - Deploy!
 
-3. **Deploy to Render**
-```bash
-deploy-to-production.bat
-```
-
-4. **Follow the deployment guide**
-See [RENDER_DEPLOYMENT_GUIDE.md](RENDER_DEPLOYMENT_GUIDE.md) for detailed instructions.
-
-### Other Deployment Options
-
-**VPS (DigitalOcean, Linode):**
-```bash
-bash vps-deploy.sh
-```
-
-**Docker:**
-```bash
-deploy-docker.bat
-```
-
-**Vercel + Railway:**
-See [DEPLOYMENT_OPTIONS.md](DEPLOYMENT_OPTIONS.md)
+**Full instructions:** See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
 
 ---
 
@@ -452,24 +449,30 @@ For support, email support@z-app.com or open an issue on GitHub.
 - [x] Security features
 - [x] Rate limiting
 
+### Recent Updates ✨
+- [x] **PostgreSQL Migration** - Migrated from MongoDB to PostgreSQL
+- [x] **Prisma ORM** - Replaced Mongoose with Prisma
+- [x] **Message Status** - WhatsApp-style delivery indicators
+- [x] **Profile Fixes** - Fixed 500 errors and image refresh
+- [x] **Redis Integration** - Multi-server support ready
+- [x] **ID Migration** - Converted _id to id throughout codebase
+
 ### Planned 🔜
 - [ ] Group chats
 - [ ] Message search
 - [ ] Message editing
 - [ ] Push notifications
 - [ ] Message forwarding
-- [ ] Voice messages (full integration)
 - [ ] 2FA authentication
-- [ ] Redis caching
-- [ ] CDN integration
 
 ---
 
 ## 📈 Status
 
-**Current Version**: 3.0  
+**Current Version**: 4.0  
 **Status**: Production Ready ✅  
-**Last Updated**: December 5, 2024
+**Database**: PostgreSQL + Prisma ✅  
+**Last Updated**: December 8, 2025
 
 ---
 

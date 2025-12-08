@@ -48,9 +48,8 @@ const AdminNotificationsList = () => {
 						color: notif.color,
 						notificationType: notif.type,
 						createdAt: notif.createdAt,
-						id: notif._id,
-						dbId: notif._id,
-						_id: notif._id,
+						id: notif.id,
+						dbId: notif.id,
 					};
 					addNotification(notifData);
 					notificationsToAdd.push(notifData);
@@ -628,7 +627,7 @@ const DiscoverPage = () => {
 									<div className="flex-1 min-w-0">
 										<h3 className="font-bold text-sm sm:text-base">⚠️ Account Suspended</h3>
 										<p className="text-xs sm:text-sm mt-1">
-											Suspended Until: <span className="font-semibold">{new Date(authUser.suspendedUntil).toLocaleString()}</span>
+											Suspended Until: <span className="font-semibold">{new Date(authUser.suspensionEndTime).toLocaleString()}</span>
 										</p>
 										{authUser.suspensionReason && (
 											<div className="bg-base-100/50 p-2 sm:p-3 rounded-lg mt-2">

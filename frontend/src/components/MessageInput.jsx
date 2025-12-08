@@ -24,7 +24,7 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
     if (!socket || !selectedUser) return;
     
     // Emit typing event
-    socket.emit("typing", { receiverId: selectedUser._id });
+    socket.emit("typing", { receiverId: selectedUser.id });
     
     // Clear previous timeout
     if (typingTimeoutRef.current) {
@@ -33,7 +33,7 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
     
     // Stop typing after 2 seconds of inactivity
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit("stopTyping", { receiverId: selectedUser._id });
+      socket.emit("stopTyping", { receiverId: selectedUser.id });
     }, 2000);
   };
 
@@ -44,7 +44,7 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
         clearTimeout(typingTimeoutRef.current);
       }
       if (socket && selectedUser) {
-        socket.emit("stopTyping", { receiverId: selectedUser._id });
+        socket.emit("stopTyping", { receiverId: selectedUser.id });
       }
     };
   }, [socket, selectedUser]);
@@ -76,13 +76,13 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
 
     // Stop typing indicator immediately
     if (socket && selectedUser) {
-      socket.emit("stopTyping", { receiverId: selectedUser._id });
+      socket.emit("stopTyping", { receiverId: selectedUser.id });
     }
 
     // Store values before clearing
     const messageText = text.trim();
     const messageImage = imagePreview;
-    const messageReplyTo = replyingTo?._id || null;
+    const messageReplyTo = replyingTo?.id || null;
 
     // ✅ INSTANT: Clear form IMMEDIATELY (no await, no delay)
     setText("");
@@ -131,7 +131,7 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
         <div className="mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-base-200 rounded-xl border-l-4 border-primary reply-slide-in">
           <div className="flex-1 min-w-0">
             <div className="text-xs font-semibold text-primary mb-0.5">
-              Replying to {replyingTo.senderId === selectedUser?._id ? selectedUser.fullName : "You"}
+              Replying to {replyingTo.senderId === selectedUser?.id ? selectedUser.fullName : "You"}
             </div>
             <div className="text-sm text-base-content/70 truncate">
               {replyingTo.text || (replyingTo.image ? "📷 Image" : replyingTo.voice ? "🎤 Voice message" : "Message")}

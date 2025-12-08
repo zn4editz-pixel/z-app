@@ -37,6 +37,9 @@ export const openDB = () => {
 // Friends Cache
 export const cacheFriends = async (userId, data) => {
   try {
+    if (!userId || !data) {
+      return;
+    }
     const db = await openDB();
     const tx = db.transaction('friends', 'readwrite');
     await tx.objectStore('friends').put({
@@ -51,6 +54,9 @@ export const cacheFriends = async (userId, data) => {
 
 export const getCachedFriends = async (userId) => {
   try {
+    if (!userId) {
+      return null;
+    }
     const db = await openDB();
     const tx = db.transaction('friends', 'readonly');
     const cached = await tx.objectStore('friends').get(userId);

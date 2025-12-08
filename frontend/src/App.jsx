@@ -90,10 +90,10 @@ const App = () => {
 	
 	// Fetch friend data when user is authenticated
 	useEffect(() => {
-		if (authUser?._id) {
+		if (authUser?.id) {
 			fetchFriendData();
 		}
-	}, [authUser?._id, fetchFriendData]);
+	}, [authUser?.id, fetchFriendData]);
 	
 	useEffect(() => {
 		if (authUser?.isSuspended && window.location.pathname !== "/suspended") {
@@ -103,10 +103,10 @@ const App = () => {
 	
 	// --- MAIN SOCKET LISTENER EFFECT ---
 	useEffect(() => {
-		if (!socket || !authUser?._id) return;
+		if (!socket || !authUser?.id) return;
 
 		// Initial registration
-		socket.emit("register-user", authUser._id);
+		socket.emit("register-user", authUser.id);
 
 		// 1. User/Admin actions listener
 		socket.on("user-action", ({ type, reason, until }) => {
@@ -138,7 +138,7 @@ const App = () => {
 
 		// 2. Message listener
 		socket.on("message-received", ({ sender, text }) => {
-			if (sender?._id !== authUser?._id) {
+			if (sender?.id !== authUser?.id) {
 				showMessageToast({
 					senderName: sender?.name || "Unknown",
 					senderAvatar: sender?.profilePic || "/default-avatar.png",
@@ -182,9 +182,8 @@ const App = () => {
 				color: notification.color,
 				notificationType: notification.type,
 				createdAt: notification.createdAt,
-				id: notification._id || notification.id, // Use DB ID
-				dbId: notification._id || notification.id, // Store for deletion
-				_id: notification._id || notification.id,
+				id: notification.id,
+				dbId: notification.id,
 			});
 		});
 
@@ -204,9 +203,8 @@ const App = () => {
 				color: notification.color,
 				notificationType: notification.type,
 				createdAt: notification.createdAt,
-				id: notification._id || notification.id, // Use DB ID
-				dbId: notification._id || notification.id, // Store for deletion
-				_id: notification._id || notification.id,
+				id: notification.id,
+				dbId: notification.id,
 			});
 		});
 

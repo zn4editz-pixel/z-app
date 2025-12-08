@@ -6,8 +6,17 @@ const urlsToCache = [
   '/manifest.json'
 ];
 
+// Only enable service worker in production
+const isProduction = self.location.hostname !== 'localhost' && self.location.hostname !== '127.0.0.1';
+
 // Install service worker
 self.addEventListener('install', (event) => {
+  if (!isProduction) {
+    console.log('Service worker disabled in development');
+    self.skipWaiting();
+    return;
+  }
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -18,8 +27,13 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Fetch from cache
+// Fetch from cache (only in production)
 self.addEventListener('fetch', (event) => {
+  // Skip caching in development
+  if (!isProduction) {
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
