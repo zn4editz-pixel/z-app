@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import cloudinary from "../lib/cloudinary.js";
-import User from "../models/user.model.js";
+import prisma from "../lib/prisma.js";
 import { generateToken } from "../lib/utils.js";
 import sendEmail from "../utils/sendEmail.js";
 import { getLocationData, getClientIP } from "../utils/geoLocation.js";
@@ -20,12 +20,16 @@ export const signup = async (req, res) => {
 			return res.status(400).json({ message: "Password must be at least 6 characters long." });
 		}
 
-		const existingUserByEmail = await User.findOne({ email });
+		const existingUserByEmail = await prisma.user.findUnique({ 
+			where: { email } 
+		});
 		if (existingUserByEmail) {
 			return res.status(409).json({ message: "Email is already registered." });
 		}
 
-		const existingUserByUsername = await User.findOne({ username: username.toLowerCase() });
+		const existingUserByUsername = await prisma.user.findUnique({ 
+			where: { username: username.toLowerCase() } 
+		});
 		if (existingUserByUsername) {
 			return res.status(409).json({ message: "Username is already taken." });
 		}
@@ -51,29 +55,30 @@ export const signup = async (req, res) => {
 		const clientIP = getClientIP(req);
 		const locationData = await getLocationData(clientIP);
 
-		const newUser = new User({
-			fullName,
-			email,
-			username: username.toLowerCase(),
-			nickname: fullName, // Default nickname
-			bio: bio || "",
-			password: hashedPassword,
-			profilePic: uploadedProfilePic,
-			country: locationData.country,
-			countryCode: locationData.countryCode,
-			city: locationData.city,
-			region: locationData.region || '',
-			timezone: locationData.timezone || '',
-			isVPN: locationData.isVPN || false,
-			lastIP: clientIP
+		const newUser = await prisma.user.create({
+			data: {
+				fullName,
+				email,
+				username: username.toLowerCase(),
+				nickname: fullName, // Default nickname
+				bio: bio || "",
+				password: hashedPassword,
+				profilePic: uploadedProfilePic,
+				country: locationData.country,
+				countryCode: locationData.countryCode,
+				city: locationData.city,
+				region: locationData.region || '',
+				timezone: locationData.timezone || '',
+				isVPN: locationData.isVPN || false,
+				lastIP: clientIP
+			}
 		});
 
-		await newUser.save();
-		const token = generateToken(newUser._id, res);
+		const token = generateToken(newUser.id, res);
 
 		res.status(201).json({
 			token, // Return token for mobile apps
-			_id: newUser._id,
+			_id: newUser.id,
 			fullName: newUser.fullName,
 			email: newUser.email,
 			username: newUser.username,
@@ -109,9 +114,16 @@ export const login = async (req, res) => {
 			return res.status(400).json({ message: "Email/Username and password are required." });
 		}
 
-		const user = await User.findOne({
-			$or: [{ email: emailOrUsername }, { username: emailOrUsername.toLowerCase() }],
+		// Try to find user by email first, then by username
+		let user = await prisma.user.findUnique({
+			where: { email: emailOrUsername }
 		});
+
+		if (!user) {
+			user = await prisma.user.findUnique({
+				where: { username: emailOrUsername.toLowerCase() }
+			});
+		}
 
 		if (!user) return res.status(401).json({ message: "Invalid credentials." });
 
@@ -125,36 +137,40 @@ export const login = async (req, res) => {
 		const clientIP = getClientIP(req);
 		const locationData = await getLocationData(clientIP);
 		
-		user.country = locationData.country;
-		user.countryCode = locationData.countryCode;
-		user.city = locationData.city;
-		user.region = locationData.region || '';
-		user.timezone = locationData.timezone || '';
-		user.isVPN = locationData.isVPN || false;
-		user.lastIP = clientIP;
-		await user.save();
+		const updatedUser = await prisma.user.update({
+			where: { id: user.id },
+			data: {
+				country: locationData.country,
+				countryCode: locationData.countryCode,
+				city: locationData.city,
+				region: locationData.region || '',
+				timezone: locationData.timezone || '',
+				isVPN: locationData.isVPN || false,
+				lastIP: clientIP
+			}
+		});
 
-		const token = generateToken(user._id, res);
+		const token = generateToken(updatedUser.id, res);
 
 		res.status(200).json({
 			token, // Return token for mobile apps
-			_id: user._id,
-			fullName: user.fullName,
-			email: user.email,
-			username: user.username,
-			nickname: user.nickname,
-			bio: user.bio,
-			profilePic: user.profilePic,
-			hasCompletedProfile: user.hasCompletedProfile,
-			isAdmin: user.email === process.env.ADMIN_EMAIL,
-			isBlocked: user.isBlocked,
-			isSuspended: user.isSuspended,
-			isVerified: user.isVerified,
-			isOnline: user.isOnline,
-			createdAt: user.createdAt,
-			country: user.country,
-			countryCode: user.countryCode,
-			city: user.city,
+			_id: updatedUser.id,
+			fullName: updatedUser.fullName,
+			email: updatedUser.email,
+			username: updatedUser.username,
+			nickname: updatedUser.nickname,
+			bio: updatedUser.bio,
+			profilePic: updatedUser.profilePic,
+			hasCompletedProfile: updatedUser.hasCompletedProfile,
+			isAdmin: updatedUser.email === process.env.ADMIN_EMAIL,
+			isBlocked: updatedUser.isBlocked,
+			isSuspended: updatedUser.isSuspended,
+			isVerified: updatedUser.isVerified,
+			isOnline: updatedUser.isOnline,
+			createdAt: updatedUser.createdAt,
+			country: updatedUser.country,
+			countryCode: updatedUser.countryCode,
+			city: updatedUser.city,
 		});
 	} catch (error) {
 		console.error("Login Error:", error);
@@ -188,13 +204,15 @@ export const logout = (req, res) => {
 export const completeProfileSetup = async (req, res) => {
 	try {
 		const { nickname, bio, profilePic } = req.body;
-		const userId = req.user._id;
+		const userId = req.user.id;
 
 		if (!nickname) {
 			return res.status(400).json({ message: "Nickname is required." });
 		}
 
-		const user = await User.findById(userId);
+		const user = await prisma.user.findUnique({
+			where: { id: userId }
+		});
 		if (!user) {
 			return res.status(404).json({ message: "User not found." });
 		}
@@ -210,16 +228,20 @@ export const completeProfileSetup = async (req, res) => {
 			}
 		}
 
-		user.nickname = nickname;
-		user.bio = bio || "";
-		user.profilePic = uploadedProfilePic;
-		user.hasCompletedProfile = true;
+		const updatedUser = await prisma.user.update({
+			where: { id: userId },
+			data: {
+				nickname,
+				bio: bio || "",
+				profilePic: uploadedProfilePic,
+				hasCompletedProfile: true
+			}
+		});
 
-		const updatedUser = await user.save();
-		const userObject = updatedUser.toObject();
-		delete userObject.password;
+		// Remove password from response
+		const { password, ...userWithoutPassword } = updatedUser;
 
-		res.status(200).json(userObject);
+		res.status(200).json(userWithoutPassword);
 	} catch (error) {
 		console.error("Complete Profile Setup Error:", error);
 		res.status(500).json({ message: "Failed to update profile." });
@@ -230,18 +252,35 @@ export const completeProfileSetup = async (req, res) => {
 export const updateProfile = async (req, res) => {
 	try {
 		const { profilePic } = req.body;
-		const userId = req.user._id;
+		const userId = req.user.id;
 
 		if (!profilePic) {
 			return res.status(400).json({ message: "Profile picture is required." });
 		}
 
 		const uploadResponse = await cloudinary.uploader.upload(profilePic);
-		const updatedUser = await User.findByIdAndUpdate(
-			userId,
-			{ profilePic: uploadResponse.secure_url },
-			{ new: true }
-		).select("-password");
+		const updatedUser = await prisma.user.update({
+			where: { id: userId },
+			data: { profilePic: uploadResponse.secure_url },
+			select: {
+				id: true,
+				fullName: true,
+				email: true,
+				username: true,
+				nickname: true,
+				bio: true,
+				profilePic: true,
+				hasCompletedProfile: true,
+				isVerified: true,
+				isOnline: true,
+				country: true,
+				countryCode: true,
+				city: true,
+				createdAt: true,
+				updatedAt: true,
+				password: false
+			}
+		});
 
 		res.status(200).json(updatedUser);
 	} catch (error) {
@@ -254,18 +293,35 @@ export const updateProfile = async (req, res) => {
 export const updateProfileInfo = async (req, res) => {
 	try {
 		const { fullName, nickname, bio } = req.body;
-		const userId = req.user._id;
+		const userId = req.user.id;
 
 		const updateData = {};
 		if (fullName !== undefined) updateData.fullName = fullName;
 		if (nickname !== undefined) updateData.nickname = nickname;
 		if (bio !== undefined) updateData.bio = bio;
 
-		const updatedUser = await User.findByIdAndUpdate(
-			userId,
-			updateData,
-			{ new: true }
-		).select("-password");
+		const updatedUser = await prisma.user.update({
+			where: { id: userId },
+			data: updateData,
+			select: {
+				id: true,
+				fullName: true,
+				email: true,
+				username: true,
+				nickname: true,
+				bio: true,
+				profilePic: true,
+				hasCompletedProfile: true,
+				isVerified: true,
+				isOnline: true,
+				country: true,
+				countryCode: true,
+				city: true,
+				createdAt: true,
+				updatedAt: true,
+				password: false
+			}
+		});
 
 		res.status(200).json(updatedUser);
 	} catch (error) {
@@ -278,7 +334,7 @@ export const updateProfileInfo = async (req, res) => {
 export const checkUsernameAvailability = async (req, res) => {
 	try {
 		const { username } = req.params;
-		const userId = req.user._id;
+		const userId = req.user.id;
 
 		// Check if username is valid format
 		if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
@@ -289,9 +345,11 @@ export const checkUsernameAvailability = async (req, res) => {
 		}
 
 		// Check if username is taken by another user
-		const existingUser = await User.findOne({ 
-			username: username.toLowerCase(),
-			_id: { $ne: userId } // Exclude current user
+		const existingUser = await prisma.user.findFirst({ 
+			where: {
+				username: username.toLowerCase(),
+				NOT: { id: userId } // Exclude current user
+			}
 		});
 
 		if (existingUser) {
@@ -315,7 +373,7 @@ export const checkUsernameAvailability = async (req, res) => {
 export const updateUsername = async (req, res) => {
 	try {
 		const { username } = req.body;
-		const userId = req.user._id;
+		const userId = req.user.id;
 
 		if (!username) {
 			return res.status(400).json({ message: "Username is required." });
@@ -329,20 +387,39 @@ export const updateUsername = async (req, res) => {
 		}
 
 		// Check if username is already taken
-		const existingUser = await User.findOne({ 
-			username: username.toLowerCase(),
-			_id: { $ne: userId }
+		const existingUser = await prisma.user.findFirst({ 
+			where: {
+				username: username.toLowerCase(),
+				NOT: { id: userId }
+			}
 		});
 
 		if (existingUser) {
 			return res.status(400).json({ message: "Username is already taken." });
 		}
 
-		const updatedUser = await User.findByIdAndUpdate(
-			userId,
-			{ username: username.toLowerCase() },
-			{ new: true }
-		).select("-password");
+		const updatedUser = await prisma.user.update({
+			where: { id: userId },
+			data: { username: username.toLowerCase() },
+			select: {
+				id: true,
+				fullName: true,
+				email: true,
+				username: true,
+				nickname: true,
+				bio: true,
+				profilePic: true,
+				hasCompletedProfile: true,
+				isVerified: true,
+				isOnline: true,
+				country: true,
+				countryCode: true,
+				city: true,
+				createdAt: true,
+				updatedAt: true,
+				password: false
+			}
+		});
 
 		res.status(200).json(updatedUser);
 	} catch (error) {
@@ -354,11 +431,32 @@ export const updateUsername = async (req, res) => {
 // ─── Check Auth ─────────────────────────────────────────
 export const checkAuth = async (req, res) => {
 	try {
-		const user = await User.findById(req.user._id).select("-password");
+		const user = await prisma.user.findUnique({
+			where: { id: req.user.id },
+			select: {
+				id: true,
+				fullName: true,
+				email: true,
+				username: true,
+				nickname: true,
+				bio: true,
+				profilePic: true,
+				hasCompletedProfile: true,
+				isBlocked: true,
+				isSuspended: true,
+				isVerified: true,
+				isOnline: true,
+				country: true,
+				countryCode: true,
+				city: true,
+				createdAt: true,
+				password: false
+			}
+		});
 		if (!user) return res.status(404).json({ message: "User not found." });
 
 		res.status(200).json({
-			_id: user._id,
+			_id: user.id,
 			fullName: user.fullName,
 			email: user.email,
 			username: user.username,
@@ -392,7 +490,9 @@ export const forgotPassword = async (req, res) => {
 		}
 
 		// Find user by username
-		const user = await User.findOne({ username: username.toLowerCase() });
+		const user = await prisma.user.findUnique({ 
+			where: { username: username.toLowerCase() } 
+		});
 		if (!user) {
 			return res.status(404).json({ message: "No account with that username" });
 		}
@@ -401,9 +501,13 @@ export const forgotPassword = async (req, res) => {
 		const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
 		// Save OTP to user (expires in 60 seconds)
-		user.resetPasswordToken = otp;
-		user.resetPasswordExpire = Date.now() + 60 * 1000; // 60 seconds
-		await user.save({ validateBeforeSave: false });
+		await prisma.user.update({
+			where: { id: user.id },
+			data: {
+				resetPasswordToken: otp,
+				resetPasswordExpire: new Date(Date.now() + 60 * 1000) // 60 seconds
+			}
+		});
 
 		// Send OTP via email
 		const message = `
@@ -427,9 +531,13 @@ export const forgotPassword = async (req, res) => {
 			});
 		} catch (emailError) {
 			console.error("❌ Email send error:", emailError);
-			user.resetPasswordToken = undefined;
-			user.resetPasswordExpire = undefined;
-			await user.save({ validateBeforeSave: false });
+			await prisma.user.update({
+				where: { id: user.id },
+				data: {
+					resetPasswordToken: null,
+					resetPasswordExpire: null
+				}
+			});
 			res.status(500).json({ message: "Email could not be sent. Please check your email configuration." });
 		}
 	} catch (error) {
@@ -447,10 +555,12 @@ export const verifyResetOTP = async (req, res) => {
 			return res.status(400).json({ message: "Username and OTP are required" });
 		}
 
-		const user = await User.findOne({
-			username: username.toLowerCase(),
-			resetPasswordToken: otp,
-			resetPasswordExpire: { $gt: Date.now() },
+		const user = await prisma.user.findFirst({
+			where: {
+				username: username.toLowerCase(),
+				resetPasswordToken: otp,
+				resetPasswordExpire: { gt: new Date() }
+			}
 		});
 
 		if (!user) {
@@ -478,10 +588,12 @@ export const resetPassword = async (req, res) => {
 			return res.status(400).json({ message: "Password must be at least 6 characters long" });
 		}
 
-		const user = await User.findOne({
-			username: username.toLowerCase(),
-			resetPasswordToken: otp,
-			resetPasswordExpire: { $gt: Date.now() },
+		const user = await prisma.user.findFirst({
+			where: {
+				username: username.toLowerCase(),
+				resetPasswordToken: otp,
+				resetPasswordExpire: { gt: new Date() }
+			}
 		});
 
 		if (!user) {
@@ -490,13 +602,17 @@ export const resetPassword = async (req, res) => {
 
 		// Hash new password
 		const salt = await bcrypt.genSalt(10);
-		user.password = await bcrypt.hash(password, salt);
+		const hashedPassword = await bcrypt.hash(password, salt);
 		
-		// Clear OTP fields
-		user.resetPasswordToken = undefined;
-		user.resetPasswordExpire = undefined;
-
-		await user.save();
+		// Update password and clear OTP fields
+		await prisma.user.update({
+			where: { id: user.id },
+			data: {
+				password: hashedPassword,
+				resetPasswordToken: null,
+				resetPasswordExpire: null
+			}
+		});
 
 		res.status(200).json({ message: "Password reset successful" });
 	} catch (error) {
@@ -508,10 +624,12 @@ export const resetPassword = async (req, res) => {
 
 // ─── Send OTP for Password Change ─────────────────────────────────────
 export const sendPasswordChangeOTP = async (req, res) => {
-	const userId = req.user._id;
+	const userId = req.user.id;
 
 	try {
-		const user = await User.findById(userId);
+		const user = await prisma.user.findUnique({
+			where: { id: userId }
+		});
 		if (!user) {
 			return res.status(404).json({ message: "User not found" });
 		}
@@ -520,9 +638,13 @@ export const sendPasswordChangeOTP = async (req, res) => {
 		const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
 		// Save OTP to user (expires in 5 minutes)
-		user.passwordChangeOTP = otp;
-		user.passwordChangeOTPExpires = Date.now() + 5 * 60 * 1000; // 5 minutes
-		await user.save({ validateBeforeSave: false });
+		await prisma.user.update({
+			where: { id: userId },
+			data: {
+				passwordChangeOTP: otp,
+				passwordChangeOTPExpires: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+			}
+		});
 
 		// Send OTP via email
 		const message = `
@@ -545,9 +667,13 @@ export const sendPasswordChangeOTP = async (req, res) => {
 			});
 		} catch (emailError) {
 			console.error("Email sending error:", emailError);
-			user.passwordChangeOTP = undefined;
-			user.passwordChangeOTPExpires = undefined;
-			await user.save({ validateBeforeSave: false });
+			await prisma.user.update({
+				where: { id: userId },
+				data: {
+					passwordChangeOTP: null,
+					passwordChangeOTPExpires: null
+				}
+			});
 			return res.status(500).json({ message: "Failed to send OTP email" });
 		}
 	} catch (error) {
@@ -559,7 +685,7 @@ export const sendPasswordChangeOTP = async (req, res) => {
 // ─── Change Password with OTP ─────────────────────────────────────
 export const changePassword = async (req, res) => {
 	const { otp, currentPassword, newPassword } = req.body;
-	const userId = req.user._id;
+	const userId = req.user.id;
 
 	try {
 		if (!otp || !currentPassword || !newPassword) {
@@ -570,7 +696,9 @@ export const changePassword = async (req, res) => {
 			return res.status(400).json({ message: "New password must be at least 6 characters long" });
 		}
 
-		const user = await User.findById(userId);
+		const user = await prisma.user.findUnique({
+			where: { id: userId }
+		});
 		if (!user) {
 			return res.status(404).json({ message: "User not found" });
 		}
@@ -580,7 +708,7 @@ export const changePassword = async (req, res) => {
 			return res.status(400).json({ message: "Invalid OTP" });
 		}
 
-		if (!user.passwordChangeOTPExpires || user.passwordChangeOTPExpires < Date.now()) {
+		if (!user.passwordChangeOTPExpires || user.passwordChangeOTPExpires < new Date()) {
 			return res.status(400).json({ message: "OTP has expired" });
 		}
 
@@ -592,12 +720,17 @@ export const changePassword = async (req, res) => {
 
 		// Hash new password
 		const salt = await bcrypt.genSalt(10);
-		user.password = await bcrypt.hash(newPassword, salt);
+		const hashedPassword = await bcrypt.hash(newPassword, salt);
 		
-		// Clear OTP fields
-		user.passwordChangeOTP = undefined;
-		user.passwordChangeOTPExpires = undefined;
-		await user.save();
+		// Update password and clear OTP fields
+		await prisma.user.update({
+			where: { id: userId },
+			data: {
+				password: hashedPassword,
+				passwordChangeOTP: null,
+				passwordChangeOTPExpires: null
+			}
+		});
 
 		res.status(200).json({ message: "Password changed successfully" });
 	} catch (error) {
@@ -610,14 +743,16 @@ export const changePassword = async (req, res) => {
 export const sendEmailChangeOTP = async (req, res) => {
 	try {
 		const { newEmail } = req.body;
-		const userId = req.user._id;
+		const userId = req.user.id;
 
 		if (!newEmail) {
 			return res.status(400).json({ error: "New email is required" });
 		}
 
 		// Check if email already exists
-		const existingUser = await User.findOne({ email: newEmail.toLowerCase() });
+		const existingUser = await prisma.user.findUnique({ 
+			where: { email: newEmail.toLowerCase() } 
+		});
 		if (existingUser) {
 			return res.status(400).json({ error: "Email already in use" });
 		}
@@ -626,11 +761,14 @@ export const sendEmailChangeOTP = async (req, res) => {
 		const otp = Math.floor(100000 + Math.random() * 900000).toString();
 		
 		// Store OTP in user document (expires in 10 minutes)
-		const user = await User.findById(userId);
-		user.emailChangeOTP = otp;
-		user.emailChangeOTPExpires = new Date(Date.now() + 10 * 60 * 1000);
-		user.pendingEmail = newEmail.toLowerCase();
-		await user.save();
+		await prisma.user.update({
+			where: { id: userId },
+			data: {
+				emailChangeOTP: otp,
+				emailChangeOTPExpires: new Date(Date.now() + 10 * 60 * 1000),
+				pendingEmail: newEmail.toLowerCase()
+			}
+		});
 
 		// TODO: Send email with OTP using nodemailer
 		// For now, we'll just return the OTP in development
@@ -653,13 +791,15 @@ export const sendEmailChangeOTP = async (req, res) => {
 export const verifyEmailChangeOTP = async (req, res) => {
 	try {
 		const { newEmail, otp } = req.body;
-		const userId = req.user._id;
+		const userId = req.user.id;
 
 		if (!newEmail || !otp) {
 			return res.status(400).json({ error: "Email and OTP are required" });
 		}
 
-		const user = await User.findById(userId);
+		const user = await prisma.user.findUnique({
+			where: { id: userId }
+		});
 		
 		if (!user.emailChangeOTP || !user.emailChangeOTPExpires) {
 			return res.status(400).json({ error: "No OTP request found" });
@@ -677,19 +817,23 @@ export const verifyEmailChangeOTP = async (req, res) => {
 			return res.status(400).json({ error: "Email mismatch" });
 		}
 
-		// Update email
-		user.email = newEmail.toLowerCase();
-		user.emailChangeOTP = undefined;
-		user.emailChangeOTPExpires = undefined;
-		user.pendingEmail = undefined;
-		await user.save();
+		// Update email and clear OTP fields
+		const updatedUser = await prisma.user.update({
+			where: { id: userId },
+			data: {
+				email: newEmail.toLowerCase(),
+				emailChangeOTP: null,
+				emailChangeOTPExpires: null,
+				pendingEmail: null
+			}
+		});
+
+		// Remove password from response
+		const { password, ...userWithoutPassword } = updatedUser;
 
 		res.status(200).json({ 
 			message: "Email updated successfully",
-			user: {
-				...user.toObject(),
-				password: undefined
-			}
+			user: userWithoutPassword
 		});
 	} catch (error) {
 		console.log("Error in verifyEmailChangeOTP controller", error.message);

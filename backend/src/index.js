@@ -21,7 +21,7 @@ import adminRoutes from "./routes/admin.route.js";
 import userRoutes from "./routes/user.route.js";
 import friendRoutes from "./routes/friend.route.js";
 
-import User from "./models/user.model.js";
+import prisma from "./lib/prisma.js";
 
 // Load environment variables
 dotenv.config();
@@ -147,7 +147,7 @@ if (process.env.NODE_ENV === "production") {
 app.use(notFound);
 app.use(errorHandler);
 
-// --- Default Admin Creation ---
+// --- Default Admin Creation (Prisma) ---
 const createDefaultAdmin = async () => {
 	try {
 		const adminEmail = process.env.ADMIN_EMAIL;
@@ -158,10 +158,16 @@ const createDefaultAdmin = async () => {
 			return;
 		}
 
-		const existingAdmin = await User.findOne({ email: adminEmail });
+		// Check if admin exists by email
+		let existingAdmin = await prisma.user.findUnique({
+			where: { email: adminEmail }
+		});
 
 		if (!existingAdmin) {
-			const usernameTaken = await User.findOne({ username: adminUsername });
+			// Check if username is taken
+			const usernameTaken = await prisma.user.findUnique({
+				where: { username: adminUsername }
+			});
 			if (usernameTaken) {
 				console.error(
 					`❌ Cannot create admin: Username '${adminUsername}' is already taken.`
@@ -170,22 +176,24 @@ const createDefaultAdmin = async () => {
 			}
 
 			const hashedPassword = await bcrypt.hash("safwan123", 10);
-			const admin = new User({
-				fullName: "Admin",
-				email: adminEmail,
-				username: adminUsername,
-				nickname: "Admin",
-				password: hashedPassword,
-				isAdmin: true,
-				isVerified: true,
-				hasCompletedProfile: true,
+			const admin = await prisma.user.create({
+				data: {
+					fullName: "Admin",
+					email: adminEmail,
+					username: adminUsername,
+					nickname: "Admin",
+					password: hashedPassword,
+					isVerified: true,
+					hasCompletedProfile: true,
+				}
 			});
 
-			await admin.save();
 			console.log(`✅ Default admin created: ${adminEmail}`);
 		} else if (!existingAdmin.hasCompletedProfile) {
-			existingAdmin.hasCompletedProfile = true;
-			await existingAdmin.save();
+			await prisma.user.update({
+				where: { id: existingAdmin.id },
+				data: { hasCompletedProfile: true }
+			});
 			console.log(
 				`✅ Marked existing admin '${existingAdmin.email}' as profile complete.`
 			);
@@ -203,3 +211,5 @@ server.listen(PORT, async () => {
 	await createDefaultAdmin();
 	console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
+

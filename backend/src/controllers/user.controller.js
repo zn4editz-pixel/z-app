@@ -1,9 +1,29 @@
-import User from "../models/user.model.js";
+import prisma from "../lib/prisma.js";
 
 // ─── Get All Users (Admin Only) ──────────────────────────────
 export const getAllUsers = async (req, res) => {
 	try {
-		const users = await User.find().select("-password");
+		const users = await prisma.user.findMany({
+			select: {
+				id: true,
+				fullName: true,
+				email: true,
+				username: true,
+				nickname: true,
+				bio: true,
+				profilePic: true,
+				isVerified: true,
+				hasCompletedProfile: true,
+				country: true,
+				countryCode: true,
+				city: true,
+				isOnline: true,
+				lastSeen: true,
+				createdAt: true,
+				updatedAt: true,
+				password: false
+			}
+		});
 		res.status(200).json(users);
 	} catch (err) {
 		console.error("Get all users error:", err);
@@ -12,24 +32,66 @@ export const getAllUsers = async (req, res) => {
 };
 
 // ─── Get Specific User by ID (for Admin or general use) ────────
-// ─── Get Specific User by ID (for Admin or general use) ────────
 export const getUserById = async (req, res) => {
-	try { // ✅ --- YOU WERE MISSING THIS 'try' ---
+	try {
 		const userId = req.params.id;
-		const user = await User.findById(userId).select("-password");
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: {
+				id: true,
+				fullName: true,
+				email: true,
+				username: true,
+				nickname: true,
+				bio: true,
+				profilePic: true,
+				isVerified: true,
+				hasCompletedProfile: true,
+				country: true,
+				countryCode: true,
+				city: true,
+				isOnline: true,
+				lastSeen: true,
+				createdAt: true,
+				updatedAt: true,
+				password: false
+			}
+		});
 
 		if (!user) return res.status(404).json({ error: "User not found" });
 
 		res.status(200).json(user);
-	} catch (err) { // ✅ --- This 'catch' is now correct ---
+	} catch (err) {
 		console.error("Get user by ID error:", err);
 		res.status(500).json({ error: "Failed to fetch user" });
 	}
 };
+
 // ─── Get Logged-in User Profile ───────────────────────────────
 export const getUserProfile = async (req, res) => {
 	try {
-		const user = await User.findById(req.user._id).select("-password");
+		const user = await prisma.user.findUnique({
+			where: { id: req.user.id },
+			select: {
+				id: true,
+				fullName: true,
+				email: true,
+				username: true,
+				nickname: true,
+				bio: true,
+				profilePic: true,
+				isVerified: true,
+				hasCompletedProfile: true,
+				country: true,
+				countryCode: true,
+				city: true,
+				isOnline: true,
+				lastSeen: true,
+				createdAt: true,
+				updatedAt: true,
+				password: false
+			}
+		});
 
 		if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -40,15 +102,37 @@ export const getUserProfile = async (req, res) => {
 	}
 };
 
-// ✅ --- NEW: Get Public Profile by Username ───────────────────
+// ─── Get Public Profile by Username ───────────────────
 export const getUserByUsername = async (req, res) => {
 	try {
 		const { username } = req.params;
 
-		// Find the user by their username, case-insensitive
-		const user = await User.findOne({ 
-			username: { $regex: new RegExp(`^${username}$`, "i") } 
-		}).select("-password -resetPasswordToken -resetPasswordExpire"); // Exclude sensitive info
+		// Find the user by their username (Prisma usernames are stored lowercase)
+		const user = await prisma.user.findUnique({
+			where: { username: username.toLowerCase() },
+			select: {
+				id: true,
+				fullName: true,
+				email: true,
+				username: true,
+				nickname: true,
+				bio: true,
+				profilePic: true,
+				isVerified: true,
+				hasCompletedProfile: true,
+				country: true,
+				countryCode: true,
+				city: true,
+				isOnline: true,
+				lastSeen: true,
+				friends: true,
+				friendRequestsSent: true,
+				friendRequestsReceived: true,
+				createdAt: true,
+				updatedAt: true,
+				password: false
+			}
+		});
 
 		if (!user) {
 			return res.status(404).json({ error: "User not found" });
@@ -62,29 +146,34 @@ export const getUserByUsername = async (req, res) => {
 		res.status(500).json({ error: "Failed to fetch user profile" });
 	}
 };
-// ✅ --- END NEW FUNCTION ─────────────────────────────────────
 
 // ─── Update Logged-in User Profile ────────────────────────────
 export const updateUserProfile = async (req, res) => {
 	try {
 		const { nickname, bio, profilePic, username, fullName } = req.body;
-		const userId = req.user._id;
+		const userId = req.user.id;
 
-		const user = await User.findById(userId);
+		const user = await prisma.user.findUnique({
+			where: { id: userId }
+		});
 		if (!user) return res.status(404).json({ error: "User not found" });
+
+		const updateData = {};
 
 		// Handle full name update if provided
 		if (fullName !== undefined && fullName !== user.fullName) {
 			if (!fullName || fullName.trim().length < 2) {
 				return res.status(400).json({ error: "Full name must be at least 2 characters" });
 			}
-			user.fullName = fullName.trim();
+			updateData.fullName = fullName.trim();
 		}
 
 		// Handle username change if provided
 		if (username && username !== user.username) {
 			// Check if username is available
-			const existingUser = await User.findOne({ username: username.toLowerCase() });
+			const existingUser = await prisma.user.findUnique({ 
+				where: { username: username.toLowerCase() } 
+			});
 			if (existingUser) {
 				return res.status(400).json({ error: "Username already taken" });
 			}
@@ -96,12 +185,13 @@ export const updateUserProfile = async (req, res) => {
 
 			// Reset weekly counter if a week has passed
 			if (!user.weekStartDate || user.weekStartDate < oneWeekAgo) {
-				user.usernameChangesThisWeek = 0;
-				user.weekStartDate = now;
+				updateData.usernameChangesThisWeek = 0;
+				updateData.weekStartDate = now;
 			}
 
 			// Check if user has exceeded weekly limit
-			if (user.usernameChangesThisWeek >= 2) {
+			const changesThisWeek = updateData.usernameChangesThisWeek ?? user.usernameChangesThisWeek;
+			if (changesThisWeek >= 2) {
 				return res.status(400).json({ 
 					error: "You can only change your username 2 times per week",
 					nextChangeDate: new Date(user.weekStartDate.getTime() + (7 * 24 * 60 * 60 * 1000))
@@ -118,26 +208,48 @@ export const updateUserProfile = async (req, res) => {
 			}
 
 			// Update username
-			user.usernameChangeHistory.push({
+			const newHistory = user.usernameChangeHistory || [];
+			newHistory.push({
 				oldUsername: user.username,
 				newUsername: username.toLowerCase(),
 				changedAt: now
 			});
-			user.username = username.toLowerCase();
-			user.lastUsernameChange = now;
-			user.usernameChangesThisWeek += 1;
+			
+			updateData.usernameChangeHistory = newHistory;
+			updateData.username = username.toLowerCase();
+			updateData.lastUsernameChange = now;
+			updateData.usernameChangesThisWeek = (updateData.usernameChangesThisWeek ?? user.usernameChangesThisWeek) + 1;
 		}
 
-		user.nickname = nickname ?? user.nickname;
-		user.bio = bio ?? user.bio;
-		user.profilePic = profilePic ?? user.profilePic;
+		if (nickname !== undefined) updateData.nickname = nickname;
+		if (bio !== undefined) updateData.bio = bio;
+		if (profilePic !== undefined) updateData.profilePic = profilePic;
 
-		const updatedUser = await user.save();
-		
-		const userObject = updatedUser.toObject();
-		delete userObject.password;
+		const updatedUser = await prisma.user.update({
+			where: { id: userId },
+			data: updateData,
+			select: {
+				id: true,
+				fullName: true,
+				email: true,
+				username: true,
+				nickname: true,
+				bio: true,
+				profilePic: true,
+				isVerified: true,
+				hasCompletedProfile: true,
+				country: true,
+				countryCode: true,
+				city: true,
+				isOnline: true,
+				lastSeen: true,
+				createdAt: true,
+				updatedAt: true,
+				password: false
+			}
+		});
 
-		res.status(200).json(userObject);
+		res.status(200).json(updatedUser);
 	} catch (err) {
 		console.error("Update profile error:", err);
 		res.status(500).json({ error: "Failed to update profile" });
@@ -148,16 +260,20 @@ export const updateUserProfile = async (req, res) => {
 export const checkUsernameAvailability = async (req, res) => {
 	try {
 		const { username } = req.params;
-		const userId = req.user._id;
+		const userId = req.user.id;
 
 		// Check if it's the user's current username
-		const currentUser = await User.findById(userId);
+		const currentUser = await prisma.user.findUnique({
+			where: { id: userId }
+		});
 		if (currentUser.username === username.toLowerCase()) {
 			return res.status(200).json({ available: true, current: true });
 		}
 
 		// Check if username exists
-		const existingUser = await User.findOne({ username: username.toLowerCase() });
+		const existingUser = await prisma.user.findUnique({ 
+			where: { username: username.toLowerCase() } 
+		});
 		
 		res.status(200).json({ 
 			available: !existingUser,
@@ -172,8 +288,10 @@ export const checkUsernameAvailability = async (req, res) => {
 // ─── Get Username Change Info ────────────────────────────
 export const getUsernameChangeInfo = async (req, res) => {
 	try {
-		const userId = req.user._id;
-		const user = await User.findById(userId);
+		const userId = req.user.id;
+		const user = await prisma.user.findUnique({
+			where: { id: userId }
+		});
 
 		if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -201,7 +319,7 @@ export const getUsernameChangeInfo = async (req, res) => {
 			maxChangesPerWeek: 2,
 			lastChange: user.lastUsernameChange,
 			nextChangeDate,
-			history: user.usernameChangeHistory.slice(-5) // Last 5 changes
+			history: (user.usernameChangeHistory || []).slice(-5) // Last 5 changes
 		});
 	} catch (err) {
 		console.error("Get username change info error:", err);
@@ -212,7 +330,9 @@ export const getUsernameChangeInfo = async (req, res) => {
 // ─── Delete My Account (User) ────────────────────────────────
 export const deleteMyAccount = async (req, res) => {
 	try {
-		await User.findByIdAndDelete(req.user._id);
+		await prisma.user.delete({
+			where: { id: req.user.id }
+		});
 		res.clearCookie("jwt");
 		res.status(200).json({ message: "Account deleted successfully" });
 	} catch (err) {
@@ -225,7 +345,9 @@ export const deleteMyAccount = async (req, res) => {
 export const deleteUser = async (req, res) => {
 	try {
 		const userId = req.params.userId;
-		const deletedUser = await User.findByIdAndDelete(userId);
+		const deletedUser = await prisma.user.delete({
+			where: { id: userId }
+		});
 
 		if (!deletedUser) return res.status(404).json({ error: "User not found" });
 
@@ -240,24 +362,44 @@ export const deleteUser = async (req, res) => {
 export const searchUsers = async (req, res) => {
 	try {
 		const query = req.query.q || "";
-		const loggedInUserId = req.user._id;
+		const loggedInUserId = req.user.id;
 
 		if (!query.trim()) {
 			return res.status(200).json([]);
 		}
 
-		const users = await User.find(
-			{
-				$or: [
-					{ username: { $regex: query, $options: "i" } },
-					{ nickname: { $regex: query, $options: "i" } }
-				],
-				_id: { $ne: loggedInUserId },
+		// Prisma search with contains (case-insensitive)
+		const users = await prisma.user.findMany({
+			where: {
+				AND: [
+					{
+						OR: [
+							{ username: { contains: query.toLowerCase() } },
+							{ nickname: { contains: query, mode: 'insensitive' } }
+						]
+					},
+					{ NOT: { id: loggedInUserId } }
+				]
 			},
-			"username profilePic nickname bio isVerified country countryCode city isOnline lastSeen"
-		)
-		.sort({ isOnline: -1, isVerified: -1 }) // Prioritize online users
-		.limit(10);
+			select: {
+				id: true,
+				username: true,
+				profilePic: true,
+				nickname: true,
+				bio: true,
+				isVerified: true,
+				country: true,
+				countryCode: true,
+				city: true,
+				isOnline: true,
+				lastSeen: true
+			},
+			orderBy: [
+				{ isOnline: 'desc' },
+				{ isVerified: 'desc' }
+			],
+			take: 10
+		});
 
 		res.status(200).json(users);
 	} catch (err) {
@@ -274,32 +416,48 @@ const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 
 export const getSuggestedUsers = async (req, res) => {
 	try {
-		const loggedInUserId = req.user._id;
+		const loggedInUserId = req.user.id;
 		const now = Date.now();
 
 		// Return cached data if available and fresh
 		if (suggestedUsersCache && (now - cacheTimestamp) < CACHE_DURATION) {
 			// Filter out the logged-in user from cached results
-			const filteredUsers = suggestedUsersCache.filter(u => u._id.toString() !== loggedInUserId.toString());
+			const filteredUsers = suggestedUsersCache.filter(u => u.id !== loggedInUserId);
 			return res.status(200).json(filteredUsers.slice(0, 8));
 		}
 
 		// Fetch fresh data with ultra-optimized query
-		const users = await User.find({
-			hasCompletedProfile: true
-		})
-		.select('_id username nickname profilePic isVerified bio country countryCode city isOnline lastSeen') // Include online status
-		.sort({ isOnline: -1, isVerified: -1, createdAt: -1 }) // Prioritize online users
-		.limit(20) // Fetch more for cache, filter logged-in user later
-		.lean() // Use lean() for 50% faster queries
-		.exec();
+		const users = await prisma.user.findMany({
+			where: {
+				hasCompletedProfile: true
+			},
+			select: {
+				id: true,
+				username: true,
+				nickname: true,
+				profilePic: true,
+				isVerified: true,
+				bio: true,
+				country: true,
+				countryCode: true,
+				city: true,
+				isOnline: true,
+				lastSeen: true
+			},
+			orderBy: [
+				{ isOnline: 'desc' },
+				{ isVerified: 'desc' },
+				{ createdAt: 'desc' }
+			],
+			take: 20 // Fetch more for cache, filter logged-in user later
+		});
 
 		// Update cache
 		suggestedUsersCache = users;
 		cacheTimestamp = now;
 
 		// Filter out logged-in user and return
-		const filteredUsers = users.filter(u => u._id.toString() !== loggedInUserId.toString());
+		const filteredUsers = users.filter(u => u.id !== loggedInUserId);
 		res.status(200).json(filteredUsers.slice(0, 8));
 	} catch (err) {
 		console.error("Get suggested users error:", err);

@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import User from "../models/user.model.js";
+import prisma from "../lib/prisma.js";
 
 export const protectRoute = async (req, res, next) => {
   try {
@@ -25,7 +25,46 @@ export const protectRoute = async (req, res, next) => {
       return res.status(401).json({ message: "Unauthorized - Invalid or Expired Token" });
     }
 
-    const user = await User.findById(decoded.userId).select("-password");
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        username: true,
+        nickname: true,
+        bio: true,
+        profilePic: true,
+        isVerified: true,
+        hasCompletedProfile: true,
+        country: true,
+        countryCode: true,
+        city: true,
+        region: true,
+        timezone: true,
+        isVPN: true,
+        lastIP: true,
+        isOnline: true,
+        lastSeen: true,
+        isBlocked: true,
+        isSuspended: true,
+        suspendedUntil: true,
+        suspensionReason: true,
+        verificationStatus: true,
+        verificationReason: true,
+        verificationIdProof: true,
+        verificationRequestedAt: true,
+        verificationReviewedAt: true,
+        verificationReviewedBy: true,
+        verificationAdminNote: true,
+        friends: true,
+        friendRequestsSent: true,
+        friendRequestsReceived: true,
+        createdAt: true,
+        updatedAt: true,
+        password: false
+      }
+    });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });

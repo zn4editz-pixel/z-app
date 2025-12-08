@@ -10,10 +10,15 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
+    "build": "npx prisma generate && npx prisma db push",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
+    "prisma:studio": "prisma studio",
     "build:frontend": "cd ../frontend && npm install --include=dev && npm run build",
-    "postinstall": "echo Skipping frontend build during install"
+    "postinstall": "npx prisma generate"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
     "@socket.io/redis-adapter": "^8.3.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.5.1",
@@ -30,6 +35,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.1",
     "nodemailer": "^7.0.5",
+    "prisma": "^5.22.0",
     "rate-limit-redis": "^4.2.0",
     "socket.io": "^4.8.1"
   },

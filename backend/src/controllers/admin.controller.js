@@ -1,6 +1,4 @@
-import User from "../models/user.model.js";
-import Report from "../models/report.model.js";
-import AdminNotification from "../models/adminNotification.model.js";
+import prisma from "../lib/prisma.js";
 import { 
 	sendVerificationApprovedEmail, 
 	sendVerificationRejectedEmail,
@@ -8,46 +6,23 @@ import {
 	sendAccountSuspendedEmail 
 } from "../lib/email.js";
 
-// ✅ Safe Socket Emit Utility
 const emitToUser = (io, userId, event, data) => {
-	if (!io || !userId) {
-		console.log(`⚠️ Cannot emit '${event}': io=${!!io}, userId=${userId}`);
-		return;
-	}
-	
-	// Convert userId to string for comparison
+	if (!io || !userId) return false;
 	const userIdStr = userId.toString();
-	
-	// Get socket ID from io.sockets
 	const sockets = io.sockets.sockets;
-	let targetSocketId = null;
-	
-	// Find the socket for this user
 	for (const [socketId, socket] of sockets) {
 		if (socket.userId && socket.userId.toString() === userIdStr) {
-			targetSocketId = socketId;
-			break;
+			io.to(socketId).emit(event, data);
+			return true;
 		}
 	}
-	
-	if (targetSocketId) {
-		console.log(`📤 Emitting '${event}' to user ${userId} (socket ${targetSocketId})`);
-		io.to(targetSocketId).emit(event, data);
-		return true;
-	} else {
-		console.log(`⚠️ User ${userId} not connected, cannot emit '${event}'`);
-		console.log(`   Available sockets: ${Array.from(sockets.values()).map(s => s.userId).filter(Boolean).join(', ')}`);
-		return false;
-	}
+	return false;
 };
 
-// --- User Management Functions (OPTIMIZED) ---
-// Cache for admin users list (10 seconds TTL - shorter for real-time updates)
 let adminUsersCache = null;
 let adminUsersCacheTime = 0;
 const ADMIN_USERS_CACHE_TTL = 10000;
 
-// Function to clear admin cache
 const clearAdminUsersCache = () => {
 	adminUsersCache = null;
 	adminUsersCacheTime = 0;
@@ -56,917 +31,381 @@ const clearAdminUsersCache = () => {
 export const getAllUsers = async (req, res) => {
 	try {
 		const now = Date.now();
-		
-		// Return cached data if fresh
 		if (adminUsersCache && (now - adminUsersCacheTime) < ADMIN_USERS_CACHE_TTL) {
 			return res.status(200).json(adminUsersCache);
 		}
-		
-		// Get real-time online users
 		const { userSocketMap } = await import("../lib/socket.js");
 		const onlineUserIds = Object.keys(userSocketMap);
-		
-		const users = await User.find()
-			.select('username nickname email profilePic isVerified isOnline isSuspended suspendedUntil suspensionReason lastSeen createdAt country countryCode city region timezone isVPN lastIP')
-			.sort({ createdAt: -1 })
-			.limit(100)
-			.lean();
-		
-		// Update isOnline status based on socket connections
+		const users = await prisma.user.findMany({
+			select: {
+				id: true, username: true, nickname: true, email: true,
+				profilePic: true, isVerified: true, isOnline: true,
+				isSuspended: true, suspendedUntil: true, suspensionReason: true,
+				lastSeen: true, createdAt: true, country: true, countryCode: true,
+				city: true, region: true, timezone: true, isVPN: true, lastIP: true
+			},
+			orderBy: { createdAt: "desc" },
+			take: 100
+		});
 		const usersWithOnlineStatus = users.map(user => ({
 			...user,
-			isOnline: onlineUserIds.includes(user._id.toString())
+			isOnline: onlineUserIds.includes(user.id)
 		}));
-		
-		// Update cache
 		adminUsersCache = usersWithOnlineStatus;
 		adminUsersCacheTime = now;
-		
-		console.log(`Fetched ${users.length} users, ${onlineUserIds.length} online`);
-		
 		res.status(200).json(usersWithOnlineStatus);
 	} catch (err) {
 		console.error("getAllUsers error:", err);
 		res.status(500).json({ error: "Failed to fetch users" });
 	}
 };
+
 export const suspendUser = async (req, res) => {
 	const { userId } = req.params;
 	const { until, duration, reason } = req.body;
-	
-	if (!reason) {
-		return res.status(400).json({ error: "Reason is required" });
-	}
-	
+	if (!reason) return res.status(400).json({ error: "Reason is required" });
 	try {
-		const user = await User.findById(userId);
+		const user = await prisma.user.findUnique({ where: { id: userId } });
 		if (!user) return res.status(404).json({ error: "User not found" });
-		
-		// Calculate suspension end date
 		let suspendUntilDate;
-		
 		if (until) {
 			suspendUntilDate = new Date(until);
 		} else if (duration) {
 			const now = new Date();
-			const durationMatch = duration.match(/^(\d+)([dhm])$/);
-			
-			if (durationMatch) {
-				const value = parseInt(durationMatch[1]);
-				const unit = durationMatch[2];
-				
-				switch (unit) {
-					case 'd':
-						suspendUntilDate = new Date(now.getTime() + value * 24 * 60 * 60 * 1000);
-						break;
-					case 'h':
-						suspendUntilDate = new Date(now.getTime() + value * 60 * 60 * 1000);
-						break;
-					case 'm':
-						suspendUntilDate = new Date(now.getTime() + value * 60 * 1000);
-						break;
-					default:
-						return res.status(400).json({ error: "Invalid duration format" });
-				}
+			const match = duration.match(/^(\d+)([dhm])$/);
+			if (match) {
+				const value = parseInt(match[1]);
+				const unit = match[2];
+				const multipliers = { d: 24*60*60*1000, h: 60*60*1000, m: 60*1000 };
+				suspendUntilDate = new Date(now.getTime() + value * multipliers[unit]);
 			} else {
-				return res.status(400).json({ error: "Invalid duration format. Use format like '7d', '24h', or '30m'" });
+				return res.status(400).json({ error: "Invalid duration format" });
 			}
 		} else {
-			return res.status(400).json({ error: "Either 'until' date or 'duration' is required" });
+			return res.status(400).json({ error: "Either until or duration is required" });
 		}
-		
-		if (isNaN(suspendUntilDate.getTime())) {
-			return res.status(400).json({ error: "Invalid date" });
-		}
-		
-		user.isSuspended = true;
-		user.suspendedUntil = suspendUntilDate;
-		user.suspensionReason = reason;
-		await user.save();
-		
-		// Clear cache immediately
-		clearAdminUsersCache();
-		
-		console.log(`🚫 User ${userId} suspended until ${suspendUntilDate}`);
-		
-		const io = req.app.get("io");
-		emitToUser(io, userId, "user-action", { 
-			type: "suspended", 
-			reason, 
-			until: suspendUntilDate 
+		const updatedUser = await prisma.user.update({
+			where: { id: userId },
+			data: { isSuspended: true, suspendedUntil: suspendUntilDate, suspensionReason: reason }
 		});
-		
+		clearAdminUsersCache();
+		const io = req.app.get("io");
+		emitToUser(io, userId, "user-action", { type: "suspended", reason, until: suspendUntilDate });
 		try {
-			await sendAccountSuspendedEmail(
-				user.email,
-				user.nickname || user.username,
-				reason,
-				suspendUntilDate
-			);
+			await sendAccountSuspendedEmail(user.email, user.nickname || user.username, reason, suspendUntilDate);
 		} catch (emailErr) {
 			console.error("Failed to send suspension email:", emailErr);
 		}
-		
-		res.status(200).json({ 
-			message: "User suspended successfully", 
-			user: {
-				_id: user._id,
-				username: user.username,
-				isSuspended: user.isSuspended,
-				suspendedUntil: user.suspendedUntil,
-				suspensionReason: user.suspensionReason
-			}
-		});
-	} catch (err) { 
-		console.error("suspendUser error:", err); 
-		res.status(500).json({ error: "Failed to suspend user: " + err.message }); 
+		res.status(200).json({ message: "User suspended successfully", user: updatedUser });
+	} catch (err) {
+		console.error("suspendUser error:", err);
+		res.status(500).json({ error: "Failed to suspend user" });
 	}
 };
+
 export const unsuspendUser = async (req, res) => {
-	const { userId } = req.params;
 	try {
-		const user = await User.findById(userId);
-		if (!user) return res.status(404).json({ error: "User not found" });
-		
-		user.isSuspended = false;
-		user.suspendedUntil = null;
-		user.suspensionReason = null;
-		await user.save();
-		
-		// Clear cache immediately
+		const updatedUser = await prisma.user.update({
+			where: { id: req.params.userId },
+			data: { isSuspended: false, suspendedUntil: null, suspensionReason: null }
+		});
 		clearAdminUsersCache();
-		
-		console.log(`✅ User ${userId} unsuspended`);
-		
-		const io = req.app.get("io");
-		emitToUser(io, userId, "user-action", { type: "unsuspended" });
-		
-		res.status(200).json({ 
-			message: "User unsuspended successfully", 
-			user: {
-				_id: user._id,
-				username: user.username,
-				isSuspended: user.isSuspended,
-				suspendedUntil: null,
-				suspensionReason: null
-			}
-		});
-	} catch (err) { 
-		console.error("unsuspendUser error:", err); 
-		res.status(500).json({ error: "Failed to unsuspend user: " + err.message }); 
+		emitToUser(req.app.get("io"), req.params.userId, "user-action", { type: "unsuspended" });
+		res.status(200).json({ message: "User unsuspended successfully", user: updatedUser });
+	} catch (err) {
+		res.status(500).json({ error: "Failed to unsuspend user" });
 	}
 };
+
 export const blockUser = async (req, res) => {
-	const { userId } = req.params;
 	try {
-		const user = await User.findById(userId);
-		if (!user) return res.status(404).json({ error: "User not found" });
-		
-		user.isBlocked = true;
-		await user.save();
-		
-		console.log(`🚫 User ${userId} blocked`);
-		
-		const io = req.app.get("io");
-		emitToUser(io, userId, "user-action", { type: "blocked" });
-		
-		res.status(200).json({ 
-			message: "User blocked successfully", 
-			user: {
-				_id: user._id,
-				username: user.username,
-				isBlocked: user.isBlocked
-			}
+		const updatedUser = await prisma.user.update({
+			where: { id: req.params.userId },
+			data: { isBlocked: true }
 		});
-	} catch (err) { 
-		console.error("blockUser error:", err); 
-		res.status(500).json({ error: "Failed to block user: " + err.message }); 
+		emitToUser(req.app.get("io"), req.params.userId, "user-action", { type: "blocked" });
+		res.status(200).json({ message: "User blocked successfully", user: updatedUser });
+	} catch (err) {
+		res.status(500).json({ error: "Failed to block user" });
 	}
 };
+
 export const unblockUser = async (req, res) => {
-	const { userId } = req.params;
 	try {
-		const user = await User.findById(userId);
-		if (!user) return res.status(404).json({ error: "User not found" });
-		
-		user.isBlocked = false;
-		await user.save();
-		
-		console.log(`✅ User ${userId} unblocked`);
-		
-		const io = req.app.get("io");
-		emitToUser(io, userId, "user-action", { type: "unblocked" });
-		
-		res.status(200).json({ 
-			message: "User unblocked successfully", 
-			user: {
-				_id: user._id,
-				username: user.username,
-				isBlocked: user.isBlocked
-			}
+		const updatedUser = await prisma.user.update({
+			where: { id: req.params.userId },
+			data: { isBlocked: false }
 		});
-	} catch (err) { 
-		console.error("unblockUser error:", err); 
-		res.status(500).json({ error: "Failed to unblock user: " + err.message }); 
+		emitToUser(req.app.get("io"), req.params.userId, "user-action", { type: "unblocked" });
+		res.status(200).json({ message: "User unblocked successfully", user: updatedUser });
+	} catch (err) {
+		res.status(500).json({ error: "Failed to unblock user" });
 	}
 };
+
 export const deleteUser = async (req, res) => {
-	const { userId } = req.params;
 	try {
-		const user = await User.findById(userId);
-		if (!user) return res.status(404).json({ error: "User not found" });
-		
-		// Import required models
-		const Message = (await import("../models/message.model.js")).default;
-		const FriendRequest = (await import("../models/friendRequest.model.js")).default;
-		const AdminNotification = (await import("../models/adminNotification.model.js")).default;
-		
-		console.log(`🗑️ Starting deletion process for user ${userId}`);
-		
-		// 1. Delete all messages sent by or received by this user
-		const deletedMessages = await Message.deleteMany({
-			$or: [{ senderId: userId }, { receiverId: userId }]
+		await prisma.$transaction(async (tx) => {
+			await tx.message.deleteMany({ OR: [{ senderId: req.params.userId }, { receiverId: req.params.userId }] });
+			await tx.user.delete({ where: { id: req.params.userId } });
 		});
-		console.log(`✅ Deleted ${deletedMessages.deletedCount} messages`);
-		
-		// 2. Delete all friend requests involving this user
-		const deletedFriendRequests = await FriendRequest.deleteMany({
-			$or: [{ sender: userId }, { receiver: userId }]
-		});
-		console.log(`✅ Deleted ${deletedFriendRequests.deletedCount} friend requests`);
-		
-		// 3. Remove user from other users' friend lists and request arrays
-		await User.updateMany(
-			{ friends: userId },
-			{ $pull: { friends: userId } }
-		);
-		await User.updateMany(
-			{ friendRequestsSent: userId },
-			{ $pull: { friendRequestsSent: userId } }
-		);
-		await User.updateMany(
-			{ friendRequestsReceived: userId },
-			{ $pull: { friendRequestsReceived: userId } }
-		);
-		console.log(`✅ Removed user from all friend lists and requests`);
-		
-		// 4. Update reports (keep for record but mark user as deleted)
-		await Report.updateMany(
-			{ $or: [{ reporter: userId }, { reportedUser: userId }] },
-			{ $set: { userDeleted: true } }
-		);
-		console.log(`✅ Updated reports`);
-		
-		// 5. Delete admin notifications for this user
-		const deletedNotifications = await AdminNotification.deleteMany({
-			$or: [{ recipient: userId }, { sender: userId }]
-		});
-		console.log(`✅ Deleted ${deletedNotifications.deletedCount} notifications`);
-		
-		// 6. Finally, delete the user
-		await User.findByIdAndDelete(userId);
-		console.log(`✅ User ${userId} deleted successfully`);
-		
-		// 7. Emit socket event to disconnect user if online
-		const io = req.app.get("io");
-		if (io) {
-			emitToUser(io, userId, "admin-action", { action: "account-deleted", payload: { reason: "Account deleted by admin" } });
-		}
-		
-		res.status(200).json({ 
-			message: "User and all related data deleted successfully",
-			deletedData: {
-				messages: deletedMessages.deletedCount,
-				friendRequests: deletedFriendRequests.deletedCount,
-				notifications: deletedNotifications.deletedCount
-			}
-		});
-	} catch (err) { 
-		console.error("deleteUser error:", err); 
-		res.status(500).json({ error: "Failed to delete user: " + err.message }); 
+		emitToUser(req.app.get("io"), req.params.userId, "admin-action", { action: "account-deleted" });
+		res.status(200).json({ message: "User deleted successfully" });
+	} catch (err) {
+		res.status(500).json({ error: "Failed to delete user" });
 	}
 };
+
 export const toggleVerification = async (req, res) => {
-	const { userId } = req.params;
 	try {
-		const user = await User.findById(userId);
-		if (!user) return res.status(404).json({ error: "User not found" });
-		
-		user.isVerified = !user.isVerified;
-		await user.save();
-		
-		console.log(`${user.isVerified ? '✅' : '❌'} User ${userId} verification toggled to ${user.isVerified}`);
-		
-		const io = req.app.get("io");
-		emitToUser(io, userId, "verification-status-changed", { 
-			isVerified: user.isVerified 
+		const user = await prisma.user.findUnique({ where: { id: req.params.userId } });
+		const updatedUser = await prisma.user.update({
+			where: { id: req.params.userId },
+			data: { isVerified: !user.isVerified }
 		});
-		
-		res.status(200).json({ 
-			message: `Verification ${user.isVerified ? "enabled" : "disabled"} successfully`, 
-			user: {
-				_id: user._id,
-				username: user.username,
-				isVerified: user.isVerified
-			}
-		});
-	} catch (err) { 
-		console.error("toggleVerify error:", err); 
-		res.status(500).json({ error: "Failed to toggle verification: " + err.message }); 
+		emitToUser(req.app.get("io"), req.params.userId, "verification-status-changed", { isVerified: updatedUser.isVerified });
+		res.status(200).json({ message: "Verification toggled", user: updatedUser });
+	} catch (err) {
+		res.status(500).json({ error: "Failed to toggle verification" });
 	}
 };
-// --- End User Management ---
 
-
-// ✅ --- Get Reports ---
 export const getReports = async (req, res) => {
 	try {
-		const reports = await Report.find()
-			.sort({ createdAt: -1 })
-			.limit(100)
-			.populate("reporter", "username nickname profilePic email")
-			.populate("reportedUser", "username nickname profilePic email")
-			.lean();
-
+		const reports = await prisma.report.findMany({
+			orderBy: { createdAt: "desc" },
+			take: 100,
+			include: {
+				reporter: { select: { username: true, nickname: true, profilePic: true, email: true } },
+				reportedUser: { select: { username: true, nickname: true, profilePic: true, email: true } }
+			}
+		});
 		res.status(200).json(reports);
 	} catch (err) {
-		console.error("getReports error:", err);
 		res.status(500).json({ error: "Failed to fetch reports" });
 	}
 };
 
-// ✅ --- Get AI-Detected Reports ---
 export const getAIReports = async (req, res) => {
 	try {
-		const aiReports = await Report.find({ isAIDetected: true })
-			.sort({ createdAt: -1 })
-			.populate("reporter", "username nickname profilePic email")
-			.populate("reportedUser", "username nickname profilePic email");
-
-		// Calculate AI moderation stats
-		const stats = {
-			total: aiReports.length,
-			pending: aiReports.filter(r => r.status === 'pending').length,
-			reviewed: aiReports.filter(r => r.status === 'reviewed').length,
-			actionTaken: aiReports.filter(r => r.status === 'action_taken').length,
-			dismissed: aiReports.filter(r => r.status === 'dismissed').length,
-			avgConfidence: aiReports.length > 0 
-				? (aiReports.reduce((sum, r) => sum + (r.aiConfidence || 0), 0) / aiReports.length).toFixed(2)
-				: 0,
-			categories: {}
-		};
-
-		// Count by AI category
-		aiReports.forEach(report => {
-			if (report.aiCategory) {
-				stats.categories[report.aiCategory] = (stats.categories[report.aiCategory] || 0) + 1;
+		const aiReports = await prisma.report.findMany({
+			where: { isAIDetected: true },
+			orderBy: { createdAt: "desc" },
+			include: {
+				reporter: { select: { username: true, nickname: true, profilePic: true, email: true } },
+				reportedUser: { select: { username: true, nickname: true, profilePic: true, email: true } }
 			}
 		});
-
+		const stats = {
+			total: aiReports.length,
+			pending: aiReports.filter(r => r.status === "pending").length,
+			reviewed: aiReports.filter(r => r.status === "reviewed").length,
+			actionTaken: aiReports.filter(r => r.status === "action_taken").length,
+			dismissed: aiReports.filter(r => r.status === "dismissed").length
+		};
 		res.status(200).json({ reports: aiReports, stats });
 	} catch (err) {
-		console.error("getAIReports error:", err);
 		res.status(500).json({ error: "Failed to fetch AI reports" });
 	}
 };
 
-// ✅ --- Update Report Status ---
 export const updateReportStatus = async (req, res) => {
 	const { reportId } = req.params;
 	const { status, adminNotes, actionTaken } = req.body;
-
 	try {
-		const report = await Report.findById(reportId)
-			.populate("reporter", "username nickname profilePic email")
-			.populate("reportedUser", "username nickname profilePic email");
-			
-		if (!report) {
-			return res.status(404).json({ error: "Report not found" });
-		}
-
-		// Validate status
-		const validStatuses = ["pending", "reviewed", "action_taken", "dismissed"];
-		if (!validStatuses.includes(status)) {
-			return res.status(400).json({ error: "Invalid status" });
-		}
-
-		// Update report
-		report.status = status;
-		if (adminNotes) {
-			report.adminNotes = adminNotes;
-		}
-		if (actionTaken) {
-			report.actionTaken = actionTaken;
-		}
-		report.reviewedBy = req.user._id;
-		report.reviewedAt = new Date();
-		report.reporterNotified = true;
-
-		await report.save();
-
-		// Prepare notification message
-		let notificationMessage = "";
-		let notificationTitle = "";
-		
-		if (status === "reviewed") {
-			notificationTitle = "Report Reviewed";
-			notificationMessage = `Your report against ${report.reportedUser?.nickname || report.reportedUser?.username} has been reviewed by our team.`;
-		} else if (status === "action_taken") {
-			notificationTitle = "Action Taken";
-			if (actionTaken === "warning") {
-				notificationMessage = `We've issued a warning to ${report.reportedUser?.nickname || report.reportedUser?.username} based on your report.`;
-			} else if (actionTaken === "suspended") {
-				notificationMessage = `${report.reportedUser?.nickname || report.reportedUser?.username} has been suspended based on your report. Thank you for keeping our community safe.`;
-			} else if (actionTaken === "banned") {
-				notificationMessage = `${report.reportedUser?.nickname || report.reportedUser?.username} has been permanently banned based on your report. Thank you for keeping our community safe.`;
-			} else {
-				notificationMessage = `Action has been taken on your report against ${report.reportedUser?.nickname || report.reportedUser?.username}.`;
+		const report = await prisma.report.findUnique({
+			where: { id: reportId },
+			include: {
+				reporter: { select: { id: true, username: true, nickname: true, email: true } },
+				reportedUser: { select: { username: true, nickname: true } }
 			}
-		} else if (status === "dismissed") {
-			notificationTitle = "Report Reviewed";
-			notificationMessage = `Your report has been reviewed. After investigation, no policy violation was found.`;
-		}
-
-		// Send socket notification to reporter
-		const io = req.app.get("io");
-		if (io && report.reporter) {
-			emitToUser(io, report.reporter._id, "report-status-updated", {
-				reportId: report._id,
-				status,
-				actionTaken: actionTaken || "none",
-				reportedUser: report.reportedUser?.nickname || report.reportedUser?.username,
-				title: notificationTitle,
-				message: notificationMessage,
-				timestamp: new Date()
-			});
-		}
-
-		// Send email notification to reporter
-		if (report.reporter && report.reporter.email) {
-			await sendReportStatusEmail(
-				report.reporter.email,
-				report.reporter.nickname || report.reporter.username,
-				status,
-				report.reportedUser?.nickname || report.reportedUser?.username || 'Unknown'
-			);
-		}
-
-		res.status(200).json({ 
-			message: `Report marked as ${status}`, 
-			report 
 		});
+		if (!report) return res.status(404).json({ error: "Report not found" });
+		const updatedReport = await prisma.report.update({
+			where: { id: reportId },
+			data: {
+				status,
+				adminNotes: adminNotes || report.adminNotes,
+				actionTaken: actionTaken || report.actionTaken,
+				reviewedBy: req.user.id,
+				reviewedAt: new Date()
+			}
+		});
+		res.status(200).json({ message: `Report marked as ${status}`, report: updatedReport });
 	} catch (err) {
-		console.error("updateReportStatus error:", err);
 		res.status(500).json({ error: "Failed to update report status" });
 	}
 };
 
-// ✅ --- Delete Report ---
 export const deleteReport = async (req, res) => {
-	const { reportId } = req.params;
-
 	try {
-		const report = await Report.findByIdAndDelete(reportId);
-		if (!report) {
-			return res.status(404).json({ error: "Report not found" });
-		}
-
+		await prisma.report.delete({ where: { id: req.params.reportId } });
 		res.status(200).json({ message: "Report deleted successfully" });
 	} catch (err) {
-		console.error("deleteReport error:", err);
 		res.status(500).json({ error: "Failed to delete report" });
 	}
 };
 
-// ✅ --- Get Verification Requests ---
 export const getVerificationRequests = async (req, res) => {
 	try {
-		console.log('📋 Fetching verification requests...');
-		const startTime = Date.now();
-		
-		// Simplified query - remove sort to speed up
-		const users = await User.find({
-			"verificationRequest.status": "pending"
-		})
-		.select("username nickname profilePic email verificationRequest isVerified createdAt")
-		.limit(50)
-		.lean();
-
-		const queryTime = Date.now() - startTime;
-		console.log(`✅ Found ${users.length} verification requests in ${queryTime}ms`);
-		
-		// Sort in memory (faster than DB sort for small datasets)
-		users.sort((a, b) => {
-			const dateA = a.verificationRequest?.requestedAt || a.createdAt;
-			const dateB = b.verificationRequest?.requestedAt || b.createdAt;
-			return new Date(dateB) - new Date(dateA);
+		const users = await prisma.user.findMany({
+			where: { verificationStatus: "pending" },
+			select: {
+				id: true, username: true, nickname: true, profilePic: true,
+				email: true, verificationStatus: true, verificationReason: true,
+				verificationIdProof: true, verificationRequestedAt: true,
+				isVerified: true, createdAt: true
+			},
+			take: 50,
+			orderBy: { verificationRequestedAt: "desc" }
 		});
-		
-		// Log first few for debugging
-		if (users.length > 0) {
-			console.log(`  First request: ${users[0].username}`);
-		}
-		
-		// Always return an array, even if empty
 		res.status(200).json(users);
 	} catch (err) {
-		console.error("❌ getVerificationRequests error:", err);
-		console.error("Error details:", err.message);
-		// Return empty array on error to prevent frontend crashes
 		res.status(200).json([]);
 	}
 };
 
-// ✅ --- Approve Verification Request ---
 export const approveVerification = async (req, res) => {
-	const { userId } = req.params;
 	try {
-		console.log(`🔍 Admin approving verification for user ${userId}`);
-		
-		const user = await User.findById(userId);
-		if (!user) return res.status(404).json({ error: "User not found" });
-
-		user.isVerified = true;
-		user.verificationRequest.status = "approved";
-		user.verificationRequest.reviewedAt = new Date();
-		user.verificationRequest.reviewedBy = req.user._id;
-
-		await user.save();
-		console.log(`✅ User ${userId} verification status updated to approved in database`);
-
-		const io = req.app.get("io");
-		const socketEmitted = emitToUser(io, userId, "verification-approved", { 
-			message: "Your verification request has been approved!" 
+		const user = await prisma.user.update({
+			where: { id: req.params.userId },
+			data: {
+				isVerified: true,
+				verificationStatus: "approved",
+				verificationReviewedAt: new Date(),
+				verificationReviewedBy: req.user.id
+			}
 		});
-		
-		if (socketEmitted) {
-			console.log(`✅ Socket event 'verification-approved' sent to user ${userId}`);
-		} else {
-			console.log(`⚠️ User ${userId} not online, socket event not sent`);
-		}
-
-		// Send email notification
-		try {
-			await sendVerificationApprovedEmail(
-				user.email,
-				user.nickname || user.username
-			);
-			console.log(`📧 Approval email sent to ${user.email}`);
-		} catch (emailErr) {
-			console.error("Failed to send approval email:", emailErr);
-			// Don't fail the request if email fails
-		}
-
+		emitToUser(req.app.get("io"), req.params.userId, "verification-approved", { message: "Verification approved!" });
+		await sendVerificationApprovedEmail(user.email, user.nickname || user.username);
 		res.status(200).json({ message: "Verification approved", user });
 	} catch (err) {
-		console.error("approveVerification error:", err);
 		res.status(500).json({ error: "Failed to approve verification" });
 	}
 };
 
-// ✅ --- Reject Verification Request ---
 export const rejectVerification = async (req, res) => {
-	const { userId } = req.params;
-	const { reason } = req.body;
-
 	try {
-		console.log(`🔍 Admin rejecting verification for user ${userId} with reason: ${reason}`);
-		
-		const user = await User.findById(userId);
-		if (!user) return res.status(404).json({ error: "User not found" });
-
-		user.isVerified = false;
-		user.verificationRequest.status = "rejected";
-		user.verificationRequest.adminNote = reason || "Does not meet verification criteria";
-		user.verificationRequest.reviewedAt = new Date();
-		user.verificationRequest.reviewedBy = req.user._id;
-
-		await user.save();
-		console.log(`✅ User ${userId} verification status updated to rejected in database`);
-
-		const io = req.app.get("io");
-		const socketEmitted = emitToUser(io, userId, "verification-rejected", { 
-			message: "Your verification request has been rejected",
-			reason: user.verificationRequest.adminNote
+		const user = await prisma.user.update({
+			where: { id: req.params.userId },
+			data: {
+				isVerified: false,
+				verificationStatus: "rejected",
+				verificationAdminNote: req.body.reason || "Does not meet criteria",
+				verificationReviewedAt: new Date(),
+				verificationReviewedBy: req.user.id
+			}
 		});
-		
-		if (socketEmitted) {
-			console.log(`✅ Socket event 'verification-rejected' sent to user ${userId}`);
-		} else {
-			console.log(`⚠️ User ${userId} not online, socket event not sent`);
-		}
-
-		// Send email notification
-		try {
-			await sendVerificationRejectedEmail(
-				user.email,
-				user.nickname || user.username,
-				user.verificationRequest.adminNote
-			);
-			console.log(`📧 Rejection email sent to ${user.email}`);
-		} catch (emailErr) {
-			console.error("Failed to send rejection email:", emailErr);
-			// Don't fail the request if email fails
-		}
-
+		emitToUser(req.app.get("io"), req.params.userId, "verification-rejected", { message: "Verification rejected", reason: user.verificationAdminNote });
+		await sendVerificationRejectedEmail(user.email, user.nickname || user.username, user.verificationAdminNote);
 		res.status(200).json({ message: "Verification rejected", user });
 	} catch (err) {
-		console.error("rejectVerification error:", err);
 		res.status(500).json({ error: "Failed to reject verification" });
 	}
 };
 
-// ✅ --- Get Admin Statistics ---
 export const getAdminStats = async (req, res) => {
 	try {
-		// Import userSocketMap to get real-time online users count
 		const { userSocketMap } = await import("../lib/socket.js");
-		
-		const totalUsers = await User.countDocuments();
-		const verifiedUsers = await User.countDocuments({ isVerified: true });
-		const onlineUsers = Object.keys(userSocketMap).length; // Count from socket connections
-		const suspendedUsers = await User.countDocuments({ isSuspended: true });
-		const blockedUsers = await User.countDocuments({ isBlocked: true });
-		
-		const pendingVerifications = await User.countDocuments({
-			"verificationRequest.status": "pending"
-		});
-		
-		const approvedVerifications = await User.countDocuments({
-			"verificationRequest.status": "approved"
-		});
-		
-		const rejectedVerifications = await User.countDocuments({
-			"verificationRequest.status": "rejected"
-		});
-
-		const pendingReports = await Report.countDocuments({ status: "pending" });
-		const totalReports = await Report.countDocuments();
-
-		// Get user growth data (last 7 days)
-		const sevenDaysAgo = new Date();
-		sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-		
-		const recentUsers = await User.countDocuments({
-			createdAt: { $gte: sevenDaysAgo }
-		});
-
+		const [totalUsers, verifiedUsers, suspendedUsers, blockedUsers, pendingVerifications, pendingReports, totalReports, recentUsers] = await Promise.all([
+			prisma.user.count(),
+			prisma.user.count({ where: { isVerified: true } }),
+			prisma.user.count({ where: { isSuspended: true } }),
+			prisma.user.count({ where: { isBlocked: true } }),
+			prisma.user.count({ where: { verificationStatus: "pending" } }),
+			prisma.report.count({ where: { status: "pending" } }),
+			prisma.report.count(),
+			prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 7*24*60*60*1000) } } })
+		]);
 		res.status(200).json({
-			totalUsers,
-			verifiedUsers,
-			onlineUsers,
-			suspendedUsers,
-			blockedUsers,
-			pendingVerifications,
-			approvedVerifications,
-			rejectedVerifications,
-			pendingReports,
-			totalReports,
-			recentUsers
+			totalUsers, verifiedUsers, onlineUsers: Object.keys(userSocketMap).length,
+			suspendedUsers, blockedUsers, pendingVerifications, pendingReports, totalReports, recentUsers
 		});
 	} catch (err) {
-		console.error("getAdminStats error:", err);
 		res.status(500).json({ error: "Failed to fetch admin statistics" });
 	}
 };
 
-// ✅ --- Get Dashboard Statistics ---
 export const getDashboardStats = async (req, res) => {
 	try {
-		// Import userSocketMap to get real-time online users count
 		const { userSocketMap } = await import("../lib/socket.js");
-		
-		const totalUsers = await User.countDocuments();
-		const verifiedUsers = await User.countDocuments({ isVerified: true });
-		const onlineUsers = Object.keys(userSocketMap).length;
-		const suspendedUsers = await User.countDocuments({ isSuspended: true });
-		const blockedUsers = await User.countDocuments({ isBlocked: true });
-		
-		const pendingVerifications = await User.countDocuments({
-			"verificationRequest.status": "pending"
-		});
-		
-		const pendingReports = await Report.countDocuments({ status: "pending" });
-		
-		const sevenDaysAgo = new Date();
-		sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-		const newUsersThisWeek = await User.countDocuments({
-			createdAt: { $gte: sevenDaysAgo }
-		});
-		
-		const thirtyDaysAgo = new Date();
-		thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-		const newUsersThisMonth = await User.countDocuments({
-			createdAt: { $gte: thirtyDaysAgo }
-		});
-
-		// Get online user IDs for accurate tracking
-		const onlineUserIds = Object.keys(userSocketMap);
-		
-		// Update isOnline status in database for accuracy
-		await User.updateMany(
-			{ _id: { $in: onlineUserIds } },
-			{ $set: { isOnline: true } }
-		);
-		
-		await User.updateMany(
-			{ _id: { $nin: onlineUserIds }, isOnline: true },
-			{ $set: { isOnline: false, lastSeen: new Date() } }
-		);
-
-		console.log(`Dashboard stats: ${onlineUsers} online users, ${totalUsers} total`);
-
+		const [totalUsers, verifiedUsers, suspendedUsers, blockedUsers, pendingVerifications, pendingReports, newUsersThisWeek, newUsersThisMonth] = await Promise.all([
+			prisma.user.count(),
+			prisma.user.count({ where: { isVerified: true } }),
+			prisma.user.count({ where: { isSuspended: true } }),
+			prisma.user.count({ where: { isBlocked: true } }),
+			prisma.user.count({ where: { verificationStatus: "pending" } }),
+			prisma.report.count({ where: { status: "pending" } }),
+			prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 7*24*60*60*1000) } } }),
+			prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 30*24*60*60*1000) } } })
+		]);
 		res.status(200).json({
-			totalUsers,
-			verifiedUsers,
-			onlineUsers,
-			suspendedUsers,
-			blockedUsers,
-			pendingVerifications,
-			pendingReports,
-			newUsersThisWeek,
-			newUsersThisMonth,
+			totalUsers, verifiedUsers, onlineUsers: Object.keys(userSocketMap).length,
+			suspendedUsers, blockedUsers, pendingVerifications, pendingReports, newUsersThisWeek, newUsersThisMonth
 		});
 	} catch (err) {
-		console.error("getDashboardStats error:", err);
 		res.status(500).json({ error: "Failed to fetch dashboard statistics" });
 	}
 };
 
-// ✅ --- Send Personal Notification ---
 export const sendPersonalNotification = async (req, res) => {
-	const { userId } = req.params;
-	const { title, message, color, type } = req.body;
-	const adminId = req.user._id;
-
 	try {
-		if (!title || !message) {
-			return res.status(400).json({ error: "Title and message are required" });
-		}
-
-		const user = await User.findById(userId);
-		if (!user) {
-			return res.status(404).json({ error: "User not found" });
-		}
-
-		const notification = new AdminNotification({
-			recipient: userId,
-			sender: adminId,
-			title,
-			message,
-			color: color || "blue",
-			type: type || "info",
-			isBroadcast: false,
+		const { title, message } = req.body;
+		if (!title || !message) return res.status(400).json({ error: "Title and message required" });
+		const notification = await prisma.adminNotification.create({
+			data: { type: "info", title, message }
 		});
-
-		await notification.save();
-		console.log(`📧 Personal notification saved to DB for user ${userId}`);
-
-		// Emit real-time notification to user
-		const io = req.app.get("io");
-		if (io) {
-			const notificationData = {
-				id: notification._id,
-				_id: notification._id, // Add _id for frontend deletion
-				title,
-				message,
-				color: notification.color,
-				type: notification.type,
-				createdAt: notification.createdAt,
-			};
-			console.log(`📤 Attempting to emit admin-notification to user ${userId}:`, notificationData);
-			const emitted = emitToUser(io, userId, "admin-notification", notificationData);
-			if (emitted) {
-				console.log(`✅ Successfully emitted admin-notification to user ${userId}`);
-			} else {
-				console.log(`⚠️ User ${userId} not online, notification saved to DB only`);
-			}
-		}
-
-		res.status(200).json({ 
-			message: "Notification sent successfully",
-			notification 
-		});
-	} catch (error) {
-		console.error("sendPersonalNotification error:", error);
+		res.status(200).json({ message: "Notification sent", notification });
+	} catch (err) {
 		res.status(500).json({ error: "Failed to send notification" });
 	}
 };
 
-// ✅ --- Send Broadcast Notification ---
 export const sendBroadcastNotification = async (req, res) => {
-	const { title, message, color, type } = req.body;
-	const adminId = req.user._id;
-
 	try {
-		if (!title || !message) {
-			return res.status(400).json({ error: "Title and message are required" });
-		}
-
-		// Get all users (excluding admins)
-		const users = await User.find({ isAdmin: false }).select("_id");
-		console.log(`📢 Broadcasting to ${users.length} users`);
-
-		// Create notification for each user
-		const notifications = users.map(user => ({
-			recipient: user._id,
-			sender: adminId,
-			title,
-			message,
-			color: color || "blue",
-			type: type || "info",
-			isBroadcast: true,
-		}));
-
-		await AdminNotification.insertMany(notifications);
-		console.log(`✅ Saved ${notifications.length} broadcast notifications to DB`);
-
-		// Emit real-time notification to all users
-		const io = req.app.get("io");
-		if (io) {
-			const broadcastData = {
-				title,
-				message,
-				color: color || "blue",
-				type: type || "info",
-				createdAt: new Date(),
-			};
-			console.log(`📤 Emitting admin-broadcast to all connected users:`, broadcastData);
-			io.emit("admin-broadcast", broadcastData);
-			console.log(`✅ Broadcast emitted successfully`);
-		}
-
-		res.status(200).json({ 
-			message: `Broadcast sent to ${users.length} users`,
-			count: users.length 
+		const { title, message } = req.body;
+		if (!title || !message) return res.status(400).json({ error: "Title and message required" });
+		const notification = await prisma.adminNotification.create({
+			data: { type: "broadcast", title, message }
 		});
-	} catch (error) {
-		console.error("sendBroadcastNotification error:", error);
+		req.app.get("io")?.emit("admin-broadcast", { title, message, createdAt: new Date() });
+		res.status(200).json({ message: "Broadcast sent", notification });
+	} catch (err) {
 		res.status(500).json({ error: "Failed to send broadcast" });
 	}
 };
 
-// ✅ --- Get User Notifications ---
 export const getUserNotifications = async (req, res) => {
-	const userId = req.user._id;
-
 	try {
-		const notifications = await AdminNotification.find({ recipient: userId })
-			.populate("sender", "fullName username profilePic")
-			.sort({ createdAt: -1 })
-			.limit(50);
-
+		const notifications = await prisma.adminNotification.findMany({
+			orderBy: { createdAt: "desc" },
+			take: 50
+		});
 		res.status(200).json(notifications);
-	} catch (error) {
-		console.error("getUserNotifications error:", error);
+	} catch (err) {
 		res.status(500).json({ error: "Failed to fetch notifications" });
 	}
 };
 
-// ✅ --- Mark Notification as Read ---
 export const markNotificationRead = async (req, res) => {
-	const { notificationId } = req.params;
-	const userId = req.user._id;
-
 	try {
-		const notification = await AdminNotification.findOne({
-			_id: notificationId,
-			recipient: userId,
+		await prisma.adminNotification.update({
+			where: { id: req.params.notificationId },
+			data: { isRead: true }
 		});
-
-		if (!notification) {
-			return res.status(404).json({ error: "Notification not found" });
-		}
-
-		notification.isRead = true;
-		notification.readAt = new Date();
-		await notification.save();
-
 		res.status(200).json({ message: "Notification marked as read" });
-	} catch (error) {
-		console.error("markNotificationRead error:", error);
+	} catch (err) {
 		res.status(500).json({ error: "Failed to mark notification as read" });
 	}
 };
 
-// ✅ --- Delete Notification ---
 export const deleteNotification = async (req, res) => {
-	const { notificationId } = req.params;
-	const userId = req.user._id;
-
 	try {
-		const notification = await AdminNotification.findOneAndDelete({
-			_id: notificationId,
-			recipient: userId,
+		await prisma.adminNotification.delete({
+			where: { id: req.params.notificationId }
 		});
-
-		if (!notification) {
-			return res.status(404).json({ error: "Notification not found" });
-		}
-
 		res.status(200).json({ message: "Notification deleted" });
-	} catch (error) {
-		console.error("deleteNotification error:", error);
+	} catch (err) {
 		res.status(500).json({ error: "Failed to delete notification" });
 	}
 };

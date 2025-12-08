@@ -228,6 +228,7 @@ userSchema.index({ lastSeen: -1 }); // Last seen queries
 userSchema.index({ hasCompletedProfile: 1, isVerified: -1, createdAt: -1 }); // Suggested users (compound index)
 userSchema.index({ country: 1 }); // Country-based queries
 userSchema.index({ countryCode: 1 }); // Country code queries
+userSchema.index({ "verificationRequest.status": 1 }); // Verification requests queries
 
 const User = mongoose.model("User", userSchema);
 
