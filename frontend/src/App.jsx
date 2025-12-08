@@ -284,7 +284,7 @@ const App = () => {
 
 	const hasCompletedProfile = authUser?.hasCompletedProfile;
 
-	// Unified loading component
+	// Unified loading component - always dark to prevent white flash
 	const LoadingScreen = () => (
 		<div style={{
 			position: 'fixed',
@@ -292,7 +292,7 @@ const App = () => {
 			display: 'flex',
 			alignItems: 'center',
 			justifyContent: 'center',
-			backgroundColor: theme === 'dark' ? '#1a1a1a' : '#f5f5f5'
+			backgroundColor: '#1a1a1a'
 		}}>
 			<div className="flex flex-col items-center gap-3">
 				<div style={{
@@ -304,7 +304,7 @@ const App = () => {
 					animation: 'spin 0.8s linear infinite'
 				}}></div>
 				<p style={{ 
-					color: theme === 'dark' ? '#999' : '#666',
+					color: '#999',
 					fontSize: '14px'
 				}}>Loading...</p>
 			</div>
@@ -328,7 +328,7 @@ const App = () => {
 				{hasCompletedProfile && window.location.pathname !== "/stranger" && <Navbar />}
 			</Suspense>
 
-			<Suspense fallback={<LoadingScreen />}>
+			<Suspense fallback={null}>
 				<Routes location={location} key={location.pathname}>
 				{/* --- Auth Routes --- */}
 				<Route
