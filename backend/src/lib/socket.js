@@ -292,15 +292,37 @@ io.on("connection", (socket) => {
 		try {
 			console.log(`📤 Instant message from ${socket.userId} to ${receiverId}`);
 			
-			// Create message with Prisma (FAST!)
+			// Create message with Prisma (FAST!) - Connect relations properly
 			const newMessage = await prisma.message.create({
 				data: {
-					senderId: socket.userId,
-					receiverId,
 					text: text || null,
 					image: image || null,
 					voice: voice || null,
-					voiceDuration: voiceDuration || null
+					voiceDuration: voiceDuration || null,
+					sender: {
+						connect: { id: socket.userId }
+					},
+					receiver: {
+						connect: { id: receiverId }
+					}
+				},
+				include: {
+					sender: {
+						select: {
+							id: true,
+							username: true,
+							nickname: true,
+							profilePic: true
+						}
+					},
+					receiver: {
+						select: {
+							id: true,
+							username: true,
+							nickname: true,
+							profilePic: true
+						}
+					}
 				}
 			});
 			
