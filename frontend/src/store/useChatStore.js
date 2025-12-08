@@ -164,6 +164,14 @@ export const useChatStore = create((set, get) => ({
             );
 
             if (isForCurrentChat) {
+                // ✅ CRITICAL: Check for duplicates FIRST (before any state updates)
+                const isDuplicate = messages.some(m => m.id === newMessage.id);
+                
+                if (isDuplicate) {
+                    console.log(`⚠️ Duplicate message detected, skipping: ${newMessage.id}`);
+                    return; // Exit immediately - don't process duplicates
+                }
+                
                 // ✅ INSTANT: Check if this is replacing an optimistic message (my own message)
                 if (msgSenderId === authUserId) {
                     // Find the most recent optimistic message
@@ -179,14 +187,6 @@ export const useChatStore = create((set, get) => ({
                         }));
                         return; // Exit early - message replaced
                     }
-                }
-                
-                // Check if message already exists (prevent duplicates)
-                const isDuplicate = messages.some(m => m.id === newMessage.id);
-                
-                if (isDuplicate) {
-                    console.log(`⚠️ Duplicate message detected, skipping: ${newMessage.id}`);
-                    return;
                 }
                 
                 // Add new message from other person
