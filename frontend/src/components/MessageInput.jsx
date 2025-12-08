@@ -112,7 +112,7 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
         voice: audioData,
         voiceDuration: duration,
       });
-      toast.success("Voice message sent!");
+      // ✅ No toast - silent send for better UX
     } catch (error) {
       console.error("Failed to send voice:", error);
       toast.error("Failed to send voice message");

@@ -76,7 +76,7 @@ router.post("/request-verification", async (req, res) => {
 			return res.status(400).json({ message: "You are already verified" });
 		}
 
-		if (user.verificationRequest?.status === "pending") {
+		if (user.verificationStatus === "pending") {
 			console.log(`⚠️ User ${userId} already has a pending request`);
 			return res.status(400).json({ message: "You already have a pending verification request" });
 		}
@@ -84,12 +84,10 @@ router.post("/request-verification", async (req, res) => {
 		await prisma.user.update({
 			where: { id: userId },
 			data: {
-				verificationRequest: {
-					status: "pending",
-					reason,
-					idProof,
-					requestedAt: new Date(),
-				}
+				verificationStatus: "pending",
+				verificationReason: reason,
+				verificationIdProof: idProof,
+				verificationRequestedAt: new Date(),
 			}
 		});
 		
