@@ -7,7 +7,7 @@ import {
 	LayoutDashboard,
 	Settings,
 	User,
-	Users,
+	Compass,
 } from "lucide-react";
 
 const Navbar = () => {
@@ -37,14 +37,14 @@ const Navbar = () => {
 
 					{/* Navigation Icons */}
 					<div className="flex items-center -space-x-2 sm:space-x-0 sm:gap-1">
-						{/* Social Hub / Friend Requests */}
+						{/* Social Hub / Discover */}
 						{authUser && (
 							<Link
 								to="/discover"
 								className="btn btn-ghost btn-sm btn-circle relative w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch"
-								title="Social Hub"
+								title="Discover & Social Hub"
 							>
-								<Users className="w-[18px] h-[18px] sm:w-5 sm:h-5" />
+								<Compass className="w-[18px] h-[18px] sm:w-5 sm:h-5" />
 								{totalUpdates > 0 && (
 									<span className="absolute -top-0.5 -right-0.5 bg-error text-white text-[10px] sm:text-xs font-bold rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shadow-lg animate-pulse">
 										{totalUpdates > 9 ? '9+' : totalUpdates}
