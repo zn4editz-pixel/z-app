@@ -597,7 +597,7 @@ const StrangerChatPage = () => {
 		const onDisconnected = () => {
 			if (isMounted) {
 				addMessage("System", "Partner disconnected.");
-				toast.info("Partner left. Finding a new match...");
+				toast("Partner left. Finding a new match...", { icon: "👋" });
 				closeConnection(); 
 				setStatus("waiting");
 				socket.emit("stranger:joinQueue", { userId: authUser.id });
@@ -851,7 +851,10 @@ const StrangerChatPage = () => {
 						handleSkip();
 					} else {
 						// Warning (60-79%)
-						toast.warning(`Warning: Potentially inappropriate content detected (${violations}/${MODERATION_CONFIG.maxViolations})`);
+						toast(`Warning: Potentially inappropriate content detected (${violations}/${MODERATION_CONFIG.maxViolations})`, { 
+							icon: "⚠️",
+							duration: 4000
+						});
 					}
 				} else {
 					console.log('✅ Content check passed - safe');
