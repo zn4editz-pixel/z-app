@@ -17,10 +17,11 @@ const Navbar = () => {
 	const { pendingReceived } = useFriendStore();
 	const { notifications } = useNotificationStore();
 
-	// Calculate total Social Hub updates
+	// Calculate total Social Hub updates (only unread)
 	const adminNotifications = notifications.filter(n => n.type === 'admin' || n.type === 'admin_broadcast');
+	const unreadAdminNotifications = adminNotifications.filter(n => !n.read);
 	const hasVerificationUpdate = authUser?.verificationRequest?.status && authUser.verificationRequest.status !== "none";
-	const totalUpdates = pendingReceived.length + adminNotifications.length + (hasVerificationUpdate ? 1 : 0) + (authUser?.isSuspended ? 1 : 0);
+	const totalUpdates = pendingReceived.length + unreadAdminNotifications.length + (hasVerificationUpdate ? 1 : 0) + (authUser?.isSuspended ? 1 : 0);
 
 	return (
 		<header className="bg-base-100 border-b border-base-300 fixed w-full top-0 z-40 shadow-sm">

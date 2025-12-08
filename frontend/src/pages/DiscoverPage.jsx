@@ -184,7 +184,7 @@ const AdminNotificationsList = () => {
 
 const DiscoverPage = () => {
 	const [activeTab, setActiveTab] = useState("discover"); // discover, requests, notifications
-	const { clearBadge } = useNotificationStore();
+	const { viewNotifications } = useNotificationStore();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [searchResults, setSearchResults] = useState([]);
 	const [isLoadingSearch, setIsLoadingSearch] = useState(false);
@@ -204,10 +204,22 @@ const DiscoverPage = () => {
 		console.log('Is loading:', isLoadingSuggested);
 	}, [authUser, suggestedUsers, isLoadingSuggested]);
 
-	// Calculate notification counts for each tab
+	// Calculate notification counts for each tab (only unread)
 	const adminNotifications = notifications.filter(n => n.type === 'admin' || n.type === 'admin_broadcast');
+	const unreadAdminNotifications = adminNotifications.filter(n => !n.read);
 	const hasVerificationUpdate = authUser?.verificationRequest?.status && authUser.verificationRequest.status !== "none";
-	const notificationCount = adminNotifications.length + (hasVerificationUpdate ? 1 : 0) + (authUser?.isSuspended ? 1 : 0);
+	const notificationCount = unreadAdminNotifications.length + (hasVerificationUpdate ? 1 : 0) + (authUser?.isSuspended ? 1 : 0);
+
+	// Auto-mark notifications as read when viewing notifications tab
+	useEffect(() => {
+		if (activeTab === "notifications") {
+			// Mark all as read after a short delay (Instagram-style)
+			const timer = setTimeout(() => {
+				viewNotifications();
+			}, 500);
+			return () => clearTimeout(timer);
+		}
+	}, [activeTab, viewNotifications]);
 
 	// Fetch friend data on mount - OPTIMIZED: only once
 	useEffect(() => {
@@ -365,10 +377,7 @@ const DiscoverPage = () => {
 							)}
 						</button>
 						<button
-							onClick={() => {
-								setActiveTab("notifications");
-								clearBadge(); // Clear badge when opening notifications
-							}}
+							onClick={() => setActiveTab("notifications")}
 							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-all duration-300 relative text-xs sm:text-base ${
 								activeTab === "notifications"
 									? "text-primary scale-105"
@@ -377,7 +386,7 @@ const DiscoverPage = () => {
 						>
 							<Bell className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ${activeTab === "notifications" ? "scale-110" : ""}`} />
 							<span>Notifications</span>
-							{notificationCount > 0 && (
+							{notificationCount > 0 && activeTab !== "notifications" && (
 								<span className="absolute top-1 right-1 sm:relative sm:top-0 sm:right-0 badge badge-error badge-xs sm:badge-sm animate-pulse">
 									{notificationCount > 9 ? "9+" : notificationCount}
 								</span>

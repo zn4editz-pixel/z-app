@@ -3,6 +3,7 @@ import { create } from "zustand";
 export const useNotificationStore = create((set, get) => ({
 	notifications: [],
 	unreadCount: 0,
+	hasViewedNotifications: false, // Track if user has viewed notifications tab
 
 	addNotification: (notification) => {
 		const newNotification = {
@@ -31,6 +32,7 @@ export const useNotificationStore = create((set, get) => ({
 		set((state) => ({
 			notifications: state.notifications.map((n) => ({ ...n, read: true })),
 			unreadCount: 0,
+			hasViewedNotifications: true, // Mark as viewed
 		}));
 	},
 
@@ -48,5 +50,14 @@ export const useNotificationStore = create((set, get) => ({
 
 	clearAllNotifications: () => {
 		set({ notifications: [], unreadCount: 0 });
+	},
+
+	// Auto-mark all notifications as read when viewing notifications tab
+	viewNotifications: () => {
+		set((state) => ({
+			notifications: state.notifications.map((n) => ({ ...n, read: true })),
+			unreadCount: 0,
+			hasViewedNotifications: true,
+		}));
 	},
 }));
