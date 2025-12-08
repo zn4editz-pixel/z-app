@@ -290,21 +290,22 @@ io.on("connection", (socket) => {
 	// INSTANT MESSAGE SENDING via Socket.IO (ULTRA FAST with Prisma)
 	socket.on("sendMessage", async ({ receiverId, text, image, voice, voiceDuration, replyTo, tempId }) => {
 		try {
-			console.log(`📤 Instant message from ${socket.userId} to ${receiverId}`);
+			const senderId = socket.userId;
+			console.log(`📤 Instant message from ${senderId} to ${receiverId}`);
 			
-			// Create message with Prisma (FAST!) - Connect relations properly
+			if (!senderId || !receiverId) {
+				throw new Error('Sender or receiver ID missing');
+			}
+			
+			// Create message with Prisma (FAST!) - Direct field assignment
 			const newMessage = await prisma.message.create({
 				data: {
+					senderId: senderId,
+					receiverId: receiverId,
 					text: text || null,
 					image: image || null,
 					voice: voice || null,
-					voiceDuration: voiceDuration || null,
-					sender: {
-						connect: { id: socket.userId }
-					},
-					receiver: {
-						connect: { id: receiverId }
-					}
+					voiceDuration: voiceDuration || null
 				},
 				include: {
 					sender: {
