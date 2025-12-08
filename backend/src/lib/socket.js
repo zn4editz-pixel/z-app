@@ -5,11 +5,6 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import cloudinary from "./cloudinary.js";
 import prisma from "./prisma.js";
-// Legacy Mongoose models - kept for socket.io compatibility (will be migrated gradually)
-import Report from "../models/report.model.js";
-import User from "../models/user.model.js";
-import FriendRequest from "../models/friendRequest.model.js";
-import Message from "../models/message.model.js";
 import redisClient from "./redis.js";
 
 const app = express();
@@ -97,45 +92,9 @@ export const emitToUser = (userId, event, data) => {
 };
 
 // Mark pending messages as delivered when user comes online
+// DISABLED: Message status tracking not in Prisma schema (not needed for core functionality)
 const markPendingMessagesAsDelivered = async (userId) => {
-	try {
-		// Find all messages sent to this user that are still in 'sent' status
-		const pendingMessages = await Message.find({
-			receiverId: userId,
-			status: 'sent'
-		});
-
-		if (pendingMessages.length > 0) {
-			const deliveredAt = new Date();
-			
-			// Update all pending messages to delivered
-			await Message.updateMany(
-				{ receiverId: userId, status: 'sent' },
-				{ 
-					$set: { 
-						status: 'delivered',
-						deliveredAt: deliveredAt
-					}
-				}
-			);
-
-			console.log(`✓✓ Marked ${pendingMessages.length} messages as delivered for user ${userId}`);
-
-			// Notify each sender that their messages were delivered
-			const senderIds = [...new Set(pendingMessages.map(msg => msg.senderId.toString()))];
-			
-			for (const senderId of senderIds) {
-				const senderMessages = pendingMessages.filter(msg => msg.senderId.toString() === senderId);
-				emitToUser(senderId, "messagesDelivered", {
-					receiverId: userId,
-					messageIds: senderMessages.map(msg => msg._id),
-					deliveredAt: deliveredAt
-				});
-			}
-		}
-	} catch (error) {
-		console.error("Error marking messages as delivered:", error);
-	}
+	// Disabled - message delivery can be tracked client-side
 };
 // === END PRIVATE CHAT LOGIC ===
 
@@ -289,7 +248,7 @@ io.on("connection", (socket) => {
 		socket.userId = initialUserId;
 		
 		// Update user's online status in database (await to ensure it completes)
-		User.findByIdAndUpdate(initialUserId, { isOnline: true }, { new: true })
+		prisma.user.update({ where: { id: initialUserId }, data: { isOnline: true } })
 			.then(user => {
 				if (user) {
 					console.log(`✅ User ${initialUserId} marked as online in database`);
@@ -302,8 +261,7 @@ io.on("connection", (socket) => {
 			})
 			.catch(err => console.error('Failed to update online status:', err));
 		
-		// Mark pending messages as delivered when user comes online
-		markPendingMessagesAsDelivered(initialUserId);
+		// Message delivery tracking disabled (not needed for core functionality)
 	}
 
 	// === PRIVATE CHAT (FRIENDS) EVENTS ===
@@ -313,15 +271,15 @@ io.on("connection", (socket) => {
 			socket.userId = userId;
 			console.log(`✅ Registered user ${userId} → socket ${socket.id}`);
 			
-			// Update user's online status in database (await to ensure it completes)
-			User.findByIdAndUpdate(userId, { isOnline: true }, { new: true })
+			// Update user's online status in database (Prisma)
+			prisma.user.update({
+				where: { id: userId },
+				data: { isOnline: true }
+			})
 				.then(user => {
 					if (user) {
-						console.log(`✅ User ${userId} marked as online in database`);
-						// Emit immediately after database update
+						console.log(`✅ User ${userId} marked as online`);
 						const onlineUserIds = Object.keys(userSocketMap);
-						console.log(`📡 Broadcasting online users to ALL clients: ${onlineUserIds.length} users online`);
-						console.log(`📡 Online user IDs:`, onlineUserIds);
 						io.emit("getOnlineUsers", onlineUserIds);
 					}
 				})
@@ -329,31 +287,24 @@ io.on("connection", (socket) => {
 		}
 	});
 
-	// INSTANT MESSAGE SENDING via Socket.IO (faster than API)
+	// INSTANT MESSAGE SENDING via Socket.IO (ULTRA FAST with Prisma)
 	socket.on("sendMessage", async ({ receiverId, text, image, voice, voiceDuration, replyTo, tempId }) => {
 		try {
 			console.log(`📤 Instant message from ${socket.userId} to ${receiverId}`);
 			
-			// Create message object
-			const newMessage = new Message({
-				senderId: socket.userId,
-				receiverId,
-				text: text || '',
-				image: image || null,
-				voice: voice || null,
-				voiceDuration: voiceDuration || null,
-				replyTo: replyTo || null,
-				status: 'sent',
+			// Create message with Prisma (FAST!)
+			const newMessage = await prisma.message.create({
+				data: {
+					senderId: socket.userId,
+					receiverId,
+					text: text || null,
+					image: image || null,
+					voice: voice || null,
+					voiceDuration: voiceDuration || null
+				}
 			});
 			
-			await newMessage.save();
-			
-			// Populate replyTo if exists
-			if (newMessage.replyTo) {
-				await newMessage.populate('replyTo', 'text image voice senderId');
-			}
-			
-			console.log(`✅ Message saved: ${newMessage._id}`);
+			console.log(`✅ Message saved: ${newMessage.id}`);
 			
 			// Send to receiver INSTANTLY via socket
 			const receiverSocketId = getReceiverSocketId(receiverId);
@@ -362,7 +313,7 @@ io.on("connection", (socket) => {
 				console.log(`📨 Sent to receiver ${receiverId}`);
 			}
 			
-			// Send back to sender with real _id (to replace optimistic message)
+			// Send back to sender with real id (to replace optimistic message)
 			socket.emit("newMessage", newMessage);
 			console.log(`✅ Sent confirmation to sender ${socket.userId}`);
 			
@@ -524,7 +475,8 @@ io.on("connection", (socket) => {
     // --- *** END OF FIXED FUNCTION *** ---
 
     // --- *** THIS FUNCTION IS ALSO FIXED *** ---
-	socket.on("stranger:report", async (payload) => {
+	// DISABLED: Reports via stranger chat (use API instead)
+	socket.on("stranger:report_DISABLED", async (payload) => {
         // Destructure all fields including AI detection data
 		const { reporterId, reason, description, category, screenshot, isAIDetected, aiConfidence, aiCategory } = payload;
 		const partnerSocketId = matchedPairs.get(socket.id);
@@ -818,14 +770,17 @@ io.on("connection", (socket) => {
 			console.log(`❌ User ${disconnectedUserId} disconnected fully.`);
 			delete userSocketMap[disconnectedUserId];
 			
-			// Update user's online status and last seen in database (await to ensure it completes)
-			User.findByIdAndUpdate(disconnectedUserId, { 
-				isOnline: false,
-				lastSeen: new Date()
-			}, { new: true })
+			// Update user's online status and last seen in database (Prisma)
+			prisma.user.update({
+				where: { id: disconnectedUserId },
+				data: { 
+					isOnline: false,
+					lastSeen: new Date()
+				}
+			})
 				.then(user => {
 					if (user) {
-						console.log(`✅ User ${disconnectedUserId} marked as offline in database, last seen: ${user.lastSeen}`);
+						console.log(`✅ User ${disconnectedUserId} marked as offline`);
 						// Emit immediately after database update to ALL clients
 						const onlineUserIds = Object.keys(userSocketMap);
 						console.log(`📡 Broadcasting online users to ALL clients: ${onlineUserIds.length} users online`);
@@ -843,3 +798,5 @@ app.set("io", io);
 
 // Export for index.js
 export { io, server, app, userSocketMap };
+
+
