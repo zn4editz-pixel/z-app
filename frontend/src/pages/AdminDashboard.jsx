@@ -4,7 +4,7 @@ import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "../store/useAuthStore";
 import { 
 	Users, UserCheck, AlertTriangle, Shield, TrendingUp,
-	BadgeCheck, FileText
+	BadgeCheck, FileText, Activity
 } from "lucide-react";
 import "../styles/admin-custom.css";
 
@@ -15,6 +15,7 @@ import AIModerationPanel from "../components/admin/AIModerationPanel";
 import ReportsManagement from "../components/admin/ReportsManagement";
 import VerificationRequests from "../components/admin/VerificationRequests";
 import NotificationsPanel from "../components/admin/NotificationsPanel";
+import ServerIntelligenceCenter from "../components/admin/ServerIntelligenceCenter";
 
 const AdminDashboard = () => {
 	const { socket } = useAuthStore();
@@ -40,6 +41,7 @@ const AdminDashboard = () => {
 	// Tab Configuration
 	const tabs = [
 		{ id: "dashboard", label: "Dashboard", icon: TrendingUp },
+		{ id: "server-intelligence", label: "Server Intelligence", icon: Activity },
 		{ id: "users", label: "Users", icon: Users },
 		{ id: "ai-moderation", label: "AI Moderation", icon: Shield },
 		{ id: "reports", label: "Reports", icon: AlertTriangle },
@@ -424,6 +426,8 @@ const AdminDashboard = () => {
 		switch (activeTab) {
 			case "dashboard":
 				return <DashboardOverview stats={stats} loadingStats={loadingStats} users={users} />;
+			case "server-intelligence":
+				return <ServerIntelligenceCenter />;
 			case "users":
 				return (
 					<UserManagement
@@ -466,8 +470,6 @@ const AdminDashboard = () => {
 				);
 			case "notifications":
 				return <NotificationsPanel onSendNotification={handleSendNotification} />;
-			case "server-health":
-				return <ServerHealthPanel />;
 			default:
 				return <DashboardOverview stats={stats} loadingStats={loadingStats} users={users} />;
 		}

@@ -22,6 +22,12 @@ import {
 	deleteNotification,
 } from "../controllers/admin.controller.js";
 
+import {
+	getServerMetrics,
+	getMetricsHistory,
+	clearMetricsHistory
+} from "../controllers/serverMetrics.controller.js";
+
 // Make sure these middleware paths are correct
 import { protectRoute } from "../middleware/protectRoute.js";
 import { isAdmin } from "../middleware/isAdmin.js";
@@ -57,5 +63,10 @@ router.put("/verification/reject/:userId", rejectVerification);
 // --- Admin Notifications ---
 router.post("/notifications/personal/:userId", sendPersonalNotification);
 router.post("/notifications/broadcast", sendBroadcastNotification);
+
+// --- Server Intelligence Center ---
+router.get("/server-metrics", getServerMetrics);
+router.get("/metrics-history", getMetricsHistory);
+router.delete("/metrics-history", clearMetricsHistory);
 
 export default router;
