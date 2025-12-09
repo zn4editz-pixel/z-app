@@ -10,30 +10,30 @@ let modelLoadError = null;
 // Initialize NSFW model (lazy loading)
 export const initNSFWModel = async () => {
   if (nsfwModel) {
-    console.log('✅ NSFW model already loaded');
+    if (import.meta.env.DEV) console.log('✅ NSFW model already loaded');
     return nsfwModel;
   }
   
   if (isModelLoading) {
-    console.log('⏳ NSFW model is loading...');
+    if (import.meta.env.DEV) console.log('⏳ NSFW model is loading...');
     return null;
   }
   
   isModelLoading = true;
-  console.log('🔄 Loading NSFW detection model...');
+  if (import.meta.env.DEV) console.log('🔄 Loading NSFW detection model...');
   
   try {
     // Ensure TensorFlow.js backend is ready
     await tf.ready();
-    console.log('✅ TensorFlow.js backend ready:', tf.getBackend());
+    if (import.meta.env.DEV) console.log('✅ TensorFlow.js backend ready:', tf.getBackend());
     
     // Load NSFW model
     nsfwModel = await nsfwjs.load();
-    console.log('✅ NSFW detection model loaded successfully');
+    if (import.meta.env.DEV) console.log('✅ NSFW detection model loaded successfully');
     modelLoadError = null;
     return nsfwModel;
   } catch (error) {
-    console.error('❌ Failed to load NSFW model:', error);
+    if (import.meta.env.DEV) console.error('❌ Failed to load NSFW model:', error);
     modelLoadError = error.message;
     return null;
   } finally {
@@ -46,37 +46,37 @@ export const analyzeFrame = async (videoElement) => {
   try {
     // Initialize model if not loaded
     if (!nsfwModel && !isModelLoading) {
-      console.log('🔄 Model not loaded, initializing...');
+      if (import.meta.env.DEV) console.log('🔄 Model not loaded, initializing...');
       await initNSFWModel();
     }
     
     // Wait for model to be ready
     if (isModelLoading) {
-      console.log('⏳ Waiting for model to load...');
+      if (import.meta.env.DEV) console.log('⏳ Waiting for model to load...');
       return { safe: true, confidence: 0, loading: true };
     }
     
     if (!nsfwModel) {
-      console.warn('⚠️ NSFW model not available:', modelLoadError);
+      if (import.meta.env.DEV) console.warn('⚠️ NSFW model not available:', modelLoadError);
       return { safe: true, confidence: 0, error: modelLoadError };
     }
 
     // Check if video is ready
     if (!videoElement || videoElement.readyState < 2) {
-      console.log('⏳ Video not ready yet');
+      if (import.meta.env.DEV) console.log('⏳ Video not ready yet');
       return { safe: true, confidence: 0, videoNotReady: true };
     }
 
-    console.log('🔍 Analyzing frame...');
+    if (import.meta.env.DEV) console.log('🔍 Analyzing frame...');
     const predictions = await nsfwModel.classify(videoElement);
     
     // Always log predictions for debugging
-    console.log('📊 AI Predictions:', predictions.map(p => 
+    if (import.meta.env.DEV) console.log('📊 AI Predictions:', predictions.map(p => 
       `${p.className}: ${(p.probability * 100).toFixed(1)}%`
     ).join(', '));
     
     // Log video element state
-    console.log('📹 Video state:', {
+    if (import.meta.env.DEV) console.log('📹 Video state:', {
       width: videoElement.videoWidth,
       height: videoElement.videoHeight,
       readyState: videoElement.readyState,
@@ -106,12 +106,12 @@ export const analyzeFrame = async (videoElement) => {
     };
     
     if (!result.safe) {
-      console.warn('⚠️ UNSAFE CONTENT DETECTED:', result.highestRisk);
+      if (import.meta.env.DEV) console.warn('⚠️ UNSAFE CONTENT DETECTED:', result.highestRisk);
     }
     
     return result;
   } catch (error) {
-    console.error('❌ Frame analysis error:', error);
+    if (import.meta.env.DEV) console.error('❌ Frame analysis error:', error);
     return { safe: true, confidence: 0, error: error.message };
   }
 };
@@ -128,7 +128,7 @@ export const captureVideoFrame = (videoElement) => {
     
     return canvas.toDataURL('image/jpeg', 0.8);
   } catch (error) {
-    console.error('Frame capture error:', error);
+    if (import.meta.env.DEV) console.error('Frame capture error:', error);
     return null;
   }
 };

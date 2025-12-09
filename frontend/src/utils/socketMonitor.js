@@ -19,23 +19,23 @@ export class SocketMonitor {
     if (this.isMonitoring) return;
     this.isMonitoring = true;
     
-    console.log('🔍 Socket Monitor: Started');
+    if (import.meta.env.DEV) console.log('🔍 Socket Monitor: Started');
     
     // Monitor connection events
     this.socket.on('connect', () => {
-      console.log('✅ Socket Monitor: Connected');
+      if (import.meta.env.DEV) console.log('✅ Socket Monitor: Connected');
       this.reconnectAttempts = 0;
       this.reconnectDelay = 1000;
       
       // Re-register user on reconnect
       if (this.authUser?.id) {
-        console.log(`📝 Socket Monitor: Re-registering user ${this.authUser.id}`);
+        if (import.meta.env.DEV) console.log(`📝 Socket Monitor: Re-registering user ${this.authUser.id}`);
         this.socket.emit('register-user', this.authUser.id);
       }
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.warn(`⚠️ Socket Monitor: Disconnected (${reason})`);
+      if (import.meta.env.DEV) console.warn(`⚠️ Socket Monitor: Disconnected (${reason})`);
       
       // Auto-reconnect for certain disconnect reasons
       if (reason === 'io server disconnect') {
@@ -48,21 +48,21 @@ export class SocketMonitor {
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('❌ Socket Monitor: Connection error', error.message);
+      if (import.meta.env.DEV) console.error('❌ Socket Monitor: Connection error', error.message);
       this.attemptReconnect();
     });
 
     this.socket.on('reconnect_attempt', (attemptNumber) => {
-      console.log(`🔄 Socket Monitor: Reconnect attempt ${attemptNumber}`);
+      if (import.meta.env.DEV) console.log(`🔄 Socket Monitor: Reconnect attempt ${attemptNumber}`);
     });
 
     this.socket.on('reconnect', (attemptNumber) => {
-      console.log(`✅ Socket Monitor: Reconnected after ${attemptNumber} attempts`);
+      if (import.meta.env.DEV) console.log(`✅ Socket Monitor: Reconnected after ${attemptNumber} attempts`);
       this.reconnectAttempts = 0;
     });
 
     this.socket.on('reconnect_failed', () => {
-      console.error('❌ Socket Monitor: Reconnection failed');
+      if (import.meta.env.DEV) console.error('❌ Socket Monitor: Reconnection failed');
     });
 
     // Start ping monitoring
@@ -71,7 +71,7 @@ export class SocketMonitor {
 
   attemptReconnect() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('❌ Socket Monitor: Max reconnect attempts reached');
+      if (import.meta.env.DEV) console.error('❌ Socket Monitor: Max reconnect attempts reached');
       return;
     }
 
@@ -81,11 +81,11 @@ export class SocketMonitor {
       this.maxReconnectDelay
     );
 
-    console.log(`🔄 Socket Monitor: Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    if (import.meta.env.DEV) console.log(`🔄 Socket Monitor: Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
 
     setTimeout(() => {
       if (!this.socket.connected) {
-        console.log('🔌 Socket Monitor: Attempting manual reconnect');
+        if (import.meta.env.DEV) console.log('🔌 Socket Monitor: Attempting manual reconnect');
         this.socket.connect();
       }
     }, delay);
@@ -98,10 +98,10 @@ export class SocketMonitor {
         const start = Date.now();
         this.socket.emit('ping', {}, () => {
           const latency = Date.now() - start;
-          console.log(`🏓 Socket Monitor: Ping ${latency}ms`);
+          if (import.meta.env.DEV) console.log(`🏓 Socket Monitor: Ping ${latency}ms`);
         });
       } else {
-        console.warn('⚠️ Socket Monitor: Socket disconnected, attempting reconnect');
+        if (import.meta.env.DEV) console.warn('⚠️ Socket Monitor: Socket disconnected, attempting reconnect');
         this.attemptReconnect();
       }
     }, 30000); // Ping every 30 seconds
@@ -123,7 +123,7 @@ export class SocketMonitor {
     this.socket.off('reconnect');
     this.socket.off('reconnect_failed');
     
-    console.log('🛑 Socket Monitor: Stopped');
+    if (import.meta.env.DEV) console.log('🛑 Socket Monitor: Stopped');
   }
 
   getStatus() {

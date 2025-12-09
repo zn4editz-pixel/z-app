@@ -48,7 +48,7 @@ export const cacheFriends = async (userId, data) => {
       timestamp: Date.now()
     });
   } catch (error) {
-    console.error('Failed to cache friends:', error);
+    if (import.meta.env.DEV) console.error('Failed to cache friends:', error);
   }
 };
 
@@ -67,7 +67,7 @@ export const getCachedFriends = async (userId) => {
     }
     return null;
   } catch (error) {
-    console.error('Failed to get cached friends:', error);
+    if (import.meta.env.DEV) console.error('Failed to get cached friends:', error);
     return null;
   }
 };
@@ -83,7 +83,7 @@ export const cacheMessagesDB = async (chatId, messages) => {
       timestamp: Date.now()
     });
   } catch (error) {
-    console.error('Failed to cache messages:', error);
+    if (import.meta.env.DEV) console.error('Failed to cache messages:', error);
   }
 };
 
@@ -99,7 +99,7 @@ export const getCachedMessagesDB = async (chatId) => {
     }
     return null;
   } catch (error) {
-    console.error('Failed to get cached messages:', error);
+    if (import.meta.env.DEV) console.error('Failed to get cached messages:', error);
     return null;
   }
 };
@@ -115,7 +115,7 @@ export const cacheUser = async (userId, userData) => {
       timestamp: Date.now()
     });
   } catch (error) {
-    console.error('Failed to cache user:', error);
+    if (import.meta.env.DEV) console.error('Failed to cache user:', error);
   }
 };
 
@@ -131,7 +131,7 @@ export const getCachedUser = async (userId) => {
     }
     return null;
   } catch (error) {
-    console.error('Failed to get cached user:', error);
+    if (import.meta.env.DEV) console.error('Failed to get cached user:', error);
     return null;
   }
 };
@@ -147,9 +147,9 @@ export const clearCache = async () => {
       await tx.objectStore(store).clear();
     }
     
-    console.log('✅ Cache cleared');
+    if (import.meta.env.DEV) console.log('✅ Cache cleared');
   } catch (error) {
-    console.error('Failed to clear cache:', error);
+    if (import.meta.env.DEV) console.error('Failed to clear cache:', error);
   }
 };
 
@@ -176,7 +176,7 @@ export const cleanOldCache = async () => {
       };
     }
   } catch (error) {
-    console.error('Failed to clean old cache:', error);
+    if (import.meta.env.DEV) console.error('Failed to clean old cache:', error);
   }
 };
 

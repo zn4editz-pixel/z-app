@@ -34,7 +34,7 @@ export const useFriendStore = create((set, get) => ({
         const lastFetch = sessionStorage.getItem('friendDataLastFetch');
         const now = Date.now();
         if (lastFetch && (now - parseInt(lastFetch)) < 30000 && cached) {
-            console.log("⚡ Skipping friend data fetch - recently fetched (using cache)");
+            if (import.meta.env.DEV) console.log("⚡ Skipping friend data fetch - recently fetched (using cache)");
             return;
         }
         
@@ -91,7 +91,7 @@ export const useFriendStore = create((set, get) => ({
                 };
             });
         } catch (error) {
-            console.error("❌ Failed to fetch friend data:", error.response?.data || error.message);
+            if (import.meta.env.DEV) console.error("❌ Failed to fetch friend data:", error.response?.data || error.message);
             set({
                 friends: [],
                 pendingReceived: [],
@@ -153,14 +153,14 @@ export const useFriendStore = create((set, get) => ({
 
     acceptRequest: async (senderId) => {
         try {
-            console.log("🤝 Accepting friend request from:", senderId);
+            if (import.meta.env.DEV) console.log("🤝 Accepting friend request from:", senderId);
             
             // Optimistically update state before API call
             const acceptedUser = get().pendingReceived.find(r => r.id === senderId);
-            console.log("👤 Accepted user data:", acceptedUser);
+            if (import.meta.env.DEV) console.log("👤 Accepted user data:", acceptedUser);
             
             if (!acceptedUser) {
-                console.error("❌ User not found in pending requests");
+                if (import.meta.env.DEV) console.error("❌ User not found in pending requests");
                 toast.error("Request not found");
                 return false;
             }
@@ -169,19 +169,19 @@ export const useFriendStore = create((set, get) => ({
                 pendingReceived: state.pendingReceived.filter((r) => r.id !== senderId),
                 friends: [...state.friends, acceptedUser],
             }));
-            console.log("✅ Optimistic UI update complete");
+            if (import.meta.env.DEV) console.log("✅ Optimistic UI update complete");
 
             const response = await axiosInstance.post(`/friends/accept/${senderId}`);
-            console.log("✅ API response:", response.data);
+            if (import.meta.env.DEV) console.log("✅ API response:", response.data);
             toast.success("Friend request accepted!");
             
             // Clear fetch throttle to allow immediate refetch
             sessionStorage.removeItem('friendDataLastFetch');
             
             // Force refetch to ensure consistency
-            console.log("🔄 Refetching friend data...");
+            if (import.meta.env.DEV) console.log("🔄 Refetching friend data...");
             await get().fetchFriendData();
-            console.log("✅ Friend data refetched successfully");
+            if (import.meta.env.DEV) console.log("✅ Friend data refetched successfully");
             
             return true;
         } catch (error) {

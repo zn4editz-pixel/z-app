@@ -5,7 +5,7 @@ let lenis = null;
 
 export const initSmoothScroll = () => {
 	// Return null - native scrolling only
-	console.log('✅ Using native scrolling for better touch support');
+	if (import.meta.env.DEV) console.log('✅ Using native scrolling for better touch support');
 	return null;
 };
 

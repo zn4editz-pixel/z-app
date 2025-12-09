@@ -16,7 +16,7 @@ export const saveToCache = (key, data) => {
       timestamp: Date.now(),
     }));
   } catch (error) {
-    console.error('Failed to save to cache:', error);
+    if (import.meta.env.DEV) console.error('Failed to save to cache:', error);
   }
 };
 
@@ -37,7 +37,7 @@ export const getFromCache = (key) => {
     
     return data;
   } catch (error) {
-    console.error('Failed to get from cache:', error);
+    if (import.meta.env.DEV) console.error('Failed to get from cache:', error);
     return null;
   }
 };
