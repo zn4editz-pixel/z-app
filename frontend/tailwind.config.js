@@ -9,18 +9,8 @@ export default {
   plugins: [daisyui],
   daisyui: {
     themes: [
-      {
-        light: {
-          ...require("daisyui/src/theming/themes")["light"],
-          primary: "#FF9933", // Orange theme color
-          "primary-content": "#ffffff", // White text on orange
-        },
-        dark: {
-          ...require("daisyui/src/theming/themes")["dark"],
-          primary: "#FF9933", // Orange theme color
-          "primary-content": "#ffffff", // White text on orange
-        },
-      },
+      "light",
+      "dark",
       "cupcake",
       "bumblebee",
       "emerald",

@@ -414,7 +414,7 @@ const AdminDashboard = () => {
 			<div className="max-w-7xl mx-auto">
 				{/* Header */}
 				<div className="mb-6 sm:mb-8">
-					<h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+					<h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2 bg-gradient-to-r from-base-content via-warning to-base-content bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]">
 						Admin Panel
 					</h1>
 					<p className="text-sm sm:text-base text-base-content/70">
@@ -433,7 +433,7 @@ const AdminDashboard = () => {
 									onClick={() => setActiveTab(tab.id)}
 									className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium ${
 										activeTab === tab.id
-											? "bg-gradient-to-r from-primary/90 to-secondary/90 text-primary-content shadow-lg scale-105"
+											? "bg-gradient-to-r from-warning/20 via-base-content/10 to-warning/20 text-base-content shadow-lg scale-105 border border-warning/30"
 											: "hover:bg-base-200 text-base-content/70 hover:text-base-content hover:scale-102"
 									}`}
 								>

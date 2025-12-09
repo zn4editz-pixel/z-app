@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css"; // Critical CSS only
 import "./styles/accessibility-fixes.css"; // Accessibility improvements - critical for WCAG compliance
-import "./styles/theme-override.css"; // Theme color overrides - orange instead of blue
+import "./styles/navbar-hover.css"; // Navbar white hover/active states
 import App from "./App.jsx";
 import { BrowserRouter } from "react-router-dom";
 

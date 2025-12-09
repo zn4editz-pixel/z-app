@@ -1,0 +1,53 @@
+/* Navbar button hover and active states - white/bright for all themes */
+
+/* Animated gradient for admin panel title */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  animation: gradient 3s ease infinite;
+}
+
+/* Hover state - white/bright */
+.btn-ghost:hover,
+.btn-circle:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Active/clicked state - brighter white */
+.btn-ghost:active,
+.btn-circle:active,
+.btn-ghost.active,
+.btn-circle.active {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+/* Focus state */
+.btn-ghost:focus-visible,
+.btn-circle:focus-visible {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  outline: 2px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Icons inside buttons also become white */
+.btn-ghost:hover svg,
+.btn-circle:hover svg,
+.btn-ghost:active svg,
+.btn-circle:active svg,
+.btn-ghost.active svg,
+.btn-circle.active svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
