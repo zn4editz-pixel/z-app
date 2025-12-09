@@ -20,6 +20,7 @@ import messageRoutes from "./routes/message.route.js";
 import adminRoutes from "./routes/admin.route.js";
 import userRoutes from "./routes/user.route.js";
 import friendRoutes from "./routes/friend.route.js";
+import healthRoutes from "./routes/health.route.js";
 
 import prisma from "./lib/prisma.js";
 
@@ -113,6 +114,7 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/friends", friendRoutes);
+app.use("/api/health", healthRoutes);
 
 // --- *** THIS SECTION IS NOW FIXED *** ---
 

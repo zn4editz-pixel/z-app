@@ -4,7 +4,7 @@ import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "../store/useAuthStore";
 import { 
 	Users, UserCheck, AlertTriangle, Shield, TrendingUp,
-	BadgeCheck, FileText
+	BadgeCheck, FileText, Activity
 } from "lucide-react";
 import "../styles/admin-custom.css";
 
@@ -15,6 +15,7 @@ import AIModerationPanel from "../components/admin/AIModerationPanel";
 import ReportsManagement from "../components/admin/ReportsManagement";
 import VerificationRequests from "../components/admin/VerificationRequests";
 import NotificationsPanel from "../components/admin/NotificationsPanel";
+import ServerHealthPanel from "../components/admin/ServerHealthPanel";
 
 const AdminDashboard = () => {
 	const { socket } = useAuthStore();
@@ -45,6 +46,7 @@ const AdminDashboard = () => {
 		{ id: "reports", label: "Reports", icon: AlertTriangle },
 		{ id: "verifications", label: "Verifications", icon: BadgeCheck },
 		{ id: "notifications", label: "Notifications", icon: FileText },
+		{ id: "server-health", label: "Server Health", icon: Activity },
 	];
 
 	// Fetch Data
@@ -466,6 +468,8 @@ const AdminDashboard = () => {
 				);
 			case "notifications":
 				return <NotificationsPanel onSendNotification={handleSendNotification} />;
+			case "server-health":
+				return <ServerHealthPanel />;
 			default:
 				return <DashboardOverview stats={stats} loadingStats={loadingStats} users={users} />;
 		}
