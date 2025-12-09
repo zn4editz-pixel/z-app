@@ -1,0 +1,175 @@
+/* ===== ACCESSIBILITY FIXES FOR LIGHTHOUSE 100% ===== */
+
+/* Improve text contrast ratios for WCAG AA compliance */
+
+/* Base text - ensure minimum 4.5:1 contrast ratio */
+body {
+  color: oklch(0.95 0 0); /* Near white for dark mode */
+}
+
+/* Muted text - improve from 60% to 70% opacity for better contrast */
+.text-base-content\/60,
+[class*="text-base-content/60"] {
+  opacity: 0.75 !important; /* Improved from 0.6 to 0.75 for better contrast */
+}
+
+.text-base-content\/70,
+[class*="text-base-content/70"] {
+  opacity: 0.8 !important; /* Improved from 0.7 to 0.8 */
+}
+
+.text-base-content\/40,
+[class*="text-base-content/40"] {
+  opacity: 0.65 !important; /* Improved from 0.4 to 0.65 for minimum readability */
+}
+
+/* Button text - ensure high contrast */
+.btn {
+  font-weight: 500; /* Slightly bolder for better readability */
+}
+
+/* Link text - ensure sufficient contrast */
+a {
+  color: oklch(0.7 0.15 250); /* Brighter blue for better contrast */
+}
+
+a:hover {
+  color: oklch(0.8 0.15 250); /* Even brighter on hover */
+}
+
+/* Placeholder text - improve contrast */
+::placeholder {
+  opacity: 0.65 !important; /* Improved from typical 0.5 */
+  color: currentColor;
+}
+
+/* Input text - ensure high contrast */
+input,
+textarea,
+select {
+  color: oklch(0.95 0 0); /* Near white for dark backgrounds */
+}
+
+/* Disabled state - maintain minimum contrast */
+:disabled,
+[disabled] {
+  opacity: 0.6 !important; /* Improved from typical 0.5 */
+}
+
+/* Badge text - ensure readability */
+.badge {
+  font-weight: 600; /* Bolder for small text */
+}
+
+/* Small text - increase weight for readability */
+.text-xs,
+.text-sm {
+  font-weight: 500; /* Slightly bolder for small sizes */
+}
+
+/* Focus indicators - high contrast for accessibility */
+*:focus-visible {
+  outline: 2px solid oklch(0.7 0.15 250);
+  outline-offset: 2px;
+}
+
+/* Ensure all interactive elements have visible focus */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid oklch(0.7 0.15 250);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  body {
+    color: #ffffff;
+  }
+  
+  .text-base-content\/60,
+  .text-base-content\/70,
+  .text-base-content\/40 {
+    opacity: 1 !important;
+    color: #ffffff !important;
+  }
+}
+
+/* Ensure minimum touch target size (44x44px) */
+button,
+a,
+input[type="checkbox"],
+input[type="radio"] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Exception for inline text links */
+a:not(.btn):not([class*="btn-"]) {
+  min-width: auto;
+  min-height: auto;
+}
+
+/* Improve contrast for status indicators */
+.bg-success {
+  background-color: oklch(0.65 0.15 145) !important; /* Brighter green */
+}
+
+.bg-error {
+  background-color: oklch(0.6 0.2 25) !important; /* Brighter red */
+}
+
+.bg-warning {
+  background-color: oklch(0.7 0.15 75) !important; /* Brighter yellow */
+}
+
+.text-success {
+  color: oklch(0.7 0.15 145) !important; /* Brighter green text */
+}
+
+.text-error {
+  color: oklch(0.65 0.2 25) !important; /* Brighter red text */
+}
+
+.text-warning {
+  color: oklch(0.75 0.15 75) !important; /* Brighter yellow text */
+}
+
+/* Ensure primary color has good contrast */
+.text-primary {
+  color: oklch(0.7 0.15 250) !important; /* Brighter blue */
+}
+
+.bg-primary {
+  background-color: oklch(0.55 0.2 250) !important; /* Darker blue for white text */
+}
+
+/* Improve contrast for secondary elements */
+.text-secondary {
+  color: oklch(0.75 0.1 300) !important;
+}
+
+/* Ensure sufficient contrast for all text on colored backgrounds */
+.bg-base-200,
+.bg-base-300 {
+  color: oklch(0.95 0 0);
+}
+
+/* Skip to main content link for screen readers */
+.skip-to-main {
+  position: absolute;
+  left: -9999px;
+  z-index: 999;
+  padding: 1em;
+  background-color: oklch(0.2 0 0);
+  color: oklch(0.95 0 0);
+  text-decoration: none;
+}
+
+.skip-to-main:focus {
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+}
