@@ -15,7 +15,7 @@ import AIModerationPanel from "../components/admin/AIModerationPanel";
 import ReportsManagement from "../components/admin/ReportsManagement";
 import VerificationRequests from "../components/admin/VerificationRequests";
 import NotificationsPanel from "../components/admin/NotificationsPanel";
-// import ServerHealthPanel from "../components/admin/ServerHealthPanel"; // Temporarily disabled due to cache issue
+import ServerHealthPanel from "../components/admin/ServerHealthPanel";
 
 const AdminDashboard = () => {
 	const { socket } = useAuthStore();
