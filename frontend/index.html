@@ -58,38 +58,9 @@
     <meta name="twitter:image" content="https://z-app-beta-z.onrender.com/z-app-logo.png" />
     <meta name="twitter:creator" content="@ZApp" />
     
-    <!-- Structured Data (JSON-LD) for Better SEO -->
+    <!-- ✅ SEO: Structured Data (JSON-LD) - Non-blocking -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Z-APP",
-      "alternateName": "Z-APP Chat",
-      "url": "https://z-app-beta-z.onrender.com",
-      "description": "Modern real-time chat application with HD video calls, voice messaging, instant messaging, and stranger chat. Connect with friends securely and discover new people.",
-      "applicationCategory": "CommunicationApplication",
-      "operatingSystem": "Web, iOS, Android",
-      "browserRequirements": "Requires JavaScript. Requires HTML5.",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "featureList": [
-        "Real-time messaging",
-        "HD video calls",
-        "Voice calls",
-        "Stranger chat",
-        "Friend system",
-        "Message reactions",
-        "Image sharing",
-        "Voice messages",
-        "AI content moderation"
-      ],
-      "screenshot": "https://z-app-beta-z.onrender.com/z-app-logo.png",
-      "image": "https://z-app-beta-z.onrender.com/z-app-logo.png",
-      "logo": "https://z-app-beta-z.onrender.com/z-app-logo.png"
-    }
+    {"@context":"https://schema.org","@type":"WebApplication","name":"Z-APP","alternateName":"Z-APP Chat","url":"https://z-app-beta-z.onrender.com","description":"Modern real-time chat application with HD video calls, voice messaging, instant messaging, and stranger chat. Connect with friends securely and discover new people.","applicationCategory":"CommunicationApplication","operatingSystem":"Web, iOS, Android","browserRequirements":"Requires JavaScript. Requires HTML5.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["Real-time messaging","HD video calls","Voice calls","Stranger chat","Friend system","Message reactions","Image sharing","Voice messages","AI content moderation"],"screenshot":"https://z-app-beta-z.onrender.com/z-app-logo.png","image":"https://z-app-beta-z.onrender.com/z-app-logo.png","logo":"https://z-app-beta-z.onrender.com/z-app-logo.png"}
     </script>
     
     <!-- ✅ PERFORMANCE: Preconnect for faster external resources -->
@@ -183,11 +154,10 @@
     </style>
   </head>
   <body>
-    <!-- Apply theme before page loads -->
+    <!-- ✅ PERFORMANCE: Apply theme before page loads (inline, minimal) -->
     <script>
-      // Apply saved theme immediately to prevent flash
-      const savedTheme = localStorage.getItem('chat-theme') || 'light';
-      document.documentElement.setAttribute('data-theme', savedTheme);
+      // Minimal inline script - apply theme immediately
+      try{const t=localStorage.getItem('chat-theme')||'light';document.documentElement.setAttribute('data-theme',t)}catch(e){}
     </script>
     
     <!-- Loading Screen -->
@@ -201,16 +171,10 @@
     <!-- ✅ PERFORMANCE: Main Script with async loading -->
     <script type="module" src="/src/main.jsx" defer></script>
     
-    <!-- Remove loading screen when app loads -->
+    <!-- ✅ PERFORMANCE: Remove loading screen (minimal inline script) -->
     <script>
-      window.addEventListener('load', () => {
-        const loader = document.getElementById('loading-screen');
-        document.body.classList.add('loaded');
-        setTimeout(() => {
-          loader.classList.add('loaded');
-          setTimeout(() => loader.remove(), 300);
-        }, 100);
-      });
+      // Minimal inline script - remove loader when ready
+      window.addEventListener('load',()=>{const l=document.getElementById('loading-screen');document.body.classList.add('loaded');setTimeout(()=>{l.classList.add('loaded');setTimeout(()=>l.remove(),300)},100)});
     </script>
   </body>
 </html>
