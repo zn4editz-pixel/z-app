@@ -1,0 +1,208 @@
+/* ===== COMPLETE BLUE TO ORANGE/WHITE THEME OVERRIDE ===== */
+
+/* Primary color overrides - MUST BE FIRST */
+:root {
+  --primary: #FF9933 !important;
+  --primary-focus: #ff8800 !important;
+  --primary-content: #ffffff !important;
+  --p: 0.65 0.15 35 !important; /* Orange in oklch format */
+  --pf: 0.6 0.15 35 !important; /* Darker orange for focus */
+  --pc: 1 0 0 !important; /* White content */
+}
+
+[data-theme="light"] {
+  --primary: #FF9933 !important;
+  --primary-focus: #ff8800 !important;
+  --primary-content: #ffffff !important;
+  --p: 0.65 0.15 35 !important;
+  --pf: 0.6 0.15 35 !important;
+  --pc: 1 0 0 !important;
+}
+
+[data-theme="dark"] {
+  --primary: #FF9933 !important;
+  --primary-focus: #ff8800 !important;
+  --primary-content: #ffffff !important;
+  --p: 0.65 0.15 35 !important;
+  --pf: 0.6 0.15 35 !important;
+  --pc: 1 0 0 !important;
+}
+
+/* Override ALL blue colors to white/orange */
+.text-blue-500,
+.text-blue-600,
+.text-blue-400,
+.text-blue-700,
+[class*="text-blue"],
+.text-primary {
+  color: #FF9933 !important;
+}
+
+.bg-blue-500,
+.bg-blue-600,
+.bg-blue-400,
+[class*="bg-blue"] {
+  background-color: #FF9933 !important;
+}
+
+/* Border colors */
+.border-blue-500,
+.border-blue-600,
+[class*="border-blue"],
+.border-primary {
+  border-color: #FF9933 !important;
+}
+
+/* DaisyUI button states */
+.btn-ghost:focus,
+.btn-ghost:active,
+.btn-ghost.active {
+  background-color: rgba(255, 153, 51, 0.1) !important;
+}
+
+.btn-circle:focus,
+.btn-circle:active {
+  background-color: rgba(255, 153, 51, 0.15) !important;
+}
+
+.btn-ghost:hover {
+  background-color: rgba(255, 153, 51, 0.1) !important;
+}
+
+/* Focus rings - orange instead of blue */
+*:focus-visible {
+  outline-color: #FF9933 !important;
+  outline-width: 2px !important;
+}
+
+/* Active/selected navigation states */
+[aria-current="page"],
+.active,
+[class*="active"] {
+  color: #FF9933 !important;
+}
+
+/* Tab underlines and borders */
+.border-b-2,
+.border-b-4 {
+  border-color: #FF9933 !important;
+}
+
+/* Link colors */
+a:not(.btn) {
+  color: #FF9933 !important;
+}
+
+a:not(.btn):hover {
+  color: #ff8800 !important;
+}
+
+/* SVG/Icon colors */
+svg[class*="text-blue"],
+svg.text-primary {
+  color: #FF9933 !important;
+}
+
+/* Checkbox and radio buttons */
+.checkbox:checked,
+.radio:checked {
+  background-color: #FF9933 !important;
+  border-color: #FF9933 !important;
+}
+
+/* Progress bars */
+.progress::-webkit-progress-value {
+  background-color: #FF9933 !important;
+}
+
+.progress::-moz-progress-bar {
+  background-color: #FF9933 !important;
+}
+
+/* Range sliders */
+input[type="range"]::-webkit-slider-thumb {
+  background-color: #FF9933 !important;
+}
+
+input[type="range"]::-moz-range-thumb {
+  background-color: #FF9933 !important;
+}
+
+/* Badges */
+.badge-primary {
+  background-color: #FF9933 !important;
+  color: #ffffff !important;
+}
+
+/* Alerts */
+.alert-info {
+  background-color: rgba(255, 153, 51, 0.1) !important;
+  border-color: #FF9933 !important;
+  color: #FF9933 !important;
+}
+
+/* Loading spinners */
+.loading {
+  border-color: #FF9933 !important;
+}
+
+/* Tabs */
+.tab-active,
+.tab:hover {
+  color: #FF9933 !important;
+  border-color: #FF9933 !important;
+}
+
+/* Cards and containers with primary background */
+.bg-primary {
+  background-color: #FF9933 !important;
+}
+
+.bg-primary\/10 {
+  background-color: rgba(255, 153, 51, 0.1) !important;
+}
+
+.bg-primary\/20 {
+  background-color: rgba(255, 153, 51, 0.2) !important;
+}
+
+/* Text on primary background */
+.text-primary-content {
+  color: #ffffff !important;
+}
+
+/* Hover states */
+.hover\:text-primary:hover {
+  color: #FF9933 !important;
+}
+
+.hover\:bg-primary:hover {
+  background-color: #FF9933 !important;
+}
+
+/* Ring colors (focus indicators) */
+.ring-primary {
+  --tw-ring-color: #FF9933 !important;
+}
+
+/* Gradient backgrounds */
+.from-primary {
+  --tw-gradient-from: #FF9933 !important;
+}
+
+.to-primary {
+  --tw-gradient-to: #FF9933 !important;
+}
+
+/* Sidebar check marks and icons */
+.text-primary svg,
+svg.text-primary {
+  color: #FF9933 !important;
+  fill: #FF9933 !important;
+}
+
+/* Override Lucide icons specifically */
+[class*="lucide"].text-primary {
+  color: #FF9933 !important;
+  stroke: #FF9933 !important;
+}
