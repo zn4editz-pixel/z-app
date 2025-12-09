@@ -66,29 +66,40 @@ const ChatContainer = ({ onStartCall }) => {
     
     // INSTANT scroll to bottom - NO ANIMATION
     if (messages.length > 0) {
-      // ✅ NEW: If user is scrolled up and new message arrives, show indicator
-      if (!isInitialLoad.current && !isScrolledToBottom && messages.length > previousMessagesLength.current) {
-        const newCount = messages.length - previousMessagesLength.current;
-        setNewMessageCount(prev => prev + newCount);
-        setShowNewMessageButton(true);
-      } else {
-        // Auto-scroll if at bottom or initial load
+      // ✅ FIXED: Only show button for RECEIVED messages (not sender's own)
+      if (!isInitialLoad.current && messages.length > previousMessagesLength.current) {
+        // Check if new messages are from the OTHER person (not me)
+        const newMessages = messages.slice(previousMessagesLength.current);
+        const receivedMessages = newMessages.filter(msg => msg.senderId !== authUser?.id);
+        
+        // Only show button if: scrolled up AND received messages from other person
+        if (!isScrolledToBottom && receivedMessages.length > 0) {
+          setNewMessageCount(prev => prev + receivedMessages.length);
+          setShowNewMessageButton(true);
+        } else {
+          // Auto-scroll if: at bottom OR sender sent message (always scroll for own messages)
+          requestAnimationFrame(() => {
+            if (scrollContainerRef.current) {
+              scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+            }
+          });
+          setShowNewMessageButton(false);
+          setNewMessageCount(0);
+        }
+      } else if (isInitialLoad.current) {
+        // Initial load: always scroll to bottom
         requestAnimationFrame(() => {
           if (scrollContainerRef.current) {
             scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
           }
         });
-        setShowNewMessageButton(false);
-        setNewMessageCount(0);
-      }
-      
-      if (isInitialLoad.current) {
         console.log(`📜 Initial load: Jumped to bottom (${messages.length} messages)`);
         isInitialLoad.current = false;
       }
+      
       previousMessagesLength.current = messages.length;
     }
-  }, [messages.length, isTyping]);
+  }, [messages.length, isTyping, authUser?.id]);
   
   // ✅ NEW: Handle scroll to bottom button click
   const scrollToBottom = () => {

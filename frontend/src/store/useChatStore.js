@@ -2,7 +2,6 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios"; // Keep axiosInstance for getMessages/sendMessage
 import { useAuthStore } from "./useAuthStore"; // Auth store needed for socket & user info
-import { cacheMessages, getCachedMessages, updateLastSync } from "../utils/offlineStorage";
 import { cacheMessagesDB, getCachedMessagesDB } from "../utils/cache";
 import { useFriendStore } from "./useFriendStore"; // Import friend store for real-time updates
 
@@ -231,17 +230,23 @@ export const useChatStore = create((set, get) => ({
                 
                 // ✅ INSTANT: Check if this is replacing an optimistic message (my own message)
                 if (msgSenderId === authUserId) {
-                    // Find the most recent optimistic message
-                    const optimisticIndex = messages.findIndex(m => m.tempId && m.status === 'sending');
+                    // Find matching optimistic message by tempId or recent sending status
+                    const optimisticIndex = messages.findIndex(m => 
+                        (m.tempId && m.status === 'sending') || 
+                        (m.status === 'sending' && m.senderId === authUserId)
+                    );
                     
                     if (optimisticIndex !== -1) {
                         // Replace optimistic message with real one INSTANTLY
                         console.log(`✅ Replacing optimistic message with real one`);
-                        set(state => ({
-                            messages: state.messages.map((m, idx) => 
-                                idx === optimisticIndex ? { ...newMessage, status: 'sent' } : m
-                            )
-                        }));
+                        const updatedMessages = messages.map((m, idx) => 
+                            idx === optimisticIndex ? { ...newMessage, status: 'sent' } : m
+                        );
+                        set({ messages: updatedMessages });
+                        
+                        // ✅ Update cache with replaced message
+                        const chatId = `${selectedUserId}`;
+                        cacheMessagesDB(chatId, updatedMessages);
                         return; // Exit early - message replaced
                     }
                 }
