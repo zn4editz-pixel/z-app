@@ -72,8 +72,8 @@
     <link rel="dns-prefetch" href="https://z-app-beta-z.onrender.com" />
     <link rel="dns-prefetch" href="https://res.cloudinary.com" />
     
-    <!-- ✅ PERFORMANCE: Preload critical resources -->
-    <link rel="preload" href="/z-app-logo.png" as="image" fetchpriority="high" />
+    <!-- ✅ PERFORMANCE: Preload critical resources only if used immediately -->
+    <!-- Removed preload for logo as it's not used in initial render -->
     
     <!-- ✅ PERFORMANCE: Preload main script for faster execution -->
     <link rel="modulepreload" href="/src/main.jsx" />
