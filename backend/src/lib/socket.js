@@ -518,17 +518,33 @@ io.on("connection", (socket) => {
                 });
                 throw new Error("This user has already sent you a friend request.");
 			} else {
-                // 3. Create new friend request and update User arrays
-                const newRequest = new FriendRequest({
-                    sender: senderId,
-                    receiver: receiverId,
+                // 3. Create new friend request using Prisma
+                const newRequest = await prisma.friendRequest.create({
+                    data: {
+                        senderId: senderId,
+                        receiverId: receiverId,
+                    }
                 });
-                await newRequest.save();
 
                 // Update User model arrays so acceptFriendRequest can find the request
-                sender.friendRequestsSent.push(receiverId);
-                receiver.friendRequestsReceived.push(senderId);
-                await Promise.all([sender.save(), receiver.save()]);
+                await Promise.all([
+                    prisma.user.update({
+                        where: { id: senderId },
+                        data: {
+                            friendRequestsSent: {
+                                push: receiverId
+                            }
+                        }
+                    }),
+                    prisma.user.update({
+                        where: { id: receiverId },
+                        data: {
+                            friendRequestsReceived: {
+                                push: senderId
+                            }
+                        }
+                    })
+                ]);
 
                 // 4. Emit success events
                 console.log(`👥 Friend request from ${senderId} to ${receiverId} created`);
