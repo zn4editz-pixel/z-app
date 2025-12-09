@@ -496,34 +496,59 @@ export const forgotPassword = async (req, res) => {
 		// Generate 6-digit OTP
 		const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-		// Save OTP to user (expires in 60 seconds)
+		// Save OTP to user (expires in 10 minutes)
 		await prisma.user.update({
 			where: { id: user.id },
 			data: {
 				resetPasswordToken: otp,
-				resetPasswordExpire: new Date(Date.now() + 60 * 1000) // 60 seconds
+				resetPasswordExpire: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
 			}
 		});
 
 		// Send OTP via email
 		const message = `
-      <h1>Password Reset OTP</h1>
-      <p>Your OTP for password reset is:</p>
-      <h2 style="color: #6366f1; font-size: 32px; letter-spacing: 5px;">${otp}</h2>
-      <p><strong>This OTP will expire in 60 seconds.</strong></p>
-      <p>If you didn't request this, please ignore this email.</p>
-    `;
+			<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+				<div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+					<h1 style="color: #6366f1; margin-bottom: 20px;">🔐 Password Reset OTP</h1>
+					<p style="font-size: 16px; color: #333; line-height: 1.6;">
+						Hi <strong>${user.fullName || user.username}</strong>,
+					</p>
+					<p style="font-size: 16px; color: #333; line-height: 1.6;">
+						You requested to reset your password. Your verification OTP is:
+					</p>
+					<div style="margin: 30px 0; padding: 20px; background-color: #f0f9ff; border-left: 4px solid #6366f1; border-radius: 5px; text-align: center;">
+						<p style="margin: 0 0 10px 0; color: #1e40af; font-size: 14px; font-weight: bold;">
+							YOUR OTP CODE
+						</p>
+						<p style="margin: 0; color: #6366f1; font-size: 36px; font-weight: bold; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+							${otp}
+						</p>
+					</div>
+					<p style="font-size: 16px; color: #333; line-height: 1.6;">
+						<strong style="color: #ef4444;">This OTP will expire in 10 minutes.</strong>
+					</p>
+					<p style="font-size: 14px; color: #666; margin-top: 30px;">
+						If you didn't request this password reset, please ignore this email and secure your account.
+					</p>
+					<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+					<p style="font-size: 12px; color: #9ca3af; text-align: center;">
+						This is an automated email from Z-APP. Please do not reply.
+					</p>
+				</div>
+			</div>
+		`;
 
 		try {
 			console.log(`📧 Sending OTP to ${user.email} for username: ${username}`);
-			await sendEmail(user.email, "Password Reset OTP", message);
+			await sendEmail(user.email, "Password Reset OTP - Z-APP", message);
 			console.log(`✅ OTP sent successfully to ${user.email}`);
 			
 			// Return masked email for security
 			const maskedEmail = user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
 			res.status(200).json({ 
 				message: "OTP sent to your email",
-				email: maskedEmail 
+				email: maskedEmail,
+				expiresIn: 600 // 10 minutes in seconds
 			});
 		} catch (emailError) {
 			console.error("❌ Email send error:", emailError);
@@ -534,7 +559,24 @@ export const forgotPassword = async (req, res) => {
 					resetPasswordExpire: null
 				}
 			});
-			res.status(500).json({ message: "Email could not be sent. Please check your email configuration." });
+			
+			// Check if it's an email configuration error
+			if (emailError.message.includes("Email service not configured")) {
+				res.status(500).json({ 
+					message: "Email service is not configured. Please contact support.",
+					error: "EMAIL_NOT_CONFIGURED"
+				});
+			} else if (emailError.message.includes("Authentication failed")) {
+				res.status(500).json({ 
+					message: "Email authentication failed. Please contact support.",
+					error: "EMAIL_AUTH_FAILED"
+				});
+			} else {
+				res.status(500).json({ 
+					message: "Failed to send OTP email. Please try again later.",
+					error: "EMAIL_SEND_FAILED"
+				});
+			}
 		}
 	} catch (error) {
 		console.error("Forgot password error:", error);
@@ -633,33 +675,58 @@ export const sendPasswordChangeOTP = async (req, res) => {
 		// Generate 6-digit OTP
 		const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-		// Save OTP to user (expires in 5 minutes)
+		// Save OTP to user (expires in 10 minutes)
 		await prisma.user.update({
 			where: { id: userId },
 			data: {
 				passwordChangeOTP: otp,
-				passwordChangeOTPExpires: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+				passwordChangeOTPExpires: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
 			}
 		});
 
 		// Send OTP via email
 		const message = `
-      <h1>Password Change Verification</h1>
-      <p>You requested to change your password. Your verification OTP is:</p>
-      <h2 style="color: #6366f1; font-size: 32px; letter-spacing: 5px;">${otp}</h2>
-      <p><strong>This OTP will expire in 5 minutes.</strong></p>
-      <p>If you didn't request this, please ignore this email and secure your account.</p>
-    `;
+			<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+				<div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+					<h1 style="color: #6366f1; margin-bottom: 20px;">🔐 Password Change Verification</h1>
+					<p style="font-size: 16px; color: #333; line-height: 1.6;">
+						Hi <strong>${user.fullName || user.username}</strong>,
+					</p>
+					<p style="font-size: 16px; color: #333; line-height: 1.6;">
+						You requested to change your password. Your verification OTP is:
+					</p>
+					<div style="margin: 30px 0; padding: 20px; background-color: #f0f9ff; border-left: 4px solid #6366f1; border-radius: 5px; text-align: center;">
+						<p style="margin: 0 0 10px 0; color: #1e40af; font-size: 14px; font-weight: bold;">
+							YOUR OTP CODE
+						</p>
+						<p style="margin: 0; color: #6366f1; font-size: 36px; font-weight: bold; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+							${otp}
+						</p>
+					</div>
+					<p style="font-size: 16px; color: #333; line-height: 1.6;">
+						<strong style="color: #ef4444;">This OTP will expire in 10 minutes.</strong>
+					</p>
+					<p style="font-size: 14px; color: #666; margin-top: 30px;">
+						If you didn't request this password change, please ignore this email and secure your account immediately.
+					</p>
+					<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+					<p style="font-size: 12px; color: #9ca3af; text-align: center;">
+						This is an automated email from Z-APP. Please do not reply.
+					</p>
+				</div>
+			</div>
+		`;
 
 		try {
 			console.log(`📧 Sending password change OTP to ${user.email}`);
-			await sendEmail(user.email, "Password Change Verification", message);
+			await sendEmail(user.email, "Password Change Verification - Z-APP", message);
 			console.log(`✅ OTP sent successfully to ${user.email}`);
 
 			const maskedEmail = user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
 			res.status(200).json({ 
 				message: "OTP sent to your email",
-				email: maskedEmail 
+				email: maskedEmail,
+				expiresIn: 600 // 10 minutes in seconds
 			});
 		} catch (emailError) {
 			console.error("Email sending error:", emailError);
@@ -670,7 +737,24 @@ export const sendPasswordChangeOTP = async (req, res) => {
 					passwordChangeOTPExpires: null
 				}
 			});
-			return res.status(500).json({ message: "Failed to send OTP email" });
+			
+			// Check if it's an email configuration error
+			if (emailError.message.includes("Email service not configured")) {
+				return res.status(500).json({ 
+					message: "Email service is not configured. Please contact support.",
+					error: "EMAIL_NOT_CONFIGURED"
+				});
+			} else if (emailError.message.includes("Authentication failed")) {
+				return res.status(500).json({ 
+					message: "Email authentication failed. Please contact support.",
+					error: "EMAIL_AUTH_FAILED"
+				});
+			} else {
+				return res.status(500).json({ 
+					message: "Failed to send OTP email. Please try again later.",
+					error: "EMAIL_SEND_FAILED"
+				});
+			}
 		}
 	} catch (error) {
 		console.error("Send password change OTP error:", error);

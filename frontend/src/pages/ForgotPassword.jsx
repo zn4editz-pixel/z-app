@@ -32,7 +32,7 @@ const ForgotPassword = () => {
 			const res = await axiosInstance.post("/auth/forgot-password", { username });
 			toast.success(res.data.message);
 			setMaskedEmail(res.data.email);
-			setCountdown(60); // Start 60 second countdown
+			setCountdown(res.data.expiresIn || 600); // Start countdown (default 10 minutes)
 			setStep(2);
 		} catch (error) {
 			toast.error(error.response?.data?.message || "Failed to send OTP");
@@ -95,10 +95,19 @@ const ForgotPassword = () => {
 			const res = await axiosInstance.post("/auth/forgot-password", { username });
 			toast.success("New OTP sent!");
 			setMaskedEmail(res.data.email);
-			setCountdown(60); // Reset countdown
+			setCountdown(res.data.expiresIn || 600); // Reset countdown (default 10 minutes)
 			setOtp(""); // Clear old OTP
 		} catch (error) {
-			toast.error(error.response?.data?.message || "Failed to send OTP");
+			const errorMsg = error.response?.data?.message || "Failed to send OTP";
+			const errorCode = error.response?.data?.error;
+			
+			if (errorCode === "EMAIL_NOT_CONFIGURED") {
+				toast.error("Email service is not set up. Please contact support.");
+			} else if (errorCode === "EMAIL_AUTH_FAILED") {
+				toast.error("Email authentication error. Please contact support.");
+			} else {
+				toast.error(errorMsg);
+			}
 		} finally {
 			setIsLoading(false);
 		}
