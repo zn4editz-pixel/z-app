@@ -91,11 +91,6 @@
         max-width: 100vw;
       }
       
-      /* Prevent scrolling ONLY during initial load */
-      body:not(.loaded) {
-        overflow: hidden;
-      }
-      
       /* Root container should fill viewport */
       #root {
         min-height: 100svh;
@@ -120,37 +115,6 @@
           font-size: 14px;
         }
       }
-      
-      /* Loading Screen */
-      #loading-screen {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: #1a1a1a;
-        z-index: 9999;
-        transition: opacity 0.3s ease-out;
-      }
-      
-      #loading-screen.loaded {
-        opacity: 0;
-        pointer-events: none;
-      }
-      
-      .spinner {
-        width: 50px;
-        height: 50px;
-        border: 3px solid rgba(255, 153, 51, 0.2);
-        border-top-color: #FF9933;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-      }
-      
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
     </style>
   </head>
   <body>
@@ -160,21 +124,10 @@
       try{const t=localStorage.getItem('chat-theme')||'light';document.documentElement.setAttribute('data-theme',t)}catch(e){}
     </script>
     
-    <!-- Loading Screen -->
-    <div id="loading-screen">
-      <div class="spinner"></div>
-    </div>
-    
     <!-- App Root -->
     <div id="root"></div>
     
     <!-- ✅ PERFORMANCE: Main Script with async loading -->
     <script type="module" src="/src/main.jsx" defer></script>
-    
-    <!-- ✅ PERFORMANCE: Remove loading screen (minimal inline script) -->
-    <script>
-      // Minimal inline script - remove loader when ready
-      window.addEventListener('load',()=>{const l=document.getElementById('loading-screen');document.body.classList.add('loaded');setTimeout(()=>{l.classList.add('loaded');setTimeout(()=>l.remove(),300)},100)});
-    </script>
   </body>
 </html>
