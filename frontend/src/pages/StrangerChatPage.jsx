@@ -100,8 +100,6 @@ const StrangerChatPage = () => {
 	const [reportScreenshot, setReportScreenshot] = useState(null);
 	const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 	const [aiModerationActive, setAiModerationActive] = useState(false);
-	const [isChatOpen, setIsChatOpen] = useState(false);
-	const [unreadCount, setUnreadCount] = useState(0);
 	
 	// New state for enhanced features
 	const [connectionQuality, setConnectionQuality] = useState("good");
@@ -110,9 +108,6 @@ const StrangerChatPage = () => {
 	const [chatTime, setChatTime] = useState(0);
 	const [onlineCount, setOnlineCount] = useState(0);
 	const [showPartnerInfo, setShowPartnerInfo] = useState(false);
-	
-	// Video swap feature
-	const [isVideoSwapped, setIsVideoSwapped] = useState(false);
 	
 	// Camera flip feature
 	const [facingMode, setFacingMode] = useState("user"); // "user" or "environment"
@@ -131,11 +126,7 @@ const StrangerChatPage = () => {
 
 	const addMessage = useCallback((sender, message) => {
 		setTempMessages((prev) => [...prev, { sender, message }]);
-		// Increment unread count if chat is closed and message is from stranger
-		if (!isChatOpen && sender === "Stranger") {
-			setUnreadCount(prev => prev + 1);
-		}
-	}, [isChatOpen]);
+	}, []);
 
 	// --- WebRTC helper functions ---
 	const createPeerConnection = useCallback(() => {
@@ -918,17 +909,28 @@ const StrangerChatPage = () => {
 	};
 
 	const captureScreenshot = () => {
-		// ✅ FIX: Capture the PARTNER's video (the violator), not our own video
+		// ✅ ALWAYS capture the PARTNER's video (the violator), NOT our own video
 		if (!remoteVideoRef.current || remoteVideoRef.current.videoWidth === 0) {
 			toast.error("Cannot capture screenshot - partner video not ready.");
 			return null;
 		}
+		
+		// Verify we're capturing the remote stream, not local
+		if (remoteVideoRef.current.srcObject === localStreamRef.current) {
+			console.error("❌ ERROR: Attempting to capture local video instead of partner video!");
+			toast.error("Cannot capture screenshot - wrong video source.");
+			return null;
+		}
+		
 		const canvas = document.createElement("canvas");
 		canvas.width = remoteVideoRef.current.videoWidth;
 		canvas.height = remoteVideoRef.current.videoHeight;
 		const ctx = canvas.getContext("2d");
+		
 		// ✅ Draw the PARTNER's video (the violation evidence)
 		ctx.drawImage(remoteVideoRef.current, 0, 0);
+		
+		console.log(`📸 Screenshot captured - Partner video (${canvas.width}x${canvas.height})`);
 		return canvas.toDataURL("image/jpeg", 0.9); // High quality for evidence
 	};
 
@@ -966,18 +968,9 @@ const StrangerChatPage = () => {
 		});
 	};
 
-	// Toggle chat and reset unread count
-	const toggleChat = () => {
-		setIsChatOpen(!isChatOpen);
-		if (!isChatOpen) {
-			setUnreadCount(0);
-		}
-	};
 
-	// Video swap - switch between main and PiP
-	const handleVideoSwap = () => {
-		setIsVideoSwapped(!isVideoSwapped);
-	};
+
+
 
 	// Camera flip - switch between front and back camera
 	const handleCameraFlip = async () => {
@@ -1292,97 +1285,7 @@ const StrangerChatPage = () => {
 					</div>
 				</div>
 
-				{/* Floating Chat Button - Left Bottom Corner */}
-				<div className="absolute bottom-16 sm:bottom-14 left-4 z-40">
-					{/* Chat Panel - Slides Up from Button */}
-					{isChatOpen && (
-						<div className="absolute bottom-16 left-0 w-80 sm:w-96 animate-slide-up">
-							<div className="bg-base-100 backdrop-blur-xl rounded-2xl shadow-2xl border-2 border-primary overflow-hidden">
-									{/* Chat Header - Modern Theme */}
-									<div className="px-4 py-3 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 border-b-2 border-primary/20 flex items-center justify-between">
-										<div className="flex items-center gap-2">
-											<div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-												<MessageSquare size={16} className="text-primary" />
-											</div>
-											<span className="font-bold text-base text-base-content">Chat</span>
-										</div>
-										<button 
-											className="btn btn-ghost btn-xs btn-circle hover:bg-error/10 hover:text-error"
-											onClick={toggleChat}
-										>
-											✕
-										</button>
-									</div>
 
-									{/* Messages - Better Theme */}
-									<div className="h-56 sm:h-64 overflow-y-auto p-3 space-y-2 bg-gradient-to-b from-base-200/30 to-base-200/50" style={{ WebkitOverflowScrolling: 'touch' }}>
-										{tempMessages.length === 0 ? (
-											<div className="text-center text-base-content/50 text-sm mt-12">
-												<div className="text-4xl mb-2">💬</div>
-												<p>No messages yet</p>
-												<p className="text-xs mt-1">Say hi! 👋</p>
-											</div>
-										) : (
-											tempMessages.map((msg, index) => (
-												<div 
-													key={index} 
-													className={`flex ${msg.sender === 'You' ? 'justify-end' : 'justify-start'} animate-fade-in`}
-												>
-													<div className={`max-w-[75%] px-3 py-2 rounded-xl text-sm shadow-md ${
-														msg.sender === 'You' 
-															? 'bg-gradient-to-br from-primary to-primary/90 text-primary-content rounded-br-sm' 
-															: msg.sender === 'System'
-															? 'bg-gradient-to-br from-warning to-warning/90 text-warning-content rounded-lg'
-															: 'bg-base-100 text-base-content rounded-bl-sm border-2 border-primary/20'
-													}`}>
-														{msg.message}
-													</div>
-												</div>
-											))
-										)}
-									</div>
-
-									{/* Message Input - Modern Theme */}
-									<form onSubmit={handleSendTempMessage} className="p-3 bg-base-100 border-t-2 border-primary/20">
-										<div className="flex gap-2">
-											<input
-												type="text"
-												placeholder="Type a message..."
-												className="input input-bordered input-sm flex-1 text-sm bg-base-200 border-2 border-primary/20 focus:border-primary"
-												value={currentMessage}
-												onChange={(e) => setCurrentMessage(e.target.value)}
-												disabled={status !== "connected"}
-											/>
-											<button
-												type="submit"
-												disabled={status !== "connected" || !currentMessage.trim()}
-												className="btn btn-primary btn-sm btn-circle"
-											>
-												<Send size={16} />
-											</button>
-										</div>
-									</form>
-								</div>
-							</div>
-						)}
-
-					{/* Floating Button - Always Visible */}
-					<button
-						onClick={toggleChat}
-						className="btn btn-circle btn-outline btn-primary w-12 h-12 sm:w-14 sm:h-14 bg-base-100/90 backdrop-blur-md shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 transition-all border-2"
-					>
-						<MessageSquare size={20} className="sm:w-6 sm:h-6" />
-						{/* Unread Badge */}
-						{unreadCount > 0 && !isChatOpen && (
-							<span className="absolute -top-1 -right-1 flex h-6 w-6">
-								<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
-								<span className="relative inline-flex rounded-full h-6 w-6 bg-error items-center justify-center text-[10px] font-bold text-white border-2 border-base-100">
-									{unreadCount > 9 ? '9+' : unreadCount}
-								</span>
-							</span>
-						)}
-					</button>
-				</div>
 			</div>
 
 
