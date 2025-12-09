@@ -53,20 +53,37 @@
   border-color: #FF9933 !important;
 }
 
-/* DaisyUI button states */
-.btn-ghost:focus,
-.btn-ghost:active,
-.btn-ghost.active {
-  background-color: rgba(255, 153, 51, 0.1) !important;
+/* DaisyUI button states - Theme aware */
+/* Dark theme: white/light hover */
+[data-theme="dark"] .btn-ghost:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-.btn-circle:focus,
-.btn-circle:active {
-  background-color: rgba(255, 153, 51, 0.15) !important;
+[data-theme="dark"] .btn-ghost:focus,
+[data-theme="dark"] .btn-ghost:active,
+[data-theme="dark"] .btn-ghost.active {
+  background-color: rgba(255, 255, 255, 0.15) !important;
 }
 
-.btn-ghost:hover {
-  background-color: rgba(255, 153, 51, 0.1) !important;
+[data-theme="dark"] .btn-circle:focus,
+[data-theme="dark"] .btn-circle:active {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Light theme: black/dark hover */
+[data-theme="light"] .btn-ghost:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .btn-ghost:focus,
+[data-theme="light"] .btn-ghost:active,
+[data-theme="light"] .btn-ghost.active {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .btn-circle:focus,
+[data-theme="light"] .btn-circle:active {
+  background-color: rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Focus rings - orange instead of blue */
