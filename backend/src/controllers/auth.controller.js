@@ -505,37 +505,98 @@ export const forgotPassword = async (req, res) => {
 			}
 		});
 
-		// Send OTP via email
+		// Send OTP via email with Z-APP branding
 		const message = `
-			<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
-				<div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-					<h1 style="color: #6366f1; margin-bottom: 20px;">🔐 Password Reset OTP</h1>
-					<p style="font-size: 16px; color: #333; line-height: 1.6;">
-						Hi <strong>${user.fullName || user.username}</strong>,
-					</p>
-					<p style="font-size: 16px; color: #333; line-height: 1.6;">
-						You requested to reset your password. Your verification OTP is:
-					</p>
-					<div style="margin: 30px 0; padding: 20px; background-color: #f0f9ff; border-left: 4px solid #6366f1; border-radius: 5px; text-align: center;">
-						<p style="margin: 0 0 10px 0; color: #1e40af; font-size: 14px; font-weight: bold;">
-							YOUR OTP CODE
-						</p>
-						<p style="margin: 0; color: #6366f1; font-size: 36px; font-weight: bold; letter-spacing: 8px; font-family: 'Courier New', monospace;">
-							${otp}
-						</p>
-					</div>
-					<p style="font-size: 16px; color: #333; line-height: 1.6;">
-						<strong style="color: #ef4444;">This OTP will expire in 10 minutes.</strong>
-					</p>
-					<p style="font-size: 14px; color: #666; margin-top: 30px;">
-						If you didn't request this password reset, please ignore this email and secure your account.
-					</p>
-					<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-					<p style="font-size: 12px; color: #9ca3af; text-align: center;">
-						This is an automated email from Z-APP. Please do not reply.
-					</p>
-				</div>
-			</div>
+			<!DOCTYPE html>
+			<html>
+			<head>
+				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<title>Password Reset OTP - Z-APP</title>
+			</head>
+			<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0f172a;">
+				<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0f172a; padding: 40px 20px;">
+					<tr>
+						<td align="center">
+							<table width="600" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+								<!-- Header with Logo -->
+								<tr>
+									<td style="padding: 40px 40px 30px; text-align: center; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+										<div style="background: white; width: 80px; height: 80px; border-radius: 20px; margin: 0 auto 20px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+											<span style="font-size: 48px; font-weight: 900; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Z</span>
+										</div>
+										<h1 style="margin: 0; color: white; font-size: 32px; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.2);">Z-APP</h1>
+										<p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 16px; font-weight: 500;">Connect. Chat. Discover.</p>
+									</td>
+								</tr>
+								
+								<!-- Content -->
+								<tr>
+									<td style="padding: 40px; background-color: white;">
+										<div style="text-align: center; margin-bottom: 30px;">
+											<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 20px; display: inline-flex; align-items: center; justify-content: center;">
+												<span style="font-size: 30px;">🔐</span>
+											</div>
+											<h2 style="margin: 0; color: #1e293b; font-size: 28px; font-weight: 700;">Password Reset</h2>
+										</div>
+										
+										<p style="font-size: 16px; color: #475569; line-height: 1.6; margin: 0 0 20px;">
+											Hi <strong style="color: #1e293b;">${user.fullName || user.username}</strong>,
+										</p>
+										
+										<p style="font-size: 16px; color: #475569; line-height: 1.6; margin: 0 0 30px;">
+											You requested to reset your password. Use the verification code below to continue:
+										</p>
+										
+										<!-- OTP Box -->
+										<div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 3px dashed #667eea; border-radius: 15px; padding: 30px; text-align: center; margin: 30px 0;">
+											<p style="margin: 0 0 15px; color: #475569; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+												Your Verification Code
+											</p>
+											<div style="background: white; border-radius: 10px; padding: 20px; display: inline-block; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);">
+												<p style="margin: 0; font-size: 48px; font-weight: 900; letter-spacing: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-family: 'Courier New', monospace;">
+													${otp}
+												</p>
+											</div>
+										</div>
+										
+										<!-- Timer Warning -->
+										<div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; border-radius: 10px; padding: 20px; margin: 30px 0;">
+											<p style="margin: 0; color: #92400e; font-size: 15px; font-weight: 600;">
+												⏰ <strong>Important:</strong> This code will expire in <strong>10 minutes</strong>
+											</p>
+										</div>
+										
+										<p style="font-size: 14px; color: #64748b; line-height: 1.6; margin: 30px 0 0;">
+											If you didn't request this password reset, please ignore this email and ensure your account is secure.
+										</p>
+									</td>
+								</tr>
+								
+								<!-- Footer -->
+								<tr>
+									<td style="padding: 30px 40px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); text-align: center;">
+										<p style="margin: 0 0 15px; color: rgba(255,255,255,0.7); font-size: 14px;">
+											Need help? Contact us at <a href="mailto:support@z-app.com" style="color: #a78bfa; text-decoration: none; font-weight: 600;">support@z-app.com</a>
+										</p>
+										<p style="margin: 0 0 20px; color: rgba(255,255,255,0.5); font-size: 12px;">
+											© ${new Date().getFullYear()} Z-APP. All rights reserved.
+										</p>
+										<div style="margin-top: 20px;">
+											<a href="#" style="display: inline-block; margin: 0 10px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px;">Privacy Policy</a>
+											<span style="color: rgba(255,255,255,0.3);">•</span>
+											<a href="#" style="display: inline-block; margin: 0 10px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px;">Terms of Service</a>
+											<span style="color: rgba(255,255,255,0.3);">•</span>
+											<a href="#" style="display: inline-block; margin: 0 10px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px;">Help Center</a>
+										</div>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+			</body>
+			</html>
 		`;
 
 		try {
@@ -684,37 +745,101 @@ export const sendPasswordChangeOTP = async (req, res) => {
 			}
 		});
 
-		// Send OTP via email
+		// Send OTP via email with Z-APP branding
 		const message = `
-			<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
-				<div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-					<h1 style="color: #6366f1; margin-bottom: 20px;">🔐 Password Change Verification</h1>
-					<p style="font-size: 16px; color: #333; line-height: 1.6;">
-						Hi <strong>${user.fullName || user.username}</strong>,
-					</p>
-					<p style="font-size: 16px; color: #333; line-height: 1.6;">
-						You requested to change your password. Your verification OTP is:
-					</p>
-					<div style="margin: 30px 0; padding: 20px; background-color: #f0f9ff; border-left: 4px solid #6366f1; border-radius: 5px; text-align: center;">
-						<p style="margin: 0 0 10px 0; color: #1e40af; font-size: 14px; font-weight: bold;">
-							YOUR OTP CODE
-						</p>
-						<p style="margin: 0; color: #6366f1; font-size: 36px; font-weight: bold; letter-spacing: 8px; font-family: 'Courier New', monospace;">
-							${otp}
-						</p>
-					</div>
-					<p style="font-size: 16px; color: #333; line-height: 1.6;">
-						<strong style="color: #ef4444;">This OTP will expire in 10 minutes.</strong>
-					</p>
-					<p style="font-size: 14px; color: #666; margin-top: 30px;">
-						If you didn't request this password change, please ignore this email and secure your account immediately.
-					</p>
-					<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-					<p style="font-size: 12px; color: #9ca3af; text-align: center;">
-						This is an automated email from Z-APP. Please do not reply.
-					</p>
-				</div>
-			</div>
+			<!DOCTYPE html>
+			<html>
+			<head>
+				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<title>Password Change Verification - Z-APP</title>
+			</head>
+			<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0f172a;">
+				<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0f172a; padding: 40px 20px;">
+					<tr>
+						<td align="center">
+							<table width="600" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+								<!-- Header with Logo -->
+								<tr>
+									<td style="padding: 40px 40px 30px; text-align: center; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+										<div style="background: white; width: 80px; height: 80px; border-radius: 20px; margin: 0 auto 20px; display: inline-flex; align-items: center; justify-center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+											<span style="font-size: 48px; font-weight: 900; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Z</span>
+										</div>
+										<h1 style="margin: 0; color: white; font-size: 32px; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.2);">Z-APP</h1>
+										<p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 16px; font-weight: 500;">Connect. Chat. Discover.</p>
+									</td>
+								</tr>
+								
+								<!-- Content -->
+								<tr>
+									<td style="padding: 40px; background-color: white;">
+										<div style="text-align: center; margin-bottom: 30px;">
+											<div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 20px; display: inline-flex; align-items: center; justify-content: center;">
+												<span style="font-size: 30px;">🔒</span>
+											</div>
+											<h2 style="margin: 0; color: #1e293b; font-size: 28px; font-weight: 700;">Password Change</h2>
+										</div>
+										
+										<p style="font-size: 16px; color: #475569; line-height: 1.6; margin: 0 0 20px;">
+											Hi <strong style="color: #1e293b;">${user.fullName || user.username}</strong>,
+										</p>
+										
+										<p style="font-size: 16px; color: #475569; line-height: 1.6; margin: 0 0 30px;">
+											You requested to change your password. Use the verification code below to continue:
+										</p>
+										
+										<!-- OTP Box -->
+										<div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 3px dashed #10b981; border-radius: 15px; padding: 30px; text-align: center; margin: 30px 0;">
+											<p style="margin: 0 0 15px; color: #475569; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+												Your Verification Code
+											</p>
+											<div style="background: white; border-radius: 10px; padding: 20px; display: inline-block; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);">
+												<p style="margin: 0; font-size: 48px; font-weight: 900; letter-spacing: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-family: 'Courier New', monospace;">
+													${otp}
+												</p>
+											</div>
+										</div>
+										
+										<!-- Timer Warning -->
+										<div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; border-radius: 10px; padding: 20px; margin: 30px 0;">
+											<p style="margin: 0; color: #92400e; font-size: 15px; font-weight: 600;">
+												⏰ <strong>Important:</strong> This code will expire in <strong>10 minutes</strong>
+											</p>
+										</div>
+										
+										<!-- Security Notice -->
+										<div style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-left: 4px solid #ef4444; border-radius: 10px; padding: 20px; margin: 30px 0;">
+											<p style="margin: 0; color: #991b1b; font-size: 14px; font-weight: 600;">
+												🛡️ <strong>Security Alert:</strong> If you didn't request this password change, please secure your account immediately and contact support.
+											</p>
+										</div>
+									</td>
+								</tr>
+								
+								<!-- Footer -->
+								<tr>
+									<td style="padding: 30px 40px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); text-align: center;">
+										<p style="margin: 0 0 15px; color: rgba(255,255,255,0.7); font-size: 14px;">
+											Need help? Contact us at <a href="mailto:support@z-app.com" style="color: #a78bfa; text-decoration: none; font-weight: 600;">support@z-app.com</a>
+										</p>
+										<p style="margin: 0 0 20px; color: rgba(255,255,255,0.5); font-size: 12px;">
+											© ${new Date().getFullYear()} Z-APP. All rights reserved.
+										</p>
+										<div style="margin-top: 20px;">
+											<a href="#" style="display: inline-block; margin: 0 10px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px;">Privacy Policy</a>
+											<span style="color: rgba(255,255,255,0.3);">•</span>
+											<a href="#" style="display: inline-block; margin: 0 10px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px;">Terms of Service</a>
+											<span style="color: rgba(255,255,255,0.3);">•</span>
+											<a href="#" style="display: inline-block; margin: 0 10px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px;">Help Center</a>
+										</div>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+			</body>
+			</html>
 		`;
 
 		try {
