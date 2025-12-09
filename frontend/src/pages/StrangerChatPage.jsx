@@ -1049,13 +1049,13 @@ const StrangerChatPage = () => {
 			<div className="flex-1 relative overflow-hidden">
 				{/* Remote Video - Full Screen Background */}
 				<video 
-					ref={isVideoSwapped ? localVideoRef : remoteVideoRef}
+					ref={remoteVideoRef}
 					autoPlay 
 					playsInline 
-					muted={isVideoSwapped}
+					muted={false}
 					className="absolute inset-0 w-full h-full object-cover bg-base-300"
 					style={{
-						transform: isVideoSwapped ? 'scaleX(-1)' : 'none',
+						transform: 'none',
 						willChange: 'transform',
 						backfaceVisibility: 'hidden',
 						WebkitBackfaceVisibility: 'hidden'
@@ -1137,32 +1137,24 @@ const StrangerChatPage = () => {
 					</div>
 				</div>
 
-				{/* Self Camera - Picture-in-Picture - Clickable to Swap */}
-				<div 
-					className="absolute top-20 right-4 z-20 cursor-pointer group" 
-					onClick={handleVideoSwap}
-					title="Click to swap views"
-				>
-					<div className="relative w-32 h-44 sm:w-36 sm:h-48 md:w-40 md:h-56 rounded-xl overflow-hidden shadow-2xl border-2 border-primary bg-base-300 transition-transform hover:scale-105">
+				{/* Self Camera - Picture-in-Picture */}
+				<div className="absolute top-20 right-4 z-20">
+					<div className="relative w-32 h-44 sm:w-36 sm:h-48 md:w-40 md:h-56 rounded-xl overflow-hidden shadow-2xl border-2 border-primary bg-base-300">
 						<video 
-							ref={isVideoSwapped ? remoteVideoRef : localVideoRef}
+							ref={localVideoRef}
 							autoPlay 
 							playsInline 
-							muted={!isVideoSwapped}
+							muted={true}
 							className="w-full h-full object-cover"
 							style={{
-								transform: !isVideoSwapped ? 'scaleX(-1)' : 'none',
+								transform: 'scaleX(-1)',
 								willChange: 'transform',
 								backfaceVisibility: 'hidden',
 								WebkitBackfaceVisibility: 'hidden'
 							}}
 						/>
-						{/* Swap Icon Overlay */}
-						<div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-							<Repeat className="w-10 h-10 text-white drop-shadow-lg" />
-						</div>
 						<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-2">
-							<p className="text-white text-xs font-bold">{isVideoSwapped ? "Stranger" : "You"}</p>
+							<p className="text-white text-xs font-bold">You</p>
 						</div>
 					</div>
 				</div>
