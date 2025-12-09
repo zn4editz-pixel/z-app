@@ -26,9 +26,11 @@ export default defineConfig({
       output: {
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
+            // ✅ PERFORMANCE: Split React into separate chunk (cached separately)
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
               return 'react-vendor';
             }
+            // ✅ PERFORMANCE: Lazy-load heavy libraries
             if (id.includes('framer-motion')) {
               return 'framer-motion';
             }
@@ -50,18 +52,23 @@ export default defineConfig({
             return 'vendor';
           }
         },
-        // Optimize chunk sizes
+        // ✅ PERFORMANCE: Optimize chunk sizes and naming
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
     chunkSizeWarningLimit: 1000,
-    cssCodeSplit: true,
-    sourcemap: false,
-    reportCompressedSize: false,
-    // Enable compression
-    assetsInlineLimit: 4096, // Inline assets smaller than 4kb
+    cssCodeSplit: true, // ✅ PERFORMANCE: Split CSS for faster loading
+    sourcemap: false, // ✅ PERFORMANCE: Disable sourcemaps in production
+    reportCompressedSize: false, // ✅ PERFORMANCE: Faster builds
+    assetsInlineLimit: 4096, // ✅ PERFORMANCE: Inline small assets (< 4kb)
+    // ✅ PERFORMANCE: Enable tree-shaking
+    treeshake: {
+      moduleSideEffects: false,
+      propertyReadSideEffects: false,
+      tryCatchDeoptimization: false,
+    },
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'zustand', 'axios', 'socket.io-client'],

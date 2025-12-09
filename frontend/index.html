@@ -92,17 +92,20 @@
     }
     </script>
     
-    <!-- Preconnect for Performance -->
+    <!-- ✅ PERFORMANCE: Preconnect for faster external resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://res.cloudinary.com" />
     
-    <!-- DNS Prefetch for faster API calls -->
+    <!-- ✅ PERFORMANCE: DNS Prefetch for faster API calls -->
     <link rel="dns-prefetch" href="https://z-app-beta-z.onrender.com" />
     <link rel="dns-prefetch" href="https://res.cloudinary.com" />
     
-    <!-- Preload critical resources -->
-    <link rel="preload" href="/z-app-logo.png" as="image" />
+    <!-- ✅ PERFORMANCE: Preload critical resources -->
+    <link rel="preload" href="/z-app-logo.png" as="image" fetchpriority="high" />
+    
+    <!-- ✅ PERFORMANCE: Preload main script for faster execution -->
+    <link rel="modulepreload" href="/src/main.jsx" />
     <style>
       /* Prevent white flash - set body background immediately */
       html, body {
@@ -195,8 +198,8 @@
     <!-- App Root -->
     <div id="root"></div>
     
-    <!-- Main Script -->
-    <script type="module" src="/src/main.jsx"></script>
+    <!-- ✅ PERFORMANCE: Main Script with async loading -->
+    <script type="module" src="/src/main.jsx" defer></script>
     
     <!-- Remove loading screen when app loads -->
     <script>
