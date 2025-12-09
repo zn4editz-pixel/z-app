@@ -148,14 +148,27 @@ const App = () => {
 			}
 		});
 
-		// 2. Message listener
+		// 2. Message listener - ✅ FIX: Add to notification store
 		socket.on("message-received", ({ sender, text }) => {
 			if (sender?.id !== authUser?.id) {
+				// Show toast
 				showMessageToast({
 					senderName: sender?.name || "Unknown",
 					senderAvatar: sender?.profilePic || "/default-avatar.png",
 					messageText: text || "",
 					theme,
+				});
+				
+				// ✅ FIX: Add to notification store for persistence
+				const { addNotification } = useNotificationStore.getState();
+				addNotification({
+					type: 'message',
+					title: sender?.name || sender?.nickname || "New Message",
+					message: text || "Sent you a message",
+					senderId: sender?.id,
+					senderAvatar: sender?.profilePic,
+					createdAt: new Date().toISOString(),
+					id: `msg-${Date.now()}-${sender?.id}`
 				});
 			}
 		});

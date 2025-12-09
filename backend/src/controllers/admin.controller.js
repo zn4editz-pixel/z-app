@@ -196,15 +196,22 @@ export const getAIReports = async (req, res) => {
 				reportedUser: { select: { username: true, nickname: true, profilePic: true, email: true } }
 			}
 		});
+		
+		// ✅ FIX: Calculate average confidence
+		const totalConfidence = aiReports.reduce((sum, r) => sum + (r.aiConfidence || 0), 0);
+		const avgConfidence = aiReports.length > 0 ? totalConfidence / aiReports.length : 0;
+		
 		const stats = {
 			total: aiReports.length,
 			pending: aiReports.filter(r => r.status === "pending").length,
 			reviewed: aiReports.filter(r => r.status === "reviewed").length,
 			actionTaken: aiReports.filter(r => r.status === "action_taken").length,
-			dismissed: aiReports.filter(r => r.status === "dismissed").length
+			dismissed: aiReports.filter(r => r.status === "dismissed").length,
+			avgConfidence: avgConfidence // ✅ FIX: Add average confidence
 		};
 		res.status(200).json({ reports: aiReports, stats });
 	} catch (err) {
+		console.error("Error fetching AI reports:", err);
 		res.status(500).json({ error: "Failed to fetch AI reports" });
 	}
 };

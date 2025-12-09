@@ -304,27 +304,44 @@ const AdminDashboard = () => {
 	};
 
 	const handleApproveVerification = async (userId) => {
+		// ✅ FIX: Optimistic update
+		setVerificationRequests(prev => prev.filter(req => req.id !== userId));
+		
 		try {
 			await axiosInstance.put(`/admin/verification/approve/${userId}`);
 			toast.success("Verification approved");
-			fetchVerificationRequests();
-			fetchUsers();
-			fetchStats();
+			// Refetch to ensure consistency
+			await Promise.all([
+				fetchVerificationRequests(),
+				fetchUsers(),
+				fetchStats()
+			]);
 		} catch (err) {
 			toast.error(err.response?.data?.message || "Failed to approve verification");
+			// Revert optimistic update on error
+			fetchVerificationRequests();
 		}
 	};
 
 	const handleRejectVerification = async (userId) => {
 		const reason = prompt("Enter rejection reason:");
 		if (!reason) return;
+		
+		// ✅ FIX: Optimistic update
+		setVerificationRequests(prev => prev.filter(req => req.id !== userId));
+		
 		try {
 			await axiosInstance.put(`/admin/verification/reject/${userId}`, { reason });
 			toast.success("Verification rejected");
-			fetchVerificationRequests();
-			fetchStats();
+			// Refetch to ensure consistency
+			await Promise.all([
+				fetchVerificationRequests(),
+				fetchStats()
+			]);
 		} catch (err) {
 			toast.error(err.response?.data?.message || "Failed to reject verification");
+			// Revert optimistic update on error
+			fetchVerificationRequests();
 		}
 	};
 
