@@ -12,6 +12,7 @@ const ServerIntelligenceCenter = () => {
 	const [loading, setLoading] = useState(true);
 	const [history, setHistory] = useState([]);
 	const [bugs, setBugs] = useState([]);
+	const [showReportModal, setShowReportModal] = useState(false);
 	const intervalRef = useRef(null);
 
 	useEffect(() => {
@@ -57,15 +58,61 @@ const ServerIntelligenceCenter = () => {
 		<div className="space-y-6">
 			{/* Header */}
 			<div className="bg-gradient-to-r from-black via-yellow-900/20 to-black p-6 rounded-2xl border-2 border-yellow-500/30 shadow-2xl">
-				<div className="flex items-center gap-4">
-					<div className="p-4 bg-yellow-500/20 rounded-xl border border-yellow-500/50">
-						<Activity className="w-8 h-8 text-yellow-500" />
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-4">
+						<div className="p-4 bg-yellow-500/20 rounded-xl border border-yellow-500/50 animate-pulse">
+							<Activity className="w-8 h-8 text-yellow-500" />
+						</div>
+						<div>
+							<h2 className="text-3xl font-bold text-yellow-500">Server Intelligence Center</h2>
+							<p className="text-yellow-200/70">Real-time performance monitoring & diagnostics</p>
+						</div>
 					</div>
-					<div>
-						<h2 className="text-3xl font-bold text-yellow-500">Server Intelligence Center</h2>
-						<p className="text-yellow-200/70">Real-time performance monitoring & diagnostics</p>
+					<div className="flex items-center gap-3">
+						<div className="px-4 py-2 bg-green-500/20 rounded-lg border border-green-500/50">
+							<span className="text-green-400 font-semibold">● Live</span>
+						</div>
+						<button
+							onClick={() => setShowReportModal(true)}
+							className="px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-lg border border-yellow-500/50 text-yellow-400 font-semibold transition-all"
+						>
+							📝 Report Issue
+						</button>
 					</div>
 				</div>
+			</div>
+
+			{/* 🚨 PROMINENT BUG DETECTION SECTION - Always Visible at Top */}
+			<div className="bg-gradient-to-br from-red-950/50 via-orange-950/30 to-black p-6 rounded-2xl border-2 border-red-500/50 shadow-2xl">
+				<div className="flex items-center justify-between mb-4">
+					<div className="flex items-center gap-3">
+						<div className="p-3 bg-red-500/20 rounded-xl border border-red-500/50 animate-pulse">
+							<AlertTriangle className="w-7 h-7 text-red-500" />
+						</div>
+						<div>
+							<h3 className="text-2xl font-bold text-red-400">🔍 Automatic Bug Detection</h3>
+							<p className="text-red-200/70">Real-time system health monitoring • Scans every 3 seconds</p>
+						</div>
+					</div>
+					<div className="text-right">
+						<div className="text-3xl font-bold text-white">{bugs.length}</div>
+						<div className="text-sm text-red-300">Issues Found</div>
+					</div>
+				</div>
+				
+				{bugs.length === 0 ? (
+					<div className="flex flex-col items-center justify-center py-12 bg-green-950/30 rounded-xl border-2 border-green-500/30">
+						<CheckCircle className="w-16 h-16 text-green-500 mb-4" />
+						<h4 className="text-2xl font-bold text-green-400 mb-2">✅ All Systems Healthy!</h4>
+						<p className="text-green-200/70">No issues detected. Your application is running perfectly.</p>
+					</div>
+				) : (
+					<div className="space-y-3">
+						{bugs.map((bug, idx) => (
+							<EnhancedBugAlert key={idx} bug={bug} />
+						))}
+					</div>
+				)}
 			</div>
 
 			{/* Status Overview */}
@@ -186,19 +233,9 @@ const ServerIntelligenceCenter = () => {
 				/>
 			</div>
 
-			{/* Bug Detection */}
-			{bugs.length > 0 && (
-				<div className="bg-gradient-to-br from-red-950/50 to-black p-6 rounded-2xl border-2 border-red-500/30">
-					<div className="flex items-center gap-3 mb-4">
-						<AlertTriangle className="w-6 h-6 text-red-500" />
-						<h3 className="text-xl font-bold text-red-500">Detected Issues</h3>
-					</div>
-					<div className="space-y-3">
-						{bugs.map((bug, idx) => (
-							<BugAlert key={idx} bug={bug} />
-						))}
-					</div>
-				</div>
+			{/* Manual Report Modal */}
+			{showReportModal && (
+				<ManualReportModal onClose={() => setShowReportModal(false)} />
 			)}
 
 			{/* System Resources */}
@@ -536,26 +573,280 @@ const DetailedMetricPanel = ({ title, icon: Icon, metrics }) => {
 	);
 };
 
-const BugAlert = ({ bug }) => {
-	const severityColors = {
-		critical: "border-red-500/50 bg-red-950/30 text-red-400",
-		high: "border-orange-500/50 bg-orange-950/30 text-orange-400",
-		medium: "border-yellow-500/50 bg-yellow-950/30 text-yellow-400",
-		low: "border-blue-500/50 bg-blue-950/30 text-blue-400"
+const EnhancedBugAlert = ({ bug }) => {
+	const [showSolution, setShowSolution] = useState(false);
+	
+	const severityConfig = {
+		critical: {
+			color: "border-red-500/50 bg-red-950/30 text-red-400",
+			icon: "🔴",
+			badge: "bg-red-500 text-white"
+		},
+		high: {
+			color: "border-orange-500/50 bg-orange-950/30 text-orange-400",
+			icon: "🟠",
+			badge: "bg-orange-500 text-white"
+		},
+		medium: {
+			color: "border-yellow-500/50 bg-yellow-950/30 text-yellow-400",
+			icon: "🟡",
+			badge: "bg-yellow-500 text-black"
+		},
+		low: {
+			color: "border-blue-500/50 bg-blue-950/30 text-blue-400",
+			icon: "🔵",
+			badge: "bg-blue-500 text-white"
+		}
+	};
+
+	const config = severityConfig[bug.severity] || severityConfig.low;
+	
+	// Auto-generate solution based on bug type
+	const getSolution = () => {
+		if (bug.title.includes("Expired Suspensions")) {
+			return {
+				steps: [
+					"Run database cleanup script to clear expired suspensions",
+					"Set up automated cron job to check suspensions daily",
+					"Add middleware to auto-clear on user login"
+				],
+				command: "npm run cleanup:suspensions",
+				priority: "Medium - Should be fixed within 24 hours"
+			};
+		}
+		if (bug.title.includes("High Memory")) {
+			return {
+				steps: [
+					"Restart the server to clear memory",
+					"Check for memory leaks in recent code changes",
+					"Implement memory monitoring and alerts",
+					"Consider scaling to larger instance"
+				],
+				command: "pm2 restart all",
+				priority: "High - Fix immediately"
+			};
+		}
+		if (bug.title.includes("Stale Reports")) {
+			return {
+				steps: [
+					"Review and process pending reports",
+					"Set up automated report aging notifications",
+					"Assign reports to moderators automatically"
+				],
+				command: "Review in Reports Management tab",
+				priority: "Low - Can be addressed in next review cycle"
+			};
+		}
+		if (bug.title.includes("Redis")) {
+			return {
+				steps: [
+					"Check Redis server status",
+					"Verify Redis connection credentials",
+					"Restart Redis service if needed",
+					"Check network connectivity to Redis"
+				],
+				command: "redis-cli ping",
+				priority: "Critical - Fix immediately"
+			};
+		}
+		return {
+			steps: ["Investigate the issue", "Check logs for more details", "Contact support if needed"],
+			command: "Check server logs",
+			priority: "Review and assess"
+		};
+	};
+
+	const solution = getSolution();
+
+	return (
+		<div className={`p-5 rounded-xl border-2 ${config.color} transition-all hover:scale-[1.02]`}>
+			<div className="flex items-start gap-4">
+				<div className="text-3xl">{config.icon}</div>
+				<div className="flex-1">
+					<div className="flex items-center gap-3 mb-2">
+						<h4 className="text-lg font-bold">{bug.title}</h4>
+						<span className={`px-2 py-1 rounded text-xs font-bold ${config.badge}`}>
+							{bug.severity.toUpperCase()}
+						</span>
+					</div>
+					<p className="text-sm opacity-90 mb-3">{bug.description}</p>
+					
+					<div className="flex items-center gap-6 text-xs opacity-70 mb-3">
+						<span>📍 {bug.location}</span>
+						<span>🕐 {new Date(bug.timestamp).toLocaleString()}</span>
+					</div>
+
+					{/* Solution Section */}
+					<button
+						onClick={() => setShowSolution(!showSolution)}
+						className="flex items-center gap-2 text-sm font-semibold hover:opacity-80 transition-all mb-2"
+					>
+						<span>{showSolution ? "▼" : "▶"}</span>
+						<span>💡 View Suggested Solution</span>
+					</button>
+
+					{showSolution && (
+						<div className="mt-3 p-4 bg-black/30 rounded-lg border border-white/10">
+							<div className="mb-3">
+								<span className="text-xs font-bold opacity-70">PRIORITY:</span>
+								<span className="ml-2 text-sm font-semibold">{solution.priority}</span>
+							</div>
+							<div className="mb-3">
+								<span className="text-xs font-bold opacity-70">RECOMMENDED STEPS:</span>
+								<ol className="mt-2 space-y-2">
+									{solution.steps.map((step, idx) => (
+										<li key={idx} className="text-sm flex gap-2">
+											<span className="font-bold">{idx + 1}.</span>
+											<span>{step}</span>
+										</li>
+									))}
+								</ol>
+							</div>
+							<div className="p-3 bg-black/50 rounded border border-white/10">
+								<span className="text-xs font-bold opacity-70">COMMAND:</span>
+								<code className="ml-2 text-sm text-green-400">{solution.command}</code>
+							</div>
+						</div>
+					)}
+				</div>
+			</div>
+		</div>
+	);
+};
+
+const ManualReportModal = ({ onClose }) => {
+	const [formData, setFormData] = useState({
+		title: "",
+		description: "",
+		severity: "medium",
+		screenshot: null
+	});
+	const [uploading, setUploading] = useState(false);
+	const fileInputRef = useRef(null);
+
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		setUploading(true);
+		
+		try {
+			const formDataToSend = new FormData();
+			formDataToSend.append("title", formData.title);
+			formDataToSend.append("description", formData.description);
+			formDataToSend.append("severity", formData.severity);
+			if (formData.screenshot) {
+				formDataToSend.append("screenshot", formData.screenshot);
+			}
+
+			// Send to backend
+			await axiosInstance.post("/admin/manual-report", formDataToSend, {
+				headers: { "Content-Type": "multipart/form-data" }
+			});
+
+			toast.success("Report submitted successfully!");
+			onClose();
+		} catch (err) {
+			toast.error("Failed to submit report");
+		} finally {
+			setUploading(false);
+		}
+	};
+
+	const handleFileChange = (e) => {
+		const file = e.target.files[0];
+		if (file) {
+			if (file.size > 5 * 1024 * 1024) {
+				toast.error("File size must be less than 5MB");
+				return;
+			}
+			setFormData({ ...formData, screenshot: file });
+		}
 	};
 
 	return (
-		<div className={`p-4 rounded-lg border-2 ${severityColors[bug.severity]}`}>
-			<div className="flex items-start gap-3">
-				<AlertTriangle className="w-5 h-5 mt-0.5" />
-				<div className="flex-1">
-					<h4 className="font-semibold mb-1">{bug.title}</h4>
-					<p className="text-sm opacity-80">{bug.description}</p>
-					<div className="flex items-center gap-4 mt-2 text-xs opacity-60">
-						<span>Location: {bug.location}</span>
-						<span>Detected: {new Date(bug.timestamp).toLocaleTimeString()}</span>
-					</div>
+		<div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+			<div className="bg-gradient-to-br from-gray-900 to-black p-6 rounded-2xl border-2 border-yellow-500/30 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+				<div className="flex items-center justify-between mb-6">
+					<h3 className="text-2xl font-bold text-yellow-500">📝 Submit Manual Report</h3>
+					<button onClick={onClose} className="text-white/70 hover:text-white text-2xl">×</button>
 				</div>
+
+				<form onSubmit={handleSubmit} className="space-y-4">
+					<div>
+						<label className="block text-sm font-semibold text-white/70 mb-2">Issue Title *</label>
+						<input
+							type="text"
+							required
+							value={formData.title}
+							onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+							className="w-full px-4 py-3 bg-black/50 border border-white/20 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+							placeholder="Brief description of the issue"
+						/>
+					</div>
+
+					<div>
+						<label className="block text-sm font-semibold text-white/70 mb-2">Severity *</label>
+						<select
+							value={formData.severity}
+							onChange={(e) => setFormData({ ...formData, severity: e.target.value })}
+							className="w-full px-4 py-3 bg-black/50 border border-white/20 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+						>
+							<option value="low">🔵 Low - Minor issue</option>
+							<option value="medium">🟡 Medium - Moderate impact</option>
+							<option value="high">🟠 High - Significant impact</option>
+							<option value="critical">🔴 Critical - Urgent attention needed</option>
+						</select>
+					</div>
+
+					<div>
+						<label className="block text-sm font-semibold text-white/70 mb-2">Description *</label>
+						<textarea
+							required
+							value={formData.description}
+							onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+							className="w-full px-4 py-3 bg-black/50 border border-white/20 rounded-lg text-white focus:border-yellow-500 focus:outline-none h-32 resize-none"
+							placeholder="Detailed description of the issue, steps to reproduce, expected vs actual behavior..."
+						/>
+					</div>
+
+					<div>
+						<label className="block text-sm font-semibold text-white/70 mb-2">Screenshot (Optional)</label>
+						<input
+							ref={fileInputRef}
+							type="file"
+							accept="image/*"
+							onChange={handleFileChange}
+							className="hidden"
+						/>
+						<button
+							type="button"
+							onClick={() => fileInputRef.current?.click()}
+							className="w-full px-4 py-3 bg-black/50 border-2 border-dashed border-white/20 rounded-lg text-white/70 hover:border-yellow-500 hover:text-white transition-all"
+						>
+							{formData.screenshot ? (
+								<span className="text-green-400">✓ {formData.screenshot.name}</span>
+							) : (
+								<span>📷 Click to upload screenshot (Max 5MB)</span>
+							)}
+						</button>
+					</div>
+
+					<div className="flex gap-3 pt-4">
+						<button
+							type="button"
+							onClick={onClose}
+							className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-semibold transition-all"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							disabled={uploading}
+							className="flex-1 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 rounded-lg text-black font-semibold transition-all disabled:opacity-50"
+						>
+							{uploading ? "Submitting..." : "Submit Report"}
+						</button>
+					</div>
+				</form>
 			</div>
 		</div>
 	);

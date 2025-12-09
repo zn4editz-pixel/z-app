@@ -431,3 +431,55 @@ export const deleteNotification = async (req, res) => {
 		res.status(500).json({ error: "Failed to delete notification" });
 	}
 };
+
+export const submitManualReport = async (req, res) => {
+	try {
+		const { title, description, severity } = req.body;
+		let screenshotUrl = null;
+
+		// Handle screenshot upload if provided
+		if (req.file) {
+			// Upload to Cloudinary or your storage
+			const cloudinary = await import("../lib/cloudinary.js");
+			const result = await cloudinary.default.uploader.upload(req.file.path, {
+				folder: "manual-reports"
+			});
+			screenshotUrl = result.secure_url;
+		}
+
+		// Create manual report in database
+		const report = await prisma.manualReport.create({
+			data: {
+				title,
+				description,
+				severity,
+				screenshot: screenshotUrl,
+				reportedBy: req.user.id,
+				status: "pending"
+			}
+		});
+
+		res.status(200).json({ message: "Report submitted successfully", report });
+	} catch (err) {
+		console.error("Submit manual report error:", err);
+		res.status(500).json({ error: "Failed to submit report" });
+	}
+};
+
+export const getManualReports = async (req, res) => {
+	try {
+		const reports = await prisma.manualReport.findMany({
+			orderBy: { createdAt: "desc" },
+			take: 50,
+			include: {
+				reporter: {
+					select: { username: true, nickname: true, profilePic: true }
+				}
+			}
+		});
+		res.status(200).json(reports);
+	} catch (err) {
+		console.error("Get manual reports error:", err);
+		res.status(500).json({ error: "Failed to fetch manual reports" });
+	}
+};

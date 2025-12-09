@@ -20,6 +20,8 @@ import {
 	getUserNotifications,
 	markNotificationRead,
 	deleteNotification,
+	submitManualReport,
+	getManualReports
 } from "../controllers/admin.controller.js";
 
 import {
@@ -68,5 +70,9 @@ router.post("/notifications/broadcast", sendBroadcastNotification);
 router.get("/server-metrics", getServerMetrics);
 router.get("/metrics-history", getMetricsHistory);
 router.delete("/metrics-history", clearMetricsHistory);
+
+// --- Manual Reports ---
+router.post("/manual-report", submitManualReport);
+router.get("/manual-reports", getManualReports);
 
 export default router;
