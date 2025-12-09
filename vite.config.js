@@ -24,15 +24,17 @@ export default defineConfig({
   },
   esbuild: {
     logOverride: { 'this-is-undefined-in-esm': 'silent' },
+    // ✅ PERFORMANCE: Remove console.log and debugger in production
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+    // ✅ PERFORMANCE: Minify identifiers
+    minifyIdentifiers: true,
+    minifySyntax: true,
+    minifyWhitespace: true,
   },
   build: {
     target: 'esnext',
     minify: 'esbuild', // ✅ PERFORMANCE: Faster than terser (10x speed)
     cssMinify: true,
-    // ✅ PERFORMANCE: Aggressive minification options
-    minifyOptions: {
-      drop: ['console', 'debugger'], // Remove console.log in production
-    },
     rollupOptions: {
       output: {
         manualChunks: (id) => {
@@ -80,6 +82,10 @@ export default defineConfig({
       propertyReadSideEffects: false,
       tryCatchDeoptimization: false,
     },
+    // ✅ PERFORMANCE: Reduce chunk size
+    chunkSizeWarningLimit: 500,
+    // ✅ PERFORMANCE: Enable compression
+    brotliSize: false,
   },
   optimizeDeps: {
     // ✅ PERFORMANCE: Pre-bundle these dependencies for faster dev server
