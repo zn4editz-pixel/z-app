@@ -43,8 +43,8 @@ const NotificationsPanel = ({ onSendNotification }) => {
 			{/* Send Notification Form */}
 			<div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
 				<div className="flex items-center gap-3 mb-4">
-					<div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-info/20 flex items-center justify-center">
-						<FileText className="w-5 h-5 sm:w-6 sm:h-6 text-info" />
+					<div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-base-content/10 flex items-center justify-center">
+						<FileText className="w-5 h-5 sm:w-6 sm:h-6 text-base-content" />
 					</div>
 					<div>
 						<h2 className="text-xl sm:text-2xl font-semibold">Send Notification</h2>

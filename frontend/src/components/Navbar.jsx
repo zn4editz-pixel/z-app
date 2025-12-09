@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 import { useFriendStore } from "../store/useFriendStore";
@@ -12,15 +12,18 @@ import {
 
 const Navbar = () => {
 	const { authUser } = useAuthStore();
-	const { selectedUser } = useChatStore();
 	const isAdmin = authUser?.isAdmin;
 	const { pendingReceived } = useFriendStore();
-	const { notifications, getUnreadAdminCount } = useNotificationStore();
+	const { getUnreadAdminCount } = useNotificationStore();
+	const location = useLocation();
 
 	// Calculate total Social Hub updates (only unread)
 	const unreadAdminCount = getUnreadAdminCount();
 	const hasVerificationUpdate = authUser?.verificationRequest?.status && authUser.verificationRequest.status !== "none";
 	const totalUpdates = pendingReceived.length + unreadAdminCount + (hasVerificationUpdate ? 1 : 0) + (authUser?.isSuspended ? 1 : 0);
+
+	// Check if current page is active
+	const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
 	return (
 		<header className="bg-base-100 border-b border-base-300 fixed w-full top-0 z-40 shadow-sm">
@@ -41,7 +44,9 @@ const Navbar = () => {
 						{authUser && (
 							<Link
 								to="/discover"
-								className="btn btn-ghost btn-sm btn-circle relative w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch"
+								className={`btn btn-sm btn-circle relative w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch ${
+									isActive('/discover') ? 'btn-active' : 'btn-ghost'
+								}`}
 								title="Discover & Social Hub"
 								aria-label={`Discover and Social Hub${totalUpdates > 0 ? ` (${totalUpdates} updates)` : ''}`}
 							>
@@ -58,7 +63,9 @@ const Navbar = () => {
 						{isAdmin && (
 							<Link
 								to="/admin"
-								className="btn btn-ghost btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch"
+								className={`btn btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch ${
+									isActive('/admin') ? 'btn-active' : 'btn-ghost'
+								}`}
 								title="Admin Dashboard"
 								aria-label="Admin Dashboard"
 							>
@@ -69,7 +76,9 @@ const Navbar = () => {
 						{/* Settings */}
 						<Link
 							to="/settings"
-							className="btn btn-ghost btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch"
+							className={`btn btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch ${
+								isActive('/settings') ? 'btn-active' : 'btn-ghost'
+							}`}
 							title="Settings"
 							aria-label="Settings"
 						>
@@ -80,7 +89,9 @@ const Navbar = () => {
 						{authUser && (
 							<Link
 								to="/profile"
-								className="btn btn-ghost btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch"
+								className={`btn btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch ${
+									isActive('/profile') ? 'btn-active' : 'btn-ghost'
+								}`}
 								title="Profile"
 								aria-label="Profile"
 							>

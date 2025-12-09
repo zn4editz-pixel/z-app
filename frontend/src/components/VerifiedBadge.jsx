@@ -11,7 +11,7 @@ const VerifiedBadge = ({ size = "sm", className = "" }) => {
 
   return (
     <BadgeCheck
-      className={`${sizeClasses[size]} text-primary fill-primary/20 flex-shrink-0 ${className}`}
+      className={`${sizeClasses[size]} text-warning fill-warning/20 flex-shrink-0 ${className}`}
       title="Verified"
     />
   );

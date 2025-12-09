@@ -1078,10 +1078,10 @@ html {
 /* Avatar Ring Animation */
 @keyframes ring-pulse {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.4);
+    box-shadow: 0 0 0 0 hsl(var(--p) / 0.4);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0);
+    box-shadow: 0 0 0 4px hsl(var(--p) / 0);
   }
 }
 
@@ -1121,7 +1121,7 @@ html {
 }
 
 .glow-hover:hover {
-  box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.4);
+  box-shadow: 0 0 20px hsl(var(--p) / 0.4);
 }
 
 /* Smooth Width Transition */
@@ -1175,11 +1175,11 @@ html {
     background-color: transparent;
   }
   15% {
-    background-color: rgba(var(--primary-rgb, 59, 130, 246), 0.25);
+    background-color: hsl(var(--p) / 0.25);
     transform: scale(1.02);
   }
   50% {
-    background-color: rgba(var(--primary-rgb, 59, 130, 246), 0.15);
+    background-color: hsl(var(--p) / 0.15);
     transform: scale(1.01);
   }
   100% {

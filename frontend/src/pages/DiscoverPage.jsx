@@ -79,22 +79,22 @@ const AdminNotificationsList = () => {
 		const colorMap = {
 			green: 'border-success',
 			red: 'border-error',
-			blue: 'border-info',
+			blue: 'border-base-content/20',
 			yellow: 'border-warning',
-			orange: 'border-orange-500',
+			orange: 'border-warning',
 		};
-		return colorMap[color] || 'border-info';
+		return colorMap[color] || 'border-base-content/20';
 	};
 
 	const getTextColor = (color) => {
 		const colorMap = {
 			green: 'text-success',
 			red: 'text-error',
-			blue: 'text-info',
+			blue: 'text-base-content',
 			yellow: 'text-warning',
-			orange: 'text-orange-500',
+			orange: 'text-warning',
 		};
-		return colorMap[color] || 'text-info';
+		return colorMap[color] || 'text-base-content';
 	};
 
 	const getIcon = (type) => {
@@ -198,7 +198,7 @@ const DiscoverPage = () => {
 
 	// Debug logging
 	useEffect(() => {
-		console.log('🔍 DiscoverPage mounted');
+		if (import.meta.env.DEV) console.log('🔍 DiscoverPage mounted');
 		console.log('Auth user:', authUser);
 		console.log('Suggested users:', suggestedUsers);
 		console.log('Is loading:', isLoadingSuggested);
@@ -328,8 +328,8 @@ const DiscoverPage = () => {
 				{/* Header */}
 				<div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
 					<div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4">
-						<Users className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
-						<h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Social Hub</h1>
+						<Users className="w-6 h-6 sm:w-8 sm:h-8 text-base-content flex-shrink-0" />
+						<h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-base-content via-warning to-base-content bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]">Social Hub</h1>
 					</div>
 					<p className="text-sm sm:text-base text-base-content/70">
 						Discover users, manage requests, and stay updated
@@ -339,12 +339,13 @@ const DiscoverPage = () => {
 				{/* Tabs */}
 				<div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg mb-4 sm:mb-6 overflow-hidden">
 					<div className="flex border-b border-base-300 relative">
-						{/* Animated underline */}
+						{/* Animated underline - uses theme primary color */}
 						<div 
-							className="absolute bottom-0 h-0.5 bg-primary transition-all duration-300 ease-out"
+							className="absolute bottom-0 h-0.5 transition-all duration-300 ease-out"
 							style={{
 								width: '33.333%',
-								transform: `translateX(${activeTab === 'discover' ? '0%' : activeTab === 'requests' ? '100%' : '200%'})`
+								transform: `translateX(${activeTab === 'discover' ? '0%' : activeTab === 'requests' ? '100%' : '200%'})`,
+								backgroundColor: 'hsl(var(--p))'
 							}}
 						/>
 						
@@ -352,7 +353,7 @@ const DiscoverPage = () => {
 							onClick={() => setActiveTab("discover")}
 							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-all duration-300 text-xs sm:text-base relative ${
 								activeTab === "discover"
-									? "text-primary scale-105"
+									? "text-base-content scale-105"
 									: "text-base-content/60 hover:text-base-content hover:bg-base-200/50"
 							}`}
 						>
@@ -363,7 +364,7 @@ const DiscoverPage = () => {
 							onClick={() => setActiveTab("requests")}
 							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-all duration-300 relative text-xs sm:text-base ${
 								activeTab === "requests"
-									? "text-primary scale-105"
+									? "text-base-content scale-105"
 									: "text-base-content/60 hover:text-base-content hover:bg-base-200/50"
 							}`}
 						>
@@ -379,7 +380,7 @@ const DiscoverPage = () => {
 							onClick={() => setActiveTab("notifications")}
 							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-all duration-300 relative text-xs sm:text-base ${
 								activeTab === "notifications"
-									? "text-primary scale-105"
+									? "text-base-content scale-105"
 									: "text-base-content/60 hover:text-base-content hover:bg-base-200/50"
 							}`}
 						>

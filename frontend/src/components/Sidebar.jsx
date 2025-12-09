@@ -149,7 +149,7 @@ const Sidebar = () => {
           </div>
 
           {/* Friends Horizontal Bar - Stranger button fixed, then scrollable friends */}
-          <div className="flex py-2 -mx-3 sm:-mx-4 relative">
+          <div className="flex py-3 pt-4 -mx-3 sm:-mx-4 relative">
             {/* Stranger Chat Button - Compact with border */}
             <div className="flex-none pl-3 sm:pl-4 sticky left-0 z-10 bg-base-100">
               <div className="flex items-center gap-2 border-r border-base-content/10 pr-2">
@@ -168,8 +168,8 @@ const Sidebar = () => {
               </div>
             </div>
             
-            {/* Scrollable Friends Container */}
-            <div className="flex gap-3 sm:gap-4 overflow-x-auto pr-3 sm:pr-4 scrollbar-hide pl-3">
+            {/* Scrollable Friends Container - Added padding top to prevent clipping on hover */}
+            <div className="flex gap-3 sm:gap-4 overflow-x-auto pr-3 sm:pr-4 scrollbar-hide pl-3 overflow-y-visible">
             
             {/* All Friends - Online first with green ring, then offline */}
             {friends

@@ -28,9 +28,9 @@ body {
   font-weight: 500; /* Slightly bolder for better readability */
 }
 
-/* Link text - ensure sufficient contrast */
+/* Link text - use theme primary color */
 a {
-  color: oklch(0.7 0.15 250); /* Brighter blue for better contrast */
+  color: hsl(var(--p));
 }
 
 a:hover {
@@ -137,9 +137,9 @@ a:not(.btn):not([class*="btn-"]) {
   color: oklch(0.75 0.15 75) !important; /* Brighter yellow text */
 }
 
-/* Ensure primary color has good contrast */
+/* Ensure primary color uses theme primary */
 .text-primary {
-  color: oklch(0.7 0.15 250) !important; /* Brighter blue */
+  color: hsl(var(--p)) !important;
 }
 
 .bg-primary {

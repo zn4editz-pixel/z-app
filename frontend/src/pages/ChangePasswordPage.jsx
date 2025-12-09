@@ -98,8 +98,8 @@ const ChangePasswordPage = () => {
           {/* Step 1: Send OTP */}
           {step === 1 && (
             <div className="space-y-3 sm:space-y-4">
-              <div className="flex items-start gap-2 p-2 sm:p-3 bg-info/10 rounded-lg border border-info/20">
-                <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-info mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-2 p-2 sm:p-3 bg-base-content/10 rounded-lg border border-base-content/20">
+                <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-base-content/70 mt-0.5 flex-shrink-0" />
                 <p className="text-[11px] sm:text-xs text-base-content/70">
                   For security, we'll send a verification code to your email
                 </p>

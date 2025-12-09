@@ -1,4 +1,5 @@
-/* Navbar button hover and active states - white/bright for all themes */
+/* Navbar button hover and active states - use theme primary color */
+/* ONLY applies to navbar buttons - does not affect other page elements */
 
 /* Animated gradient for admin panel title */
 @keyframes gradient {
@@ -17,37 +18,69 @@
   animation: gradient 3s ease infinite;
 }
 
-/* Hover state - white/bright */
-.btn-ghost:hover,
-.btn-circle:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+/* Hover state - bright icon with subtle background (but NOT for active buttons) */
+header .btn.btn-ghost:hover:not(.btn-active),
+header .btn.btn-circle:hover:not(.btn-active),
+header .btn-ghost.btn-sm:hover:not(.btn-active),
+header .btn-circle.btn-sm:hover:not(.btn-active) {
+  background-color: hsl(var(--p) / 0.15) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
 }
 
-/* Active/clicked state - brighter white */
-.btn-ghost:active,
-.btn-circle:active,
-.btn-ghost.active,
-.btn-circle.active {
-  background-color: rgba(255, 255, 255, 0.2) !important;
+header .btn-ghost:hover:not(.btn-active) svg,
+header .btn-circle:hover:not(.btn-active) svg {
   color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Active/clicked state - stronger primary color */
+header .btn.btn-ghost:active,
+header .btn.btn-circle:active,
+header .btn-ghost.btn-sm:active,
+header .btn-circle.btn-sm:active {
+  background-color: hsl(var(--p) / 0.2) !important;
+  color: hsl(var(--p)) !important;
+  border-color: transparent !important;
+}
+
+header .btn-ghost:active svg,
+header .btn-circle:active svg {
+  color: hsl(var(--p)) !important;
+  stroke: hsl(var(--p)) !important;
 }
 
 /* Focus state */
-.btn-ghost:focus-visible,
-.btn-circle:focus-visible {
-  background-color: rgba(255, 255, 255, 0.15) !important;
-  color: #ffffff !important;
-  outline: 2px solid rgba(255, 255, 255, 0.3) !important;
+header .btn.btn-ghost:focus-visible,
+header .btn.btn-circle:focus-visible {
+  background-color: hsl(var(--p) / 0.15) !important;
+  color: hsl(var(--p)) !important;
+  outline: 2px solid hsl(var(--p) / 0.3) !important;
+  border-color: transparent !important;
 }
 
-/* Icons inside buttons also become white */
-.btn-ghost:hover svg,
-.btn-circle:hover svg,
-.btn-ghost:active svg,
-.btn-circle:active svg,
-.btn-ghost.active svg,
-.btn-circle.active svg {
+/* Active page state - highlighted with theme primary color background, white icon */
+header .btn.btn-active,
+header .btn-active.btn-sm {
+  background-color: hsl(var(--p) / 0.2) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+header .btn-active svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Active page hover - slightly stronger */
+header .btn.btn-active:hover,
+header .btn-active.btn-sm:hover {
+  background-color: hsl(var(--p) / 0.3) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+header .btn-active:hover svg {
   color: #ffffff !important;
   stroke: #ffffff !important;
 }

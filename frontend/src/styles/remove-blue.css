@@ -1,57 +1,40 @@
-/* Remove ALL blue colors and replace with theme colors (white/gold) */
+/* Let DaisyUI theme colors work naturally - remove hardcoded blue overrides */
 
-/* Social Hub icon - change from blue to white */
+/* Convert hardcoded blue classes to use theme primary color */
 .text-blue-500,
 .text-blue-600,
 .text-blue-400,
 [class*="text-blue"] {
-  color: currentColor !important;
+  color: hsl(var(--p)) !important;
 }
 
-/* Discover tab and icons - change from blue to theme color */
 .border-blue-500,
 .border-blue-600,
 [class*="border-blue"] {
-  border-color: currentColor !important;
+  border-color: hsl(var(--p)) !important;
 }
 
-/* User names (test, Mohammed safwan) - change from blue to white */
-a[class*="text-blue"],
-.text-primary {
-  color: var(--bc) !important; /* Use theme text color */
-}
-
-/* Links and usernames */
-a:not(.btn) {
-  color: var(--bc) !important;
-}
-
-a:not(.btn):hover {
-  opacity: 0.8;
-}
-
-/* Tab underlines */
-.border-b-blue-500,
-.border-b-primary {
-  border-bottom-color: var(--bc) !important;
-}
-
-/* Icons */
-svg.text-blue-500,
-svg.text-blue-600,
-svg.text-primary {
-  color: var(--bc) !important;
-  stroke: var(--bc) !important;
-}
-
-/* Remove any blue backgrounds */
 .bg-blue-500,
 .bg-blue-600,
 [class*="bg-blue"] {
-  background-color: transparent !important;
+  background-color: hsl(var(--p)) !important;
 }
 
-/* Verified badges and icons */
-.text-info {
-  color: var(--bc) !important;
+.border-b-blue-500 {
+  border-bottom-color: hsl(var(--p)) !important;
 }
+
+/* Ensure hover states use theme primary color */
+.hover\:text-blue-500:hover,
+.hover\:text-blue-600:hover,
+.hover\:border-blue-500:hover {
+  color: hsl(var(--p)) !important;
+  border-color: hsl(var(--p)) !important;
+}
+
+/* Link hover colors - use theme primary color instead of blue */
+a:hover {
+  color: hsl(var(--p)) !important;
+}
+
+/* Let theme handle all other colors naturally */

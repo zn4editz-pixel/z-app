@@ -29,7 +29,7 @@ const DashboardOverview = ({ stats, loadingStats, users = [] }) => {
 	
 	// Debug: Log the mismatch
 	if (stats && onlineUsers.length !== stats.onlineUsers) {
-		console.log(`⚠️ Online user count mismatch: DB shows ${onlineUsers.length}, Socket shows ${stats.onlineUsers}`);
+		if (import.meta.env.DEV) console.log(`⚠️ Online user count mismatch: DB shows ${onlineUsers.length}, Socket shows ${stats.onlineUsers}`);
 	}
 
 	return (
@@ -43,14 +43,14 @@ const DashboardOverview = ({ stats, loadingStats, users = [] }) => {
 					</div>
 				) : stats && (
 					<>
-						<div className="stat bg-gradient-to-br from-blue-500/10 via-blue-600/10 to-purple-600/10 rounded-2xl shadow-xl p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 border border-blue-500/20 hover:border-blue-500/40 hover:scale-105">
-							<div className="stat-figure text-blue-600">
-								<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+						<div className="stat bg-gradient-to-br from-white/10 via-white/5 to-primary/10 rounded-2xl shadow-xl p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 border border-white/20 hover:border-white/40 hover:scale-105">
+							<div className="stat-figure text-white">
+								<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-white/20 to-primary/30 flex items-center justify-center shadow-lg">
 									<Users className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
 								</div>
 							</div>
 							<div className="stat-title text-xs sm:text-sm font-semibold text-base-content/70">Total Users</div>
-							<div className="stat-value text-blue-600 text-3xl sm:text-4xl font-bold">{stats.totalUsers}</div>
+							<div className="stat-value text-white text-3xl sm:text-4xl font-bold">{stats.totalUsers}</div>
 							<div className="stat-desc text-xs font-medium text-green-600">+{stats.recentUsers} this week</div>
 						</div>
 
@@ -93,12 +93,12 @@ const DashboardOverview = ({ stats, loadingStats, users = [] }) => {
 			{/* Analytics Charts - Modern Design */}
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 				{/* User Growth Chart - Gradient Area Chart */}
-				<div className="bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 backdrop-blur-sm rounded-2xl shadow-xl p-5 sm:p-6 border border-blue-500/20 hover:border-blue-500/40 transition-all">
+				<div className="bg-gradient-to-br from-white/5 via-primary/5 to-secondary/5 backdrop-blur-sm rounded-2xl shadow-xl p-5 sm:p-6 border border-white/20 hover:border-white/40 transition-all">
 					<h3 className="text-lg sm:text-xl font-bold mb-6 flex items-center gap-3">
-						<div className="p-2.5 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl shadow-lg">
+						<div className="p-2.5 bg-gradient-to-br from-white/20 via-primary/30 to-secondary/30 rounded-xl shadow-lg">
 							<TrendingUp className="w-5 h-5 text-white" />
 						</div>
-						<span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+						<span className="bg-gradient-to-r from-white to-primary bg-clip-text text-transparent">
 							User Growth Trend
 						</span>
 					</h3>

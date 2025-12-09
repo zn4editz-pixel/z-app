@@ -450,7 +450,7 @@ const ProfilePage = () => {
                     placeholder="new@email.com"
                   />
                   <div className="flex items-start gap-2 p-2 bg-base-200 rounded-lg border border-base-300">
-                    <AlertCircle className="w-3.5 h-3.5 text-info mt-0.5 flex-shrink-0" />
+                    <AlertCircle className="w-3.5 h-3.5 text-base-content/70 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-base-content/70">An OTP will be sent to verify your new email</p>
                   </div>
                   <div className="flex gap-2">

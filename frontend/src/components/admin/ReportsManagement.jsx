@@ -104,7 +104,7 @@ const ReportsManagement = ({
 							<div className="text-xs text-base-content/60">Auto-Resolvable</div>
 						</div>
 						<div className="bg-base-100 rounded-lg p-3">
-							<div className="text-2xl font-bold text-info">{Math.round(aiStats.avgConfidence * 100)}%</div>
+							<div className="text-2xl font-bold text-base-content">{Math.round(aiStats.avgConfidence * 100)}%</div>
 							<div className="text-xs text-base-content/60">Avg Confidence</div>
 						</div>
 					</div>
@@ -138,7 +138,7 @@ const ReportsManagement = ({
 					<span className="loading loading-spinner loading-lg"></span>
 				</div>
 			) : reports.length === 0 ? (
-				<div className="text-center text-info py-8">
+				<div className="text-center text-base-content/60 py-8">
 					<AlertTriangle className="w-16 h-16 mx-auto mb-4 opacity-30" />
 					<p>No pending reports found.</p>
 				</div>
@@ -152,7 +152,7 @@ const ReportsManagement = ({
 								className={`card bg-base-200 shadow-md border-l-4 ${
 									ai.requiresImmediate ? 'border-error animate-pulse' :
 									ai.severity.level >= 4 ? 'border-warning' :
-									ai.severity.level >= 3 ? 'border-info' :
+									ai.severity.level >= 3 ? 'border-base-content/30' :
 									'border-success'
 								}`}
 							>

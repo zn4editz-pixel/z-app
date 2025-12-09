@@ -15,7 +15,7 @@ const AdminNotifications = ({ users = [] }) => {
   const colors = [
     { value: "green", label: "Green (Success)", class: "bg-success" },
     { value: "red", label: "Red (Error)", class: "bg-error" },
-    { value: "blue", label: "Blue (Info)", class: "bg-info" },
+    { value: "blue", label: "White (Info)", class: "bg-base-content" },
     { value: "yellow", label: "Yellow (Warning)", class: "bg-warning" },
     { value: "orange", label: "Orange (Alert)", class: "bg-orange-500" },
   ];

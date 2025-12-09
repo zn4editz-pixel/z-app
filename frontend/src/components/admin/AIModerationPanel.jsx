@@ -63,8 +63,8 @@ const AIModerationPanel = ({
 									<div className="text-3xl font-bold text-warning">{aiStats.pending}</div>
 									<div className="text-xs font-medium text-base-content/70 mt-1">Pending Review</div>
 								</div>
-								<div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-sm rounded-xl p-4 text-center shadow-lg border border-blue-500/30 hover:shadow-xl hover:scale-105 transition-all">
-									<div className="text-3xl font-bold text-info">{aiStats.reviewed}</div>
+								<div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-xl p-4 text-center shadow-lg border border-white/30 hover:shadow-xl hover:scale-105 transition-all">
+									<div className="text-3xl font-bold text-white">{aiStats.reviewed}</div>
 									<div className="text-xs font-medium text-base-content/70 mt-1">Reviewed</div>
 								</div>
 								<div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 backdrop-blur-sm rounded-xl p-4 text-center shadow-lg border border-green-500/30 hover:shadow-xl hover:scale-105 transition-all">
@@ -222,7 +222,7 @@ const AIModerationPanel = ({
 														className={`h-2.5 rounded-full ${
 															report.aiConfidence >= 0.8 ? 'bg-error' :
 															report.aiConfidence >= 0.6 ? 'bg-warning' :
-															'bg-info'
+															'bg-base-content/30'
 														}`}
 														style={{ width: `${(report.aiConfidence * 100).toFixed(0)}%` }}
 													></div>

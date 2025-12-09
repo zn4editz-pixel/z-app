@@ -339,8 +339,8 @@ const SettingsPage = () => {
           {/* Theme Preview Section - Full Width */}
           <div className="bg-base-100 rounded-lg sm:rounded-xl shadow-lg p-2.5 xs:p-3 sm:p-4 md:p-6 border border-base-300">
             <div className="flex items-center gap-2 xs:gap-2.5 sm:gap-3 mb-2.5 xs:mb-3 sm:mb-4">
-              <div className="w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-lg bg-info/10 flex items-center justify-center flex-shrink-0">
-                <Send className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5 text-info" />
+              <div className="w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-lg bg-base-content/10 flex items-center justify-center flex-shrink-0">
+                <Send className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5 text-base-content" />
               </div>
               <div className="min-w-0">
                 <h2 className="text-sm xs:text-base sm:text-lg font-semibold truncate">Theme Preview</h2>
