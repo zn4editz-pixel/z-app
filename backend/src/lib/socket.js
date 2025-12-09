@@ -273,6 +273,9 @@ io.on("connection", (socket) => {
 					console.log(`📡 Broadcasting online users to ALL clients: ${onlineUserIds.length} users online`);
 					console.log(`📡 Online user IDs:`, onlineUserIds);
 					io.emit("getOnlineUsers", onlineUserIds);
+					
+					// Emit to admin dashboard for real-time updates
+					io.emit("admin:userOnline", { userId: initialUserId, isOnline: true });
 				}
 			})
 			.catch(err => console.error('Failed to update online status:', err));
@@ -297,6 +300,9 @@ io.on("connection", (socket) => {
 						console.log(`✅ User ${userId} marked as online`);
 						const onlineUserIds = Object.keys(userSocketMap);
 						io.emit("getOnlineUsers", onlineUserIds);
+						
+						// Emit to admin dashboard for real-time updates
+						io.emit("admin:userOnline", { userId, isOnline: true });
 					}
 				})
 				.catch(err => console.error('Failed to update online status:', err));
@@ -909,6 +915,9 @@ io.on("connection", (socket) => {
 						console.log(`📡 Broadcasting online users to ALL clients: ${onlineUserIds.length} users online`);
 						console.log(`📡 Online user IDs:`, onlineUserIds);
 						io.emit("getOnlineUsers", onlineUserIds);
+						
+						// Emit to admin dashboard for real-time updates
+						io.emit("admin:userOffline", { userId: disconnectedUserId, isOnline: false, lastSeen: new Date() });
 					}
 				})
 				.catch(err => console.error('Failed to update offline status:', err));

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
+import { useAuthStore } from "../store/useAuthStore";
 import { 
 	Users, UserCheck, AlertTriangle, Shield, TrendingUp,
 	BadgeCheck, FileText
@@ -16,6 +17,8 @@ import VerificationRequests from "../components/admin/VerificationRequests";
 import NotificationsPanel from "../components/admin/NotificationsPanel";
 
 const AdminDashboard = () => {
+	const { socket } = useAuthStore();
+	
 	// Active Tab State
 	const [activeTab, setActiveTab] = useState("dashboard");
 
@@ -52,6 +55,47 @@ const AdminDashboard = () => {
 		fetchAIReports();
 		fetchVerificationRequests();
 	}, []);
+	
+	// Real-time socket listeners for online status updates
+	useEffect(() => {
+		if (!socket) return;
+		
+		const handleUserOnline = ({ userId, isOnline }) => {
+			console.log(`📡 Admin: User ${userId} is now online`);
+			setUsers(prevUsers => 
+				prevUsers.map(user => 
+					user.id === userId ? { ...user, isOnline: true } : user
+				)
+			);
+			// Update stats
+			setStats(prevStats => prevStats ? {
+				...prevStats,
+				onlineUsers: prevStats.onlineUsers + 1
+			} : null);
+		};
+		
+		const handleUserOffline = ({ userId, isOnline, lastSeen }) => {
+			console.log(`📡 Admin: User ${userId} is now offline`);
+			setUsers(prevUsers => 
+				prevUsers.map(user => 
+					user.id === userId ? { ...user, isOnline: false, lastSeen } : user
+				)
+			);
+			// Update stats
+			setStats(prevStats => prevStats ? {
+				...prevStats,
+				onlineUsers: Math.max(0, prevStats.onlineUsers - 1)
+			} : null);
+		};
+		
+		socket.on("admin:userOnline", handleUserOnline);
+		socket.on("admin:userOffline", handleUserOffline);
+		
+		return () => {
+			socket.off("admin:userOnline", handleUserOnline);
+			socket.off("admin:userOffline", handleUserOffline);
+		};
+	}, [socket]);
 
 	const fetchStats = async () => {
 		setLoadingStats(true);

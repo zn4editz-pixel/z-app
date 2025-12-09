@@ -21,7 +21,7 @@ const emitToUser = (io, userId, event, data) => {
 
 let adminUsersCache = null;
 let adminUsersCacheTime = 0;
-const ADMIN_USERS_CACHE_TTL = 10000;
+const ADMIN_USERS_CACHE_TTL = 2000; // Reduced to 2 seconds for real-time online status
 
 const clearAdminUsersCache = () => {
 	adminUsersCache = null;
@@ -30,13 +30,25 @@ const clearAdminUsersCache = () => {
 
 export const getAllUsers = async (req, res) => {
 	try {
-		const now = Date.now();
-		if (adminUsersCache && (now - adminUsersCacheTime) < ADMIN_USERS_CACHE_TTL) {
-			return res.status(200).json(adminUsersCache);
-		}
+		// Always get fresh online status from socket connections
 		const { userSocketMap } = await import("../lib/socket.js");
 		const onlineUserIds = Object.keys(userSocketMap);
-		const users = await prisma.user.findMany({
+		
+		// Check cache for user data (but always update online status)
+		const now = Date.now();
+		let users;
+		
+		if (adminUsersCache && (now - adminUsersCacheTime) < ADMIN_USERS_CACHE_TTL) {
+			// Use cached user data but update online status
+			users = adminUsersCache.map(user => ({
+				...user,
+				isOnline: onlineUserIds.includes(user.id)
+			}));
+			return res.status(200).json(users);
+		}
+		
+		// Fetch fresh user data from database
+		users = await prisma.user.findMany({
 			select: {
 				id: true, username: true, nickname: true, email: true,
 				profilePic: true, isVerified: true, isOnline: true,
@@ -47,10 +59,13 @@ export const getAllUsers = async (req, res) => {
 			orderBy: { createdAt: "desc" },
 			take: 100
 		});
+		
+		// Always sync online status from socket connections (source of truth)
 		const usersWithOnlineStatus = users.map(user => ({
 			...user,
 			isOnline: onlineUserIds.includes(user.id)
 		}));
+		
 		adminUsersCache = usersWithOnlineStatus;
 		adminUsersCacheTime = now;
 		res.status(200).json(usersWithOnlineStatus);
