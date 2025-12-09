@@ -310,16 +310,9 @@ const App = () => {
 
 	const hasCompletedProfile = authUser?.hasCompletedProfile;
 
-	// ✅ FIXED: Loading screen respects theme
+	// ✅ FIXED: Loading screen uses theme background color (same as navbar)
 	const LoadingScreen = () => (
-		<div style={{
-			position: 'fixed',
-			inset: 0,
-			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
-			backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff'
-		}}>
+		<div className="fixed inset-0 flex items-center justify-center bg-base-100">
 			<div className="flex flex-col items-center gap-3">
 				<div style={{
 					width: '50px',
@@ -329,10 +322,7 @@ const App = () => {
 					borderRadius: '50%',
 					animation: 'spin 0.8s linear infinite'
 				}}></div>
-				<p style={{ 
-					color: theme === 'dark' ? '#999' : '#666',
-					fontSize: '14px'
-				}}>Loading...</p>
+				<p className="text-base-content/70 text-sm">Loading...</p>
 			</div>
 			<style>{`
 				@keyframes spin {
