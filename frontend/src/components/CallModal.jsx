@@ -244,10 +244,10 @@ const CallModal = () => {
                     <h2 className="text-xl font-semibold mb-1">{partnerName}</h2>
                     <p className="text-base-content/70 mb-6">Incoming {callType} call...</p>
                     <div className="flex justify-center gap-4">
-                        <button className="btn btn-error btn-circle btn-lg" onClick={() => rejectCall('declined')}>
+                        <button className="btn btn-error btn-circle btn-lg" onClick={() => rejectCall('declined')} aria-label="Reject call">
                             <PhoneOff />
                         </button>
-                        <button className="btn btn-success btn-circle btn-lg" onClick={acceptCall}>
+                        <button className="btn btn-success btn-circle btn-lg" onClick={acceptCall} aria-label={`Accept ${callType} call`}>
                             {callType === 'video' ? <Video /> : <Phone />}
                         </button>
                     </div>
@@ -310,6 +310,7 @@ const CallModal = () => {
                         <button 
                             className="btn btn-ghost btn-circle btn-sm" 
                             onClick={endCall}
+                            aria-label="Close call window"
                         >
                             <X size={20} />
                         </button>
@@ -370,6 +371,7 @@ const CallModal = () => {
                             className={`btn btn-circle ${isMuted ? 'btn-error' : 'btn-outline btn-primary'}`}
                             onClick={handleToggleMute}
                             title={isMuted ? 'Unmute' : 'Mute'}
+                            aria-label={isMuted ? 'Unmute microphone' : 'Mute microphone'}
                         >
                             {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
                         </button>
@@ -380,6 +382,7 @@ const CallModal = () => {
                                 className={`btn btn-circle ${isCameraOff ? 'btn-error' : 'btn-outline btn-primary'}`}
                                 onClick={handleToggleCamera}
                                 title={isCameraOff ? 'Turn On Camera' : 'Turn Off Camera'}
+                                aria-label={isCameraOff ? 'Turn on camera' : 'Turn off camera'}
                             >
                                 {isCameraOff ? <VideoOff size={20} /> : <Video size={20} />}
                             </button>
@@ -390,6 +393,7 @@ const CallModal = () => {
                             className="btn btn-error btn-circle btn-lg mx-2"
                             onClick={endCall}
                             title="End Call"
+                            aria-label="End call"
                         >
                             <PhoneOff size={24} />
                         </button>
@@ -398,6 +402,7 @@ const CallModal = () => {
                         <button 
                             className="btn btn-circle btn-outline btn-primary hidden sm:flex"
                             title="Volume"
+                            aria-label="Adjust volume"
                         >
                             <Volume2 size={20} />
                         </button>

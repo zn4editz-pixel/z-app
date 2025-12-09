@@ -272,6 +272,7 @@ const ProfilePage = () => {
                     onClick={() => setIsEditingFullName(true)}
                     className="btn btn-sm btn-ghost"
                     title="Edit full name"
+                    aria-label="Edit full name"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
@@ -290,6 +291,7 @@ const ProfilePage = () => {
                       onClick={handleFullNameChange}
                       disabled={!newFullName || newFullName.trim().length < 2 || newFullName === authUser?.fullName}
                       className="btn btn-success btn-sm"
+                      aria-label="Save full name"
                     >
                       <Check className="w-4 h-4" />
                       Save
@@ -300,6 +302,7 @@ const ProfilePage = () => {
                         setNewFullName(authUser?.fullName || "");
                       }}
                       className="btn btn-ghost btn-sm"
+                      aria-label="Cancel editing full name"
                     >
                       <X className="w-4 h-4" />
                       Cancel
@@ -326,6 +329,7 @@ const ProfilePage = () => {
                     disabled={!usernameChangeInfo?.canChange}
                     className="btn btn-sm btn-ghost"
                     title={!usernameChangeInfo?.canChange ? "Username change limit reached" : "Edit username"}
+                    aria-label={!usernameChangeInfo?.canChange ? "Username change limit reached" : "Edit username"}
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
@@ -393,6 +397,7 @@ const ProfilePage = () => {
                       onClick={() => setShowUsernameConfirm(true)}
                       disabled={!newUsername || newUsername.length < 3 || !usernameAvailable || newUsername === authUser?.username}
                       className="btn btn-success btn-sm"
+                      aria-label="Save username"
                     >
                       <Check className="w-4 h-4" />
                       Save
@@ -404,6 +409,7 @@ const ProfilePage = () => {
                         setUsernameAvailable(null);
                       }}
                       className="btn btn-ghost btn-sm"
+                      aria-label="Cancel editing username"
                     >
                       <X className="w-4 h-4" />
                       Cancel
@@ -429,6 +435,7 @@ const ProfilePage = () => {
                     onClick={() => setIsEditingEmail(true)}
                     className="btn btn-sm btn-ghost"
                     title="Edit email"
+                    aria-label="Edit email address"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>

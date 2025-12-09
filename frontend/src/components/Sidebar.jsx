@@ -142,7 +142,7 @@ const Sidebar = () => {
             <button
               onClick={() => setSearchOpen(true)}
               className="btn btn-ghost btn-circle btn-sm"
-              aria-label="Search"
+              aria-label="Search friends"
             >
               <Search className="w-5 h-5" />
             </button>
@@ -359,7 +359,7 @@ const Sidebar = () => {
                     setQuery("");
                   }}
                   className="btn btn-ghost btn-circle btn-sm hover:bg-error/10 hover:text-error"
-                  aria-label="Close search"
+                  aria-label="Close search dialog"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -382,6 +382,7 @@ const Sidebar = () => {
                   <button
                     onClick={() => setQuery("")}
                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-base-content/40 hover:text-base-content"
+                    aria-label="Clear search"
                   >
                     <X className="w-5 h-5" />
                   </button>

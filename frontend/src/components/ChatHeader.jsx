@@ -30,6 +30,7 @@ const ChatHeader = ({ onStartCall }) => {
 				<button
 					className="btn btn-ghost btn-circle btn-sm md:hidden"
 					onClick={() => setSelectedUser(null)}
+					aria-label="Back to chat list"
 				>
 					<ArrowLeft className="w-5 h-5" />
 				</button>
@@ -79,6 +80,7 @@ const ChatHeader = ({ onStartCall }) => {
 					className="btn btn-ghost btn-circle btn-sm sm:btn-md btn-touch"
 					onClick={() => handleStartCall('audio')}
 					title="Audio call"
+					aria-label="Start audio call"
 				>
 					<Phone className="w-5 h-5 sm:w-6 sm:h-6" />
 				</button>
@@ -88,6 +90,7 @@ const ChatHeader = ({ onStartCall }) => {
 					className="btn btn-ghost btn-circle btn-sm sm:btn-md btn-touch"
 					onClick={() => handleStartCall('video')}
 					title="Video call"
+					aria-label="Start video call"
 				>
 					<Video className="w-5 h-5 sm:w-6 sm:h-6" />
 				</button>

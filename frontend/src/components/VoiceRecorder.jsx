@@ -129,6 +129,7 @@ const VoiceRecorder = ({ onSendVoice, disabled }) => {
               onClick={cancelRecording}
               className="btn btn-ghost flex-1 gap-2"
               disabled={isSending}
+              aria-label="Cancel voice message"
             >
               <X className="w-4 h-4" />
               <span className="hidden sm:inline">Cancel</span>
@@ -137,6 +138,7 @@ const VoiceRecorder = ({ onSendVoice, disabled }) => {
               onClick={sendVoiceMessage}
               className="btn btn-primary flex-1 gap-2"
               disabled={isSending}
+              aria-label="Send voice message"
             >
               {isSending ? (
                 <>
@@ -177,6 +179,7 @@ const VoiceRecorder = ({ onSendVoice, disabled }) => {
             <button
               onClick={stopRecording}
               className="btn btn-error gap-2"
+              aria-label="Stop recording"
             >
               <div className="w-3 h-3 bg-white rounded-sm" />
               <span className="hidden sm:inline">Stop</span>

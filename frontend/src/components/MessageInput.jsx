@@ -167,6 +167,7 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
             onClick={onCancelReply}
             className="btn btn-ghost btn-xs btn-circle flex-shrink-0 hover:bg-error/20 hover:text-error transition-colors"
             type="button"
+            aria-label="Cancel reply"
           >
             <X className="w-4 h-4" />
           </button>
@@ -186,6 +187,7 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
               className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-error text-white
               flex items-center justify-center hover:scale-110 active:scale-95 transition shadow-lg"
               type="button"
+              aria-label="Remove image"
             >
               <X className="w-4 h-4" />
             </button>
@@ -204,6 +206,7 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
                 type="button"
                 onClick={() => addEmoji(emoji)}
                 className="text-2xl p-2 hover:bg-base-300 rounded-lg active:scale-110 transition"
+                aria-label={`Add ${emoji} emoji`}
               >
                 {emoji}
               </button>
@@ -235,6 +238,7 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
               ${showEmojiPicker ? "bg-base-300 text-primary" : "bg-base-300/50 text-base-content/70 hover:text-base-content"}`}
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             title="Add emoji"
+            aria-label="Add emoji"
           >
             <Smile className="w-5 h-5" />
           </button>
@@ -246,6 +250,7 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
               ${imagePreview ? "bg-base-300 text-primary" : "bg-base-300/50 text-base-content/70 hover:text-base-content"}`}
             onClick={() => fileInputRef.current?.click()}
             title="Attach image"
+            aria-label="Attach image"
           >
             <Image className="w-5 h-5" />
           </button>
@@ -270,6 +275,7 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
           <button
             type="submit"
             className="btn btn-primary btn-circle btn-sm sm:btn-md flex-shrink-0 shadow-lg hover:scale-105 active:scale-95 transition-transform"
+            aria-label="Send message"
           >
             <Send className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>

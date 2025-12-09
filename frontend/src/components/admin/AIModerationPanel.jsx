@@ -34,11 +34,11 @@ const AIModerationPanel = ({
 						</div>
 					</div>
 					<div className="flex gap-2">
-						<button className="btn btn-sm btn-outline btn-primary gap-2">
+						<button className="btn btn-sm btn-outline btn-primary gap-2" aria-label="Refresh AI reports">
 							<RefreshCw size={16} />
 							Refresh
 						</button>
-						<button className="btn btn-sm btn-outline btn-secondary gap-2">
+						<button className="btn btn-sm btn-outline btn-secondary gap-2" aria-label="Export AI reports">
 							<Download size={16} />
 							Export
 						</button>

@@ -157,6 +157,7 @@ const SettingsPage = () => {
                 <button
                   onClick={() => setIsEditingProfile(true)}
                   className="btn btn-sm btn-ghost gap-2"
+                  aria-label="Edit profile"
                 >
                   <Edit2 className="w-4 h-4" />
                   Edit
