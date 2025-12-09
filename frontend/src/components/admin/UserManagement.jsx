@@ -88,7 +88,13 @@ const UserManagement = ({
 	];
 
 	return (
-		<div className="bg-base-100/90 backdrop-blur-sm rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 border border-base-300">
+		<div className="relative min-h-screen">
+			{/* Lightweight User Management Background */}
+			<div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-5">
+				<div className="absolute top-1/3 left-1/3 w-80 h-80 bg-amber-400 rounded-full blur-3xl will-change-transform" style={{ animation: 'float 22s ease-in-out infinite' }} />
+			</div>
+			
+		<div className="relative z-10 bg-black/80 backdrop-blur-sm rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 border-2 border-amber-400/30">
 			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
 				<div>
 					<h2 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-3">
@@ -361,6 +367,7 @@ const UserManagement = ({
 					animation: scaleIn 0.3s ease-out;
 				}
 			`}</style>
+		</div>
 		</div>
 	);
 };

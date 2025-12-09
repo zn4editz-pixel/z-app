@@ -62,7 +62,13 @@ const ReportsManagement = ({
 	};
 
 	return (
-		<div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
+		<div className="relative min-h-screen">
+			{/* Lightweight Reports Background */}
+			<div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-5">
+				<div className="absolute top-1/2 right-1/3 w-72 h-72 bg-red-400 rounded-full blur-3xl will-change-transform" style={{ animation: 'float 28s ease-in-out infinite' }} />
+			</div>
+			
+		<div className="relative z-10 bg-black/80 rounded-xl shadow-lg p-4 sm:p-6 border-2 border-amber-400/30">
 			{/* Header */}
 			<div className="flex items-center justify-between mb-4">
 				<div className="flex items-center gap-3">
@@ -383,6 +389,7 @@ const ReportsManagement = ({
 					})}
 				</div>
 			)}
+		</div>
 		</div>
 	);
 };

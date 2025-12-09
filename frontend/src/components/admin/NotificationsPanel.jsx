@@ -39,15 +39,21 @@ const NotificationsPanel = ({ onSendNotification }) => {
 	};
 
 	return (
-		<div className="space-y-6">
+		<div className="relative min-h-screen">
+			{/* Lightweight Notifications Background */}
+			<div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-5">
+				<div className="absolute top-1/4 right-1/2 w-84 h-84 bg-blue-400 rounded-full blur-3xl will-change-transform" style={{ animation: 'float 24s ease-in-out infinite' }} />
+			</div>
+			
+		<div className="relative z-10 space-y-6">
 			{/* Send Notification Form */}
-			<div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
+			<div className="bg-black/80 rounded-xl shadow-lg p-4 sm:p-6 border-2 border-amber-400/30">
 				<div className="flex items-center gap-3 mb-4">
-					<div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-base-content/10 flex items-center justify-center">
-						<FileText className="w-5 h-5 sm:w-6 sm:h-6 text-base-content" />
+					<div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-500/20 border-2 border-amber-400/40 flex items-center justify-center">
+						<FileText className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" />
 					</div>
 					<div>
-						<h2 className="text-xl sm:text-2xl font-semibold">Send Notification</h2>
+						<h2 className="text-xl sm:text-2xl font-semibold text-amber-300">Send Notification</h2>
 						<p className="text-xs sm:text-sm text-base-content/60">Send notifications to users</p>
 					</div>
 				</div>
@@ -150,10 +156,11 @@ const NotificationsPanel = ({ onSendNotification }) => {
 			</div>
 
 			{/* Recent Notifications */}
-			<div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6">
-				<h3 className="text-lg sm:text-xl font-semibold mb-4">Recent Notifications</h3>
+			<div className="bg-black/80 rounded-xl shadow-lg p-4 sm:p-6 border-2 border-amber-400/30">
+				<h3 className="text-lg sm:text-xl font-semibold mb-4 text-amber-300">Recent Notifications</h3>
 				<AdminNotifications />
 			</div>
+		</div>
 		</div>
 	);
 };

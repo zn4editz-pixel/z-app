@@ -33,7 +33,12 @@ const DashboardOverview = ({ stats, loadingStats, users = [] }) => {
 	}
 
 	return (
-		<div className="space-y-6 sm:space-y-8 animate-fadeIn">
+		<div className="space-y-6 sm:space-y-8 animate-fadeIn relative min-h-screen">
+			{/* Lightweight Dashboard Background */}
+			<div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-5">
+				<div className="absolute top-1/2 left-1/2 w-96 h-96 bg-amber-400 rounded-full blur-3xl will-change-transform" style={{ animation: 'float 25s ease-in-out infinite' }} />
+			</div>
+			
 			{/* Statistics Cards */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
 				{loadingStats ? (
@@ -43,48 +48,48 @@ const DashboardOverview = ({ stats, loadingStats, users = [] }) => {
 					</div>
 				) : stats && (
 					<>
-						<div className="stat bg-gradient-to-br from-white/10 via-white/5 to-primary/10 rounded-2xl shadow-xl p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 border border-white/20 hover:border-white/40 hover:scale-105">
-							<div className="stat-figure text-white">
-								<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-white/20 to-primary/30 flex items-center justify-center shadow-lg">
-									<Users className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+						<div className="relative stat bg-black/80 backdrop-blur-sm rounded-2xl shadow-xl p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 border-2 border-amber-400/40 hover:border-amber-400/80 hover:scale-105">
+							<div className="stat-figure text-amber-400">
+								<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-amber-500/20 to-yellow-500/30 border-2 border-amber-400/40 flex items-center justify-center shadow-lg">
+									<Users className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" />
 								</div>
 							</div>
-							<div className="stat-title text-xs sm:text-sm font-semibold text-base-content/70">Total Users</div>
-							<div className="stat-value text-white text-3xl sm:text-4xl font-bold">{stats.totalUsers}</div>
-							<div className="stat-desc text-xs font-medium text-green-600">+{stats.recentUsers} this week</div>
+							<div className="stat-title text-xs sm:text-sm font-semibold text-amber-200/70">Total Users</div>
+							<div className="stat-value text-amber-300 text-3xl sm:text-4xl font-bold">{stats.totalUsers}</div>
+							<div className="stat-desc text-xs font-medium text-green-400">+{stats.recentUsers} this week</div>
 						</div>
 
-						<div className="stat bg-base-100/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 border border-base-300 hover:scale-105">
-							<div className="stat-figure text-success hidden sm:block">
-								<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-success/20 flex items-center justify-center">
+						<div className="relative stat bg-black/80 backdrop-blur-sm rounded-2xl shadow-xl p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 border-2 border-green-400/40 hover:border-green-400/80 hover:scale-105">
+							<div className="stat-figure text-green-400 hidden sm:block">
+								<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-green-500/20 border-2 border-green-400/40 flex items-center justify-center">
 									<UserCheck className="w-6 h-6 sm:w-7 sm:h-7" />
 								</div>
 							</div>
-							<div className="stat-title text-xs sm:text-sm font-semibold text-base-content/70">Online Now</div>
-							<div className="stat-value text-success text-3xl sm:text-4xl font-bold">{stats.onlineUsers}</div>
-							<div className="stat-desc text-xs font-medium">{stats.verifiedUsers} verified</div>
+							<div className="stat-title text-xs sm:text-sm font-semibold text-amber-200/70">Online Now</div>
+							<div className="stat-value text-green-400 text-3xl sm:text-4xl font-bold">{stats.onlineUsers}</div>
+							<div className="stat-desc text-xs font-medium text-amber-300">{stats.verifiedUsers} verified</div>
 						</div>
 
-						<div className="stat bg-base-100/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 border border-base-300 hover:scale-105">
-							<div className="stat-figure text-warning hidden sm:block">
-								<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-warning/20 flex items-center justify-center">
+						<div className="relative stat bg-black/80 backdrop-blur-sm rounded-2xl shadow-xl p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 border-2 border-yellow-400/40 hover:border-yellow-400/80 hover:scale-105">
+							<div className="stat-figure text-yellow-400 hidden sm:block">
+								<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-yellow-500/20 border-2 border-yellow-400/40 flex items-center justify-center">
 									<Clock className="w-6 h-6 sm:w-7 sm:h-7" />
 								</div>
 							</div>
-							<div className="stat-title text-xs sm:text-sm font-semibold text-base-content/70">Pending Verifications</div>
-							<div className="stat-value text-warning text-3xl sm:text-4xl font-bold">{stats.pendingVerifications}</div>
-							<div className="stat-desc text-xs font-medium">{stats.approvedVerifications} approved</div>
+							<div className="stat-title text-xs sm:text-sm font-semibold text-amber-200/70">Pending Verifications</div>
+							<div className="stat-value text-yellow-400 text-3xl sm:text-4xl font-bold">{stats.pendingVerifications}</div>
+							<div className="stat-desc text-xs font-medium text-amber-300">{stats.approvedVerifications} approved</div>
 						</div>
 
-						<div className="stat bg-base-100/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 border border-base-300 hover:scale-105">
-							<div className="stat-figure text-error hidden sm:block">
-								<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-error/20 flex items-center justify-center">
+						<div className="relative stat bg-black/80 backdrop-blur-sm rounded-2xl shadow-xl p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 border-2 border-red-400/40 hover:border-red-400/80 hover:scale-105">
+							<div className="stat-figure text-red-400 hidden sm:block">
+								<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-red-500/20 border-2 border-red-400/40 flex items-center justify-center">
 									<AlertTriangle className="w-6 h-6 sm:w-7 sm:h-7" />
 								</div>
 							</div>
-							<div className="stat-title text-xs sm:text-sm font-semibold text-base-content/70">Pending Reports</div>
-							<div className="stat-value text-error text-3xl sm:text-4xl font-bold">{stats.pendingReports}</div>
-							<div className="stat-desc text-xs font-medium">{stats.totalReports} total reports</div>
+							<div className="stat-title text-xs sm:text-sm font-semibold text-amber-200/70">Pending Reports</div>
+							<div className="stat-value text-red-400 text-3xl sm:text-4xl font-bold">{stats.pendingReports}</div>
+							<div className="stat-desc text-xs font-medium text-amber-300">{stats.totalReports} total reports</div>
 						</div>
 					</>
 				)}

@@ -8,7 +8,13 @@ const VerificationRequests = ({
 	onReject 
 }) => {
 	return (
-		<div className="bg-base-100 rounded-xl shadow-lg p-3 sm:p-4 lg:p-6">
+		<div className="relative min-h-screen">
+			{/* Lightweight Verification Background */}
+			<div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-5">
+				<div className="absolute bottom-1/3 left-1/2 w-88 h-88 bg-green-400 rounded-full blur-3xl will-change-transform" style={{ animation: 'float 26s ease-in-out infinite' }} />
+			</div>
+			
+		<div className="relative z-10 bg-black/80 rounded-xl shadow-lg p-3 sm:p-4 lg:p-6 border-2 border-amber-400/30">
 			<div className="flex items-center gap-3 mb-4">
 				<div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-warning/20 flex items-center justify-center">
 					<BadgeCheck className="w-5 h-5 sm:w-6 sm:h-6 text-warning" />
@@ -142,6 +148,7 @@ const VerificationRequests = ({
 					))}
 				</div>
 			)}
+		</div>
 		</div>
 	);
 };

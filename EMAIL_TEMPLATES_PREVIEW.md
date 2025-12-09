@@ -1,7 +1,7 @@
 # Z-APP Branded Email Templates - Preview 📧
 
 ## Overview
-Beautiful, professional email templates with Z-APP branding, logo, and theme colors.
+Beautiful, professional email templates with Z-APP branding, logo, and theme colors.can you redesign entire ai moderationl panel page it feel like moder like give a backround animation tha feels like a ai patern and also the buttons are outline not colored only border and text outline color
 
 ---
 
