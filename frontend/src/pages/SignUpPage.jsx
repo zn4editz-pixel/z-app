@@ -29,13 +29,14 @@ const SignUpPage = () => {
 	const validateForm = () => {
 		if (!formData.fullName.trim()) return toast.error("Full name is required");
 
-		// ✅ Added username validation
+		// ✅ Username validation
 		if (!formData.username.trim()) return toast.error("Username is required");
 		if (formData.username.length < 3)
 			return toast.error("Username must be at least 3 characters");
-		if (!/^[a-zA-Z0-9_.]+$/.test(formData.username))
+		// ✅ FIXED: Allow hyphens in usernames
+		if (!/^[a-zA-Z0-9_.-]+$/.test(formData.username))
 			return toast.error(
-				"Username can only contain letters, numbers, underscores, and periods."
+				"Username can only contain letters, numbers, underscores, periods, and hyphens."
 			);
 
 		if (!formData.email.trim()) return toast.error("Email is required");

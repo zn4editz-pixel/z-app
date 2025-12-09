@@ -15,6 +15,7 @@ const StrangerChatPage = lazy(() => import("./pages/StrangerChatPage"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const DiscoverPage = lazy(() => import("./pages/DiscoverPage"));
 const SuspendedPage = lazy(() => import("./pages/SuspendedPage"));
+const BlockedPage = lazy(() => import("./pages/BlockedPage")); // ✅ FIXED: Import BlockedPage
 const GoodbyePage = lazy(() => import("./pages/GoodbyePage"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -23,6 +24,7 @@ const DebugPage = lazy(() => import("./pages/DebugPage"));
 // Lazy load components
 const Navbar = lazy(() => import("./components/Navbar"));
 const PermissionHandler = lazy(() => import("./components/PermissionHandler"));
+const ErrorBoundary = lazy(() => import("./components/ErrorBoundary")); // ✅ FIXED: Import ErrorBoundary
 
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
@@ -100,11 +102,23 @@ const App = () => {
 	}, [authUser, navigate]);
 	
 	// --- MAIN SOCKET LISTENER EFFECT ---
+	// ✅ FIXED: Only register once when socket connects
 	useEffect(() => {
 		if (!socket || !authUser?.id) return;
 
-		// Initial registration
-		socket.emit("register-user", authUser.id);
+		// Register user on connect
+		const handleConnect = () => {
+			console.log('🔌 Socket connected, registering user:', authUser.id);
+			socket.emit("register-user", authUser.id);
+		};
+
+		// Register immediately if already connected
+		if (socket.connected) {
+			handleConnect();
+		}
+
+		// Listen for reconnections
+		socket.on('connect', handleConnect);
 
 		// 1. User/Admin actions listener
 		socket.on("user-action", ({ type, reason, until }) => {
@@ -209,7 +223,7 @@ const App = () => {
 		// 4. Verification notifications
 		socket.on("verification-approved", ({ message }) => {
 			toast.success(message || "Your verification request has been approved!");
-			// Update authUser state immediately
+			// ✅ FIXED: Update localStorage first to prevent race condition
 			const updatedUser = {
 				...authUser,
 				isVerified: true,
@@ -219,9 +233,8 @@ const App = () => {
 					reviewedAt: new Date()
 				}
 			};
-			setAuthUser(updatedUser);
-			// Also update localStorage to persist the change
 			localStorage.setItem("authUser", JSON.stringify(updatedUser));
+			setAuthUser(updatedUser);
 		});
 
 		socket.on("verification-rejected", ({ message, reason }) => {
@@ -229,7 +242,7 @@ const App = () => {
 			if (reason) {
 				toast.error(`Reason: ${reason}`, { duration: 5000 });
 			}
-			// Update authUser state immediately
+			// ✅ FIXED: Update localStorage first to prevent race condition
 			const updatedUser = {
 				...authUser,
 				isVerified: false,
@@ -240,9 +253,8 @@ const App = () => {
 					reviewedAt: new Date()
 				}
 			};
-			setAuthUser(updatedUser);
-			// Also update localStorage to persist the change
 			localStorage.setItem("authUser", JSON.stringify(updatedUser));
+			setAuthUser(updatedUser);
 		});
 
 		// 5. Report status notifications (FIXED: removed duplicate)
@@ -268,6 +280,7 @@ const App = () => {
 
 		// 6. Cleanup
 		return () => {
+			socket.off('connect', handleConnect); // ✅ FIXED: Cleanup connect listener
 			socket.off("user-action");
 			socket.off("message-received");
 			socket.off("friendRequest:received");
@@ -279,12 +292,12 @@ const App = () => {
 			socket.off("admin-notification");
 			socket.off("admin-broadcast");
 		};
-	// Added addPendingReceived to dependencies
-	}, [socket, authUser, navigate, forceLogout, theme, addPendingReceived]); 
+	// ✅ FIXED: Only depend on socket and authUser.id to prevent duplicate listeners
+	}, [socket, authUser?.id, navigate, forceLogout, theme, addPendingReceived, setAuthUser]); 
 
 	const hasCompletedProfile = authUser?.hasCompletedProfile;
 
-	// Unified loading component - always dark to prevent white flash
+	// ✅ FIXED: Loading screen respects theme
 	const LoadingScreen = () => (
 		<div style={{
 			position: 'fixed',
@@ -292,7 +305,7 @@ const App = () => {
 			display: 'flex',
 			alignItems: 'center',
 			justifyContent: 'center',
-			backgroundColor: '#1a1a1a'
+			backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff'
 		}}>
 			<div className="flex flex-col items-center gap-3">
 				<div style={{
@@ -304,7 +317,7 @@ const App = () => {
 					animation: 'spin 0.8s linear infinite'
 				}}></div>
 				<p style={{ 
-					color: '#999',
+					color: theme === 'dark' ? '#999' : '#666',
 					fontSize: '14px'
 				}}>Loading...</p>
 			</div>
@@ -321,15 +334,22 @@ const App = () => {
 		return <LoadingScreen />;
 	}
 
+	// ✅ FIXED: Pages where Navbar should be hidden
+	const hideNavbarPaths = ["/stranger", "/suspended", "/blocked", "/goodbye"];
+	const shouldShowNavbar = hasCompletedProfile && !hideNavbarPaths.includes(window.location.pathname);
+
 	return (
 		<div data-theme={theme} className="pt-14 md:pt-16">
-			<Suspense fallback={null}>
-				{authUser && hasCompletedProfile && <PermissionHandler />}
-				{hasCompletedProfile && window.location.pathname !== "/stranger" && <Navbar />}
+			<Suspense fallback={<LoadingScreen />}>
+				<ErrorBoundary>
+					{authUser && hasCompletedProfile && <PermissionHandler />}
+					{shouldShowNavbar && <Navbar />}
+				</ErrorBoundary>
 			</Suspense>
 
-			<Suspense fallback={null}>
-				<Routes location={location} key={location.pathname}>
+			<Suspense fallback={<LoadingScreen />}>
+				<ErrorBoundary>
+					<Routes location={location} key={location.pathname}>
 				{/* --- Auth Routes --- */}
 				<Route
 					path="/signup"
@@ -466,12 +486,13 @@ const App = () => {
 					}
 				/>
 
-				{/* --- Special Pages (unchanged) --- */}
+				{/* --- Special Pages --- */}
 				<Route path="/suspended" element={<SuspendedPage />} />
 				<Route path="/goodbye" element={<GoodbyePage />} />
-				<Route path="/blocked" element={<GoodbyePage />} />
+				<Route path="/blocked" element={<BlockedPage />} /> {/* ✅ FIXED: Use BlockedPage */}
 				<Route path="/debug" element={<DebugPage />} />
 					</Routes>
+				</ErrorBoundary>
 			</Suspense>
 
 			<Toaster position="top-center" toastOptions={{

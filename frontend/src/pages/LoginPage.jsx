@@ -2,13 +2,14 @@ import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import AuthImagePattern from "../components/AuthImagePattern";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast"; // ✅ FIXED: Import toast
 import {
 	Eye,
 	EyeOff,
 	Loader2,
 	Lock,
 	MessageSquare,
-	User, // ✅ CHANGED: Replaced Mail with User
+	User,
 } from "lucide-react";
 
 const LoginPage = () => {
@@ -20,11 +21,29 @@ const LoginPage = () => {
 	});
 	const { login, isLoggingIn } = useAuthStore();
 
+	// ✅ FIXED: Add form validation
+	const validateForm = () => {
+		if (!formData.emailOrUsername.trim()) {
+			toast.error("Email or username is required");
+			return false;
+		}
+		if (!formData.password) {
+			toast.error("Password is required");
+			return false;
+		}
+		if (formData.password.length < 6) {
+			toast.error("Password must be at least 6 characters");
+			return false;
+		}
+		return true;
+	};
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		// ✅ CHANGED: No change here, but 'formData' now correctly contains
-		// { emailOrUsername: "...", password: "..." }
-		// which matches our backend API.
+		
+		// Validate before submitting
+		if (!validateForm()) return;
+		
 		login(formData);
 	};
 
