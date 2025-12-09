@@ -36,13 +36,40 @@ export const useChatStore = create((set, get) => ({
             return;
         }
         
-        // Clear messages immediately to prevent showing wrong chat
+        // ✅ INSTANT: Try to load from cache first for instant display
+        const chatId = `${userId}`;
+        const cachedMessages = await getCachedMessagesDB(chatId);
+        
+        if (cachedMessages && cachedMessages.length > 0) {
+            console.log(`⚡ INSTANT: Loaded ${cachedMessages.length} messages from cache`);
+            set({ messages: cachedMessages, isMessagesLoading: false });
+            
+            // Mark as read immediately
+            get().resetUnread(userId);
+            get().markMessagesAsRead(userId);
+            
+            // Fetch fresh data in background (stale-while-revalidate)
+            axiosInstance.get(`/messages/${userId}`)
+                .then(res => {
+                    const currentUser = get().selectedUser;
+                    if (currentUser?.id?.toString() === targetUserId) {
+                        console.log(`🔄 Background: Updated with ${res.data.length} fresh messages`);
+                        set({ messages: res.data });
+                        // Update cache with fresh data
+                        cacheMessagesDB(chatId, res.data);
+                    }
+                })
+                .catch(err => console.error('Background fetch failed:', err));
+            
+            return; // Exit early - cache hit!
+        }
+        
+        // No cache - show loading and fetch
         set({ messages: [], isMessagesLoading: true });
         
         try {
             console.log(`📥 Fetching messages for user: ${userId}`);
             
-            // ALWAYS fetch fresh messages from server - NO CACHE
             const res = await axiosInstance.get(`/messages/${userId}`);
             
             // CRITICAL: Double-check user hasn't changed during fetch
@@ -56,6 +83,9 @@ export const useChatStore = create((set, get) => ({
             
             console.log(`✅ Loaded ${res.data.length} messages`);
             set({ messages: res.data, isMessagesLoading: false });
+            
+            // Cache the messages for next time
+            cacheMessagesDB(chatId, res.data);
             
             // Mark as read
             get().resetUnread(userId);
@@ -97,7 +127,12 @@ export const useChatStore = create((set, get) => ({
         };
         
         // ✅ INSTANT: Add optimistic message IMMEDIATELY (no waiting)
-        set({ messages: [...messages, optimisticMessage] });
+        const updatedMessages = [...messages, optimisticMessage];
+        set({ messages: updatedMessages });
+        
+        // ✅ INSTANT: Update cache immediately
+        const chatId = `${selectedUser.id}`;
+        cacheMessagesDB(chatId, updatedMessages);
         
         // ✅ Update friend list with this message (for sidebar sorting)
         useFriendStore.getState().updateFriendLastMessage(selectedUser.id, optimisticMessage);
@@ -213,7 +248,12 @@ export const useChatStore = create((set, get) => ({
                 
                 // Add new message from other person
                 console.log(`✅ Adding new message to current chat`);
-                set({ messages: [...messages, newMessage] });
+                const updatedMessages = [...messages, newMessage];
+                set({ messages: updatedMessages });
+                
+                // ✅ Update cache with new message
+                const chatId = `${selectedUserId}`;
+                cacheMessagesDB(chatId, updatedMessages);
                 
                 // ✅ Update friend list with this received message
                 useFriendStore.getState().updateFriendLastMessage(msgSenderId, newMessage);
@@ -321,11 +361,17 @@ export const useChatStore = create((set, get) => ({
     addReaction: async (messageId, emoji) => {
         try {
             const res = await axiosInstance.post(`/messages/reaction/${messageId}`, { emoji });
-            const { messages } = get();
+            const { messages, selectedUser } = get();
             const updatedMessages = messages.map(msg => 
                 msg.id === messageId ? { ...msg, reactions: res.data.reactions } : msg
             );
             set({ messages: updatedMessages });
+            
+            // Update cache
+            if (selectedUser) {
+                const chatId = `${selectedUser.id}`;
+                cacheMessagesDB(chatId, updatedMessages);
+            }
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to add reaction");
         }
@@ -334,11 +380,17 @@ export const useChatStore = create((set, get) => ({
     removeReaction: async (messageId) => {
         try {
             const res = await axiosInstance.delete(`/messages/reaction/${messageId}`);
-            const { messages } = get();
+            const { messages, selectedUser } = get();
             const updatedMessages = messages.map(msg => 
                 msg.id === messageId ? { ...msg, reactions: res.data.reactions } : msg
             );
             set({ messages: updatedMessages });
+            
+            // Update cache
+            if (selectedUser) {
+                const chatId = `${selectedUser.id}`;
+                cacheMessagesDB(chatId, updatedMessages);
+            }
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to remove reaction");
         }
@@ -347,11 +399,18 @@ export const useChatStore = create((set, get) => ({
     deleteMessage: async (messageId) => {
         try {
             await axiosInstance.delete(`/messages/message/${messageId}`);
-            const { messages } = get();
+            const { messages, selectedUser } = get();
             const updatedMessages = messages.map(msg => 
                 msg.id === messageId ? { ...msg, isDeleted: true, deletedAt: new Date() } : msg
             );
             set({ messages: updatedMessages });
+            
+            // Update cache
+            if (selectedUser) {
+                const chatId = `${selectedUser.id}`;
+                cacheMessagesDB(chatId, updatedMessages);
+            }
+            
             toast.success("Message deleted");
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to delete message");
@@ -363,19 +422,31 @@ export const useChatStore = create((set, get) => ({
         if (!socket) return;
 
         const reactionHandler = ({ messageId, reactions }) => {
-            const { messages } = get();
+            const { messages, selectedUser } = get();
             const updatedMessages = messages.map(msg => 
                 msg.id === messageId ? { ...msg, reactions } : msg
             );
             set({ messages: updatedMessages });
+            
+            // Update cache
+            if (selectedUser) {
+                const chatId = `${selectedUser.id}`;
+                cacheMessagesDB(chatId, updatedMessages);
+            }
         };
 
         const deleteHandler = ({ messageId, isDeleted, deletedAt }) => {
-            const { messages } = get();
+            const { messages, selectedUser } = get();
             const updatedMessages = messages.map(msg => 
                 msg.id === messageId ? { ...msg, isDeleted, deletedAt } : msg
             );
             set({ messages: updatedMessages });
+            
+            // Update cache
+            if (selectedUser) {
+                const chatId = `${selectedUser.id}`;
+                cacheMessagesDB(chatId, updatedMessages);
+            }
         };
 
         socket.off("messageReaction", reactionHandler);
