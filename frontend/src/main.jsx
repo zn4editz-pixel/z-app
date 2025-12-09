@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css"; // Critical CSS only
+import "./styles/accessibility-fixes.css"; // Accessibility improvements - critical for WCAG compliance
 import App from "./App.jsx";
 import { BrowserRouter } from "react-router-dom";
 

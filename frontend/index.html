@@ -77,22 +77,24 @@
     
     <!-- ✅ PERFORMANCE: Preload main script for faster execution -->
     <link rel="modulepreload" href="/src/main.jsx" />
-    
-    <!-- ✅ ACCESSIBILITY: Improved contrast ratios for WCAG AA compliance -->
-    <link rel="stylesheet" href="/src/styles/accessibility-fixes.css" />
-    
     <style>
-      /* Prevent white flash - set body background immediately */
+      /* Prevent white flash - set body background to theme color immediately */
       html, body {
         margin: 0;
         padding: 0;
-        background-color: #1a1a1a;
+        background-color: #1a1a1a; /* Dark theme default */
         /* Use svh (small viewport height) for better mobile support */
         min-height: 100svh;
         min-height: 100vh; /* Fallback */
         /* Prevent horizontal overflow */
         overflow-x: hidden;
         max-width: 100vw;
+      }
+      
+      /* Light theme background - applied immediately via inline script */
+      html[data-theme="light"], 
+      html[data-theme="light"] body {
+        background-color: #f3f4f6; /* Light gray instead of white */
       }
       
       /* Root container should fill viewport */

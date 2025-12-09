@@ -48,11 +48,12 @@ const ChatContainer = ({ onStartCall }) => {
   useEffect(() => {
     if (!selectedUser?.id) return;
     
-    console.log(`📱 ChatContainer: Loading chat for ${selectedUser.nickname || selectedUser.username}`);
+    if (import.meta.env.DEV) console.log(`📱 ChatContainer: Loading chat for ${selectedUser.nickname || selectedUser.username}`);
     
     isInitialLoad.current = true;
     previousMessagesLength.current = 0;
     
+    // ✅ INSTANT: Load messages immediately without delay
     getMessages?.(selectedUser.id);
     const unsub = subscribeToMessages?.(selectedUser.id);
     return () => typeof unsub === "function" && unsub();
@@ -87,13 +88,11 @@ const ChatContainer = ({ onStartCall }) => {
           setNewMessageCount(0);
         }
       } else if (isInitialLoad.current) {
-        // Initial load: always scroll to bottom
-        requestAnimationFrame(() => {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-          }
-        });
-        console.log(`📜 Initial load: Jumped to bottom (${messages.length} messages)`);
+        // ✅ INSTANT: Initial load scroll - no animation, no delay
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
+        if (import.meta.env.DEV) console.log(`📜 Initial load: Jumped to bottom (${messages.length} messages)`);
         isInitialLoad.current = false;
       }
       
