@@ -278,7 +278,7 @@ const AdminDashboard = () => {
 				status: newStatus
 			});
 			console.log('Update response:', response.data);
-			toast.success("Report status updated");
+			toast.success("Report status updated successfully");
 			// Refresh all data
 			await Promise.all([
 				fetchReports(),
@@ -292,14 +292,30 @@ const AdminDashboard = () => {
 	};
 
 	const handleDeleteReport = async (reportId) => {
-		if (!confirm("Are you sure you want to delete this report?")) return;
+		if (!confirm("Are you sure you want to permanently delete this report? This action cannot be undone.")) return;
 		try {
+			console.log(`Deleting report ${reportId}`);
 			await axiosInstance.delete(`/admin/reports/${reportId}`);
-			toast.success("Report deleted");
-			fetchReports();
-			fetchStats();
+			toast.success("Report deleted successfully");
+			// Refresh all data
+			await Promise.all([
+				fetchReports(),
+				fetchAIReports(),
+				fetchStats()
+			]);
 		} catch (err) {
-			toast.error(err.response?.data?.message || "Failed to delete report");
+			console.error('Delete report error:', err);
+			toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to delete report");
+		}
+	};
+
+	const handleRefreshAIReports = async () => {
+		toast.loading("Refreshing AI reports...", { id: "refresh" });
+		try {
+			await fetchAIReports();
+			toast.success("AI reports refreshed", { id: "refresh" });
+		} catch (err) {
+			toast.error("Failed to refresh", { id: "refresh" });
 		}
 	};
 
@@ -382,6 +398,8 @@ const AdminDashboard = () => {
 						aiStats={aiStats}
 						loadingAIReports={loadingAIReports}
 						onUpdateReportStatus={handleUpdateReportStatus}
+						onDeleteReport={handleDeleteReport}
+						onRefresh={handleRefreshAIReports}
 					/>
 				);
 			case "reports":

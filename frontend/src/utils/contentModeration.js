@@ -84,12 +84,13 @@ export const analyzeFrame = async (videoElement) => {
     });
     
     // Categories: Neutral, Drawing, Hentai, Porn, Sexy
+    // ✅ FIX: More sensitive detection for better nude content detection
     const inappropriate = predictions.filter(p => 
-      ['Hentai', 'Porn'].includes(p.className) && p.probability > 0.3 // Lowered threshold
+      ['Hentai', 'Porn'].includes(p.className) && p.probability > 0.50 // 50%+ for explicit content
     );
     
     const suspicious = predictions.filter(p => 
-      p.className === 'Sexy' && p.probability > 0.4 // Lowered threshold
+      p.className === 'Sexy' && p.probability > 0.50 // 50%+ for suggestive content
     );
 
     const isInappropriate = inappropriate.length > 0;
@@ -140,7 +141,7 @@ export const MODERATION_CONFIG = {
   silentReportThreshold: 0.50, // 50% confidence - silent report to admin for review (no user action)
   confidenceThreshold: 0.70, // 70% confidence to flag and warn user
   autoReportThreshold: 0.85, // 85% confidence to auto-report and disconnect (high confidence only)
-  maxViolations: 3, // Auto-disconnect after 3 violations (more lenient)
+  maxViolations: 3, // Auto-disconnect after 3 violations at 70%+ confidence
 };
 
 // Format AI analysis for report

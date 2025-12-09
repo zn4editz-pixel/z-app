@@ -206,24 +206,103 @@ const ReportsManagement = ({
 										</div>
 									</div>
 
-									{/* Report Details */}
-									<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-										<div>
-											<span className="text-base-content/60">Reporter:</span>{' '}
-											{report.isAIDetected ? (
-												<span className="badge badge-purple badge-xs">AI Auto-Report</span>
+									{/* Report Details with Clear Roles */}
+									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
+										{/* Reporter - Who reported */}
+										<div className="bg-success/10 rounded-lg p-3 border border-success/30">
+											<div className="text-xs text-success font-bold mb-2 flex items-center gap-1">
+												👤 REPORTER (Who Reported)
+											</div>
+											<div className="flex items-center gap-2">
+												<div className="avatar">
+													<div className="w-10 h-10 rounded-full ring ring-success ring-offset-2">
+														<img 
+															src={report.reporter?.profilePic || '/avatar.png'} 
+															alt="Reporter" 
+														/>
+													</div>
+												</div>
+												<div>
+													{report.isAIDetected ? (
+														<span className="badge badge-primary badge-sm">🤖 AI System</span>
+													) : (
+														<div className="font-semibold text-sm">
+															{report.reporter?.nickname || report.reporter?.username || 'N/A'}
+														</div>
+													)}
+													<div className="text-xs text-base-content/60">
+														{report.reporter?.email || 'System'}
+													</div>
+												</div>
+											</div>
+										</div>
+
+										{/* Violator - Who was reported */}
+										<div className="bg-error/10 rounded-lg p-3 border border-error/30">
+											<div className="text-xs text-error font-bold mb-2 flex items-center gap-1">
+												⚠️ VIOLATOR (Who Violated)
+											</div>
+											<div className="flex items-center gap-2">
+												<div className="avatar">
+													<div className="w-10 h-10 rounded-full ring ring-error ring-offset-2">
+														<img 
+															src={report.reportedUser?.profilePic || '/avatar.png'} 
+															alt="Violator" 
+														/>
+													</div>
+												</div>
+												<div>
+													<div className="font-semibold text-sm">
+														{report.reportedUser?.nickname || report.reportedUser?.username || 'N/A'}
+													</div>
+													<div className="text-xs text-base-content/60">
+														{report.reportedUser?.email || 'N/A'}
+													</div>
+												</div>
+											</div>
+										</div>
+
+										{/* Violation Evidence */}
+										<div className="bg-warning/10 rounded-lg p-3 border border-warning/30">
+											<div className="text-xs text-warning font-bold mb-2 flex items-center gap-1">
+												🔞 VIOLATION CONTENT
+											</div>
+											{report.screenshot ? (
+												<div className="flex items-center gap-2">
+													<div className="relative group">
+														<div className="w-16 h-16 rounded-lg border-2 border-error overflow-hidden bg-black">
+															<img 
+																src={report.screenshot} 
+																alt="Violation Evidence"
+																className="w-full h-full object-cover blur-md group-hover:blur-none transition-all cursor-pointer"
+																title="Hover to preview violation content"
+															/>
+														</div>
+														<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+															<span className="bg-error text-white text-[10px] font-bold px-1 py-0.5 rounded group-hover:opacity-0 transition-opacity">
+																NSFW
+															</span>
+														</div>
+													</div>
+													<a
+														href={report.screenshot}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="btn btn-error btn-xs gap-1"
+													>
+														<ExternalLink className="w-3 h-3" /> View Full
+													</a>
+												</div>
 											) : (
-												<span className="font-medium">
-													{report.reporter?.nickname || report.reporter?.username || 'N/A'}
-												</span>
+												<div className="text-xs text-base-content/50">
+													No screenshot available
+												</div>
 											)}
 										</div>
-										<div>
-											<span className="text-base-content/60">Reported User:</span>{' '}
-											<span className="font-medium">
-												{report.reportedUser?.nickname || report.reportedUser?.username || 'N/A'}
-											</span>
-										</div>
+									</div>
+
+									{/* Additional Info */}
+									<div className="grid grid-cols-2 gap-2 text-xs bg-base-100/50 rounded p-2">
 										<div>
 											<span className="text-base-content/60">Date:</span>{' '}
 											<span className="font-medium">

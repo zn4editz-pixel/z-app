@@ -579,14 +579,23 @@ io.on("connection", (socket) => {
 
     // --- *** ENABLED AND FIXED WITH PRISMA *** ---
 	socket.on("stranger:report", async (payload) => {
-        // Destructure all fields including AI detection data
-		const { reporterId, reason, description, category, screenshot, isAIDetected, aiConfidence, aiCategory } = payload;
+        // ✅ FIX: Destructure reportedUserId from payload (not from partnerSocket)
+		const { reporterId, reportedUserId, reason, description, category, screenshot, isAIDetected, aiConfidence, aiCategory } = payload;
 		const partnerSocketId = matchedPairs.get(socket.id);
+		
+		console.log('📥 Received report:', {
+			reporterId,
+			reportedUserId,
+			reason,
+			isAIDetected,
+			hasScreenshot: !!screenshot
+		});
 		
 		if (partnerSocketId) {
 			const partnerSocket = io.sockets.sockets.get(partnerSocketId);
 			
-			if (partnerSocket && partnerSocket.userId) {
+			// ✅ FIX: Use reportedUserId from payload, not from socket
+			if (reportedUserId) {
 				try {
                     // Validate that the screenshot exists
                     if (!screenshot) {
@@ -594,54 +603,71 @@ io.on("connection", (socket) => {
                     }
 
                     // Upload the screenshot to Cloudinary
+                    console.log('📤 Uploading screenshot to Cloudinary...');
                     const uploadResponse = await cloudinary.uploader.upload(screenshot, {
                         resource_type: "image",
                         folder: "reports",
                     });
                     const screenshotUrl = uploadResponse.secure_url;
+                    console.log('✅ Screenshot uploaded:', screenshotUrl);
 
                     if (!screenshotUrl) {
                         throw new Error("Failed to upload screenshot.");
                     }
 
-                    // Save the report with AI detection data using Prisma
+                    // ✅ FIX: Save the report with correct reporter and violator IDs
 					const report = await prisma.report.create({
 						data: {
-							reporterId: reporterId,
-							reportedUserId: partnerSocket.strangerData?.userId || reportedUserId,
+							reporterId: reporterId, // ✅ The person who saw the violation
+							reportedUserId: reportedUserId, // ✅ The person showing inappropriate content
 							reason,
 							description,
 							category: category || "stranger_chat",
-							screenshot: screenshotUrl,
+							screenshot: screenshotUrl, // ✅ Screenshot of the violator's video
 							isAIDetected: isAIDetected || false,
 							aiConfidence: aiConfidence || null,
 							aiCategory: aiCategory || null,
 							status: 'pending'
 						}
 					});
-					console.log(`🚨 Report saved: ${reporterId} reported ${partnerSocket.userId}${isAIDetected ? ' (AI Detected)' : ''}`);
+					console.log(`✅ Report saved: Reporter ${reporterId} reported Violator ${reportedUserId}${isAIDetected ? ' (AI Detected)' : ''}`);
 					
-					socket.emit("stranger:reportSuccess", { message: "Report submitted" });
+					socket.emit("stranger:reportSuccess", { message: "Report submitted successfully" });
 				} catch (error) {
                     // Send the specific validation error message back to the user
                     const errorMessage = error.errors?.screenshot?.message || error.message || "Failed to submit report";
-					console.error("Error saving report:", errorMessage);
+					console.error("❌ Error saving report:", errorMessage);
 					socket.emit("stranger:reportError", { error: errorMessage });
 				}
+			} else {
+				console.error("❌ No reportedUserId provided");
+				socket.emit("stranger:reportError", { error: "Missing reported user information" });
 			}
+		} else {
+			console.error("❌ No partner socket found");
+			socket.emit("stranger:reportError", { error: "Partner not found" });
 		}
 	});
     // --- *** END OF FIXED FUNCTION *** ---
 
 	// Silent AI Suspicion Report (Low confidence detections for admin review)
 	socket.on("stranger:aiSuspicion", async (payload) => {
+		// ✅ FIX: Use reportedUserId from payload
 		const { reporterId, reportedUserId, reason, description, category, screenshot, isAIDetected, aiConfidence, aiCategory, isSilentReport } = payload;
 		const partnerSocketId = matchedPairs.get(socket.id);
+		
+		console.log('📋 Silent AI suspicion:', {
+			reporterId,
+			reportedUserId,
+			aiCategory,
+			aiConfidence: aiConfidence ? `${(aiConfidence * 100).toFixed(1)}%` : 'N/A'
+		});
 		
 		if (partnerSocketId) {
 			const partnerSocket = io.sockets.sockets.get(partnerSocketId);
 			
-			if (partnerSocket && partnerSocket.userId) {
+			// ✅ FIX: Use reportedUserId from payload
+			if (reportedUserId) {
 				try {
 					// Validate screenshot
 					if (!screenshot) {
@@ -650,38 +676,42 @@ io.on("connection", (socket) => {
 					}
 
 					// Upload screenshot to Cloudinary
+					console.log('📤 Uploading AI suspicion screenshot...');
 					const uploadResponse = await cloudinary.uploader.upload(screenshot, {
 						resource_type: "image",
 						folder: "reports/ai-suspicions",
 					});
 					const screenshotUrl = uploadResponse.secure_url;
+					console.log('✅ AI suspicion screenshot uploaded');
 
 					if (!screenshotUrl) {
 						console.error("Failed to upload AI suspicion screenshot");
 						return;
 					}
 
-					// Save as a report with special flag using Prisma
+					// ✅ FIX: Save with correct reporter and violator IDs
 					const report = await prisma.report.create({
 						data: {
-							reporterId: reporterId,
-							reportedUserId: reportedUserId || partnerSocket.strangerData?.userId,
+							reporterId: reporterId, // ✅ The person who saw the violation
+							reportedUserId: reportedUserId, // ✅ The person showing suspicious content
 							reason: reason || 'AI Suspicion - Low Confidence',
 							description: description || `Low confidence AI detection for admin review\n\nCategory: ${aiCategory}\nConfidence: ${(aiConfidence * 100).toFixed(1)}%\n\nThis is a silent report - no user action was taken.`,
 							category: category || "stranger_chat",
-							screenshot: screenshotUrl,
+							screenshot: screenshotUrl, // ✅ Screenshot of the violator's video
 							isAIDetected: true,
 							aiConfidence: aiConfidence || null,
 							aiCategory: aiCategory || null,
 							status: 'pending'
 						}
 					});
-					console.log(`📋 Silent AI suspicion logged: ${aiCategory} at ${(aiConfidence * 100).toFixed(1)}% confidence`);
+					console.log(`✅ Silent AI suspicion saved: Reporter ${reporterId} flagged Violator ${reportedUserId} - ${aiCategory} at ${(aiConfidence * 100).toFixed(1)}%`);
 					
 					// No response to user - silent
 				} catch (error) {
-					console.error("Error saving AI suspicion:", error.message);
+					console.error("❌ Error saving AI suspicion:", error.message);
 				}
+			} else {
+				console.error("❌ No reportedUserId in AI suspicion");
 			}
 		}
 	});

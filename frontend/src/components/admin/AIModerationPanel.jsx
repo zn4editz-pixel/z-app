@@ -1,11 +1,13 @@
-import { Shield, ExternalLink, Eye, CheckCircle, XCircle, Brain, TrendingUp, AlertOctagon, Filter, Download, RefreshCw } from "lucide-react";
+import { Shield, ExternalLink, Eye, CheckCircle, XCircle, Brain, TrendingUp, AlertOctagon, Filter, Download, RefreshCw, Trash2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const AIModerationPanel = ({ 
 	aiReports, 
 	aiStats, 
 	loadingAIReports, 
-	onUpdateReportStatus 
+	onUpdateReportStatus,
+	onDeleteReport,
+	onRefresh
 }) => {
 	const COLORS = ['#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#64748b'];
 	
@@ -34,7 +36,11 @@ const AIModerationPanel = ({
 						</div>
 					</div>
 					<div className="flex gap-2">
-						<button className="btn btn-sm btn-outline btn-primary gap-2" aria-label="Refresh AI reports">
+						<button 
+							onClick={onRefresh}
+							className="btn btn-sm btn-outline btn-primary gap-2" 
+							aria-label="Refresh AI reports"
+						>
 							<RefreshCw size={16} />
 							Refresh
 						</button>
@@ -184,10 +190,11 @@ const AIModerationPanel = ({
 							<thead>
 								<tr className="text-xs sm:text-sm text-center bg-base-200">
 									<th>Date</th>
-									<th>Reported User</th>
+									<th>👤 Reporter</th>
+									<th>⚠️ Violator</th>
 									<th>AI Category</th>
 									<th>Confidence</th>
-									<th>Screenshot</th>
+									<th>🔞 Violation Evidence</th>
 									<th>Status</th>
 									<th>Actions</th>
 								</tr>
@@ -196,19 +203,45 @@ const AIModerationPanel = ({
 								{aiReports.map((report) => (
 									<tr key={report.id} className="text-center text-xs sm:text-sm hover:bg-base-200/50 transition-colors">
 										<td className="font-medium">{new Date(report.createdAt).toLocaleString()}</td>
+										
+										{/* Reporter Column - Who reported the violation */}
 										<td>
 											<div className="flex items-center justify-center gap-2">
 												<div className="avatar">
-													<div className="w-8 h-8 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+													<div className="w-10 h-10 rounded-full ring ring-success ring-offset-base-100 ring-offset-2">
 														<img 
-															src={report.reportedUser?.profilePic || '/avatar.png'} 
-															alt="" 
+															src={report.reporter?.profilePic || '/avatar.png'} 
+															alt="Reporter Profile" 
+															title="Person who reported"
 														/>
 													</div>
 												</div>
-												<span className="font-semibold">{report.reportedUser?.nickname || report.reportedUser?.username || 'N/A'}</span>
+												<div className="text-left">
+													<div className="font-semibold text-xs">{report.reporter?.nickname || report.reporter?.username || 'AI System'}</div>
+													<div className="text-[10px] text-success font-bold">✓ Reporter</div>
+												</div>
 											</div>
 										</td>
+
+										{/* Violator Column - Who violated the rules */}
+										<td>
+											<div className="flex items-center justify-center gap-2">
+												<div className="avatar">
+													<div className="w-10 h-10 rounded-full ring ring-error ring-offset-base-100 ring-offset-2">
+														<img 
+															src={report.reportedUser?.profilePic || '/avatar.png'} 
+															alt="Violator Profile" 
+															title="Person who violated rules"
+														/>
+													</div>
+												</div>
+												<div className="text-left">
+													<div className="font-semibold text-xs">{report.reportedUser?.nickname || report.reportedUser?.username || 'N/A'}</div>
+													<div className="text-[10px] text-error font-bold">⚠ Violator</div>
+												</div>
+											</div>
+										</td>
+
 										<td>
 											<span className="badge badge-error badge-md gap-1">
 												<AlertOctagon size={12} />
@@ -230,16 +263,45 @@ const AIModerationPanel = ({
 												<span className="text-xs font-bold">{(report.aiConfidence * 100).toFixed(0)}%</span>
 											</div>
 										</td>
+										
+										{/* Violation Screenshot - The actual nude/violent content that was reported */}
 										<td>
-											<a
-												href={report.screenshot}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="btn btn-ghost btn-xs gap-1"
-											>
-												<ExternalLink size={14} /> View
-											</a>
+											{report.screenshot ? (
+												<div className="flex flex-col items-center gap-2">
+													<div className="relative group">
+														<div className="w-20 h-20 rounded-lg border-4 border-error shadow-lg overflow-hidden bg-black">
+															<img 
+																src={report.screenshot} 
+																alt="Violation Content"
+																className="w-full h-full object-cover blur-md group-hover:blur-none transition-all duration-300 cursor-pointer"
+																title="Hover to preview violation content (nude/violent)"
+															/>
+														</div>
+														<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+															<span className="bg-error text-white text-xs font-bold px-2 py-1 rounded group-hover:opacity-0 transition-opacity">
+																🔞 NSFW
+															</span>
+														</div>
+													</div>
+													<a
+														href={report.screenshot}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="btn btn-error btn-xs gap-1 shadow-lg"
+														title="Open full violation evidence in new tab"
+													>
+														<ExternalLink size={12} /> View Full Evidence
+													</a>
+													<div className="text-[10px] text-error font-bold">Violation Content</div>
+												</div>
+											) : (
+												<div className="text-center">
+													<span className="text-xs text-base-content/50">No Evidence</span>
+													<div className="text-[10px] text-base-content/30">Screenshot missing</div>
+												</div>
+											)}
 										</td>
+
 										<td>
 											<span className={`badge badge-sm ${
 												report.status === 'pending' ? 'badge-warning' :
@@ -253,28 +315,56 @@ const AIModerationPanel = ({
 										<td>
 											<div className="flex flex-wrap justify-center gap-1">
 												{report.status === 'pending' && (
-													<button
-														onClick={() => onUpdateReportStatus(report.id, 'reviewed')}
-														className="btn btn-info btn-xs gap-1"
-													>
-														<Eye size={12} /> Review
-													</button>
+													<>
+														<button
+															onClick={() => onUpdateReportStatus(report.id, 'reviewed')}
+															className="btn btn-info btn-xs gap-1"
+															title="Mark as reviewed"
+														>
+															<Eye size={12} /> Review
+														</button>
+														<button
+															onClick={() => onDeleteReport(report.id)}
+															className="btn btn-error btn-xs gap-1"
+															title="Delete this report"
+														>
+															<Trash2 size={12} />
+														</button>
+													</>
 												)}
 												{report.status === 'reviewed' && (
 													<>
 														<button
 															onClick={() => onUpdateReportStatus(report.id, 'action_taken')}
 															className="btn btn-success btn-xs gap-1"
+															title="Mark action taken"
 														>
 															<CheckCircle size={12} /> Action
 														</button>
 														<button
 															onClick={() => onUpdateReportStatus(report.id, 'dismissed')}
 															className="btn btn-neutral btn-xs gap-1"
+															title="Dismiss this report"
 														>
 															<XCircle size={12} /> Dismiss
 														</button>
+														<button
+															onClick={() => onDeleteReport(report.id)}
+															className="btn btn-error btn-xs gap-1"
+															title="Delete this report"
+														>
+															<Trash2 size={12} />
+														</button>
 													</>
+												)}
+												{(report.status === 'action_taken' || report.status === 'dismissed') && (
+													<button
+														onClick={() => onDeleteReport(report.id)}
+														className="btn btn-error btn-xs gap-1"
+														title="Delete this report"
+													>
+														<Trash2 size={12} /> Delete
+													</button>
 												)}
 											</div>
 										</td>
