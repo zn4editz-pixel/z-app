@@ -182,6 +182,16 @@ export const useChatStore = create((set, get) => ({
             return;
         }
         
+        // ✅ CRITICAL FIX: Remove ALL existing listeners FIRST to prevent duplicates
+        socket.removeAllListeners("newMessage");
+        socket.removeAllListeners("messageDelivered");
+        socket.removeAllListeners("messagesDelivered");
+        socket.removeAllListeners("messagesRead");
+        socket.removeAllListeners("connect");
+        socket.removeAllListeners("disconnect");
+        
+        console.log('🔄 Chat Store: Cleaned up old listeners, attaching fresh ones');
+        
         // Update connection status
         set({ socketConnected: socket.connected });
         
@@ -318,15 +328,13 @@ export const useChatStore = create((set, get) => ({
             set({ messages: updatedMessages });
         };
 
-        socket.off("newMessage", messageHandler);
-        socket.off("messageDelivered", messageDeliveredHandler);
-        socket.off("messagesDelivered", messagesDeliveredHandler);
-        socket.off("messagesRead", messagesReadHandler);
-        
+        // ✅ Attach fresh listeners (already cleaned up above)
         socket.on("newMessage", messageHandler);
         socket.on("messageDelivered", messageDeliveredHandler);
         socket.on("messagesDelivered", messagesDeliveredHandler);
         socket.on("messagesRead", messagesReadHandler);
+        
+        console.log('✅ Chat Store: Fresh message listeners attached');
     },
 
     markMessagesAsRead: async (userId) => {
@@ -340,9 +348,16 @@ export const useChatStore = create((set, get) => ({
     unsubscribeFromMessages: () => {
         const { socket } = useAuthStore.getState();
         if (!socket) return;
-        socket.off("newMessage");
-        socket.off("connect");
-        socket.off("disconnect");
+        
+        // ✅ Remove ALL message-related listeners
+        socket.removeAllListeners("newMessage");
+        socket.removeAllListeners("messageDelivered");
+        socket.removeAllListeners("messagesDelivered");
+        socket.removeAllListeners("messagesRead");
+        socket.removeAllListeners("connect");
+        socket.removeAllListeners("disconnect");
+        
+        console.log('🧹 Chat Store: All message listeners removed');
         set({ socketConnected: false });
     },
 
@@ -426,6 +441,12 @@ export const useChatStore = create((set, get) => ({
         const { socket } = useAuthStore.getState();
         if (!socket) return;
 
+        // ✅ CRITICAL FIX: Remove ALL existing listeners FIRST
+        socket.removeAllListeners("messageReaction");
+        socket.removeAllListeners("messageDeleted");
+        
+        console.log('🔄 Chat Store: Cleaned up old reaction listeners');
+
         const reactionHandler = ({ messageId, reactions }) => {
             const { messages, selectedUser } = get();
             const updatedMessages = messages.map(msg => 
@@ -453,12 +474,11 @@ export const useChatStore = create((set, get) => ({
                 cacheMessagesDB(chatId, updatedMessages);
             }
         };
-
-        socket.off("messageReaction", reactionHandler);
-        socket.off("messageDeleted", deleteHandler);
         
         socket.on("messageReaction", reactionHandler);
         socket.on("messageDeleted", deleteHandler);
+        
+        console.log('✅ Chat Store: Fresh reaction listeners attached');
     },
 
 
