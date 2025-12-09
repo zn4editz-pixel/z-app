@@ -30,25 +30,14 @@ const clearAdminUsersCache = () => {
 
 export const getAllUsers = async (req, res) => {
 	try {
-		// Always get fresh online status from socket connections
+		// ALWAYS get fresh online status from socket connections (source of truth)
 		const { userSocketMap } = await import("../lib/socket.js");
 		const onlineUserIds = Object.keys(userSocketMap);
 		
-		// Check cache for user data (but always update online status)
-		const now = Date.now();
-		let users;
+		console.log(`📊 Admin: Fetching users. ${onlineUserIds.length} users currently online`);
 		
-		if (adminUsersCache && (now - adminUsersCacheTime) < ADMIN_USERS_CACHE_TTL) {
-			// Use cached user data but update online status
-			users = adminUsersCache.map(user => ({
-				...user,
-				isOnline: onlineUserIds.includes(user.id)
-			}));
-			return res.status(200).json(users);
-		}
-		
-		// Fetch fresh user data from database
-		users = await prisma.user.findMany({
+		// Fetch fresh user data from database (no caching for admin to ensure accuracy)
+		const users = await prisma.user.findMany({
 			select: {
 				id: true, username: true, nickname: true, email: true,
 				profilePic: true, isVerified: true, isOnline: true,
@@ -60,15 +49,14 @@ export const getAllUsers = async (req, res) => {
 			take: 100
 		});
 		
-		// Always sync online status from socket connections (source of truth)
-		const usersWithOnlineStatus = users.map(user => ({
+		// ALWAYS override database isOnline with socket map (socket is source of truth)
+		const usersWithAccurateOnlineStatus = users.map(user => ({
 			...user,
-			isOnline: onlineUserIds.includes(user.id)
+			isOnline: onlineUserIds.includes(user.id) // Socket map is the truth
 		}));
 		
-		adminUsersCache = usersWithOnlineStatus;
-		adminUsersCacheTime = now;
-		res.status(200).json(usersWithOnlineStatus);
+		console.log(`✅ Admin: Returning ${usersWithAccurateOnlineStatus.length} users with accurate online status`);
+		res.status(200).json(usersWithAccurateOnlineStatus);
 	} catch (err) {
 		console.error("getAllUsers error:", err);
 		res.status(500).json({ error: "Failed to fetch users" });

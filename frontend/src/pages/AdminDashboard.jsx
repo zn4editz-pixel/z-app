@@ -90,14 +90,43 @@ const AdminDashboard = () => {
 			} : null);
 		};
 		
+		// Listen for global online users updates
+		const handleOnlineUsers = (onlineUserIds) => {
+			console.log(`📡 Admin: Online users updated - ${onlineUserIds.length} users online`);
+			setUsers(prevUsers => 
+				prevUsers.map(user => ({
+					...user,
+					isOnline: onlineUserIds.includes(user.id)
+				}))
+			);
+			// Update stats with accurate count
+			setStats(prevStats => prevStats ? {
+				...prevStats,
+				onlineUsers: onlineUserIds.length
+			} : null);
+		};
+		
 		socket.on("admin:userOnline", handleUserOnline);
 		socket.on("admin:userOffline", handleUserOffline);
+		socket.on("getOnlineUsers", handleOnlineUsers); // Sync with global online users
 		
 		return () => {
 			socket.off("admin:userOnline", handleUserOnline);
 			socket.off("admin:userOffline", handleUserOffline);
+			socket.off("getOnlineUsers", handleOnlineUsers);
 		};
 	}, [socket]);
+	
+	// Periodic refresh to ensure accuracy (every 10 seconds)
+	useEffect(() => {
+		const interval = setInterval(() => {
+			if (activeTab === "users" || activeTab === "dashboard") {
+				fetchUsers(true); // Force refresh with cache bypass
+			}
+		}, 10000); // Every 10 seconds
+		
+		return () => clearInterval(interval);
+	}, [activeTab]);
 
 	const fetchStats = async () => {
 		setLoadingStats(true);
