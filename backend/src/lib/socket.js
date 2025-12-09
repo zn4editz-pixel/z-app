@@ -577,9 +577,8 @@ io.on("connection", (socket) => {
 	});
     // --- *** END OF FIXED FUNCTION *** ---
 
-    // --- *** THIS FUNCTION IS ALSO FIXED *** ---
-	// DISABLED: Reports via stranger chat (use API instead)
-	socket.on("stranger:report_DISABLED", async (payload) => {
+    // --- *** ENABLED AND FIXED WITH PRISMA *** ---
+	socket.on("stranger:report", async (payload) => {
         // Destructure all fields including AI detection data
 		const { reporterId, reason, description, category, screenshot, isAIDetected, aiConfidence, aiCategory } = payload;
 		const partnerSocketId = matchedPairs.get(socket.id);
@@ -605,24 +604,21 @@ io.on("connection", (socket) => {
                         throw new Error("Failed to upload screenshot.");
                     }
 
-                    // Save the report with AI detection data
-					const report = new Report({
-						reporter: reporterId,
-						reportedUser: partnerSocket.userId,
-						reason,
-						description,
-						category: category || "stranger_chat",
-                        screenshot: screenshotUrl,
-						isAIDetected: isAIDetected || false,
-						aiConfidence: aiConfidence || null,
-						aiCategory: aiCategory || null,
-						context: {
-							chatType: "stranger",
-							socketIds: [socket.id, partnerSocketId]
+                    // Save the report with AI detection data using Prisma
+					const report = await prisma.report.create({
+						data: {
+							reporterId: reporterId,
+							reportedUserId: partnerSocket.strangerData?.userId || reportedUserId,
+							reason,
+							description,
+							category: category || "stranger_chat",
+							screenshot: screenshotUrl,
+							isAIDetected: isAIDetected || false,
+							aiConfidence: aiConfidence || null,
+							aiCategory: aiCategory || null,
+							status: 'pending'
 						}
 					});
-					
-					await report.save();
 					console.log(`🚨 Report saved: ${reporterId} reported ${partnerSocket.userId}${isAIDetected ? ' (AI Detected)' : ''}`);
 					
 					socket.emit("stranger:reportSuccess", { message: "Report submitted" });
@@ -665,27 +661,21 @@ io.on("connection", (socket) => {
 						return;
 					}
 
-					// Save as a report with special flag
-					const report = new Report({
-						reporter: reporterId,
-						reportedUser: partnerSocket.userId,
-						reason: reason || 'AI Suspicion - Low Confidence',
-						description: description || 'Low confidence AI detection for admin review',
-						category: category || "stranger_chat",
-						screenshot: screenshotUrl,
-						isAIDetected: true,
-						aiConfidence: aiConfidence || null,
-						aiCategory: aiCategory || null,
-						status: 'pending', // Pending admin review
-						context: {
-							chatType: "stranger",
-							socketIds: [socket.id, partnerSocketId],
-							isSilentReport: true,
-							note: "Low confidence detection - no user action taken"
+					// Save as a report with special flag using Prisma
+					const report = await prisma.report.create({
+						data: {
+							reporterId: reporterId,
+							reportedUserId: reportedUserId || partnerSocket.strangerData?.userId,
+							reason: reason || 'AI Suspicion - Low Confidence',
+							description: description || `Low confidence AI detection for admin review\n\nCategory: ${aiCategory}\nConfidence: ${(aiConfidence * 100).toFixed(1)}%\n\nThis is a silent report - no user action was taken.`,
+							category: category || "stranger_chat",
+							screenshot: screenshotUrl,
+							isAIDetected: true,
+							aiConfidence: aiConfidence || null,
+							aiCategory: aiCategory || null,
+							status: 'pending'
 						}
 					});
-					
-					await report.save();
 					console.log(`📋 Silent AI suspicion logged: ${aiCategory} at ${(aiConfidence * 100).toFixed(1)}% confidence`);
 					
 					// No response to user - silent
