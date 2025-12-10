@@ -119,16 +119,17 @@ const AdminDashboard = () => {
 		};
 	}, [socket]);
 	
-	// Periodic refresh to ensure accuracy (every 10 seconds)
+	// Periodic refresh to ensure accuracy (every 30 seconds, only when server is available)
 	useEffect(() => {
 		const interval = setInterval(() => {
-			if (activeTab === "users" || activeTab === "dashboard") {
+			// Only refresh if we're not already in an error state
+			if ((activeTab === "users" || activeTab === "dashboard") && !loadingUsers) {
 				fetchUsers(true); // Force refresh with cache bypass
 			}
-		}, 10000); // Every 10 seconds
+		}, 30000); // Every 30 seconds instead of 10
 		
 		return () => clearInterval(interval);
-	}, [activeTab]);
+	}, [activeTab, loadingUsers]);
 
 	const fetchStats = async () => {
 		setLoadingStats(true);

@@ -218,13 +218,6 @@ const findMatch = (socket) => {
 				partnerId: socket.id,
 				partnerUserId: socket.strangerData?.userId,
 				partnerUserData: myDisplayData
-				partnerUserData: {
-					userId: socket.strangerData?.userId,
-					username: socket.strangerData?.username,
-					nickname: socket.strangerData?.nickname,
-					profilePic: socket.strangerData?.profilePic,
-					isVerified: socket.strangerData?.isVerified
-				}
 			});
 		} else {
 			// No valid partner found, add to queue

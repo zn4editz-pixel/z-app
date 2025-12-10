@@ -16,8 +16,24 @@ const ServerIntelligenceCenter = () => {
 
 	useEffect(() => {
 		fetchMetrics();
-		intervalRef.current = setInterval(fetchMetrics, 3000); // Update every 3s
-		return () => clearInterval(intervalRef.current);
+		// Only start polling if initial fetch succeeds
+		const startPolling = () => {
+			intervalRef.current = setInterval(() => {
+				// Only fetch if not already loading and no recent errors
+				if (!metrics.loading) {
+					fetchMetrics();
+				}
+			}, 10000); // Update every 10s instead of 3s
+		};
+		
+		// Start polling after a short delay
+		setTimeout(startPolling, 5000);
+		
+		return () => {
+			if (intervalRef.current) {
+				clearInterval(intervalRef.current);
+			}
+		};
 	}, []);
 
 	const fetchMetrics = async () => {
