@@ -11,7 +11,6 @@ const ServerIntelligenceCenter = () => {
 	const [metrics, setMetrics] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [history, setHistory] = useState([]);
-	const [bugs, setBugs] = useState([]);
 	const [showReportModal, setShowReportModal] = useState(false);
 	const intervalRef = useRef(null);
 
@@ -26,7 +25,6 @@ const ServerIntelligenceCenter = () => {
 			const res = await axiosInstance.get("/admin/server-metrics");
 			setMetrics(res.data);
 			setHistory(prev => [...prev.slice(-29), res.data].slice(-30)); // Keep last 30 data points
-			setBugs(res.data.bugs || []);
 			setLoading(false);
 		} catch (err) {
 			console.error("Failed to fetch metrics:", err);
@@ -80,39 +78,6 @@ const ServerIntelligenceCenter = () => {
 						</button>
 					</div>
 				</div>
-			</div>
-
-			{/* 🚨 PROMINENT BUG DETECTION SECTION - Always Visible at Top */}
-			<div className="bg-gradient-to-br from-red-950/50 via-orange-950/30 to-black p-6 rounded-2xl border-2 border-red-500/50 shadow-2xl">
-				<div className="flex items-center justify-between mb-4">
-					<div className="flex items-center gap-3">
-						<div className="p-3 bg-red-500/20 rounded-xl border border-red-500/50 animate-pulse">
-							<AlertTriangle className="w-7 h-7 text-red-500" />
-						</div>
-						<div>
-							<h3 className="text-2xl font-bold text-red-400">🔍 Automatic Bug Detection</h3>
-							<p className="text-red-200/70">Real-time system health monitoring • Scans every 3 seconds</p>
-						</div>
-					</div>
-					<div className="text-right">
-						<div className="text-3xl font-bold text-white">{bugs.length}</div>
-						<div className="text-sm text-red-300">Issues Found</div>
-					</div>
-				</div>
-				
-				{bugs.length === 0 ? (
-					<div className="flex flex-col items-center justify-center py-12 bg-green-950/30 rounded-xl border-2 border-green-500/30">
-						<CheckCircle className="w-16 h-16 text-green-500 mb-4" />
-						<h4 className="text-2xl font-bold text-green-400 mb-2">✅ All Systems Healthy!</h4>
-						<p className="text-green-200/70">No issues detected. Your application is running perfectly.</p>
-					</div>
-				) : (
-					<div className="space-y-3">
-						{bugs.map((bug, idx) => (
-							<EnhancedBugAlert key={idx} bug={bug} />
-						))}
-					</div>
-				)}
 			</div>
 
 			{/* Status Overview */}
@@ -572,148 +537,6 @@ const DetailedMetricPanel = ({ title, icon: Icon, metrics }) => {
 		</div>
 	);
 };
-
-const EnhancedBugAlert = ({ bug }) => {
-	const [showSolution, setShowSolution] = useState(false);
-	
-	const severityConfig = {
-		critical: {
-			color: "border-red-500/50 bg-red-950/30 text-red-400",
-			icon: "🔴",
-			badge: "bg-red-500 text-white"
-		},
-		high: {
-			color: "border-orange-500/50 bg-orange-950/30 text-orange-400",
-			icon: "🟠",
-			badge: "bg-orange-500 text-white"
-		},
-		medium: {
-			color: "border-yellow-500/50 bg-yellow-950/30 text-yellow-400",
-			icon: "🟡",
-			badge: "bg-yellow-500 text-black"
-		},
-		low: {
-			color: "border-blue-500/50 bg-blue-950/30 text-blue-400",
-			icon: "🔵",
-			badge: "bg-blue-500 text-white"
-		}
-	};
-
-	const config = severityConfig[bug.severity] || severityConfig.low;
-	
-	// Auto-generate solution based on bug type
-	const getSolution = () => {
-		if (bug.title.includes("Expired Suspensions")) {
-			return {
-				steps: [
-					"Run database cleanup script to clear expired suspensions",
-					"Set up automated cron job to check suspensions daily",
-					"Add middleware to auto-clear on user login"
-				],
-				command: "npm run cleanup:suspensions",
-				priority: "Medium - Should be fixed within 24 hours"
-			};
-		}
-		if (bug.title.includes("High Memory")) {
-			return {
-				steps: [
-					"Restart the server to clear memory",
-					"Check for memory leaks in recent code changes",
-					"Implement memory monitoring and alerts",
-					"Consider scaling to larger instance"
-				],
-				command: "pm2 restart all",
-				priority: "High - Fix immediately"
-			};
-		}
-		if (bug.title.includes("Stale Reports")) {
-			return {
-				steps: [
-					"Review and process pending reports",
-					"Set up automated report aging notifications",
-					"Assign reports to moderators automatically"
-				],
-				command: "Review in Reports Management tab",
-				priority: "Low - Can be addressed in next review cycle"
-			};
-		}
-		if (bug.title.includes("Redis")) {
-			return {
-				steps: [
-					"Check Redis server status",
-					"Verify Redis connection credentials",
-					"Restart Redis service if needed",
-					"Check network connectivity to Redis"
-				],
-				command: "redis-cli ping",
-				priority: "Critical - Fix immediately"
-			};
-		}
-		return {
-			steps: ["Investigate the issue", "Check logs for more details", "Contact support if needed"],
-			command: "Check server logs",
-			priority: "Review and assess"
-		};
-	};
-
-	const solution = getSolution();
-
-	return (
-		<div className={`p-5 rounded-xl border-2 ${config.color} transition-all hover:scale-[1.02]`}>
-			<div className="flex items-start gap-4">
-				<div className="text-3xl">{config.icon}</div>
-				<div className="flex-1">
-					<div className="flex items-center gap-3 mb-2">
-						<h4 className="text-lg font-bold">{bug.title}</h4>
-						<span className={`px-2 py-1 rounded text-xs font-bold ${config.badge}`}>
-							{bug.severity.toUpperCase()}
-						</span>
-					</div>
-					<p className="text-sm opacity-90 mb-3">{bug.description}</p>
-					
-					<div className="flex items-center gap-6 text-xs opacity-70 mb-3">
-						<span>📍 {bug.location}</span>
-						<span>🕐 {new Date(bug.timestamp).toLocaleString()}</span>
-					</div>
-
-					{/* Solution Section */}
-					<button
-						onClick={() => setShowSolution(!showSolution)}
-						className="flex items-center gap-2 text-sm font-semibold hover:opacity-80 transition-all mb-2"
-					>
-						<span>{showSolution ? "▼" : "▶"}</span>
-						<span>💡 View Suggested Solution</span>
-					</button>
-
-					{showSolution && (
-						<div className="mt-3 p-4 bg-black/30 rounded-lg border border-white/10">
-							<div className="mb-3">
-								<span className="text-xs font-bold opacity-70">PRIORITY:</span>
-								<span className="ml-2 text-sm font-semibold">{solution.priority}</span>
-							</div>
-							<div className="mb-3">
-								<span className="text-xs font-bold opacity-70">RECOMMENDED STEPS:</span>
-								<ol className="mt-2 space-y-2">
-									{solution.steps.map((step, idx) => (
-										<li key={idx} className="text-sm flex gap-2">
-											<span className="font-bold">{idx + 1}.</span>
-											<span>{step}</span>
-										</li>
-									))}
-								</ol>
-							</div>
-							<div className="p-3 bg-black/50 rounded border border-white/10">
-								<span className="text-xs font-bold opacity-70">COMMAND:</span>
-								<code className="ml-2 text-sm text-green-400">{solution.command}</code>
-							</div>
-						</div>
-					)}
-				</div>
-			</div>
-		</div>
-	);
-};
-
 const ManualReportModal = ({ onClose }) => {
 	const [formData, setFormData] = useState({
 		title: "",

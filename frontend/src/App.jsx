@@ -31,7 +31,6 @@ import { useThemeStore } from "./store/useThemeStore";
 import { initSmoothScroll, destroySmoothScroll } from "./utils/smoothScroll";
 import { useFriendStore } from "./store/useFriendStore"; // ✅ 1. Import Friend Store
 import { useNotificationStore } from "./store/useNotificationStore";
-import { initPerformanceOptimizations } from "./utils/performanceOptimizer";
 
 // Toast UI (no changes)
 const showMessageToast = ({ senderName, senderAvatar, messageText, theme }) => {
@@ -83,10 +82,7 @@ const App = () => {
 		checkAuth();
 	}, []); // eslint-disable-line react-hooks/exhaustive-deps
 	
-	// Initialize performance optimizations
-	useEffect(() => {
-		initPerformanceOptimizations();
-	}, []);
+	// Performance optimizations are now built-in to components
 	
 	// Initialize Lenis smooth scrolling
 	useEffect(() => {

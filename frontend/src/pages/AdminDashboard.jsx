@@ -4,7 +4,7 @@ import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "../store/useAuthStore";
 import { 
 	Users, UserCheck, AlertTriangle, Shield, TrendingUp,
-	BadgeCheck, FileText, Activity
+	BadgeCheck, FileText, Activity, Brain
 } from "lucide-react";
 import "../styles/admin-custom.css";
 
@@ -16,6 +16,7 @@ import ReportsManagement from "../components/admin/ReportsManagement";
 import VerificationRequests from "../components/admin/VerificationRequests";
 import NotificationsPanel from "../components/admin/NotificationsPanel";
 import ServerIntelligenceCenter from "../components/admin/ServerIntelligenceCenter";
+import AIAnalysisAgent from "../components/admin/AIAnalysisAgent";
 
 const AdminDashboard = () => {
 	const { socket } = useAuthStore();
@@ -42,6 +43,7 @@ const AdminDashboard = () => {
 	const tabs = [
 		{ id: "dashboard", label: "Dashboard", icon: TrendingUp },
 		{ id: "server-intelligence", label: "Server Intelligence", icon: Activity },
+		{ id: "ai-analysis", label: "AI Analysis", icon: Brain },
 		{ id: "users", label: "Users", icon: Users },
 		{ id: "ai-moderation", label: "AI Moderation", icon: Shield },
 		{ id: "reports", label: "Reports", icon: AlertTriangle },
@@ -457,6 +459,8 @@ const AdminDashboard = () => {
 				return <DashboardOverview stats={stats} loadingStats={loadingStats} users={users} />;
 			case "server-intelligence":
 				return <ServerIntelligenceCenter />;
+			case "ai-analysis":
+				return <AIAnalysisAgent />;
 			case "users":
 				return (
 					<UserManagement

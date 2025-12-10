@@ -1,214 +1,247 @@
-/**
- * Performance Optimization Utilities
- * Ensures supersonic fast loading even on slow internet
- */
+// ⚡ FRONTEND PERFORMANCE OPTIMIZER
+// Utilities for optimizing React performance
 
-// 1. Debounce function for expensive operations
-export const debounce = (func, wait = 300) => {
-	let timeout;
-	return function executedFunction(...args) {
-		const later = () => {
-			clearTimeout(timeout);
-			func(...args);
-		};
-		clearTimeout(timeout);
-		timeout = setTimeout(later, wait);
-	};
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+// Debounce hook for expensive operations
+export const useDebounce = (value, delay = 500) => {
+	const [debouncedValue, setDebouncedValue] = useState(value);
+
+	useEffect(() => {
+		const handler = setTimeout(() => {
+			setDebouncedValue(value);
+		}, delay);
+
+		return () => clearTimeout(handler);
+	}, [value, delay]);
+
+	return debouncedValue;
 };
 
-// 2. Throttle function for scroll/resize events
-export const throttle = (func, limit = 100) => {
-	let inThrottle;
-	return function(...args) {
-		if (!inThrottle) {
-			func.apply(this, args);
-			inThrottle = true;
-			setTimeout(() => inThrottle = false, limit);
+// Throttle hook for frequent events
+export const useThrottle = (callback, delay = 1000) => {
+	const lastRun = useRef(Date.now());
+
+	return useCallback((...args) => {
+		const now = Date.now();
+		if (now - lastRun.current >= delay) {
+			callback(...args);
+			lastRun.current = now;
 		}
-	};
+	}, [callback, delay]);
 };
 
-// 3. Lazy load images with intersection observer
-export const lazyLoadImages = () => {
-	const images = document.querySelectorAll('img[data-src]');
-	
-	const imageObserver = new IntersectionObserver((entries, observer) => {
-		entries.forEach(entry => {
-			if (entry.isIntersecting) {
-				const img = entry.target;
-				img.src = img.dataset.src;
-				img.removeAttribute('data-src');
-				observer.unobserve(img);
+// Intersection Observer for lazy loading
+export const useIntersectionObserver = (options = {}) => {
+	const [isIntersecting, setIsIntersecting] = useState(false);
+	const targetRef = useRef(null);
+
+	useEffect(() => {
+		const observer = new IntersectionObserver(([entry]) => {
+			setIsIntersecting(entry.isIntersecting);
+		}, options);
+
+		const current = targetRef.current;
+		if (current) {
+			observer.observe(current);
+		}
+
+		return () => {
+			if (current) {
+				observer.unobserve(current);
 			}
-		});
-	}, {
-		rootMargin: '50px' // Start loading 50px before entering viewport
-	});
+		};
+	}, [options]);
 
-	images.forEach(img => imageObserver.observe(img));
+	return [targetRef, isIntersecting];
 };
 
-// 4. Preload critical resources
-export const preloadCriticalResources = () => {
-	const criticalResources = [
-		{ href: '/avatar.png', as: 'image' },
-		// Add more critical resources here
-	];
-
-	criticalResources.forEach(resource => {
-		const link = document.createElement('link');
-		link.rel = 'preload';
-		link.href = resource.href;
-		link.as = resource.as;
-		document.head.appendChild(link);
-	});
-};
-
-// 5. Optimize animations - Pause when tab is hidden
-export const optimizeAnimations = () => {
-	let animationsPaused = false;
-
-	document.addEventListener('visibilitychange', () => {
-		if (document.hidden && !animationsPaused) {
-			// Pause all CSS animations
-			document.body.style.animationPlayState = 'paused';
-			animationsPaused = true;
-		} else if (!document.hidden && animationsPaused) {
-			// Resume animations
-			document.body.style.animationPlayState = 'running';
-			animationsPaused = false;
-		}
-	});
-};
-
-// 6. Request Idle Callback wrapper for non-critical tasks
-export const runWhenIdle = (callback) => {
-	if ('requestIdleCallback' in window) {
-		requestIdleCallback(callback, { timeout: 2000 });
-	} else {
-		setTimeout(callback, 1);
+// Request batching for API calls
+class RequestBatcher {
+	constructor(batchFn, delay = 50) {
+		this.batchFn = batchFn;
+		this.delay = delay;
+		this.queue = [];
+		this.timeout = null;
 	}
-};
 
-// 7. Batch DOM updates
-export const batchDOMUpdates = (updates) => {
-	requestAnimationFrame(() => {
-		updates.forEach(update => update());
-	});
-};
+	add(request) {
+		return new Promise((resolve, reject) => {
+			this.queue.push({ request, resolve, reject });
+			
+			if (this.timeout) {
+				clearTimeout(this.timeout);
+			}
+			
+			this.timeout = setTimeout(() => {
+				this.flush();
+			}, this.delay);
+		});
+	}
 
-// 8. Optimize scroll performance
-export const optimizeScroll = () => {
-	let ticking = false;
-
-	const handleScroll = () => {
-		if (!ticking) {
-			window.requestAnimationFrame(() => {
-				// Your scroll handling code here
-				ticking = false;
+	async flush() {
+		if (this.queue.length === 0) return;
+		
+		const batch = this.queue.splice(0);
+		try {
+			const results = await this.batchFn(batch.map(item => item.request));
+			batch.forEach((item, index) => {
+				item.resolve(results[index]);
 			});
-			ticking = true;
+		} catch (error) {
+			batch.forEach(item => {
+				item.reject(error);
+			});
 		}
+	}
+}
+
+export const createBatcher = (batchFn, delay) => new RequestBatcher(batchFn, delay);
+
+// Memoization with expiry
+export class MemoCache {
+	constructor(ttl = 60000) {
+		this.cache = new Map();
+		this.ttl = ttl;
+	}
+
+	get(key) {
+		const item = this.cache.get(key);
+		if (!item) return null;
+		
+		if (Date.now() - item.timestamp > this.ttl) {
+			this.cache.delete(key);
+			return null;
+		}
+		
+		return item.value;
+	}
+
+	set(key, value) {
+		this.cache.set(key, {
+			value,
+			timestamp: Date.now()
+		});
+	}
+
+	clear() {
+		this.cache.clear();
+	}
+
+	size() {
+		return this.cache.size;
+	}
+}
+
+// Virtual scrolling helper
+export const useVirtualScroll = (items, itemHeight, containerHeight) => {
+	const [scrollTop, setScrollTop] = useState(0);
+	
+	const visibleStart = Math.floor(scrollTop / itemHeight);
+	const visibleEnd = Math.ceil((scrollTop + containerHeight) / itemHeight);
+	
+	const visibleItems = items.slice(
+		Math.max(0, visibleStart - 5), // Buffer
+		Math.min(items.length, visibleEnd + 5)
+	);
+	
+	const offsetY = visibleStart * itemHeight;
+	
+	return {
+		visibleItems,
+		offsetY,
+		totalHeight: items.length * itemHeight,
+		onScroll: (e) => setScrollTop(e.target.scrollTop)
 	};
-
-	window.addEventListener('scroll', handleScroll, { passive: true });
-	return () => window.removeEventListener('scroll', handleScroll);
 };
 
-// 9. Reduce motion for users who prefer it
-export const respectReducedMotion = () => {
-	const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Image lazy loading with placeholder
+export const useLazyImage = (src, placeholder = '') => {
+	const [imageSrc, setImageSrc] = useState(placeholder);
+	const [isLoading, setIsLoading] = useState(true);
+
+	useEffect(() => {
+		const img = new Image();
+		img.src = src;
+		
+		img.onload = () => {
+			setImageSrc(src);
+			setIsLoading(false);
+		};
+		
+		img.onerror = () => {
+			setIsLoading(false);
+		};
+	}, [src]);
+
+	return { imageSrc, isLoading };
+};
+
+// Prevent unnecessary re-renders
+export const useShallowCompare = (value) => {
+	const ref = useRef(value);
 	
-	if (prefersReducedMotion) {
-		document.documentElement.style.setProperty('--animation-duration', '0.01ms');
-		document.documentElement.style.setProperty('--transition-duration', '0.01ms');
+	if (JSON.stringify(ref.current) !== JSON.stringify(value)) {
+		ref.current = value;
 	}
-};
-
-// 10. Memory cleanup utility
-export const cleanupMemory = () => {
-	// Clear any cached data that's no longer needed
-	if ('caches' in window) {
-		caches.keys().then(names => {
-			names.forEach(name => {
-				if (name.includes('old-') || name.includes('temp-')) {
-					caches.delete(name);
-				}
-			});
-		});
-	}
-};
-
-// 11. Optimize network requests
-export const optimizeNetworkRequests = () => {
-	// Use HTTP/2 Server Push hints
-	const link = document.createElement('link');
-	link.rel = 'preconnect';
-	link.href = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-	document.head.appendChild(link);
-};
-
-// 12. Initialize all optimizations
-export const initPerformanceOptimizations = () => {
-	// Run immediately
-	respectReducedMotion();
-	optimizeNetworkRequests();
-	optimizeAnimations();
 	
-	// Run when idle
-	runWhenIdle(() => {
-		lazyLoadImages();
-		preloadCriticalResources();
-	});
-	
-	// Cleanup old data periodically
-	setInterval(cleanupMemory, 5 * 60 * 1000); // Every 5 minutes
+	return ref.current;
 };
 
-// 13. Performance monitoring
-export const monitorPerformance = () => {
-	if ('performance' in window && 'PerformanceObserver' in window) {
-		// Monitor Long Tasks
-		try {
-			const observer = new PerformanceObserver((list) => {
-				for (const entry of list.getEntries()) {
-					if (entry.duration > 50) {
-						console.warn('Long task detected:', entry.duration, 'ms');
-					}
-				}
-			});
-			observer.observe({ entryTypes: ['longtask'] });
-		} catch (e) {
-			// Long task API not supported
+// Batch state updates
+export const useBatchedState = (initialState) => {
+	const [state, setState] = useState(initialState);
+	const updates = useRef({});
+	const timeout = useRef(null);
+
+	const batchedSetState = useCallback((updates) => {
+		Object.assign(updates.current, updates);
+		
+		if (timeout.current) {
+			clearTimeout(timeout.current);
 		}
+		
+		timeout.current = setTimeout(() => {
+			setState(prev => ({ ...prev, ...updates.current }));
+			updates.current = {};
+		}, 16); // Next frame
+	}, []);
 
-		// Monitor Layout Shifts
-		try {
-			const clsObserver = new PerformanceObserver((list) => {
-				for (const entry of list.getEntries()) {
-					if (entry.hadRecentInput) continue;
-					console.log('Layout shift:', entry.value);
-				}
-			});
-			clsObserver.observe({ entryTypes: ['layout-shift'] });
-		} catch (e) {
-			// Layout shift API not supported
-		}
-	}
+	return [state, batchedSetState];
+};
+
+// Performance monitoring
+export const measurePerformance = (name, fn) => {
+	const start = performance.now();
+	const result = fn();
+	const end = performance.now();
+	
+	console.log(`⚡ ${name}: ${(end - start).toFixed(2)}ms`);
+	
+	return result;
+};
+
+// Async performance monitoring
+export const measurePerformanceAsync = async (name, fn) => {
+	const start = performance.now();
+	const result = await fn();
+	const end = performance.now();
+	
+	console.log(`⚡ ${name}: ${(end - start).toFixed(2)}ms`);
+	
+	return result;
 };
 
 export default {
-	debounce,
-	throttle,
-	lazyLoadImages,
-	preloadCriticalResources,
-	optimizeAnimations,
-	runWhenIdle,
-	batchDOMUpdates,
-	optimizeScroll,
-	respectReducedMotion,
-	cleanupMemory,
-	optimizeNetworkRequests,
-	initPerformanceOptimizations,
-	monitorPerformance
+	useDebounce,
+	useThrottle,
+	useIntersectionObserver,
+	createBatcher,
+	MemoCache,
+	useVirtualScroll,
+	useLazyImage,
+	useShallowCompare,
+	useBatchedState,
+	measurePerformance,
+	measurePerformanceAsync
 };

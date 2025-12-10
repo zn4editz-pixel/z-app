@@ -30,6 +30,12 @@ import {
 	clearMetricsHistory
 } from "../controllers/serverMetrics.controller.js";
 
+import {
+	getAIAnalysis,
+	getAnalysisHistory,
+	triggerAnalysis
+} from "../controllers/aiAnalysis.controller.js";
+
 // Make sure these middleware paths are correct
 import { protectRoute } from "../middleware/protectRoute.js";
 import { isAdmin } from "../middleware/isAdmin.js";
@@ -74,5 +80,10 @@ router.delete("/metrics-history", clearMetricsHistory);
 // --- Manual Reports ---
 router.post("/manual-report", submitManualReport);
 router.get("/manual-reports", getManualReports);
+
+// --- AI Analysis Agent ---
+router.get("/ai-analysis", getAIAnalysis);
+router.get("/ai-analysis/history", getAnalysisHistory);
+router.post("/ai-analysis/trigger", triggerAnalysis);
 
 export default router;
