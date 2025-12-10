@@ -37,7 +37,7 @@ const AdminNotificationsList = () => {
 			try {
 				const res = await axiosInstance.get("/users/notifications");
 				const dbNotifications = res.data || [];
-				console.log(`📥 Loaded ${dbNotifications.length} notifications from DB`);
+				if (import.meta.env.DEV) console.log(`📥 Loaded ${dbNotifications.length} notifications from DB`);
 				
 				const notificationsToAdd = [];
 				// Add each notification to the store
@@ -60,7 +60,7 @@ const AdminNotificationsList = () => {
 				sessionStorage.setItem('adminNotifications', JSON.stringify(notificationsToAdd));
 				sessionStorage.setItem('adminNotificationsTime', now.toString());
 			} catch (error) {
-				console.error("Error loading notifications:", error);
+				if (import.meta.env.DEV) console.error("Error loading notifications:", error);
 			} finally {
 				setIsLoading(false);
 			}
@@ -113,19 +113,21 @@ const AdminNotificationsList = () => {
 
 	const handleDelete = async (notification) => {
 		try {
-			console.log("Deleting notification:", notification);
+			if (import.meta.env.DEV) console.log("Deleting notification:", notification);
 			// Delete from backend if it has a DB ID
 			if (notification.dbId) {
-				console.log(`Calling DELETE /users/notifications/${notification.dbId}`);
+				if (import.meta.env.DEV) console.log(`Calling DELETE /users/notifications/${notification.dbId}`);
 				await axiosInstance.delete(`/users/notifications/${notification.dbId}`);
-				console.log("Backend deletion successful");
+				if (import.meta.env.DEV) console.log("Backend deletion successful");
 			}
 			// Remove from local store
 			clearNotification(notification.id);
 			toast.success("Notification deleted");
 		} catch (error) {
-			console.error("Error deleting notification:", error);
-			console.error("Error response:", error.response?.data);
+			if (import.meta.env.DEV) {
+				console.error("Error deleting notification:", error);
+				console.error("Error response:", error.response?.data);
+			}
 			toast.error(error.response?.data?.error || "Failed to delete notification");
 		}
 	};
