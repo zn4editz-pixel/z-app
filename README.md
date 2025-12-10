@@ -1,6 +1,9 @@
-# Z-App - Real-Time Chat Application 🚀
+# ZN4Studio Stranger Chat - Enterprise Video Communication Platform 🚀
 
-**A modern, feature-rich chat application with video calls, stranger chat, AI content moderation, and comprehensive admin tools**
+**Developed by Safwan for ZN4Studio**  
+**© 2025 ZN4Studio. All rights reserved.**
+
+**A world-class, enterprise-grade video communication platform with AI moderation, real-time analytics, and advanced admin intelligence**
 
 [![Node.js](https://img.shields.io/badge/Node.js-20.x-green.svg)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15.x-blue.svg)](https://www.postgresql.org/)
