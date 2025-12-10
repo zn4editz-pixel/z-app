@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, useMemo, memo, lazy, Suspense, startTransition } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo, memo, lazy, startTransition } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useFriendStore } from "../store/useFriendStore";
 import toast from "react-hot-toast";
@@ -630,20 +630,20 @@ const StrangerChatPage = () => {
 					throw new Error("Your browser doesn't support camera access");
 				}
 
-				// Ultra-fast media constraints for instant loading
+				// Optimized media constraints for reliable connection
 				const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 				const stream = await navigator.mediaDevices.getUserMedia({
 					video: {
-						width: { ideal: isMobile ? 320 : 480 },
-						height: { ideal: isMobile ? 240 : 360 },
+						width: { min: 320, ideal: isMobile ? 480 : 640, max: 1280 },
+						height: { min: 240, ideal: isMobile ? 360 : 480, max: 720 },
 						facingMode: "user",
-						frameRate: { ideal: 15, max: 20 }
+						frameRate: { ideal: 24, max: 30 }
 					},
 					audio: {
 						echoCancellation: true,
-						noiseSuppression: false,
-						autoGainControl: false,
-						sampleRate: 22050
+						noiseSuppression: true,
+						autoGainControl: true,
+						sampleRate: 44100
 					}
 				});
 
@@ -661,17 +661,24 @@ const StrangerChatPage = () => {
 					localVideoRef.current.style.backfaceVisibility = 'hidden';
 					localVideoRef.current.style.transform = 'translateZ(0)';
 					
-					// Fast video loading with reduced timeout
+					// Reliable video loading with proper timeout
 					await new Promise((resolve, reject) => {
-						const timeout = setTimeout(() => reject(new Error('Video load timeout')), 1500);
+						const timeout = setTimeout(() => {
+							console.warn("Video load timeout, continuing anyway");
+							resolve(); // Don't reject, just continue
+						}, 3000);
 						
-						if (localVideoRef.current.readyState >= 1) { // Reduced from 2 to 1
+						if (localVideoRef.current.readyState >= 2) {
 							clearTimeout(timeout);
 							resolve();
 						} else {
-							localVideoRef.current.onloadeddata = () => { // Changed from onloadedmetadata
+							localVideoRef.current.onloadedmetadata = () => {
 								clearTimeout(timeout);
 								resolve();
+							};
+							localVideoRef.current.onerror = () => {
+								clearTimeout(timeout);
+								reject(new Error('Video load error'));
 							};
 						}
 					});
@@ -936,18 +943,28 @@ const StrangerChatPage = () => {
 		}
 
 		try {
+			let success = false;
 			if (friendStatus === "NOT_FRIENDS") {
-				await sendFriendRequest(partnerUserId);
-				toast.success("📨 Friend request sent!");
+				success = await sendFriendRequest(partnerUserId);
+				if (success) {
+					toast.success("📨 Friend request sent!");
+				}
 			} else if (friendStatus === "REQUEST_RECEIVED") {
-				await acceptFriendRequest(partnerUserId);
-				toast.success("🎉 Friend request accepted!");
+				success = await acceptFriendRequest(partnerUserId);
+				if (success) {
+					toast.success("🎉 Friend request accepted!");
+				}
 			}
 			
-			// Refresh friend data
-			fetchFriendData();
+			// Force refresh friend data after action
+			if (success) {
+				setTimeout(() => {
+					fetchFriendData();
+				}, 500);
+			}
 		} catch (error) {
-			toast.error("Failed to send friend request");
+			console.error("Friend request error:", error);
+			toast.error("Failed to process friend request");
 		}
 	}, [status, partnerUserId, friendStatus, sendFriendRequest, acceptFriendRequest, fetchFriendData]);
 

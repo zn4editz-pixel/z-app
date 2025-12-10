@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { cacheFriends, getCachedFriends } from "../utils/cache.js";
-import { getId, includesId, findById, filterOutId } from "../utils/idHelper.js";
+import { getId, includesId, filterOutId } from "../utils/idHelper.js";
 
 export const useFriendStore = create((set, get) => ({
     friends: [],
@@ -160,24 +160,28 @@ export const useFriendStore = create((set, get) => ({
         try {
             if (import.meta.env.DEV) console.log("🤝 Accepting friend request from:", senderId);
             
-            // Optimistically update state before API call
-            const acceptedUser = get().pendingReceived.find(r => r.id === senderId);
+            // Find the request using the helper function
+            const acceptedUser = get().pendingReceived.find(r => getId(r) === senderId);
             if (import.meta.env.DEV) console.log("👤 Accepted user data:", acceptedUser);
             
             if (!acceptedUser) {
                 if (import.meta.env.DEV) console.error("❌ User not found in pending requests");
-                toast.error("Request not found");
+                // Force refresh to get latest data
+                await get().fetchFriendData();
+                toast.error("Request not found. Please try again.");
                 return false;
             }
             
-            set((state) => ({
-                pendingReceived: state.pendingReceived.filter((r) => r.id !== senderId),
-                friends: [...state.friends, acceptedUser],
-            }));
-            if (import.meta.env.DEV) console.log("✅ Optimistic UI update complete");
-
+            // Make API call first to avoid race conditions
             const response = await axiosInstance.post(`/friends/accept/${senderId}`);
             if (import.meta.env.DEV) console.log("✅ API response:", response.data);
+            
+            // Update state after successful API call
+            set((state) => ({
+                pendingReceived: state.pendingReceived.filter((r) => getId(r) !== senderId),
+                friends: [...state.friends, acceptedUser],
+            }));
+            if (import.meta.env.DEV) console.log("✅ State update complete");
             toast.success("Friend request accepted!");
             
             // Clear fetch throttle to allow immediate refetch

@@ -159,10 +159,10 @@ const Sidebar = () => {
                     className="flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-all hover:scale-105"
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-dashed border-primary/50 flex items-center justify-center bg-primary/10 hover:bg-primary/20 transition-colors">
-                      <Video className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-dashed border-base-content/30 flex items-center justify-center bg-base-200/50 hover:bg-base-200 transition-colors">
+                      <Video className="w-6 h-6 sm:w-7 sm:h-7 text-base-content/70" />
                     </div>
-                    <span className="text-xs sm:text-sm truncate w-14 sm:w-16 text-center text-primary font-medium">
+                    <span className="text-xs sm:text-sm truncate w-14 sm:w-16 text-center text-base-content/70 font-medium">
                       Stranger
                     </span>
                   </Link>
