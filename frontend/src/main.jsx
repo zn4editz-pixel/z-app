@@ -12,6 +12,7 @@ setTimeout(() => {
   import("./styles/responsive.css");
   import("./styles/mobile.css");
   import("./styles/smooth-transitions.css");
+  import("./styles/stranger-chat.css");
 }, 0);
 
 createRoot(document.getElementById("root")).render(

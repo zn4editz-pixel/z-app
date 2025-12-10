@@ -12,6 +12,7 @@ const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage"));
 const MyProfilePage = lazy(() => import("./pages/ProfilePage"));
 const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
 const StrangerChatPage = lazy(() => import("./pages/StrangerChatPage"));
+const StrangerChatSettings = lazy(() => import("./pages/StrangerChatSettings"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const DiscoverPage = lazy(() => import("./pages/DiscoverPage"));
 const SuspendedPage = lazy(() => import("./pages/SuspendedPage"));
@@ -477,7 +478,21 @@ const App = () => {
 					}
 				/>
 				
-				{/* Stranger Chat route (unchanged) */}
+				{/* Stranger Chat Settings route */}
+				<Route
+					path="/stranger-settings"
+					element={
+						!authUser ? (
+							<Navigate to="/login" />
+						) : !hasCompletedProfile ? (
+							<Navigate to="/setup-profile" />
+						) : (
+							<StrangerChatSettings />
+						)
+					}
+				/>
+
+				{/* Stranger Chat route */}
 				<Route
 					path="/stranger"
 					element={

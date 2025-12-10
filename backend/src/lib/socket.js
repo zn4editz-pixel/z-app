@@ -189,21 +189,35 @@ const findMatch = (socket) => {
 			
 			console.log(`✅ Matched ${socket.id} with ${partnerSocketId}`);
 			
-			// ✅ FIX: Send COMPLETE user data to both partners
+			// ✅ FIX: Send COMPLETE user data to both partners with privacy settings
+			const partnerDisplayData = {
+				userId: partnerSocket.strangerData?.userId,
+				displayName: partnerSocket.strangerData?.username || partnerSocket.strangerData?.nickname ? 
+					(partnerSocket.strangerData?.nickname || partnerSocket.strangerData?.username) : "Stranger",
+				profilePic: partnerSocket.strangerData?.profilePic || null,
+				isVerified: partnerSocket.strangerData?.isVerified || false,
+				allowFriendRequests: partnerSocket.strangerData?.allowFriendRequests !== false
+			};
+			
+			const myDisplayData = {
+				userId: socket.strangerData?.userId,
+				displayName: socket.strangerData?.username || socket.strangerData?.nickname ? 
+					(socket.strangerData?.nickname || socket.strangerData?.username) : "Stranger",
+				profilePic: socket.strangerData?.profilePic || null,
+				isVerified: socket.strangerData?.isVerified || false,
+				allowFriendRequests: socket.strangerData?.allowFriendRequests !== false
+			};
+			
 			socket.emit("stranger:matched", { 
 				partnerId: partnerSocketId,
 				partnerUserId: partnerSocket.strangerData?.userId,
-				partnerUserData: {
-					userId: partnerSocket.strangerData?.userId,
-					username: partnerSocket.strangerData?.username,
-					nickname: partnerSocket.strangerData?.nickname,
-					profilePic: partnerSocket.strangerData?.profilePic,
-					isVerified: partnerSocket.strangerData?.isVerified
-				}
+				partnerUserData: partnerDisplayData
 			});
+			
 			partnerSocket.emit("stranger:matched", { 
 				partnerId: socket.id,
 				partnerUserId: socket.strangerData?.userId,
+				partnerUserData: myDisplayData
 				partnerUserData: {
 					userId: socket.strangerData?.userId,
 					username: socket.strangerData?.username,

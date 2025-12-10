@@ -151,6 +151,11 @@ export const useFriendStore = create((set, get) => ({
         }
     },
 
+    // Alias for sendRequest (for compatibility)
+    sendFriendRequest: async (receiverId) => {
+        return await get().sendRequest(receiverId);
+    },
+
     acceptRequest: async (senderId) => {
         try {
             if (import.meta.env.DEV) console.log("🤝 Accepting friend request from:", senderId);
@@ -192,6 +197,11 @@ export const useFriendStore = create((set, get) => ({
             await get().fetchFriendData();
             return false;
         }
+    },
+
+    // Alias for acceptRequest (for compatibility)
+    acceptFriendRequest: async (senderId) => {
+        return await get().acceptRequest(senderId);
     },
 
     rejectRequest: async (userId) => {
