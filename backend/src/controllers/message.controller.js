@@ -108,7 +108,13 @@ export const getMessages = async (req, res) => {
       skip: page * limit
     });
 
-    res.status(200).json(messages.reverse());
+    // Parse reactions JSON for each message
+    const messagesWithParsedReactions = messages.map(message => ({
+      ...message,
+      reactions: message.reactions ? JSON.parse(message.reactions) : []
+    }));
+
+    res.status(200).json(messagesWithParsedReactions.reverse());
   } catch (error) {
     console.error("Error in getMessages:", error.message);
     res.status(500).json({ error: "Internal server error" });
@@ -325,8 +331,13 @@ export const addReaction = async (req, res) => {
       return res.status(404).json({ error: "Message not found" });
     }
 
-    // Get current reactions
-    let reactions = Array.isArray(message.reactions) ? message.reactions : [];
+    // Get current reactions (parse JSON string)
+    let reactions = [];
+    try {
+      reactions = message.reactions ? JSON.parse(message.reactions) : [];
+    } catch (error) {
+      reactions = [];
+    }
     
     // Remove existing reaction from this user (if any)
     reactions = reactions.filter(r => r.userId !== userId);
@@ -338,10 +349,10 @@ export const addReaction = async (req, res) => {
       createdAt: new Date().toISOString()
     });
 
-    // Update message with new reactions
+    // Update message with new reactions (stringify for SQLite)
     const updatedMessage = await prisma.message.update({
       where: { id: messageId },
-      data: { reactions },
+      data: { reactions: JSON.stringify(reactions) },
       include: {
         sender: { select: { id: true, fullName: true, nickname: true, profilePic: true } },
         receiver: { select: { id: true, fullName: true, nickname: true, profilePic: true } }
@@ -352,9 +363,10 @@ export const addReaction = async (req, res) => {
     const receiverSocketId = getReceiverSocketId(message.receiverId);
     const senderSocketId = getReceiverSocketId(message.senderId);
     
+    const parsedReactions = updatedMessage.reactions ? JSON.parse(updatedMessage.reactions) : [];
     const reactionData = {
       messageId,
-      reactions: updatedMessage.reactions
+      reactions: parsedReactions
     };
     
     if (receiverSocketId) {
@@ -364,7 +376,7 @@ export const addReaction = async (req, res) => {
       io.to(senderSocketId).emit("messageReaction", reactionData);
     }
 
-    res.status(200).json({ message: "Reaction added", reactions: updatedMessage.reactions });
+    res.status(200).json({ message: "Reaction added", reactions: parsedReactions });
   } catch (error) {
     console.error("Error in addReaction:", error.message);
     res.status(500).json({ error: "Internal server error" });
@@ -388,14 +400,19 @@ export const removeReaction = async (req, res) => {
       return res.status(404).json({ error: "Message not found" });
     }
 
-    // Get current reactions and remove this user's reaction
-    let reactions = Array.isArray(message.reactions) ? message.reactions : [];
+    // Get current reactions and remove this user's reaction (parse JSON string)
+    let reactions = [];
+    try {
+      reactions = message.reactions ? JSON.parse(message.reactions) : [];
+    } catch (error) {
+      reactions = [];
+    }
     reactions = reactions.filter(r => r.userId !== userId);
 
-    // Update message with new reactions
+    // Update message with new reactions (stringify for SQLite)
     const updatedMessage = await prisma.message.update({
       where: { id: messageId },
-      data: { reactions },
+      data: { reactions: JSON.stringify(reactions) },
       include: {
         sender: { select: { id: true, fullName: true, nickname: true, profilePic: true } },
         receiver: { select: { id: true, fullName: true, nickname: true, profilePic: true } }
@@ -406,9 +423,10 @@ export const removeReaction = async (req, res) => {
     const receiverSocketId = getReceiverSocketId(message.receiverId);
     const senderSocketId = getReceiverSocketId(message.senderId);
     
+    const parsedReactions = updatedMessage.reactions ? JSON.parse(updatedMessage.reactions) : [];
     const reactionData = {
       messageId,
-      reactions: updatedMessage.reactions
+      reactions: parsedReactions
     };
     
     if (receiverSocketId) {
@@ -418,7 +436,7 @@ export const removeReaction = async (req, res) => {
       io.to(senderSocketId).emit("messageReaction", reactionData);
     }
 
-    res.status(200).json({ message: "Reaction removed", reactions: updatedMessage.reactions });
+    res.status(200).json({ message: "Reaction removed", reactions: parsedReactions });
   } catch (error) {
     console.error("Error in removeReaction:", error.message);
     res.status(500).json({ error: "Internal server error" });

@@ -117,6 +117,9 @@ model Message {
   replyToId String?
   isDeleted Boolean @default(false)
   deletedAt DateTime?
+  
+  // Message Reactions (JSON field for SQLite)
+  reactions String? @default("[]") // JSON string storing reactions array
 }
 
 // ─── Friend Request Model ─────────────────────────────────────────────
