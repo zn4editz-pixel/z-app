@@ -10,7 +10,7 @@ const LONG_PRESS_DURATION = 500; // ms
 const DOUBLE_TAP_DELAY = 300; // ms
 const SWIPE_THRESHOLD = 60; // px
 
-const ChatMessage = ({ message, onReply }) => {
+const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
   const { authUser } = useAuthStore();
   const { addReaction, removeReaction, deleteMessage, selectedUser } = useChatStore();
   const [showReactions, setShowReactions] = useState(false);
@@ -25,6 +25,7 @@ const ChatMessage = ({ message, onReply }) => {
   const touchStartPos = useRef({ x: 0, y: 0 });
   const touchStartTime = useRef(0);
   const audioRef = useRef(null);
+  const messageRef = useRef(null);
   
   const isMyMessage = message.senderId === authUser.id;
   const myReaction = (message.reactions || []).find(r => r.userId?.id === authUser.id || r.userId === authUser.id);
@@ -121,6 +122,10 @@ const ChatMessage = ({ message, onReply }) => {
     } else {
       addReaction(message.id, "❤️");
       showHeartAnimation();
+      // Trigger floating reaction animation
+      if (onFloatingReaction && messageRef.current) {
+        onFloatingReaction("❤️", messageRef.current);
+      }
     }
   };
 
@@ -148,6 +153,10 @@ const ChatMessage = ({ message, onReply }) => {
       removeReaction(message.id);
     } else {
       addReaction(message.id, emoji);
+      // Trigger floating reaction animation
+      if (onFloatingReaction && messageRef.current) {
+        onFloatingReaction(emoji, messageRef.current);
+      }
     }
   };
 
@@ -237,6 +246,7 @@ const ChatMessage = ({ message, onReply }) => {
   return (
     <>
       <div 
+        ref={messageRef}
         id={`message-${message.id}`}
         className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'mb-5' : 'mb-3'} relative w-full max-w-full`}
       >

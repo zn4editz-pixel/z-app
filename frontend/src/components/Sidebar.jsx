@@ -315,14 +315,14 @@ const Sidebar = () => {
                         })()}
                       </div>
 
-                      {/* Unread Badge - Instagram Style */}
+                      {/* Professional Unread Badge */}
                       {unread > 0 && (
                         <div className="flex-shrink-0">
                           <div className="relative">
-                            <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] sm:min-w-[26px] sm:h-[26px] px-2 bg-primary text-primary-content rounded-full text-[11px] sm:text-xs font-bold shadow-lg ring-2 ring-base-100"> 
-                              {unread > 99 ? "99+" : unread}
+                            <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] sm:min-w-[24px] sm:h-[24px] px-1.5 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white rounded-full text-[10px] sm:text-xs font-bold shadow-lg border-2 border-white dark:border-gray-800 transform transition-transform duration-200 hover:scale-110"> 
+                              {unread > 9 ? "9+" : unread}
                             </span>
-                            <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-75"></span>
+                            <span className="absolute inset-0 rounded-full bg-blue-500 animate-pulse opacity-30"></span>
                           </div>
                         </div>
                       )}
@@ -459,11 +459,11 @@ const Sidebar = () => {
                           </div>
                         </div>
 
-                        {/* Unread Badge - Enhanced */}
+                        {/* Professional Unread Badge */}
                         {unread > 0 && (
                           <div className="flex-shrink-0">
-                            <span className="inline-flex items-center justify-center min-w-[24px] h-6 sm:min-w-[28px] sm:h-7 px-2 bg-error text-error-content rounded-full text-xs sm:text-sm font-bold shadow-lg">
-                              {unread > 99 ? "99+" : unread}
+                            <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] sm:min-w-[26px] sm:h-[26px] px-1.5 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white rounded-full text-[10px] sm:text-xs font-bold shadow-lg border-2 border-white dark:border-gray-800 transform transition-transform duration-200 hover:scale-110">
+                              {unread > 9 ? "9+" : unread}
                             </span>
                           </div>
                         )}

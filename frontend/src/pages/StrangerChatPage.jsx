@@ -194,8 +194,8 @@ const ChatMessages = memo(({ messages, isVisible }) => {
 	if (!isVisible || messages.length === 0) return null;
 	
 	return (
-		<div className="absolute left-4 bottom-32 max-w-xs z-20">
-			<div className="bg-base-100/95 backdrop-blur-md rounded-2xl border border-base-300 shadow-xl max-h-64 overflow-y-auto">
+		<div className="absolute left-4 bottom-36 max-w-xs z-40 pointer-events-none">
+			<div className="bg-base-100/95 backdrop-blur-md rounded-2xl border border-base-300 shadow-xl max-h-64 overflow-y-auto pointer-events-auto">
 				<div className="p-3 space-y-2">
 					{messages.slice(-5).map((msg, idx) => (
 						<div key={idx} className={`text-sm ${
@@ -1317,20 +1317,22 @@ const StrangerChatPage = () => {
 
 				{/* Message Input */}
 				{status === "connected" && showChatMessages && (
-					<div className="absolute left-4 bottom-20 max-w-xs z-20">
-						<form onSubmit={handleSendMessage} className="flex gap-2">
+					<div className="absolute left-4 bottom-20 max-w-xs z-50 message-input-container">
+						<form onSubmit={handleSendMessage} className="flex gap-2 message-input-container">
 							<input
 								type="text"
 								value={currentMessage}
 								onChange={(e) => setCurrentMessage(e.target.value)}
 								placeholder="Type a message..."
-								className="input input-sm input-bordered flex-1 bg-base-100/90 backdrop-blur-md"
+								className="input input-sm input-bordered flex-1 bg-base-100/95 backdrop-blur-md border-base-300 focus:border-primary focus:outline-none shadow-lg"
 								maxLength={200}
+								autoComplete="off"
+								autoFocus={showChatMessages}
 							/>
 							<button
 								type="submit"
 								disabled={!currentMessage.trim()}
-								className="btn btn-sm btn-primary"
+								className="btn btn-sm btn-primary shadow-lg hover:shadow-xl transition-all duration-200"
 							>
 								<Send className="w-4 h-4" />
 							</button>
@@ -1356,16 +1358,20 @@ const StrangerChatPage = () => {
 				)}
 
 				{/* Bottom Control Bar */}
-				<div className="absolute bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-black/70 to-transparent">
-					<div className="flex items-center justify-center gap-4 p-4 pb-6">
+				<div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black/70 to-transparent pointer-events-none">
+					<div className="flex items-center justify-center gap-4 p-4 pb-6 pointer-events-auto">
 						{/* Skip Button */}
 						<button
 							onClick={handleSkip}
 							disabled={status === "initializing"}
-							className="btn btn-lg gap-3 bg-gradient-to-r from-primary to-primary-focus border-none text-primary-content shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 font-semibold"
+							className={`btn btn-lg gap-3 border-none shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 font-semibold ${
+								status === "waiting" 
+									? "bg-gradient-to-r from-gray-700 via-gray-800 to-gray-900 text-white hover:from-gray-600 hover:via-gray-700 hover:to-gray-800" 
+									: "bg-gradient-to-r from-primary to-primary-focus text-primary-content hover:from-primary-focus hover:to-primary"
+							}`}
 						>
 							<SkipForward className="w-5 h-5" />
-							<span className="font-bold text-primary-content">
+							<span className="font-bold">
 								{status === "connected" ? "Skip" : status === "waiting" ? "Searching..." : "Start"}
 							</span>
 						</button>
@@ -1428,6 +1434,26 @@ const StrangerChatPage = () => {
 				
 				.animate-float-up {
 					animation: float-up 3s ease-out forwards;
+				}
+				
+				/* Fix for message input interaction */
+				.message-input-container {
+					pointer-events: auto !important;
+					touch-action: manipulation !important;
+				}
+				
+				.message-input-container input {
+					pointer-events: auto !important;
+					user-select: text !important;
+					-webkit-user-select: text !important;
+					-moz-user-select: text !important;
+					-ms-user-select: text !important;
+					touch-action: manipulation !important;
+				}
+				
+				.message-input-container button {
+					pointer-events: auto !important;
+					touch-action: manipulation !important;
 				}
 			`}</style>
 		</div>

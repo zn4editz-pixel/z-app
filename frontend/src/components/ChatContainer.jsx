@@ -41,8 +41,41 @@ const ChatContainer = ({ onStartCall }) => {
   const [showNewMessageButton, setShowNewMessageButton] = useState(false);
   const [newMessageCount, setNewMessageCount] = useState(0);
   
+  // ✅ NEW: Floating reactions system
+  const [floatingReactions, setFloatingReactions] = useState([]);
+  
   const handleReply = (message) => {
     setReplyingTo(message);
+  };
+
+  // ✅ NEW: Floating reaction function
+  const triggerFloatingReaction = (emoji, messageElement) => {
+    if (!messageElement) return;
+    
+    const rect = messageElement.getBoundingClientRect();
+    const containerRect = scrollContainerRef.current?.getBoundingClientRect();
+    
+    if (!containerRect) return;
+    
+    // Calculate position relative to chat container
+    const relativeX = ((rect.left + rect.width / 2 - containerRect.left) / containerRect.width) * 100;
+    const relativeY = ((containerRect.bottom - rect.top) / containerRect.height) * 100;
+    
+    const reaction = {
+      id: Date.now() + Math.random(),
+      emoji,
+      x: Math.max(10, Math.min(90, relativeX + (Math.random() - 0.5) * 20)), // Add some randomness
+      y: Math.max(10, Math.min(90, relativeY + (Math.random() - 0.5) * 10)),
+      delay: Math.random() * 200,
+      duration: 2500 + Math.random() * 1000
+    };
+    
+    setFloatingReactions(prev => [...prev, reaction]);
+    
+    // Remove reaction after animation
+    setTimeout(() => {
+      setFloatingReactions(prev => prev.filter(r => r.id !== reaction.id));
+    }, reaction.duration + reaction.delay);
   };
 
   useEffect(() => {
@@ -258,7 +291,12 @@ const ChatContainer = ({ onStartCall }) => {
               }
               
               // Use new ChatMessage component with reactions and reply
-              return <ChatMessage key={message.id} message={message} onReply={handleReply} />;
+              return <ChatMessage 
+                key={message.id} 
+                message={message} 
+                onReply={handleReply} 
+                onFloatingReaction={triggerFloatingReaction}
+              />;
             })
           )}
           
@@ -283,6 +321,25 @@ const ChatContainer = ({ onStartCall }) => {
           )}
           
           <div ref={bottomRef} />
+          
+          {/* Floating Reactions Container */}
+          <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
+            {floatingReactions.map((reaction) => (
+              <div
+                key={reaction.id}
+                className="absolute animate-float-reaction text-4xl"
+                style={{
+                  left: `${reaction.x}%`,
+                  bottom: `${reaction.y}%`,
+                  textShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  animationDelay: `${reaction.delay}ms`,
+                  animationDuration: `${reaction.duration}ms`
+                }}
+              >
+                {reaction.emoji}
+              </div>
+            ))}
+          </div>
           
           {/* Modern "New message" indicator */}
           {showNewMessageButton && (
@@ -351,6 +408,37 @@ const ChatContainer = ({ onStartCall }) => {
           border-top: 6px solid transparent;
           border-left: 6px solid var(--p);
           border-bottom: 6px solid transparent;
+        }
+        
+        @keyframes float-reaction {
+          0% {
+            transform: translateY(0) scale(0.8) rotate(0deg);
+            opacity: 0;
+          }
+          15% {
+            transform: translateY(-20px) scale(1.2) rotate(-5deg);
+            opacity: 1;
+          }
+          30% {
+            transform: translateY(-60px) scale(1) rotate(5deg);
+            opacity: 0.9;
+          }
+          60% {
+            transform: translateY(-120px) scale(1.1) rotate(-3deg);
+            opacity: 0.7;
+          }
+          85% {
+            transform: translateY(-180px) scale(0.9) rotate(8deg);
+            opacity: 0.4;
+          }
+          100% {
+            transform: translateY(-220px) scale(0.6) rotate(15deg);
+            opacity: 0;
+          }
+        }
+        
+        .animate-float-reaction {
+          animation: float-reaction 2.5s ease-out forwards;
         }
       `}</style>
     </>
