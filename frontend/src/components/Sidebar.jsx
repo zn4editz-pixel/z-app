@@ -35,7 +35,7 @@ const Sidebar = () => {
     const isFromMe = lastMsg.senderId === authUser?.id;
     
     // Handle reactions
-    if (lastMsg.reactions && lastMsg.reactions.length > 0) {
+    if (lastMsg.reactions && Array.isArray(lastMsg.reactions) && lastMsg.reactions.length > 0) {
       const myReaction = lastMsg.reactions.find(r => r.userId === authUser?.id);
       const theirReaction = lastMsg.reactions.find(r => r.userId === user.id);
       

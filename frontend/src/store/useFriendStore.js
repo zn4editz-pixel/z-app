@@ -17,9 +17,16 @@ export const useFriendStore = create((set, get) => ({
         const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
         const userId = authUser.id;
         
+        if (import.meta.env.DEV) console.log("🔄 Fetching friend data for user:", userId);
+        
         // Try cache first for instant load
         const cached = await getCachedFriends(userId);
         if (cached) {
+            if (import.meta.env.DEV) console.log("📦 Using cached friend data:", {
+                friends: cached.friends?.length || 0,
+                received: cached.received?.length || 0,
+                sent: cached.sent?.length || 0
+            });
             set({
                 friends: cached.friends || [],
                 pendingReceived: cached.received || [],
@@ -39,10 +46,20 @@ export const useFriendStore = create((set, get) => ({
         }
         
         try {
+            if (import.meta.env.DEV) console.log("🌐 Making API calls to fetch friend data...");
+            
             const [friendsRes, requestsRes] = await Promise.all([
                 axiosInstance.get("/friends/all"),
                 axiosInstance.get("/friends/requests"),
             ]);
+            
+            if (import.meta.env.DEV) console.log("✅ API responses received:", {
+                friends: friendsRes.data?.length || 0,
+                requests: {
+                    received: requestsRes.data?.received?.length || 0,
+                    sent: requestsRes.data?.sent?.length || 0
+                }
+            });
             
             // Cache the fresh data
             const freshData = {
@@ -117,7 +134,7 @@ export const useFriendStore = create((set, get) => ({
         return "NOT_FRIENDS";
     },
 
-    // --- NEW ACTION FOR REAL-TIME UPDATES ---
+    // --- REAL-TIME ACTIONS ---
     /**
      * Used by the WebSocket hook to instantly add a new pending request
      * without requiring a full refetch.
@@ -134,11 +151,71 @@ export const useFriendStore = create((set, get) => ({
             return state;
         });
     },
-    // --- END NEW ACTION ---
+
+    /**
+     * Used by WebSocket to instantly move accepted user to friends list
+     */
+    handleFriendRequestAccepted: (data) => {
+        const { friendData } = data;
+        set((state) => {
+            // Remove from sent requests and add to friends
+            const updatedSent = state.pendingSent.filter(r => getId(r) !== friendData.id);
+            const updatedFriends = [...state.friends, friendData];
+            
+            toast.success(`${friendData.nickname || friendData.username} accepted your friend request! 🎉`);
+            
+            return {
+                pendingSent: updatedSent,
+                friends: updatedFriends
+            };
+        });
+    },
+
+    /**
+     * Subscribe to real-time friend request events
+     */
+    subscribeToFriendEvents: (socket) => {
+        if (!socket) {
+            console.log("❌ No socket available for friend events");
+            return;
+        }
+
+        console.log("🔔 Subscribing to real-time friend events");
+
+        // Remove existing listeners to prevent duplicates
+        socket.off("friendRequestReceived");
+        socket.off("friendRequestAccepted");
+
+        // Listen for incoming friend requests
+        socket.on("friendRequestReceived", (data) => {
+            console.log("📨 Received friend request:", data);
+            get().addPendingReceived(data);
+        });
+
+        // Listen for friend request acceptances
+        socket.on("friendRequestAccepted", (data) => {
+            console.log("✅ Friend request accepted:", data);
+            get().handleFriendRequestAccepted(data);
+        });
+    },
+
+    /**
+     * Unsubscribe from real-time friend request events
+     */
+    unsubscribeFromFriendEvents: (socket) => {
+        if (!socket) return;
+
+        console.log("🔕 Unsubscribing from friend events");
+        socket.off("friendRequestReceived");
+        socket.off("friendRequestAccepted");
+    },
+    // --- END REAL-TIME ACTIONS ---
 
     // --- Standard Actions ---
     sendRequest: async (receiverId) => {
         try {
+            if (import.meta.env.DEV) console.log("🚀 Sending friend request to:", receiverId);
+            
             // Check if already sent to prevent duplicates
             const { pendingSent, friends } = get();
             if (includesId(pendingSent, receiverId) || includesId(friends, receiverId)) {
@@ -146,26 +223,37 @@ export const useFriendStore = create((set, get) => ({
                 return false;
             }
 
-            const response = await axiosInstance.post(`/friends/send/${receiverId}`);
-            
-            // Update local state optimistically with proper user object
-            const userObj = { _id: receiverId, id: receiverId };
+            // Optimistic update - add to pending sent immediately
             set((state) => ({
-                pendingSent: [...state.pendingSent, userObj]
+                pendingSent: [...state.pendingSent, { id: receiverId, _id: receiverId }]
             }));
+
+            const response = await axiosInstance.post(`/friends/send/${receiverId}`);
+            if (import.meta.env.DEV) console.log("✅ Friend request API response:", response.data);
             
-            // Clear throttle and refetch to get updated data
+            // Clear cache to ensure fresh data on next fetch
             sessionStorage.removeItem('friendDataLastFetch');
+            const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+            if (authUser.id) {
+                const cacheKey = `friends_${authUser.id}`;
+                localStorage.removeItem(cacheKey);
+                sessionStorage.removeItem(cacheKey);
+            }
             
-            // Don't await fetchFriendData to avoid blocking UI
-            setTimeout(() => {
-                get().fetchFriendData();
-            }, 100);
+            // Fetch fresh data to get complete user details
+            await get().fetchFriendData();
             
             toast.success("Friend request sent!");
+            if (import.meta.env.DEV) console.log("✅ Friend request sent successfully");
             return true;
         } catch (error) {
             console.error("❌ Send friend request error:", error);
+            
+            // Revert optimistic update on error
+            set((state) => ({
+                pendingSent: filterOutId(state.pendingSent, receiverId)
+            }));
+            
             const errorMessage = error.response?.data?.message || error.response?.data?.error || "Failed to send friend request";
             toast.error(errorMessage);
             return false;
@@ -203,31 +291,34 @@ export const useFriendStore = create((set, get) => ({
                 return false;
             }
             
-            // Make API call first to avoid race conditions
+            // Make API call first to ensure backend consistency
             const response = await axiosInstance.post(`/friends/accept/${senderId}`);
             if (import.meta.env.DEV) console.log("✅ API response:", response.data);
             
-            // Update state after successful API call
+            // Immediately update state - remove from pending and add to friends
             set((state) => ({
-                pendingReceived: state.pendingReceived.filter((r) => getId(r) !== senderId),
                 friends: [...state.friends, acceptedUser],
+                pendingReceived: state.pendingReceived.filter(r => getId(r) !== senderId)
             }));
-            if (import.meta.env.DEV) console.log("✅ State update complete");
-            toast.success("Friend request accepted!");
             
-            // Clear fetch throttle to allow immediate refetch
+            // Clear all caches to force fresh data on next fetch
             sessionStorage.removeItem('friendDataLastFetch');
+            const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+            if (authUser.id) {
+                const cacheKey = `friends_${authUser.id}`;
+                localStorage.removeItem(cacheKey);
+                sessionStorage.removeItem(cacheKey);
+            }
             
-            // Force refetch to ensure consistency
-            if (import.meta.env.DEV) console.log("🔄 Refetching friend data...");
-            await get().fetchFriendData();
-            if (import.meta.env.DEV) console.log("✅ Friend data refetched successfully");
+            toast.success("Friend request accepted!");
+            if (import.meta.env.DEV) console.log("✅ Friend request accepted and UI updated");
             
             return true;
         } catch (error) {
             console.error("❌ Accept request error:", error.response?.data || error.message);
             toast.error(error.response?.data?.message || "Failed to accept request.");
-            // Clear throttle and revert optimistic update on error
+            
+            // Force refresh on error to get correct state
             sessionStorage.removeItem('friendDataLastFetch');
             await get().fetchFriendData();
             return false;

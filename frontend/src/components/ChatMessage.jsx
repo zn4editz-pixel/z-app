@@ -27,7 +27,7 @@ const ChatMessage = ({ message, onReply }) => {
   const audioRef = useRef(null);
   
   const isMyMessage = message.senderId === authUser.id;
-  const myReaction = message.reactions?.find(r => r.userId?.id === authUser.id || r.userId === authUser.id);
+  const myReaction = (message.reactions || []).find(r => r.userId?.id === authUser.id || r.userId === authUser.id);
 
   // Update current time while playing
   useEffect(() => {
@@ -189,7 +189,7 @@ const ChatMessage = ({ message, onReply }) => {
   };
 
   // Group reactions by emoji
-  const groupedReactions = message.reactions?.reduce((acc, reaction) => {
+  const groupedReactions = (message.reactions || []).reduce((acc, reaction) => {
     if (!acc[reaction.emoji]) {
       acc[reaction.emoji] = [];
     }

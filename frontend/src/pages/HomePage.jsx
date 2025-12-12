@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
+import { useFriendStore } from "../store/useFriendStore";
 import toast from "react-hot-toast";
 
 import Sidebar from "../components/Sidebar";
@@ -10,8 +11,9 @@ import PrivateCallModal from "../components/PrivateCallModal";
 import IncomingCallModal from "../components/IncomingCallModal";
 
 const HomePage = () => {
-  const { selectedUser } = useChatStore();
+  const { selectedUser, restoreSelectedUser } = useChatStore();
   const { socket, authUser } = useAuthStore();
+  const { friends, fetchFriendData } = useFriendStore();
   
   const [callState, setCallState] = useState({
     isCallActive: false,
@@ -21,6 +23,32 @@ const HomePage = () => {
   });
   
   const [incomingCall, setIncomingCall] = useState(null);
+
+  // Restore selected user on page load/refresh
+  useEffect(() => {
+    const restoreChat = async () => {
+      if (authUser && friends.length > 0) {
+        console.log('🔄 Attempting to restore selected user from localStorage/URL');
+        const restored = await restoreSelectedUser();
+        if (restored) {
+          console.log('✅ Successfully restored chat state');
+        } else {
+          console.log('ℹ️ No previous chat to restore');
+        }
+      }
+    };
+
+    // Only attempt restore when we have both auth user and friends data
+    if (authUser && friends.length > 0) {
+      restoreChat();
+    } else if (authUser && friends.length === 0) {
+      // If we have auth user but no friends yet, fetch friends first
+      console.log('📥 Fetching friends data before attempting restore');
+      fetchFriendData().then(() => {
+        // Friends will be available on next render, useEffect will run again
+      });
+    }
+  }, [authUser, friends.length, restoreSelectedUser, fetchFriendData]);
 
   useEffect(() => {
     if (!socket) return;

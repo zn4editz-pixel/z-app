@@ -30,7 +30,8 @@ router.post("/reject/:userId", rejectFriendRequest);
 // Unfriend a user
 router.delete("/unfriend/:friendId", unfriendUser);
 
-// Get all of the logged-in user's friends
+// Get all of the logged-in user's friends (both /all and root route)
+router.get("/", getFriends);
 router.get("/all", getFriends);
 
 // Get all pending friend requests (sent and received)

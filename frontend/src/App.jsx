@@ -21,6 +21,7 @@ const GoodbyePage = lazy(() => import("./pages/GoodbyePage"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const DebugPage = lazy(() => import("./pages/DebugPage"));
+const MessageDiagnosticPage = lazy(() => import("./pages/MessageDiagnosticPage"));
 
 // Lazy load components
 const Navbar = lazy(() => import("./components/Navbar"));
@@ -511,6 +512,7 @@ const App = () => {
 						<Route path="/goodbye" element={<GoodbyePage />} />
 						<Route path="/blocked" element={<BlockedPage />} /> {/* ✅ FIXED: Use BlockedPage */}
 						<Route path="/debug" element={<DebugPage />} />
+						<Route path="/message-diagnostic" element={<MessageDiagnosticPage />} />
 					</Routes>
 				</ErrorBoundary>
 			</Suspense>

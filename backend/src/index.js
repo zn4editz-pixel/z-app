@@ -123,12 +123,13 @@ async function startServer() {
     },
   }));
 
-  // CORS configuration
+  // CORS configuration - Fixed for message sending
   app.use(cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
-    credentials: true,
+    origin: ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
+    credentials: false, // Changed to false to fix CORS issues
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    optionsSuccessStatus: 200
   }));
 
   // Body parsing middleware
@@ -157,13 +158,20 @@ async function startServer() {
   app.use('/api/friends', friendRoutes);
   app.use('/api/admin', adminRoutes);
 
-  // Socket.IO setup (basic for Railway free tier)
+  // Socket.IO setup with stranger chat functionality
   const io = new Server(server, {
     cors: {
       origin: process.env.FRONTEND_URL || "http://localhost:5173",
       credentials: true
     },
     transports: ['websocket', 'polling']
+  });
+
+  // Import and initialize socket handlers
+  await import('./lib/socketHandlers.js').then(module => {
+    module.initializeSocketHandlers(io);
+  }).catch(error => {
+    console.log('⚠️ Socket handlers not available, basic socket only');
   });
 
   // Error handling middleware

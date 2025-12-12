@@ -1,5 +1,6 @@
 // Simplified Friend Controller for SQLite compatibility
-import { prisma } from "../lib/db.js";
+import prisma from "../lib/prisma.js";
+import { emitToUser } from "../lib/socketHandlers.js";
 
 // Cache for friends data (5 minutes TTL)
 const friendsCache = new Map();
@@ -48,16 +49,34 @@ export const sendFriendRequest = async (req, res) => {
 		}
 
 		// Create friend request
-		await prisma.friendRequest.create({
+		const friendRequest = await prisma.friendRequest.create({
 			data: {
 				senderId,
 				receiverId
+			},
+			include: {
+				sender: {
+					select: {
+						id: true,
+						fullName: true,
+						username: true,
+						nickname: true,
+						profilePic: true,
+						isVerified: true
+					}
+				}
 			}
 		});
 
 		// Clear cache
 		clearFriendsCache(senderId);
 		clearFriendsCache(receiverId);
+
+		// 🔥 REAL-TIME: Emit friend request to receiver
+		emitToUser(receiverId, "friendRequestReceived", {
+			...friendRequest.sender,
+			requestId: friendRequest.id
+		});
 
 		res.status(200).json({ message: "Friend request sent successfully." });
 	} catch (error) {
@@ -86,12 +105,47 @@ export const acceptFriendRequest = async (req, res) => {
 			return res.status(404).json({ message: "Friend request not found." });
 		}
 
-		// The request already exists, so they're now friends
-		// No need to create a new record - the existing FriendRequest represents the friendship
+		if (friendRequest.status === "accepted") {
+			return res.status(400).json({ message: "Friend request already accepted." });
+		}
+
+		// Update the friend request status to accepted
+		await prisma.friendRequest.update({
+			where: {
+				senderId_receiverId: {
+					senderId,
+					receiverId
+				}
+			},
+			data: {
+				status: "accepted"
+			}
+		});
+
+		// Get user details for real-time update
+		const acceptedUser = await prisma.user.findUnique({
+			where: { id: receiverId },
+			select: {
+				id: true,
+				fullName: true,
+				username: true,
+				nickname: true,
+				profilePic: true,
+				isOnline: true,
+				lastSeen: true,
+				isVerified: true
+			}
+		});
 
 		// Clear cache
 		clearFriendsCache(senderId);
 		clearFriendsCache(receiverId);
+
+		// 🔥 REAL-TIME: Emit friend request accepted to sender
+		emitToUser(senderId, "friendRequestAccepted", {
+			friendData: acceptedUser,
+			acceptedBy: receiverId
+		});
 
 		res.status(200).json({ message: "Friend request accepted." });
 	} catch (error) {
@@ -106,7 +160,7 @@ export const rejectFriendRequest = async (req, res) => {
 		const { userId } = req.params; // Get from URL params, not body
 		const receiverId = req.user.id;
 
-		// Delete the friend request (handle both directions)
+		// Update the friend request status to rejected (or delete it)
 		await prisma.friendRequest.deleteMany({
 			where: {
 				OR: [
@@ -133,12 +187,17 @@ export const unfriendUser = async (req, res) => {
 		const { friendId } = req.params;
 		const userId = req.user.id;
 
-		// Delete both possible friend request records
+		// Delete the accepted friendship record
 		await prisma.friendRequest.deleteMany({
 			where: {
-				OR: [
-					{ senderId: userId, receiverId: friendId },
-					{ senderId: friendId, receiverId: userId }
+				AND: [
+					{
+						OR: [
+							{ senderId: userId, receiverId: friendId },
+							{ senderId: friendId, receiverId: userId }
+						]
+					},
+					{ status: "accepted" }
 				]
 			}
 		});
@@ -165,12 +224,17 @@ export const getFriends = async (req, res) => {
 			return res.status(200).json(cached.data);
 		}
 
-		// Get all friend requests where user is involved
+		// Get all accepted friend requests where user is involved
 		const friendRequests = await prisma.friendRequest.findMany({
 			where: {
-				OR: [
-					{ senderId: userId },
-					{ receiverId: userId }
+				AND: [
+					{
+						OR: [
+							{ senderId: userId },
+							{ receiverId: userId }
+						]
+					},
+					{ status: "accepted" }
 				]
 			},
 			include: {
@@ -226,7 +290,10 @@ export const getPendingRequests = async (req, res) => {
 
 		// Get received requests (pending for this user to accept/reject)
 		const receivedRequests = await prisma.friendRequest.findMany({
-			where: { receiverId: userId },
+			where: { 
+				receiverId: userId,
+				status: "pending"
+			},
 			include: {
 				sender: {
 					select: {
@@ -243,7 +310,10 @@ export const getPendingRequests = async (req, res) => {
 
 		// Get sent requests (waiting for others to accept/reject)
 		const sentRequests = await prisma.friendRequest.findMany({
-			where: { senderId: userId },
+			where: { 
+				senderId: userId,
+				status: "pending"
+			},
 			include: {
 				receiver: {
 					select: {

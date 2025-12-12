@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Auth Data - Z-APP</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+        }
+        .success { background: rgba(34, 197, 94, 0.3); }
+        .error { background: rgba(239, 68, 68, 0.3); }
+        .warning { background: rgba(245, 158, 11, 0.3); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Z-APP Auth Data Cleaner</h1>
+        <p>This tool helps clear old authentication data from previous database migrations (MongoDB → PostgreSQL → SQLite).</p>
+        
+        <div class="status" id="status">
+            Ready to clear authentication data...
+        </div>
+        
+        <button onclick="checkCurrentAuth()">🔍 Check Current Auth</button>
+        <button onclick="clearAuthData()">🧹 Clear Auth Data</button>
+        <button onclick="testBackendConnection()">🔗 Test Backend</button>
+        <button onclick="goToLogin()">🚀 Go to Login</button>
+        
+        <h3>📋 Instructions:</h3>
+        <ol>
+            <li><strong>Check Current Auth</strong> - See what's stored in localStorage</li>
+            <li><strong>Clear Auth Data</strong> - Remove old tokens and user data</li>
+            <li><strong>Test Backend</strong> - Verify backend is running</li>
+            <li><strong>Go to Login</strong> - Navigate to the login page</li>
+        </ol>
+        
+        <h3>🔑 Test Accounts:</h3>
+        <div class="status">
+            <strong>Admin Account:</strong><br>
+            Email: ronaldo@gmail.com<br>
+            Password: admin123<br><br>
+            
+            <strong>Regular User:</strong><br>
+            Create new account via signup
+        </div>
+    </div>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function checkCurrentAuth() {
+            const token = localStorage.getItem('token');
+            const authUser = localStorage.getItem('authUser');
+            
+            let message = '🔍 Current Auth Status:\n\n';
+            
+            if (token) {
+                message += `Token: ${token.substring(0, 20)}...\n`;
+            } else {
+                message += 'Token: None\n';
+            }
+            
+            if (authUser) {
+                try {
+                    const user = JSON.parse(authUser);
+                    message += `User: ${user.fullName || user.username} (${user.email})\n`;
+                    message += `User ID: ${user.id}\n`;
+                    
+                    // Check if it's a MongoDB ID (24 hex chars)
+                    if (user.id && user.id.length === 24 && /^[0-9a-fA-F]{24}$/.test(user.id)) {
+                        message += '⚠️ WARNING: MongoDB ID detected! This needs to be cleared.\n';
+                        updateStatus(message, 'warning');
+                        return;
+                    } else {
+                        message += '✅ SQLite ID detected (compatible)\n';
+                    }
+                } catch (e) {
+                    message += '❌ Invalid user data in localStorage\n';
+                    updateStatus(message, 'error');
+                    return;
+                }
+            } else {
+                message += 'User: None\n';
+            }
+            
+            updateStatus(message, token || authUser ? 'warning' : 'success');
+        }
+
+        function clearAuthData() {
+            const itemsToRemove = ['token', 'authUser', 'jwt'];
+            let removedItems = [];
+            
+            itemsToRemove.forEach(item => {
+                if (localStorage.getItem(item)) {
+                    localStorage.removeItem(item);
+                    removedItems.push(item);
+                }
+            });
+            
+            // Also clear any other Z-APP related data
+            Object.keys(localStorage).forEach(key => {
+                if (key.includes('z-app') || key.includes('chat') || key.includes('friend')) {
+                    localStorage.removeItem(key);
+                    removedItems.push(key);
+                }
+            });
+            
+            const message = `🧹 Cleared auth data!\n\nRemoved items: ${removedItems.length > 0 ? removedItems.join(', ') : 'None found'}\n\n✅ Ready for fresh login!`;
+            updateStatus(message, 'success');
+        }
+
+        async function testBackendConnection() {
+            updateStatus('🔗 Testing backend connection...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:5001/health/ping');
+                const data = await response.json();
+                
+                const message = `✅ Backend is running!\n\nStatus: ${data.status}\nUptime: ${Math.round(data.uptime)}s\nMemory: ${data.memory}`;
+                updateStatus(message, 'success');
+            } catch (error) {
+                const message = `❌ Backend connection failed!\n\nError: ${error.message}\n\nMake sure backend is running on port 5001`;
+                updateStatus(message, 'error');
+            }
+        }
+
+        function goToLogin() {
+            // Check if we're already on localhost:5175
+            if (window.location.hostname === 'localhost' && window.location.port === '5175') {
+                window.location.href = '/login';
+            } else {
+                window.location.href = 'http://localhost:5175/login';
+            }
+        }
+
+        // Auto-check auth on page load
+        window.onload = function() {
+            checkCurrentAuth();
+        };
+    </script>
+</body>
+</html>

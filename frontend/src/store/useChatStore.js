@@ -41,7 +41,14 @@ export const useChatStore = create((set, get) => ({
         
         if (cachedMessages && cachedMessages.length > 0) {
             console.log(`⚡ INSTANT: Loaded ${cachedMessages.length} messages from cache`);
-            set({ messages: cachedMessages, isMessagesLoading: false });
+            
+            // Ensure cached messages have proper reactions arrays
+            const normalizedCachedMessages = cachedMessages.map(msg => ({
+                ...msg,
+                reactions: Array.isArray(msg.reactions) ? msg.reactions : []
+            }));
+            
+            set({ messages: normalizedCachedMessages, isMessagesLoading: false });
             
             // Mark as read immediately
             get().resetUnread(userId);
@@ -81,7 +88,14 @@ export const useChatStore = create((set, get) => ({
             }
             
             console.log(`✅ Loaded ${res.data.length} messages`);
-            set({ messages: res.data, isMessagesLoading: false });
+            
+            // Ensure all messages have proper reactions arrays
+            const normalizedMessages = res.data.map(msg => ({
+                ...msg,
+                reactions: Array.isArray(msg.reactions) ? msg.reactions : []
+            }));
+            
+            set({ messages: normalizedMessages, isMessagesLoading: false });
             
             // Cache the messages for next time
             cacheMessagesDB(chatId, res.data);
@@ -137,40 +151,38 @@ export const useChatStore = create((set, get) => ({
         useFriendStore.getState().updateFriendLastMessage(selectedUser.id, optimisticMessage);
         
         // ✅ INSTANT: Send in background (fire and forget - NO AWAIT)
-        if (socket && socket.connected) {
-            console.log('📤 Sending via Socket.IO (INSTANT)');
-            
-            // Emit via socket for instant delivery (NO AWAIT - fire and forget)
-            socket.emit('sendMessage', {
-                receiverId: selectedUser.id,
-                ...messageData,
-                tempId: tempId
-            });
-            
-            // Socket will emit back with the real message to replace optimistic one
-        } else {
-            // Fallback to API only if socket not available (also fire and forget)
-            console.log('📤 Sending via API (fallback)');
+        // 🔧 TEMPORARY FIX: Force API usage for reliable message sending
+        console.log('📤 Sending via API (FORCED - ensuring reliability)');
+        
+        // Always use API for now to ensure messages work
+        {
             axiosInstance.post(`/messages/send/${selectedUser.id}`, messageData)
                 .then(res => {
+                    console.log('✅ Message sent successfully via API:', res.data);
                     const currentUser = get().selectedUser;
                     if (currentUser?.id === selectedUser.id && res.data?.id) {
+                        // Ensure the response message has proper reactions array
+                        const normalizedMessage = {
+                            ...res.data,
+                            reactions: Array.isArray(res.data.reactions) ? res.data.reactions : []
+                        };
+                        
                         set(state => ({
                             messages: state.messages.map(m => 
-                                m.tempId === tempId ? res.data : m
+                                m.tempId === tempId ? normalizedMessage : m
                             )
                         }));
                     }
                 })
                 .catch(error => {
-                    console.error('Send failed:', error);
+                    console.error('❌ Send failed:', error);
                     // Mark message as failed
                     set(state => ({
                         messages: state.messages.map(m => 
                             m.tempId === tempId ? { ...m, status: 'failed' } : m
                         )
                     }));
-                    toast.error("Failed to send");
+                    toast.error("Failed to send message");
                 });
         }
     },
@@ -369,13 +381,80 @@ export const useChatStore = create((set, get) => ({
         console.log(`👤 Selecting user: ${user?.nickname || user?.username || 'none'}`);
         // CRITICAL: Clear messages IMMEDIATELY to prevent flash of previous chat
         set({ selectedUser: user, messages: [], isMessagesLoading: false });
+        
         if (user) {
+            // Save selected user to localStorage for page refresh persistence
+            localStorage.setItem('selectedChatUser', JSON.stringify({
+                id: user.id,
+                username: user.username,
+                nickname: user.nickname,
+                fullName: user.fullName,
+                profilePic: user.profilePic,
+                isOnline: user.isOnline
+            }));
+            
+            // Update URL to reflect current chat (without page reload)
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('chat', user.id);
+            window.history.replaceState({}, '', currentUrl);
+            
             // Small delay to ensure state is updated
             const userId = user.id;
             setTimeout(() => {
                 get().getMessages(userId);
             }, 0);
+        } else {
+            // Clear localStorage and URL when no user selected
+            localStorage.removeItem('selectedChatUser');
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.delete('chat');
+            window.history.replaceState({}, '', currentUrl);
         }
+    },
+
+    // NEW: Restore selected user from localStorage or URL
+    restoreSelectedUser: async () => {
+        try {
+            // Check URL first for chat parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const chatUserId = urlParams.get('chat');
+            
+            // Check localStorage for saved user
+            const savedUser = localStorage.getItem('selectedChatUser');
+            
+            if (chatUserId || savedUser) {
+                const { friends } = useFriendStore.getState();
+                let targetUserId = chatUserId;
+                let targetUser = null;
+                
+                // If we have URL parameter, use that
+                if (chatUserId) {
+                    targetUser = friends.find(friend => friend.id === chatUserId);
+                }
+                
+                // If no URL param or user not found, try localStorage
+                if (!targetUser && savedUser) {
+                    try {
+                        const parsedUser = JSON.parse(savedUser);
+                        targetUserId = parsedUser.id;
+                        targetUser = friends.find(friend => friend.id === parsedUser.id) || parsedUser;
+                    } catch (e) {
+                        console.error('Failed to parse saved user:', e);
+                        localStorage.removeItem('selectedChatUser');
+                    }
+                }
+                
+                // If we found a user, restore the chat
+                if (targetUser && targetUserId) {
+                    console.log(`🔄 Restoring chat with: ${targetUser.nickname || targetUser.username}`);
+                    get().setSelectedUser(targetUser);
+                    return true;
+                }
+            }
+        } catch (error) {
+            console.error('Failed to restore selected user:', error);
+        }
+        return false;
     },
 
     incrementUnread: (userId) => set((state) => ({ unreadCounts: {...state.unreadCounts, [userId]: (state.unreadCounts[userId] || 0) + 1} })),

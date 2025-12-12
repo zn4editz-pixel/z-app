@@ -40,13 +40,28 @@ export const useAuthStore = create((set, get) => ({
 				return;
 			}
 			
-			// Show cached user immediately for instant load
+			// ✅ FIX: Check for old MongoDB user IDs and clear them
 			if (cachedUser) {
 				try {
 					const parsedUser = JSON.parse(cachedUser);
+					// If user ID looks like MongoDB ObjectId (24 hex chars), clear old data
+					if (parsedUser.id && parsedUser.id.length === 24 && /^[0-9a-fA-F]{24}$/.test(parsedUser.id)) {
+						console.log("🧹 Detected old MongoDB user data, clearing for fresh login...");
+						localStorage.removeItem("authUser");
+						localStorage.removeItem("token");
+						delete axiosInstance.defaults.headers.common['Authorization'];
+						set({ authUser: null, isCheckingAuth: false });
+						toast.error("Please log in again - your account has been migrated to a new system");
+						return;
+					}
 					set({ authUser: parsedUser, isCheckingAuth: false });
 				} catch (e) {
-					console.error("Failed to parse cached user");
+					console.error("Failed to parse cached user, clearing auth data");
+					localStorage.removeItem("authUser");
+					localStorage.removeItem("token");
+					delete axiosInstance.defaults.headers.common['Authorization'];
+					set({ authUser: null, isCheckingAuth: false });
+					return;
 				}
 			} else {
 				set({ isCheckingAuth: true });
@@ -96,24 +111,39 @@ export const useAuthStore = create((set, get) => ({
 		} catch (error) {
 			console.log("Auth check failed:", error.response?.status, error.response?.data?.message || error.message);
 			
-			// Only clear auth if it's a real auth failure (401), not network errors
-			if (error.response?.status === 401) {
-				console.log("Token invalid or expired, clearing auth");
+			// Clear auth for any auth failure (401) or user not found errors
+			if (error.response?.status === 401 || error.response?.status === 404 || 
+				error.message?.includes("User not found") || error.message?.includes("Invalid user")) {
+				console.log("🧹 Auth failed - clearing old authentication data");
 				set({ authUser: null });
 				localStorage.removeItem("authUser");
 				localStorage.removeItem("token");
 				delete axiosInstance.defaults.headers.common['Authorization'];
 				get().disconnectSocket();
 				useFriendStore.getState().clearFriendData();
+				toast.error("Please log in again - your session has expired");
 			} else {
 				// For network errors, keep the user logged in (offline support)
 				console.log("Network error during auth check, keeping user logged in");
 				const cachedUser = localStorage.getItem("authUser");
 				if (cachedUser) {
 					try {
-						set({ authUser: JSON.parse(cachedUser) });
+						const parsedUser = JSON.parse(cachedUser);
+						// Double-check for MongoDB IDs even in network errors
+						if (parsedUser.id && parsedUser.id.length === 24 && /^[0-9a-fA-F]{24}$/.test(parsedUser.id)) {
+							console.log("🧹 Network error but detected MongoDB ID, clearing auth");
+							localStorage.removeItem("authUser");
+							localStorage.removeItem("token");
+							delete axiosInstance.defaults.headers.common['Authorization'];
+							set({ authUser: null });
+							return;
+						}
+						set({ authUser: parsedUser });
 					} catch (e) {
 						console.error("Failed to parse cached user:", e);
+						localStorage.removeItem("authUser");
+						localStorage.removeItem("token");
+						set({ authUser: null });
 					}
 				}
 			}
@@ -264,6 +294,9 @@ export const useAuthStore = create((set, get) => ({
 
 		newSocket.on("connect", () => {
 			console.log("✅ Socket connected:", newSocket.id);
+			
+			// 🔥 REAL-TIME: Subscribe to friend events when socket connects
+			useFriendStore.getState().subscribeToFriendEvents(newSocket);
 		});
 		
         newSocket.on("connect_error", (err) => {
@@ -337,6 +370,10 @@ export const useAuthStore = create((set, get) => ({
 		
 		if (socket) {
             console.log("Disconnecting socket...", socket.id);
+			
+			// 🔥 REAL-TIME: Unsubscribe from friend events before disconnecting
+			useFriendStore.getState().unsubscribeFromFriendEvents(socket);
+			
 			socket.disconnect();
 			set({ socket: null, onlineUsers: [] }); // Clear socket and online users
 		}

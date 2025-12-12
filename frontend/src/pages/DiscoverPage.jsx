@@ -644,13 +644,41 @@ const DiscoverPage = () => {
 														)}
 
 														<div className="flex gap-2">
-															<Link
-																to={`/profile/${user.username}`}
-																className="btn btn-primary btn-xs sm:btn-sm flex-1 hover:scale-105 active:scale-95 transition-transform duration-200"
-															>
-																<Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-																<span className="text-xs sm:text-sm">View Profile</span>
-															</Link>
+															{/* For search results, only show View Profile button */}
+															{searchQuery.trim() ? (
+																<Link
+																	to={`/profile/${user.username}`}
+																	className="btn btn-primary btn-xs sm:btn-sm w-full hover:scale-105 active:scale-95 transition-transform duration-200"
+																>
+																	<Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+																	<span className="text-xs sm:text-sm">View Profile</span>
+																</Link>
+															) : (
+																/* For suggested users, show both buttons */
+																<>
+																	<Link
+																		to={`/profile/${user.username}`}
+																		className="btn btn-outline btn-xs sm:btn-sm flex-1 hover:scale-105 active:scale-95 transition-transform duration-200"
+																	>
+																		<Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+																		<span className="text-xs sm:text-sm">View</span>
+																	</Link>
+																	{(() => {
+																		const buttonConfig = getButtonConfig(userId);
+																		const ButtonIcon = buttonConfig.icon;
+																		return (
+																			<button
+																				onClick={buttonConfig.onClick}
+																				disabled={buttonConfig.disabled}
+																				className={`btn ${buttonConfig.className} btn-xs sm:btn-sm flex-1 hover:scale-105 active:scale-95 transition-transform duration-200`}
+																			>
+																				<ButtonIcon className={`w-3 h-3 sm:w-4 sm:h-4 ${loadingRequestId === userId ? 'animate-spin' : ''}`} />
+																				<span className="text-xs sm:text-sm">{buttonConfig.text}</span>
+																			</button>
+																		);
+																	})()}
+																</>
+															)}
 														</div>
 													</div>
 												</div>

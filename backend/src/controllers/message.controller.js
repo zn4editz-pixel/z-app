@@ -2,6 +2,7 @@ import prisma from "../lib/prisma.js";
 import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 import { clearFriendsCache } from "./friend.controller.js";
+import { emitToUser } from "../lib/socketHandlers.js";
 
 // Cache for sidebar users (1 minute TTL)
 let sidebarUsersCache = new Map();
@@ -18,12 +19,17 @@ export const getUsersForSidebar = async (req, res) => {
       return res.status(200).json(cached.data);
     }
 
-    // Fetch friends using FriendRequest table (SQLite compatible)
+    // Fetch friends using FriendRequest table (SQLite compatible) - only accepted friendships
     const friendRequests = await prisma.friendRequest.findMany({
       where: {
-        OR: [
-          { senderId: loggedInUserId },
-          { receiverId: loggedInUserId }
+        AND: [
+          {
+            OR: [
+              { senderId: loggedInUserId },
+              { receiverId: loggedInUserId }
+            ]
+          },
+          { status: "accepted" }
         ]
       }
     });
@@ -234,19 +240,14 @@ export const sendMessage = async (req, res) => {
       senderAvatar: sender?.profilePic
     };
 
-    if (receiverSocketId) {
-      // Emit to receiver instantly
-      io.to(receiverSocketId).emit("newMessage", messageData);
+    // 🔥 REAL-TIME: Emit new message to receiver
+    emitToUser(receiverId, "newMessage", messageData);
 
-      // Notify sender that message was delivered
-      const senderSocketId = getReceiverSocketId(senderId);
-      if (senderSocketId) {
-        io.to(senderSocketId).emit("messageDelivered", {
-          messageId: newMessage.id,
-          deliveredAt: new Date()
-        });
-      }
-    }
+    // 🔥 REAL-TIME: Notify sender that message was delivered
+    emitToUser(senderId, "messageDelivered", {
+      messageId: newMessage.id,
+      deliveredAt: new Date()
+    });
 
     // Return response immediately
     res.status(201).json(newMessage);
@@ -293,14 +294,11 @@ export const markMessagesAsRead = async (req, res) => {
       select: { id: true }
     });
 
-    // Notify sender that messages were read
-    const senderSocketId = getReceiverSocketId(senderId);
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("messagesRead", {
-        readBy: myId,
-        count: messages.length
-      });
-    }
+    // 🔥 REAL-TIME: Notify sender that messages were read
+    emitToUser(senderId, "messagesRead", {
+      readBy: myId,
+      count: messages.length
+    });
 
     res.status(200).json({ message: "Messages marked as read", count: messages.length });
   } catch (error) {
@@ -359,22 +357,15 @@ export const addReaction = async (req, res) => {
       }
     });
 
-    // Notify both users
-    const receiverSocketId = getReceiverSocketId(message.receiverId);
-    const senderSocketId = getReceiverSocketId(message.senderId);
-    
+    // 🔥 REAL-TIME: Notify both users about reaction
     const parsedReactions = updatedMessage.reactions ? JSON.parse(updatedMessage.reactions) : [];
     const reactionData = {
       messageId,
       reactions: parsedReactions
     };
     
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("messageReaction", reactionData);
-    }
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("messageReaction", reactionData);
-    }
+    emitToUser(message.receiverId, "messageReaction", reactionData);
+    emitToUser(message.senderId, "messageReaction", reactionData);
 
     res.status(200).json({ message: "Reaction added", reactions: parsedReactions });
   } catch (error) {
@@ -419,22 +410,15 @@ export const removeReaction = async (req, res) => {
       }
     });
 
-    // Notify both users
-    const receiverSocketId = getReceiverSocketId(message.receiverId);
-    const senderSocketId = getReceiverSocketId(message.senderId);
-    
+    // 🔥 REAL-TIME: Notify both users about reaction removal
     const parsedReactions = updatedMessage.reactions ? JSON.parse(updatedMessage.reactions) : [];
     const reactionData = {
       messageId,
       reactions: parsedReactions
     };
     
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("messageReaction", reactionData);
-    }
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("messageReaction", reactionData);
-    }
+    emitToUser(message.receiverId, "messageReaction", reactionData);
+    emitToUser(message.senderId, "messageReaction", reactionData);
 
     res.status(200).json({ message: "Reaction removed", reactions: parsedReactions });
   } catch (error) {
@@ -476,10 +460,7 @@ export const deleteMessage = async (req, res) => {
       await cloudinary.uploader.destroy(`chat_voices/${publicId}`, { resource_type: 'video' }).catch(err => console.log("Cloudinary delete error:", err));
     }
 
-    // Notify both users
-    const receiverSocketId = getReceiverSocketId(message.receiverId);
-    const senderSocketId = getReceiverSocketId(message.senderId);
-    
+    // 🔥 REAL-TIME: Notify both users about message deletion
     const deleteData = { 
       messageId, 
       deletedBy: userId, 
@@ -487,12 +468,8 @@ export const deleteMessage = async (req, res) => {
       deletedAt: new Date() 
     };
 
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("messageDeleted", deleteData);
-    }
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("messageDeleted", deleteData);
-    }
+    emitToUser(message.receiverId, "messageDeleted", deleteData);
+    emitToUser(message.senderId, "messageDeleted", deleteData);
 
     res.status(200).json({ message: "Message deleted successfully" });
   } catch (error) {

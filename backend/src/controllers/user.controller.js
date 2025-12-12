@@ -204,14 +204,6 @@ export const updateUserProfile = async (req, res) => {
 			}
 
 			// Update username
-			const newHistory = user.usernameChangeHistory || [];
-			newHistory.push({
-				oldUsername: user.username,
-				newUsername: username.toLowerCase(),
-				changedAt: now
-			});
-			
-			updateData.usernameChangeHistory = newHistory;
 			updateData.username = username.toLowerCase();
 			updateData.lastUsernameChange = now;
 			updateData.usernameChangesThisWeek = (updateData.usernameChangesThisWeek ?? user.usernameChangesThisWeek) + 1;

@@ -10,7 +10,7 @@ export const axiosInstance = axios.create({
   baseURL: import.meta.env.PROD
     ? `${apiBaseUrl}/api`
     : "http://localhost:5001/api",
-  withCredentials: true,
+  // withCredentials: true, // Removed to fix CORS issues
   timeout: 15000, // 15 second timeout
   headers: {
     'Content-Type': 'application/json',

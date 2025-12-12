@@ -126,9 +126,11 @@ model Message {
 model FriendRequest {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   senderId   String
   receiverId String
+  status     String   @default("pending") // pending, accepted, rejected
 
   sender   User @relation("FriendRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
   receiver User @relation("FriendRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
