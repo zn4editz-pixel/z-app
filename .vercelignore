@@ -1,5 +1,4 @@
 backend/
-frontend/
 node_modules/
 *.md
 *.bat
@@ -7,3 +6,7 @@ node_modules/
 .git/
 .kiro/
 docs/
+src/
+vite.config.js
+package.json
+index.html
