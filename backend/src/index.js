@@ -54,6 +54,7 @@ import authRoutes from './routes/auth.route.js';
 import userRoutes from './routes/user.route.js';
 import messageRoutes from './routes/message.route.js';
 import adminRoutes from './routes/admin.route.js';
+import friendRoutes from './routes/friend.route.js';
 import healthRoutes from './routes/health.route.js';
 
 const PORT = process.env.PORT || 5001;
@@ -130,6 +131,7 @@ async function startServer() {
   app.use('/api/auth', authRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/messages', messageRoutes);
+  app.use('/api/friends', friendRoutes);
   app.use('/api/admin', adminRoutes);
 
   // Socket.IO setup (basic for Railway free tier)

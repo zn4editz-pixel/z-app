@@ -12,7 +12,7 @@ export const clearFriendsCache = (userId) => {
 // Send Friend Request
 export const sendFriendRequest = async (req, res) => {
 	try {
-		const { receiverId } = req.body;
+		const { receiverId } = req.params; // Get from URL params, not body
 		const senderId = req.user.id;
 
 		if (senderId === receiverId) {
@@ -69,7 +69,7 @@ export const sendFriendRequest = async (req, res) => {
 // Accept Friend Request
 export const acceptFriendRequest = async (req, res) => {
 	try {
-		const { senderId } = req.body;
+		const { senderId } = req.params; // Get from URL params, not body
 		const receiverId = req.user.id;
 
 		// Find the friend request
@@ -103,21 +103,21 @@ export const acceptFriendRequest = async (req, res) => {
 // Reject Friend Request
 export const rejectFriendRequest = async (req, res) => {
 	try {
-		const { senderId } = req.body;
+		const { userId } = req.params; // Get from URL params, not body
 		const receiverId = req.user.id;
 
-		// Delete the friend request
-		await prisma.friendRequest.delete({
+		// Delete the friend request (handle both directions)
+		await prisma.friendRequest.deleteMany({
 			where: {
-				senderId_receiverId: {
-					senderId,
-					receiverId
-				}
+				OR: [
+					{ senderId: userId, receiverId },
+					{ senderId: receiverId, receiverId: userId }
+				]
 			}
 		});
 
 		// Clear cache
-		clearFriendsCache(senderId);
+		clearFriendsCache(userId);
 		clearFriendsCache(receiverId);
 
 		res.status(200).json({ message: "Friend request rejected." });
