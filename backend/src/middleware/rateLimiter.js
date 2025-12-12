@@ -1,16 +1,26 @@
 // PRODUCTION RATE LIMITING FOR 500K+ USERS
 import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
-import { redis } from '../lib/db.production.js';
 
-// Create Redis store for distributed rate limiting
-const redisStore = new RedisStore({
-  sendCommand: (...args) => redis.call(...args),
-});
+// Fallback to memory store if Redis not available
+let redisStore;
+try {
+  const { redis } = await import('../lib/db.production.js');
+  redisStore = new RedisStore({
+    sendCommand: (...args) => redis.call(...args),
+    prefix: 'rl:general:',
+  });
+} catch (error) {
+  console.log('⚠️ Redis not available, using memory store for rate limiting');
+  redisStore = undefined; // Use default memory store
+}
 
 // General API rate limiting
 export const generalLimiter = rateLimit({
-  store: redisStore,
+  store: redisStore ? new RedisStore({
+    sendCommand: (...args) => redisStore.sendCommand(...args),
+    prefix: 'rl:general:',
+  }) : undefined,
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // Limit each IP to 1000 requests per windowMs
   message: {
@@ -19,15 +29,14 @@ export const generalLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    // Use user ID if authenticated, otherwise IP
-    return req.user?.id || req.ip;
-  },
 });
 
 // Authentication rate limiting (stricter)
 export const authLimiter = rateLimit({
-  store: redisStore,
+  store: redisStore ? new RedisStore({
+    sendCommand: (...args) => redisStore.sendCommand(...args),
+    prefix: 'rl:auth:',
+  }) : undefined,
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // Limit each IP to 10 auth attempts per windowMs
   message: {
@@ -41,14 +50,16 @@ export const authLimiter = rateLimit({
 
 // Message sending rate limiting
 export const messageLimiter = rateLimit({
-  store: redisStore,
+  store: redisStore ? new RedisStore({
+    sendCommand: (...args) => redisStore.sendCommand(...args),
+    prefix: 'rl:messages:',
+  }) : undefined,
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 60, // 60 messages per minute per user
   message: {
     error: 'Message rate limit exceeded. Please slow down.',
     retryAfter: '1 minute'
   },
-  keyGenerator: (req) => `messages:${req.user.id}`,
 });
 
 // File upload rate limiting
