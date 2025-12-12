@@ -45,6 +45,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:3000',
+    'https://z-app-official.vercel.app',
     'https://z-app-frontend.vercel.app',
     process.env.FRONTEND_URL
   ].filter(Boolean),
@@ -120,6 +121,7 @@ const io = new Server(server, {
     origin: [
       'http://localhost:5173',
       'http://localhost:3000',
+      'https://z-app-official.vercel.app',
       'https://z-app-frontend.vercel.app',
       process.env.FRONTEND_URL
     ].filter(Boolean),
