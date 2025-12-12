@@ -64,6 +64,9 @@ export const connectDB = async () => {
 
 export const isDatabaseConnected = () => isConnected;
 
+// Export prisma instance
+export { prisma };
+
 // Graceful shutdown
 process.on('beforeExit', async () => {
 	await prisma.$disconnect();

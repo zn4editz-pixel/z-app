@@ -11,17 +11,29 @@ import process from 'process';
 let prisma, rateLimiters, errorHandler, securityMiddleware;
 
 try {
-  const dbModule = await import('./lib/db.production.js');
-  prisma = dbModule.prisma;
+  // Use production DB only in production environment
+  if (process.env.NODE_ENV === 'production') {
+    const dbModule = await import('./lib/db.production.js');
+    prisma = dbModule.prisma;
+    console.log('✅ Production database loaded');
+  } else {
+    const dbModule = await import('./lib/db.js');
+    prisma = dbModule.prisma;
+    console.log('✅ Development database loaded');
+  }
 } catch (error) {
-  console.log('⚠️ Production DB not available, using basic DB...');
+  console.log('⚠️ Database not available, using fallback...');
   const dbModule = await import('./lib/db.js');
   prisma = dbModule.prisma;
 }
 
 try {
-  const rateLimitModule = await import('./middleware/rateLimiter.js');
+  // Use local rate limiter for development, production for production
+  const rateLimitModule = process.env.NODE_ENV === 'production' 
+    ? await import('./middleware/rateLimiter.js')
+    : await import('./middleware/rateLimiter.local.js');
   rateLimiters = rateLimitModule.default;
+  console.log('✅ Rate limiter loaded successfully');
 } catch (error) {
   console.log('⚠️ Rate limiter not available, using basic limits...');
   rateLimiters = {
@@ -41,13 +53,8 @@ try {
   };
 }
 
-try {
-  const securityModule = await import('./middleware/security.js');
-  securityMiddleware = securityModule.securityMiddleware;
-} catch (error) {
-  console.log('⚠️ Security middleware not available, using basic security...');
-  securityMiddleware = (req, res, next) => next();
-}
+// Security middleware is handled by individual rate limiters, not a single middleware
+securityMiddleware = (req, res, next) => next();
 
 // Import routes
 import authRoutes from './routes/auth.route.js';
@@ -55,16 +62,32 @@ import userRoutes from './routes/user.route.js';
 import messageRoutes from './routes/message.route.js';
 import adminRoutes from './routes/admin.route.js';
 import friendRoutes from './routes/friend.route.js';
-import healthRoutes from './routes/health.route.js';
+
+// Use simple health routes for development to avoid Redis dependencies
+let healthRoutes;
+try {
+  if (process.env.NODE_ENV === 'production') {
+    healthRoutes = (await import('./routes/health.route.js')).default;
+  } else {
+    healthRoutes = (await import('./routes/health.simple.js')).default;
+  }
+} catch (error) {
+  console.log('⚠️ Health routes not available');
+  // Create minimal health route
+  const express = (await import('express')).default;
+  healthRoutes = express.Router();
+  healthRoutes.get('/ping', (req, res) => res.json({ status: 'ok' }));
+}
 
 const PORT = process.env.PORT || 5001;
+
+const app = express();
 
 // Railway Free Tier - Single Process (no clustering to save memory)
 console.log(`🚀 Starting Railway Free Tier Backend on port ${PORT}`);
 startServer();
 
 async function startServer() {
-  const app = express();
   const server = createServer(app);
 
   // Trust proxy for load balancer

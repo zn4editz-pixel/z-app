@@ -1,5 +1,5 @@
 // Simplified Friend Controller for SQLite compatibility
-import prisma from "../lib/prisma.js";
+import { prisma } from "../lib/db.js";
 
 // Cache for friends data (5 minutes TTL)
 const friendsCache = new Map();
