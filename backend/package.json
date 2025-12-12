@@ -8,9 +8,9 @@
     "node": ">=20.x"
   },
   "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js",
-    "build": "npx prisma generate && npx prisma db push",
+    "dev": "nodemon src/index.simple.js",
+    "start": "node src/index.simple.js",
+    "build": "npx prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
