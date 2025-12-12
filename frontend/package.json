@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "rimraf ../backend/dist && node -e \"require('fs').mkdirSync('../backend/dist', {recursive: true})\" && node -e \"require('fs').cpSync('dist', '../backend/dist', {recursive: true})\"",
+    "vercel-build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

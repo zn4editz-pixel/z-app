@@ -1,0 +1,60 @@
+{
+  "name": "Z-APP | Connect Instantly",
+  "short_name": "Z-APP",
+  "description": "Modern real-time chat with HD video calls, voice messaging, and instant messaging. Connect with friends securely.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#FF9933",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/z-app-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/z-app-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/z-app-logo.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/z-app-logo.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/z-app-logo.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["social", "communication", "entertainment"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Start Chat",
+      "short_name": "Chat",
+      "description": "Start a new conversation",
+      "url": "/",
+      "icons": [{ "src": "/z-app-logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Discover",
+      "short_name": "Discover",
+      "description": "Discover new people",
+      "url": "/discover",
+      "icons": [{ "src": "/z-app-logo.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -1,0 +1,228 @@
+/* ===== ADMIN FORCE BLACK THEME ===== */
+/* This file must be loaded LAST to override all other CSS */
+/* Maximum specificity to ensure black background */
+
+/* Force black background with the highest possible specificity */
+html body div.admin-dashboard-container,
+html body div.admin-dashboard-container.min-h-screen,
+html body .admin-dashboard-container,
+html body .admin-dashboard-container * {
+  background-color: #000000 !important;
+  background: #000000 !important;
+}
+
+/* Override any DaisyUI theme variables */
+html body .admin-dashboard-container {
+  --b1: 0 0% 0% !important; /* Pure black */
+  --b2: 0 0% 10% !important; /* Very dark gray */
+  --b3: 0 0% 20% !important; /* Dark gray */
+  --bc: 45 100% 76% !important; /* Golden text */
+}
+
+/* Force all possible background classes to black */
+html body .admin-dashboard-container .bg-gray-900,
+html body .admin-dashboard-container .bg-base-100,
+html body .admin-dashboard-container .bg-base-200,
+html body .admin-dashboard-container .bg-base-300,
+html body .admin-dashboard-container [class*="bg-"],
+html body .admin-dashboard-container .min-h-screen {
+  background-color: #000000 !important;
+  background: #000000 !important;
+}
+
+/* Cards should be dark gray, not black */
+html body .admin-dashboard-container .admin-metric-card,
+html body .admin-dashboard-container .admin-chart-container,
+html body .admin-dashboard-container .bg-gray-800 {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+}
+
+/* Golden theme colors with shining gradient animation */
+html body .admin-dashboard-container .admin-header h1.admin-title {
+  background: linear-gradient(
+    45deg,
+    #fbbf24 0%,
+    #f59e0b 12.5%,
+    #fcd34d 25%,
+    #fef3c7 37.5%,
+    #fffbeb 50%,
+    #fef3c7 62.5%,
+    #fcd34d 75%,
+    #f59e0b 87.5%,
+    #fbbf24 100%
+  ) !important;
+  background-size: 800% 800% !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  animation: shining-gold 4s ease-in-out infinite !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.8)) !important;
+}
+
+/* Fallback for browsers that don't support background-clip: text */
+@supports not (-webkit-background-clip: text) {
+  html body .admin-dashboard-container .admin-header h1.admin-title {
+    color: #fbbf24 !important;
+    -webkit-text-fill-color: unset !important;
+    text-shadow: 0 0 30px rgba(251, 191, 36, 0.8) !important;
+  }
+}
+
+html body .admin-dashboard-container .admin-tab.active {
+  background-color: #fbbf24 !important;
+  color: #000000 !important;
+}
+
+/* Enhanced subtitle with subtle gold glow */
+html body .admin-dashboard-container .admin-header p.admin-subtitle {
+  color: #d4af37 !important;
+  text-shadow: 0 0 15px rgba(212, 175, 55, 0.6) !important;
+  animation: subtle-glow 5s ease-in-out infinite alternate !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Subtle glow animation for subtitle */
+@keyframes subtle-glow {
+  0% {
+    text-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
+  }
+  100% {
+    text-shadow: 0 0 25px rgba(212, 175, 55, 0.9), 0 0 35px rgba(251, 191, 36, 0.4);
+  }
+}
+
+/* Override any remaining theme conflicts */
+html body .admin-dashboard-container div,
+html body .admin-dashboard-container section,
+html body .admin-dashboard-container article {
+  background-color: transparent !important;
+}
+
+/* Ensure the main container is always black */
+html body .admin-dashboard-container.min-h-screen {
+  background-color: #000000 !important;
+  background: #000000 !important;
+}
+
+/* Override body background when admin dashboard is present */
+body:has(.admin-dashboard-container) {
+  background-color: #000000 !important;
+  background: #000000 !important;
+}
+
+html:has(.admin-dashboard-container) {
+  background-color: #000000 !important;
+  background: #000000 !important;
+}
+
+/* Force override of any Tailwind/DaisyUI classes */
+.admin-dashboard-container.bg-gray-900 {
+  background-color: #000000 !important;
+  background: #000000 !important;
+}
+
+/* Use CSS custom properties to override theme */
+.admin-dashboard-container {
+  background-color: #000000 !important;
+  background: #000000 !important;
+  --tw-bg-opacity: 1 !important;
+  --bg-base-100: #000000 !important;
+  --bg-base-200: #1a1a1a !important;
+  --bg-base-300: #333333 !important;
+}
+
+/* ===== SHINING GOLD ANIMATION ===== */
+@keyframes shining-gold {
+  0% {
+    background-position: 0% 50%;
+    filter: brightness(1) saturate(1) hue-rotate(0deg);
+  }
+  20% {
+    background-position: 25% 50%;
+    filter: brightness(1.2) saturate(1.1) hue-rotate(5deg);
+  }
+  40% {
+    background-position: 50% 50%;
+    filter: brightness(1.4) saturate(1.3) hue-rotate(10deg);
+  }
+  60% {
+    background-position: 75% 50%;
+    filter: brightness(1.6) saturate(1.5) hue-rotate(15deg);
+  }
+  80% {
+    background-position: 100% 50%;
+    filter: brightness(1.4) saturate(1.3) hue-rotate(10deg);
+  }
+  100% {
+    background-position: 125% 50%;
+    filter: brightness(1) saturate(1) hue-rotate(0deg);
+  }
+}
+
+/* Enhanced gold shimmer effect */
+@keyframes gold-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Add shimmer overlay */
+html body .admin-dashboard-container .admin-header h1::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: gold-shimmer 2s ease-in-out infinite;
+  z-index: 1;
+}
+
+/* Make header position relative for shimmer */
+html body .admin-dashboard-container .admin-header h1 {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Add pulsing glow to entire header */
+html body .admin-dashboard-container .admin-header {
+  position: relative !important;
+  padding: 2rem !important;
+  border-radius: 1rem !important;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(251, 191, 36, 0.1) 0%,
+    rgba(251, 191, 36, 0.05) 50%,
+    transparent 100%
+  ) !important;
+  animation: header-glow 6s ease-in-out infinite alternate !important;
+}
+
+/* Header glow animation */
+@keyframes header-glow {
+  0% {
+    box-shadow: 
+      0 0 20px rgba(251, 191, 36, 0.3),
+      inset 0 0 20px rgba(251, 191, 36, 0.1);
+  }
+  100% {
+    box-shadow: 
+      0 0 40px rgba(251, 191, 36, 0.6),
+      0 0 60px rgba(251, 191, 36, 0.4),
+      inset 0 0 30px rgba(251, 191, 36, 0.2);
+  }
+}

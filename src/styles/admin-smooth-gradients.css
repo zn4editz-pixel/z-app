@@ -1,0 +1,214 @@
+/* SMOOTH GRADIENT ANIMATIONS FOR ADMIN PANEL */
+
+/* Admin Panel Header Gradient Animation */
+.admin-panel-gradient {
+  background: linear-gradient(
+    45deg,
+    #f59e0b,
+    #fbbf24,
+    #fcd34d,
+    #fde68a,
+    #fef3c7,
+    #fde68a,
+    #fcd34d,
+    #fbbf24,
+    #f59e0b
+  );
+  background-size: 400% 400%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: smoothGradientFlow 6s ease-in-out infinite;
+}
+
+/* Dashboard Overview Gradient Animation */
+.dashboard-overview-gradient {
+  background: linear-gradient(
+    90deg,
+    #f59e0b,
+    #fbbf24,
+    #fcd34d,
+    #fde68a,
+    #fef3c7,
+    #fde68a,
+    #fcd34d,
+    #fbbf24,
+    #f59e0b
+  );
+  background-size: 300% 300%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: smoothGradientFlow 8s ease-in-out infinite;
+}
+
+/* Smooth Gradient Flow Animation */
+@keyframes smoothGradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 50% 75%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  75% {
+    background-position: 50% 25%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Alternative Smooth Wave Animation */
+.admin-panel-gradient-wave {
+  background: linear-gradient(
+    270deg,
+    #f59e0b 0%,
+    #fbbf24 25%,
+    #fcd34d 50%,
+    #fbbf24 75%,
+    #f59e0b 100%
+  );
+  background-size: 200% 200%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: waveGradient 4s linear infinite;
+}
+
+@keyframes waveGradient {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 200% 0%;
+  }
+}
+
+/* Pulsing Gradient (Alternative) */
+.admin-panel-gradient-pulse {
+  background: linear-gradient(
+    45deg,
+    #f59e0b,
+    #fbbf24,
+    #fcd34d,
+    #fbbf24,
+    #f59e0b
+  );
+  background-size: 300% 300%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: pulseGradient 3s ease-in-out infinite;
+}
+
+@keyframes pulseGradient {
+  0%, 100% {
+    background-position: 0% 50%;
+    opacity: 1;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 0.8;
+  }
+}
+
+/* Fallback for browsers that don't support background-clip: text */
+@supports not (-webkit-background-clip: text) {
+  .admin-panel-gradient,
+  .dashboard-overview-gradient,
+  .admin-panel-gradient-wave,
+  .admin-panel-gradient-pulse {
+    background: none;
+    color: #fbbf24;
+    -webkit-text-fill-color: unset;
+  }
+}
+
+/* Mobile Optimization */
+@media (max-width: 768px) {
+  .admin-panel-gradient,
+  .dashboard-overview-gradient {
+    background-size: 200% 200%;
+    animation-duration: 4s;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .admin-panel-gradient,
+  .dashboard-overview-gradient,
+  .admin-panel-gradient-wave,
+  .admin-panel-gradient-pulse {
+    animation: none;
+    background: linear-gradient(45deg, #f59e0b, #fbbf24);
+    background-size: 100% 100%;
+  }
+}
+
+/* Ultra Smooth Transform-Based Animation */
+.admin-panel-gradient-transform {
+  position: relative;
+  color: transparent;
+  background: linear-gradient(45deg, #f59e0b, #fbbf24);
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+.admin-panel-gradient-transform::before {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    45deg,
+    #f59e0b,
+    #fbbf24,
+    #fcd34d,
+    #fde68a,
+    #fef3c7,
+    #fde68a,
+    #fcd34d,
+    #fbbf24,
+    #f59e0b
+  );
+  background-size: 400% 400%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: ultraSmoothGradient 5s linear infinite;
+}
+
+@keyframes ultraSmoothGradient {
+  0% { background-position: 0% 0%; }
+  25% { background-position: 100% 0%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+/* Performance Optimization */
+.admin-panel-gradient,
+.dashboard-overview-gradient,
+.admin-panel-gradient-wave,
+.admin-panel-gradient-pulse,
+.admin-panel-gradient-transform {
+  will-change: background-position;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Ensure smooth animation on all devices */
+@media (max-width: 480px) {
+  .admin-panel-gradient-wave {
+    animation-duration: 3s;
+  }
+  
+  .dashboard-overview-gradient {
+    animation-duration: 6s;
+  }
+}

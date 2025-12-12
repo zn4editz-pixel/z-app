@@ -1,41 +1,55 @@
 {
-  "name": "z-app",
-  "version": "1.0.0",
-  "description": "Z-APP - Full-stack real-time chat application with video calling, friend system, and admin dashboard",
+  "name": "frontend",
   "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "build": "npm install --prefix frontend && npm run build --prefix frontend",
-    "start": "cd backend && npm start",
-    "postinstall": "echo 'Root install complete'"
-  },
-  "devDependencies": {
-    "@svgr/webpack": "^8.1.0",
-    "concurrently": "^8.2.2",
-    "vite-plugin-svgr": "^4.3.0"
+    "dev": "vite",
+    "build": "vite build",
+    "vercel-build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "cookie-parser": "^1.4.7",
-    "crypto": "^1.0.1",
-    "nodemailer": "^7.0.5",
-    "react-hot-toast": "^2.5.2",
-    "react-icons": "^5.5.0"
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/camera": "^7.0.2",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/core": "^7.4.4",
+    "@capacitor/filesystem": "^7.1.5",
+    "@capacitor/ios": "^7.4.4",
+    "@capacitor/push-notifications": "^7.0.3",
+    "@capacitor/splash-screen": "^7.0.3",
+    "@studio-freight/lenis": "^1.0.42",
+    "@tensorflow/tfjs": "^4.22.0",
+    "axios": "^1.7.7",
+    "framer-motion": "^12.23.25",
+    "gsap": "^3.13.0",
+    "lenis": "^1.3.15",
+    "lucide-react": "^0.459.0",
+    "nsfwjs": "^4.2.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hot-toast": "^2.4.1",
+    "react-router-dom": "^6.28.0",
+    "recharts": "^3.5.1",
+    "socket.io-client": "^4.8.1",
+    "zustand": "^5.0.1"
   },
-  "keywords": [
-    "chat",
-    "real-time",
-    "socket.io",
-    "react",
-    "nodejs",
-    "mongodb",
-    "webrtc",
-    "messaging"
-  ],
-  "author": "Z-APP Team",
-  "license": "ISC",
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "daisyui": "^4.12.14",
+    "eslint": "^9.13.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.14",
+    "globals": "^15.11.0",
+    "postcss": "^8.4.49",
+    "rimraf": "^6.0.1",
+    "tailwindcss": "^3.4.15",
+    "vite": "^7.2.7"
   }
 }

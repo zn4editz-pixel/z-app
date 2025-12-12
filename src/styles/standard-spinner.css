@@ -1,0 +1,64 @@
+/* Typical Loading Spinner - Uses text color */
+.standard-spinner {
+  position: relative;
+  display: inline-block;
+  margin: 0 auto;
+}
+
+.standard-spinner-circle {
+  width: 100%;
+  height: 100%;
+  border: 2px solid hsl(var(--bc) / 0.2);
+  border-top: 2px solid hsl(var(--bc));
+  border-radius: 50%;
+  animation: standard-spin 1s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Rotation Animation */
+@keyframes standard-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Size Variants */
+.standard-spinner.w-6 .standard-spinner-circle {
+  border-width: 1.5px;
+}
+
+.standard-spinner.w-8 .standard-spinner-circle {
+  border-width: 2px;
+}
+
+.standard-spinner.w-12 .standard-spinner-circle {
+  border-width: 2.5px;
+}
+
+.standard-spinner.w-16 .standard-spinner-circle {
+  border-width: 3px;
+}
+
+/* Force Animation */
+.standard-spinner-circle {
+  animation-play-state: running !important;
+  animation-timing-function: linear !important;
+  animation-iteration-count: infinite !important;
+  animation-name: standard-spin !important;
+}
+
+/* Browser Compatibility */
+@-webkit-keyframes standard-spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
+@-moz-keyframes standard-spin {
+  0% { -moz-transform: rotate(0deg); }
+  100% { -moz-transform: rotate(360deg); }
+}

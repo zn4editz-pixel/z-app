@@ -1,0 +1,40 @@
+/* Let DaisyUI theme colors work naturally - remove hardcoded blue overrides */
+
+/* Convert hardcoded blue classes to use theme primary color */
+.text-blue-500,
+.text-blue-600,
+.text-blue-400,
+[class*="text-blue"] {
+  color: hsl(var(--p)) !important;
+}
+
+.border-blue-500,
+.border-blue-600,
+[class*="border-blue"] {
+  border-color: hsl(var(--p)) !important;
+}
+
+.bg-blue-500,
+.bg-blue-600,
+[class*="bg-blue"] {
+  background-color: hsl(var(--p)) !important;
+}
+
+.border-b-blue-500 {
+  border-bottom-color: hsl(var(--p)) !important;
+}
+
+/* Ensure hover states use theme primary color */
+.hover\:text-blue-500:hover,
+.hover\:text-blue-600:hover,
+.hover\:border-blue-500:hover {
+  color: hsl(var(--p)) !important;
+  border-color: hsl(var(--p)) !important;
+}
+
+/* Link hover colors - use theme primary color instead of blue */
+a:hover {
+  color: hsl(var(--p)) !important;
+}
+
+/* Let theme handle all other colors naturally */

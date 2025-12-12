@@ -1,0 +1,210 @@
+/* Admin Dark Theme Override - Force BLACK and GOLD styling */
+/* HIGHEST PRIORITY OVERRIDES - Must come after all other CSS */
+
+/* FORCE PURE BLACK BACKGROUND WITH MAXIMUM SPECIFICITY */
+html body .admin-dashboard-container,
+html body .admin-dashboard-container *,
+html body .admin-dashboard-container div,
+html body .admin-dashboard-container section,
+html body .admin-dashboard-container .bg-gray-900,
+html body .admin-dashboard-container .bg-base-100,
+html body .admin-dashboard-container .bg-base-200,
+html body .admin-dashboard-container .bg-base-300,
+body:has(.admin-dashboard-container),
+html:has(.admin-dashboard-container) {
+  background-color: #000000 !important; /* Pure black */
+  background: #000000 !important; /* Pure black */
+}
+
+/* Override any conflicting theme styles for admin dashboard */
+html body .admin-dashboard-container {
+  background-color: #000000 !important; /* Pure black */
+  background: #000000 !important; /* Pure black */
+  color: #fbbf24 !important; /* Golden text */
+}
+
+/* Override DaisyUI theme variables specifically for admin */
+html body .admin-dashboard-container .bg-gray-900 {
+  background-color: #000000 !important; /* Force black instead of gray-900 */
+  background: #000000 !important;
+}
+
+/* Override theme-visibility-fix.css aggressive overrides */
+html body .admin-dashboard-container [class*="bg-"],
+html body .admin-dashboard-container .min-h-screen,
+html body .admin-dashboard-container div,
+html body .admin-dashboard-container section {
+  background-color: #000000 !important;
+  background: #000000 !important;
+}
+
+.admin-dashboard-container .admin-header {
+  background: transparent !important;
+}
+
+.admin-dashboard-container .admin-header h1 {
+  color: #fbbf24 !important; /* Golden yellow */
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.5) !important;
+  font-weight: 800 !important;
+}
+
+.admin-dashboard-container .admin-header p {
+  color: #d4af37 !important; /* Darker gold */
+}
+
+.admin-dashboard-container .admin-tabs {
+  background-color: #1a1a1a !important; /* Very dark gray */
+  border-color: #333333 !important; /* Dark border */
+}
+
+.admin-dashboard-container .admin-tab {
+  color: #d4af37 !important; /* Gold text */
+}
+
+.admin-dashboard-container .admin-tab:hover {
+  background-color: #2a2a2a !important; /* Dark hover */
+  color: #fbbf24 !important; /* Bright gold on hover */
+}
+
+.admin-dashboard-container .admin-tab.active {
+  background-color: #fbbf24 !important; /* Golden background */
+  color: #000000 !important; /* Black text on gold */
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.6) !important;
+}
+
+.admin-dashboard-container .admin-metric-card {
+  background-color: #1a1a1a !important; /* Very dark cards */
+  border-color: #333333 !important; /* Dark borders */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8) !important;
+}
+
+.admin-dashboard-container .admin-metric-card .card-title {
+  color: #fbbf24 !important; /* Golden titles */
+  font-weight: 600 !important;
+}
+
+.admin-dashboard-container .admin-metric-card .card-value {
+  color: #ffffff !important; /* White values */
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.3) !important;
+}
+
+.admin-dashboard-container .admin-metric-card .card-subtitle {
+  color: #d4af37 !important; /* Darker gold subtitles */
+}
+
+.admin-dashboard-container .admin-chart-container {
+  background-color: #1a1a1a !important; /* Very dark charts */
+  border-color: #333333 !important; /* Dark borders */
+}
+
+.admin-dashboard-container .admin-chart-title {
+  color: #fbbf24 !important; /* Golden chart titles */
+  font-weight: 600 !important;
+}
+
+/* Enhanced Icon backgrounds with glow */
+.admin-dashboard-container .icon-yellow {
+  background-color: #fbbf24 !important; /* Golden yellow */
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.5) !important;
+}
+
+.admin-dashboard-container .icon-green {
+  background-color: #10b981 !important; /* Green */
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.5) !important;
+}
+
+.admin-dashboard-container .icon-red {
+  background-color: #ef4444 !important; /* Red */
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.5) !important;
+}
+
+.admin-dashboard-container .icon-yellow-500 {
+  background-color: #eab308 !important; /* Darker yellow */
+  box-shadow: 0 0 15px rgba(234, 179, 8, 0.5) !important;
+}
+
+/* Force text colors with golden theme */
+.admin-dashboard-container .text-white {
+  color: #ffffff !important;
+}
+
+.admin-dashboard-container .text-gray-400 {
+  color: #d4af37 !important; /* Convert gray to gold */
+}
+
+.admin-dashboard-container .text-yellow-400 {
+  color: #fbbf24 !important;
+}
+
+.admin-dashboard-container .text-gray-900 {
+  color: #000000 !important;
+}
+
+.admin-dashboard-container .text-green-400 {
+  color: #4ade80 !important;
+}
+
+/* Force all backgrounds to be black or dark */
+.admin-dashboard-container div,
+.admin-dashboard-container section,
+.admin-dashboard-container article {
+  background-color: transparent !important;
+}
+
+.admin-dashboard-container .bg-gray-800,
+.admin-dashboard-container .bg-gray-900,
+.admin-dashboard-container .bg-base-100,
+.admin-dashboard-container .bg-base-200,
+.admin-dashboard-container .bg-base-300 {
+  background-color: #1a1a1a !important;
+}
+
+/* Remove any blue colors */
+.admin-dashboard-container *[class*="blue"],
+.admin-dashboard-container *[class*="primary"]:not(.icon-):not(.admin-tab) {
+  background-color: #1a1a1a !important;
+  color: #fbbf24 !important;
+}
+
+/* Golden glow effects */
+.admin-dashboard-container .admin-metric-card:hover {
+  box-shadow: 0 8px 25px rgba(251, 191, 36, 0.2) !important;
+  transform: translateY(-2px) !important;
+}
+
+.admin-dashboard-container .admin-chart-container:hover {
+  box-shadow: 0 8px 25px rgba(251, 191, 36, 0.1) !important;
+}
+
+/* ===== FINAL OVERRIDES - MAXIMUM SPECIFICITY ===== */
+/* These must be at the end to override all other CSS files */
+
+/* Force black background on the main container with highest specificity */
+html body div.admin-dashboard-container.min-h-screen.pt-14.xs\\:pt-16.sm\\:pt-18.md\\:pt-20.px-2.xs\\:px-3.sm\\:px-4.lg\\:px-6.bg-gray-900.pb-16.xs\\:pb-18.sm\\:pb-20.md\\:pb-10 {
+  background-color: #000000 !important;
+  background: #000000 !important;
+}
+
+/* Override any remaining theme variables */
+html body .admin-dashboard-container * {
+  --b1: 0 0% 0% !important; /* Pure black */
+  --b2: 0 0% 10% !important; /* Very dark gray */
+  --b3: 0 0% 20% !important; /* Dark gray */
+}
+
+/* Force all backgrounds in admin to be black or dark */
+html body .admin-dashboard-container *[class*="bg-gray"],
+html body .admin-dashboard-container *[class*="bg-base"],
+html body .admin-dashboard-container *[class*="bg-slate"],
+html body .admin-dashboard-container .min-h-screen {
+  background-color: #000000 !important;
+  background: #000000 !important;
+}
+
+/* Ensure cards are dark gray, not black */
+html body .admin-dashboard-container .admin-metric-card,
+html body .admin-dashboard-container .admin-chart-container,
+html body .admin-dashboard-container .bg-gray-800 {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+}

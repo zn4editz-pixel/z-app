@@ -1,0 +1,534 @@
+/* ===== INSTAGRAM/WHATSAPP SMOOTH TRANSITIONS ===== */
+
+/* Ultra Smooth Base Transitions */
+:root {
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 600ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --transition-smooth: 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Apply smooth transitions globally */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth Button Transitions */
+button, .btn {
+  transition: all var(--transition-fast);
+  transform-origin: center;
+  will-change: transform;
+}
+
+button:active, .btn:active {
+  transform: scale(0.95);
+}
+
+/* Smooth Link Transitions */
+a {
+  transition: all var(--transition-fast);
+}
+
+/* Smooth Input Transitions */
+input, textarea, select {
+  transition: all var(--transition-base);
+}
+
+input:focus, textarea:focus, select:focus {
+  transform: scale(1.01);
+}
+
+/* Smooth Card Transitions */
+.card, [class*="card"] {
+  transition: all var(--transition-base);
+  will-change: transform, box-shadow;
+}
+
+.card:hover, [class*="card"]:hover {
+  transform: translateY(-2px);
+}
+
+/* Smooth Image Transitions */
+img {
+  transition: all var(--transition-base);
+}
+
+/* Smooth Avatar Transitions */
+.avatar, [class*="avatar"] {
+  transition: all var(--transition-base);
+}
+
+.avatar:hover, [class*="avatar"]:hover {
+  transform: scale(1.05);
+}
+
+/* Smooth Badge Transitions */
+.badge, [class*="badge"] {
+  transition: all var(--transition-fast);
+}
+
+/* Smooth Modal Transitions */
+.modal, [class*="modal"] {
+  transition: all var(--transition-smooth);
+}
+
+/* Smooth Dropdown Transitions */
+.dropdown, [class*="dropdown"] {
+  transition: all var(--transition-base);
+}
+
+/* Smooth Toast Transitions */
+.toast, [class*="toast"] {
+  transition: all var(--transition-smooth);
+}
+
+/* Smooth Sidebar Transitions */
+.sidebar, [class*="sidebar"] {
+  transition: all var(--transition-smooth);
+}
+
+/* Smooth Navbar Transitions */
+.navbar, [class*="navbar"] {
+  transition: all var(--transition-base);
+}
+
+/* Smooth Tab Transitions */
+.tab, [class*="tab"] {
+  transition: all var(--transition-base);
+}
+
+/* Smooth Accordion Transitions */
+.accordion, [class*="accordion"] {
+  transition: all var(--transition-smooth);
+}
+
+/* Smooth Tooltip Transitions */
+.tooltip, [class*="tooltip"] {
+  transition: all var(--transition-fast);
+}
+
+/* Smooth Progress Bar Transitions */
+.progress, [class*="progress"] {
+  transition: all var(--transition-base);
+}
+
+/* Smooth Switch/Toggle Transitions */
+.switch, .toggle, [class*="switch"], [class*="toggle"] {
+  transition: all var(--transition-base);
+}
+
+/* Smooth Checkbox/Radio Transitions */
+input[type="checkbox"], input[type="radio"] {
+  transition: all var(--transition-fast);
+}
+
+/* Smooth Slider Transitions */
+.slider, [class*="slider"] {
+  transition: all var(--transition-base);
+}
+
+/* Smooth Spinner Transitions */
+.spinner, [class*="spinner"] {
+  transition: all var(--transition-base);
+}
+
+/* Smooth Alert Transitions */
+.alert, [class*="alert"] {
+  transition: all var(--transition-base);
+}
+
+/* Smooth Divider Transitions */
+.divider, hr {
+  transition: all var(--transition-base);
+}
+
+/* Smooth Icon Transitions */
+svg, [class*="icon"] {
+  transition: all var(--transition-fast);
+}
+
+/* Smooth Background Transitions */
+.bg-transition {
+  transition: background-color var(--transition-base), 
+              background-image var(--transition-base);
+}
+
+/* Smooth Color Transitions */
+.color-transition {
+  transition: color var(--transition-base);
+}
+
+/* Smooth Border Transitions */
+.border-transition {
+  transition: border-color var(--transition-base), 
+              border-width var(--transition-base);
+}
+
+/* Smooth Shadow Transitions */
+.shadow-transition {
+  transition: box-shadow var(--transition-base);
+}
+
+/* Smooth Opacity Transitions */
+.opacity-transition {
+  transition: opacity var(--transition-base);
+}
+
+/* Smooth Transform Transitions */
+.transform-transition {
+  transition: transform var(--transition-base);
+}
+
+/* Smooth Scale Transitions */
+.scale-transition {
+  transition: transform var(--transition-base);
+  transform-origin: center;
+}
+
+.scale-transition:hover {
+  transform: scale(1.05);
+}
+
+.scale-transition:active {
+  transform: scale(0.95);
+}
+
+/* Smooth Rotate Transitions */
+.rotate-transition {
+  transition: transform var(--transition-base);
+}
+
+/* Smooth Width/Height Transitions */
+.size-transition {
+  transition: width var(--transition-base), 
+              height var(--transition-base);
+}
+
+/* Smooth Position Transitions */
+.position-transition {
+  transition: top var(--transition-base), 
+              right var(--transition-base), 
+              bottom var(--transition-base), 
+              left var(--transition-base);
+}
+
+/* Smooth Margin/Padding Transitions */
+.spacing-transition {
+  transition: margin var(--transition-base), 
+              padding var(--transition-base);
+}
+
+/* Smooth Filter Transitions */
+.filter-transition {
+  transition: filter var(--transition-base);
+}
+
+/* Smooth Backdrop Transitions */
+.backdrop-transition {
+  transition: backdrop-filter var(--transition-base);
+}
+
+/* Instagram-Style Smooth Hover */
+.instagram-hover {
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.instagram-hover:hover {
+  transform: scale(1.02);
+  filter: brightness(1.05);
+}
+
+.instagram-hover:active {
+  transform: scale(0.98);
+  filter: brightness(0.95);
+}
+
+/* WhatsApp-Style Smooth Press */
+.whatsapp-press {
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.whatsapp-press:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
+
+/* Smooth Fade Transition */
+.fade-transition {
+  transition: opacity var(--transition-base), 
+              visibility var(--transition-base);
+}
+
+.fade-transition.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Smooth Slide Transition */
+.slide-transition {
+  transition: transform var(--transition-smooth);
+}
+
+/* Smooth Grow Transition */
+.grow-transition {
+  transition: all var(--transition-base);
+}
+
+.grow-transition:hover {
+  transform: scale(1.1);
+}
+
+/* Smooth Shrink Transition */
+.shrink-transition {
+  transition: all var(--transition-base);
+}
+
+.shrink-transition:hover {
+  transform: scale(0.9);
+}
+
+/* Smooth Lift Transition */
+.lift-transition {
+  transition: all var(--transition-base);
+}
+
+.lift-transition:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Smooth Sink Transition */
+.sink-transition {
+  transition: all var(--transition-base);
+}
+
+.sink-transition:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Smooth Glow Transition */
+.glow-transition {
+  transition: all var(--transition-base);
+}
+
+.glow-transition:hover {
+  box-shadow: 0 0 20px rgba(255, 153, 51, 0.5);
+}
+
+/* Smooth Blur Transition */
+.blur-transition {
+  transition: filter var(--transition-base);
+}
+
+.blur-transition:hover {
+  filter: blur(2px);
+}
+
+/* Smooth Brightness Transition */
+.brightness-transition {
+  transition: filter var(--transition-base);
+}
+
+.brightness-transition:hover {
+  filter: brightness(1.1);
+}
+
+/* Smooth Contrast Transition */
+.contrast-transition {
+  transition: filter var(--transition-base);
+}
+
+.contrast-transition:hover {
+  filter: contrast(1.1);
+}
+
+/* Smooth Saturate Transition */
+.saturate-transition {
+  transition: filter var(--transition-base);
+}
+
+.saturate-transition:hover {
+  filter: saturate(1.2);
+}
+
+/* Smooth Grayscale Transition */
+.grayscale-transition {
+  transition: filter var(--transition-base);
+}
+
+.grayscale-transition:hover {
+  filter: grayscale(0);
+}
+
+/* Smooth Sepia Transition */
+.sepia-transition {
+  transition: filter var(--transition-base);
+}
+
+.sepia-transition:hover {
+  filter: sepia(0);
+}
+
+/* Smooth Hue Rotate Transition */
+.hue-transition {
+  transition: filter var(--transition-base);
+}
+
+.hue-transition:hover {
+  filter: hue-rotate(45deg);
+}
+
+/* Smooth Invert Transition */
+.invert-transition {
+  transition: filter var(--transition-base);
+}
+
+.invert-transition:hover {
+  filter: invert(1);
+}
+
+/* Smooth All Transition */
+.all-transition {
+  transition: all var(--transition-base);
+}
+
+/* Smooth None (Disable Transitions) */
+.no-transition {
+  transition: none !important;
+}
+
+/* Smooth Delay Utilities */
+.delay-75 { transition-delay: 75ms; }
+.delay-100 { transition-delay: 100ms; }
+.delay-150 { transition-delay: 150ms; }
+.delay-200 { transition-delay: 200ms; }
+.delay-300 { transition-delay: 300ms; }
+.delay-500 { transition-delay: 500ms; }
+.delay-700 { transition-delay: 700ms; }
+.delay-1000 { transition-delay: 1000ms; }
+
+/* Smooth Duration Utilities */
+.duration-75 { transition-duration: 75ms; }
+.duration-100 { transition-duration: 100ms; }
+.duration-150 { transition-duration: 150ms; }
+.duration-200 { transition-duration: 200ms; }
+.duration-300 { transition-duration: 300ms; }
+.duration-500 { transition-duration: 500ms; }
+.duration-700 { transition-duration: 700ms; }
+.duration-1000 { transition-duration: 1000ms; }
+
+/* Smooth Easing Utilities */
+.ease-linear { transition-timing-function: linear; }
+.ease-in { transition-timing-function: cubic-bezier(0.4, 0, 1, 1); }
+.ease-out { transition-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+.ease-in-out { transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+.ease-bounce { transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+.ease-smooth { transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+
+/* Hardware Acceleration for Smooth Performance */
+.gpu-accelerate {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Smooth Scroll */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Reduce Motion for Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Smooth Focus Transitions */
+*:focus {
+  transition: outline var(--transition-fast), 
+              box-shadow var(--transition-fast);
+}
+
+/* Smooth Placeholder Transitions */
+::placeholder {
+  transition: opacity var(--transition-base);
+}
+
+input:focus::placeholder,
+textarea:focus::placeholder {
+  opacity: 0.5;
+}
+
+/* Smooth Selection Transitions */
+::selection {
+  background-color: rgba(255, 153, 51, 0.3);
+  transition: background-color var(--transition-base);
+}
+
+/* Smooth Scrollbar Transitions */
+::-webkit-scrollbar-thumb {
+  transition: background-color var(--transition-base);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(155, 155, 155, 0.6);
+}
+
+/* Smooth Page Transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all var(--transition-smooth);
+}
+
+.page-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-exit-active {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all var(--transition-smooth);
+}
+
+/* Smooth Component Mount/Unmount */
+.component-enter {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.component-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: all var(--transition-base);
+}
+
+.component-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.component-exit-active {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: all var(--transition-base);
+}

@@ -1,0 +1,289 @@
+import { useRef, useState, useEffect } from "react";
+import { useChatStore } from "../store/useChatStore";
+import { useAuthStore } from "../store/useAuthStore";
+import { Image, Send, X, Smile } from "lucide-react";
+import toast from "react-hot-toast";
+import VoiceRecorder from "./VoiceRecorder";
+import ImageCropper from "./ImageCropper";
+
+const MessageInput = ({ replyingTo, onCancelReply }) => {
+  const [text, setText] = useState("");
+  const [imagePreview, setImagePreview] = useState(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
+  const [tempImage, setTempImage] = useState(null);
+  const fileInputRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  const inputRef = useRef(null); // ✅ NEW: For instant focus
+  const { sendMessage, selectedUser } = useChatStore();
+  const { socket } = useAuthStore();
+
+  const emojis = ["😊", "😂", "❤️", "👍", "🎉", "🔥", "😍", "🤔", "👏", "🙌", "💯", "✨"];
+
+  // Handle typing indicator
+  const handleTyping = (value) => {
+    setText(value);
+    
+    if (!socket || !selectedUser) return;
+    
+    // Emit typing event
+    socket.emit("typing", { receiverId: selectedUser.id });
+    
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Stop typing after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("stopTyping", { receiverId: selectedUser.id });
+    }, 2000);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      if (socket && selectedUser) {
+        socket.emit("stopTyping", { receiverId: selectedUser.id });
+      }
+    };
+  }, [socket, selectedUser]);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file || !file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setTempImage(reader.result);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (croppedImage) => {
+    setImagePreview(croppedImage);
+    setShowCropper(false);
+    setTempImage(null);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setTempImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    
+    // ✅ INSTANT: Check and return immediately if empty
+    if (!text.trim() && !imagePreview) return;
+
+    // Stop typing indicator immediately
+    if (socket && selectedUser) {
+      socket.emit("stopTyping", { receiverId: selectedUser.id });
+    }
+
+    // Store values before clearing
+    const messageText = text.trim();
+    const messageImage = imagePreview;
+    const messageReplyTo = replyingTo?.id || null;
+
+    // ✅ INSTANT: Clear form IMMEDIATELY (no await, no delay)
+    setText("");
+    setImagePreview(null);
+    setShowEmojiPicker(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (onCancelReply) onCancelReply();
+    
+    // ✅ INSTANT: Focus back to input for rapid messaging
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+
+    // ✅ INSTANT: Send in background (fire and forget - NO WAITING)
+    sendMessage({
+      text: messageText,
+      image: messageImage,
+      replyTo: messageReplyTo,
+    }).catch(error => {
+      console.error("Send failed:", error);
+    });
+  };
+
+  const handleSendVoice = async (audioData, duration) => {
+    try {
+      await sendMessage({
+        voice: audioData,
+        voiceDuration: duration,
+      });
+      // ✅ No toast - silent send for better UX
+    } catch (error) {
+      console.error("Failed to send voice:", error);
+      toast.error("Failed to send voice message");
+    }
+  };
+
+  const addEmoji = (emoji) => {
+    setText((prev) => prev + emoji);
+    setShowEmojiPicker(false);
+  };
+
+  return (
+    <>
+      {/* Image Cropper Modal */}
+      {showCropper && tempImage && (
+        <ImageCropper
+          image={tempImage}
+          onCrop={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
+
+      <div className="p-2.5 sm:p-4 w-full bg-base-100 border-t border-base-300 sticky bottom-0 z-10" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
+        {/* Reply Preview */}
+      {replyingTo && (
+        <div className="mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-base-200 rounded-xl border-l-4 border-primary reply-slide-in">
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-semibold text-primary mb-0.5">
+              Replying to {replyingTo.senderId === selectedUser?.id ? selectedUser.fullName : "You"}
+            </div>
+            <div className="text-sm text-base-content/70 truncate">
+              {replyingTo.text || (replyingTo.image ? "📷 Image" : replyingTo.voice ? "🎤 Voice message" : "Message")}
+            </div>
+          </div>
+          <button
+            onClick={onCancelReply}
+            className="btn btn-ghost btn-xs btn-circle flex-shrink-0 hover:bg-error/20 hover:text-error transition-colors"
+            type="button"
+            aria-label="Cancel reply"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {imagePreview && (
+        <div className="mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-base-200 rounded-xl">
+          <div className="relative">
+            <img
+              src={imagePreview}
+              alt="Preview"
+              className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border-2 border-primary"
+            />
+            <button
+              onClick={removeImage}
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-error text-white
+              flex items-center justify-center hover:scale-110 active:scale-95 transition shadow-lg"
+              type="button"
+              aria-label="Remove image"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <span className="text-sm text-base-content/70">Image ready to send</span>
+        </div>
+      )}
+
+      {/* Emoji Picker */}
+      {showEmojiPicker && (
+        <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-base-200 rounded-xl shadow-lg">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
+            {emojis.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                onClick={() => addEmoji(emoji)}
+                className="text-2xl p-2 hover:bg-base-300 rounded-lg active:scale-110 transition"
+                aria-label={`Add ${emoji} emoji`}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <form
+        onSubmit={handleSendMessage}
+        className="flex items-center gap-2"
+      >
+        {/* Text Input Container */}
+        <div className="flex-1 flex items-center gap-2.5 bg-base-200 rounded-full px-4 py-2.5 min-w-0">
+          <input
+            ref={inputRef}
+            type="text"
+            className="flex-1 bg-transparent outline-none border-none text-sm sm:text-base placeholder:text-base-content/50 min-w-0"
+            placeholder="Type a message..."
+            value={text}
+            onChange={(e) => handleTyping(e.target.value)}
+            autoComplete="off"
+          />
+          
+          {/* Emoji Button */}
+          <button
+            type="button"
+            className={`w-9 h-9 flex items-center justify-center rounded-full hover:bg-base-300 active:scale-95 transition-all flex-shrink-0
+              ${showEmojiPicker ? "bg-base-300 text-primary" : "bg-base-300/50 text-base-content/70 hover:text-base-content"}`}
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            title="Add emoji"
+            aria-label="Add emoji"
+          >
+            <Smile className="w-5 h-5" />
+          </button>
+          
+          {/* Image Upload Button */}
+          <button
+            type="button"
+            className={`w-9 h-9 flex items-center justify-center rounded-full hover:bg-base-300 active:scale-95 transition-all flex-shrink-0
+              ${imagePreview ? "bg-base-300 text-primary" : "bg-base-300/50 text-base-content/70 hover:text-base-content"}`}
+            onClick={() => fileInputRef.current?.click()}
+            title="Attach image"
+            aria-label="Attach image"
+          >
+            <Image className="w-5 h-5" />
+          </button>
+
+          {/* Hidden File Input */}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleImageChange}
+          />
+        </div>
+
+        {/* Voice Recorder - Show when no text */}
+        {!text.trim() && !imagePreview && (
+          <VoiceRecorder onSendVoice={handleSendVoice} />
+        )}
+
+        {/* Send Button - ALWAYS ENABLED for rapid messaging */}
+        {(text.trim() || imagePreview) && (
+          <button
+            type="submit"
+            className="btn btn-primary btn-circle btn-sm sm:btn-md flex-shrink-0 shadow-lg hover:scale-105 active:scale-95 transition-transform"
+            aria-label="Send message"
+          >
+            <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+        )}
+      </form>
+      </div>
+    </>
+  );
+};
+
+export default MessageInput;

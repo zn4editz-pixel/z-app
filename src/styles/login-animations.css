@@ -1,0 +1,257 @@
+/* 🎨 ELEGANT LOGIN ANIMATIONS - Subtle and beautiful for PC users */
+
+/* Gentle floating animations */
+@keyframes float-slow {
+
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+
+  33% {
+    transform: translateY(-15px) translateX(10px);
+  }
+
+  66% {
+    transform: translateY(10px) translateX(-5px);
+  }
+}
+
+@keyframes float-medium {
+
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+
+  50% {
+    transform: translateY(-20px) translateX(15px);
+  }
+}
+
+@keyframes float-fast {
+
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+
+  25% {
+    transform: translateY(-10px) translateX(-8px);
+  }
+
+  75% {
+    transform: translateY(8px) translateX(12px);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-float-medium {
+  animation: float-medium 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-float-fast {
+  animation: float-fast 4s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Gentle pulse for grid items */
+@keyframes gentle-pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+    box-shadow: 0 4px 20px hsl(var(--p) / 0.2);
+  }
+}
+
+.animate-gentle-pulse {
+  animation: gentle-pulse 3s ease-in-out infinite;
+}
+
+/* Gentle glow animation */
+@keyframes gentle-glow {
+
+  0%,
+  100% {
+    border-color: hsl(var(--p) / 0.3);
+    background-color: hsl(var(--p) / 0.2);
+  }
+
+  50% {
+    border-color: hsl(var(--p) / 0.5);
+    background-color: hsl(var(--p) / 0.3);
+  }
+}
+
+.animate-gentle-glow {
+  animation: gentle-glow 4s ease-in-out infinite;
+}
+
+/* Slide up animation for text */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 1s ease-out forwards;
+  opacity: 0;
+}
+
+/* Smooth entrance for the whole component */
+.hidden.lg\:flex {
+  animation: slide-up 1.2s ease-out;
+}
+
+/* Enhanced hover effects for PC users */
+@media (min-width: 1024px) {
+  .grid .w-16:hover {
+    transform: scale(1.05) rotate(3deg);
+    box-shadow: 0 8px 25px hsl(var(--p) / 0.3);
+    border-color: hsl(var(--p) / 0.6);
+    background-color: hsl(var(--p) / 0.3);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Subtle parallax effect removed per user request */
+}
+
+/* Breathing animation for background orbs */
+@keyframes breathe {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+
+  50% {
+    transform: scale(1.1);
+    opacity: 0.5;
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 8s ease-in-out infinite, breathe 4s ease-in-out infinite;
+}
+
+.animate-float-medium {
+  animation: float-medium 6s ease-in-out infinite, breathe 5s ease-in-out infinite;
+}
+
+.animate-float-fast {
+  animation: float-fast 4s ease-in-out infinite, breathe 3s ease-in-out infinite;
+}
+
+/* Staggered grid entrance */
+.grid .w-16:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.grid .w-16:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.grid .w-16:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.grid .w-16:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+.grid .w-16:nth-child(5) {
+  animation-delay: 0.5s;
+}
+
+.grid .w-16:nth-child(6) {
+  animation-delay: 0.6s;
+}
+
+.grid .w-16:nth-child(7) {
+  animation-delay: 0.7s;
+}
+
+.grid .w-16:nth-child(8) {
+  animation-delay: 0.8s;
+}
+
+.grid .w-16:nth-child(9) {
+  animation-delay: 0.9s;
+}
+
+/* Subtle shimmer effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.grid .w-16::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.grid .w-16:hover::before {
+  opacity: 1;
+}
+
+/* 🌈 New Gradient Flow Animation */
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-flow {
+  background-size: 200% 200% !important;
+  animation: gradient-flow 15s ease infinite;
+}
+
+/* Disable animations on mobile for performance */
+/* Reduced motion block removed to ensure animations play */

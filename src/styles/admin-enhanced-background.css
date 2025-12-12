@@ -1,0 +1,342 @@
+/* ENHANCED ADMIN BACKGROUND ANIMATIONS */
+
+/* Main Admin Background Container */
+.admin-enhanced-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    #0f172a 0%,
+    #1e293b 25%,
+    #334155 50%,
+    #1e293b 75%,
+    #0f172a 100%
+  );
+  background-size: 400% 400%;
+  animation: backgroundFlow 20s ease-in-out infinite;
+}
+
+/* Floating Geometric Shapes */
+.admin-floating-shapes {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.admin-shape {
+  position: absolute;
+  opacity: 0.1;
+  animation: floatShape 15s ease-in-out infinite;
+}
+
+.admin-shape-1 {
+  top: 10%;
+  left: 10%;
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(45deg, #fbbf24, #f59e0b);
+  border-radius: 20px;
+  animation-delay: 0s;
+  animation-duration: 20s;
+}
+
+.admin-shape-2 {
+  top: 60%;
+  right: 15%;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(45deg, #10b981, #059669);
+  border-radius: 50%;
+  animation-delay: 5s;
+  animation-duration: 25s;
+}
+
+.admin-shape-3 {
+  bottom: 20%;
+  left: 20%;
+  width: 120px;
+  height: 60px;
+  background: linear-gradient(45deg, #3b82f6, #2563eb);
+  border-radius: 30px;
+  animation-delay: 10s;
+  animation-duration: 18s;
+}
+
+.admin-shape-4 {
+  top: 30%;
+  right: 40%;
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(45deg, #ef4444, #dc2626);
+  border-radius: 15px;
+  animation-delay: 15s;
+  animation-duration: 22s;
+}
+
+/* Animated Grid Overlay */
+.admin-grid-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(251, 191, 36, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(251, 191, 36, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: gridMove 30s linear infinite;
+  opacity: 0.3;
+}
+
+/* Status Connection Lines */
+.admin-status-lines {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.status-line {
+  position: absolute;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  animation: statusPulse 4s ease-in-out infinite;
+  opacity: 0.6;
+}
+
+.status-line-1 {
+  top: 25%;
+  left: 0;
+  width: 100%;
+  color: #10b981; /* Green - Healthy */
+  animation-delay: 0s;
+}
+
+.status-line-2 {
+  top: 45%;
+  left: 0;
+  width: 100%;
+  color: #fbbf24; /* Yellow - Warning */
+  animation-delay: 1s;
+}
+
+.status-line-3 {
+  top: 65%;
+  left: 0;
+  width: 100%;
+  color: #3b82f6; /* Blue - Info */
+  animation-delay: 2s;
+}
+
+.status-line-4 {
+  top: 85%;
+  left: 0;
+  width: 100%;
+  color: #ef4444; /* Red - Critical */
+  animation-delay: 3s;
+}
+
+/* Vertical Connection Lines */
+.vertical-status-line {
+  position: absolute;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, currentColor, transparent);
+  animation: verticalPulse 5s ease-in-out infinite;
+  opacity: 0.4;
+}
+
+.vertical-line-1 {
+  left: 20%;
+  color: #10b981;
+  animation-delay: 0.5s;
+}
+
+.vertical-line-2 {
+  left: 40%;
+  color: #fbbf24;
+  animation-delay: 1.5s;
+}
+
+.vertical-line-3 {
+  left: 60%;
+  color: #3b82f6;
+  animation-delay: 2.5s;
+}
+
+.vertical-line-4 {
+  left: 80%;
+  color: #ef4444;
+  animation-delay: 3.5s;
+}
+
+/* Animated Nodes */
+.status-nodes {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.status-node {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: nodePulse 3s ease-in-out infinite;
+  box-shadow: 0 0 20px currentColor;
+}
+
+.node-backend {
+  top: 20%;
+  left: 15%;
+  color: #10b981;
+}
+
+.node-frontend {
+  top: 20%;
+  right: 15%;
+  color: #3b82f6;
+  animation-delay: 0.5s;
+}
+
+.node-database {
+  bottom: 20%;
+  left: 15%;
+  color: #fbbf24;
+  animation-delay: 1s;
+}
+
+.node-websocket {
+  bottom: 20%;
+  right: 15%;
+  color: #ef4444;
+  animation-delay: 1.5s;
+}
+
+/* Keyframe Animations */
+@keyframes backgroundFlow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes floatShape {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) translateX(10px) rotate(90deg);
+  }
+  50% {
+    transform: translateY(-10px) translateX(-15px) rotate(180deg);
+  }
+  75% {
+    transform: translateY(-30px) translateX(5px) rotate(270deg);
+  }
+}
+
+@keyframes gridMove {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(50px, 50px);
+  }
+}
+
+@keyframes statusPulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scaleX(0.8);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scaleX(1.2);
+  }
+}
+
+@keyframes verticalPulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scaleY(0.8);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scaleY(1.2);
+  }
+}
+
+@keyframes nodePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 1;
+  }
+}
+
+/* Dynamic Status Colors */
+.status-healthy {
+  color: #10b981 !important;
+}
+
+.status-warning {
+  color: #fbbf24 !important;
+}
+
+.status-critical {
+  color: #ef4444 !important;
+}
+
+.status-info {
+  color: #3b82f6 !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .admin-shape {
+    opacity: 0.05;
+  }
+  
+  .admin-grid-overlay {
+    background-size: 30px 30px;
+  }
+  
+  .status-line,
+  .vertical-status-line {
+    opacity: 0.3;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .admin-enhanced-background,
+  .admin-shape,
+  .admin-grid-overlay,
+  .status-line,
+  .vertical-status-line,
+  .status-node {
+    animation: none;
+  }
+}
+
+/* Performance Optimization */
+.admin-enhanced-background,
+.admin-floating-shapes,
+.admin-grid-overlay,
+.admin-status-lines,
+.status-nodes {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
