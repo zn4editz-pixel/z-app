@@ -28,6 +28,11 @@ const clearAdminUsersCache = () => {
 	adminUsersCacheTime = 0;
 };
 
+const clearAdminStatsCache = () => {
+	adminStatsCache = null;
+	adminStatsCacheTime = 0;
+};
+
 export const getAllUsers = async (req, res) => {
 	try {
 		// ALWAYS get fresh online status from socket connections (source of truth)
@@ -92,6 +97,7 @@ export const suspendUser = async (req, res) => {
 			data: { isSuspended: true, suspensionEndTime: suspendUntilDate, suspensionReason: reason }
 		});
 		clearAdminUsersCache();
+		clearAdminStatsCache();
 		const io = req.app.get("io");
 		emitToUser(io, userId, "user-action", { type: "suspended", reason, until: suspendUntilDate });
 		try {
@@ -113,6 +119,7 @@ export const unsuspendUser = async (req, res) => {
 			data: { isSuspended: false, suspensionEndTime: null, suspensionReason: null }
 		});
 		clearAdminUsersCache();
+		clearAdminStatsCache();
 		emitToUser(req.app.get("io"), req.params.userId, "user-action", { type: "unsuspended" });
 		res.status(200).json({ message: "User unsuspended successfully", user: updatedUser });
 	} catch (err) {
@@ -314,24 +321,68 @@ export const rejectVerification = async (req, res) => {
 	}
 };
 
+// Cache for admin stats
+let adminStatsCache = null;
+let adminStatsCacheTime = 0;
+const ADMIN_STATS_CACHE_TTL = 30000; // 30 seconds cache
+
 export const getAdminStats = async (req, res) => {
 	try {
+		const now = Date.now();
+		
+		// Return cached data if still valid
+		if (adminStatsCache && (now - adminStatsCacheTime) < ADMIN_STATS_CACHE_TTL) {
+			// Always get fresh online count from socket
+			const { userSocketMap } = await import("../lib/socket.js");
+			const freshStats = {
+				...adminStatsCache,
+				onlineUsers: Object.keys(userSocketMap).length
+			};
+			return res.status(200).json(freshStats);
+		}
+
 		const { userSocketMap } = await import("../lib/socket.js");
-		const [totalUsers, verifiedUsers, suspendedUsers, blockedUsers, pendingVerifications, pendingReports, totalReports, recentUsers] = await Promise.all([
+		
+		// Optimized parallel queries
+		const [
+			totalUsers, 
+			verifiedUsers, 
+			suspendedUsers, 
+			pendingVerifications, 
+			pendingReports, 
+			totalReports, 
+			recentUsers,
+			approvedVerifications
+		] = await Promise.all([
 			prisma.user.count(),
 			prisma.user.count({ where: { isVerified: true } }),
 			prisma.user.count({ where: { isSuspended: true } }),
-			prisma.user.count({ where: { isBlocked: true } }),
 			prisma.user.count({ where: { verificationStatus: "pending" } }),
 			prisma.report.count({ where: { status: "pending" } }),
 			prisma.report.count(),
-			prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 7*24*60*60*1000) } } })
+			prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 7*24*60*60*1000) } } }),
+			prisma.user.count({ where: { verificationStatus: "approved" } })
 		]);
-		res.status(200).json({
-			totalUsers, verifiedUsers, onlineUsers: Object.keys(userSocketMap).length,
-			suspendedUsers, blockedUsers, pendingVerifications, pendingReports, totalReports, recentUsers
-		});
+
+		const stats = {
+			totalUsers, 
+			verifiedUsers, 
+			onlineUsers: Object.keys(userSocketMap).length,
+			suspendedUsers, 
+			pendingVerifications, 
+			pendingReports, 
+			totalReports, 
+			recentUsers,
+			approvedVerifications
+		};
+
+		// Cache the stats (except online users which changes frequently)
+		adminStatsCache = { ...stats };
+		adminStatsCacheTime = now;
+
+		res.status(200).json(stats);
 	} catch (err) {
+		console.error("getAdminStats error:", err);
 		res.status(500).json({ error: "Failed to fetch admin statistics" });
 	}
 };

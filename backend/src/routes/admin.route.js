@@ -37,7 +37,7 @@ import {
 } from "../controllers/aiAnalysis.controller.js";
 
 // Make sure these middleware paths are correct
-import { protectRoute } from "../middleware/protectRoute.js";
+import { protectRoute } from "../middleware/auth.middleware.js";
 import { isAdmin } from "../middleware/isAdmin.js";
 
 const router = express.Router();

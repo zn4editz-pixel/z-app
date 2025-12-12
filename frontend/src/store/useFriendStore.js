@@ -139,21 +139,52 @@ export const useFriendStore = create((set, get) => ({
     // --- Standard Actions ---
     sendRequest: async (receiverId) => {
         try {
-            await axiosInstance.post(`/friends/send/${receiverId}`);
-            // Clear throttle and refetch
+            // Check if already sent to prevent duplicates
+            const { pendingSent, friends } = get();
+            if (includesId(pendingSent, receiverId) || includesId(friends, receiverId)) {
+                toast.error("Friend request already sent or you are already friends");
+                return false;
+            }
+
+            const response = await axiosInstance.post(`/friends/send/${receiverId}`);
+            
+            // Update local state optimistically with proper user object
+            const userObj = { _id: receiverId, id: receiverId };
+            set((state) => ({
+                pendingSent: [...state.pendingSent, userObj]
+            }));
+            
+            // Clear throttle and refetch to get updated data
             sessionStorage.removeItem('friendDataLastFetch');
-            get().fetchFriendData();
+            
+            // Don't await fetchFriendData to avoid blocking UI
+            setTimeout(() => {
+                get().fetchFriendData();
+            }, 100);
+            
             toast.success("Friend request sent!");
             return true;
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to send request.");
+            console.error("❌ Send friend request error:", error);
+            const errorMessage = error.response?.data?.message || error.response?.data?.error || "Failed to send friend request";
+            toast.error(errorMessage);
             return false;
         }
     },
 
-    // Alias for sendRequest (for compatibility)
+    // Alias for sendRequest (for compatibility) - Enhanced with better error handling
     sendFriendRequest: async (receiverId) => {
-        return await get().sendRequest(receiverId);
+        try {
+            if (import.meta.env.DEV) console.log("🚀 Sending friend request to:", receiverId);
+            
+            const result = await get().sendRequest(receiverId);
+            
+            if (import.meta.env.DEV) console.log("✅ Friend request result:", result);
+            return result;
+        } catch (error) {
+            if (import.meta.env.DEV) console.error("❌ Friend request failed:", error);
+            throw error;
+        }
     },
 
     acceptRequest: async (senderId) => {

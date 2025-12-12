@@ -7,6 +7,7 @@
 
 /* Custom Scrollbar Styles */
 @layer utilities {
+
   /* Hide scrollbar for Chrome, Safari and Opera */
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
@@ -14,8 +15,10 @@
 
   /* Hide scrollbar for IE, Edge and Firefox */
   .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
   }
 
   /* Thin scrollbar */
@@ -46,10 +49,14 @@
 /* Native smooth scrolling - works on all devices */
 html {
   scroll-behavior: smooth;
+  @apply bg-base-100;
+  min-height: 100%;
 }
 
 /* Better text rendering */
 body {
+  @apply bg-base-100 text-base-content;
+  min-height: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Enable momentum scrolling on iOS */

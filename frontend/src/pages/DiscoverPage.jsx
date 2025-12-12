@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { axiosInstance } from "../lib/axios.js";
-import { Search, Loader2, UserPlus, Users, Bell, UserCheck, CheckCircle, XCircle, BadgeCheck, Mail, Trash2 } from "lucide-react";
+import { Search, Loader2, UserPlus, Users, Bell, UserCheck, CheckCircle, XCircle, BadgeCheck, Mail, Trash2, Eye } from "lucide-react";
 import toast from "react-hot-toast";
 import VerifiedBadge from "../components/VerifiedBadge";
 import CountryFlag from "../components/CountryFlag";
@@ -193,17 +193,23 @@ const DiscoverPage = () => {
 	const [suggestedUsers, setSuggestedUsers] = useState([]);
 	const [isLoadingSuggested, setIsLoadingSuggested] = useState(true);
 	const [loadingRequestId, setLoadingRequestId] = useState(null);
+	const [recentlyClicked, setRecentlyClicked] = useState(new Set());
+	const [isProcessingRequest, setIsProcessingRequest] = useState(false);
+	const [buttonStates, setButtonStates] = useState(new Map());
+	
 
-	const { pendingReceived, acceptRequest, rejectRequest, fetchFriendData } = useFriendStore();
+	const { pendingReceived, acceptRequest, rejectRequest, fetchFriendData, sendFriendRequest, getFriendshipStatus } = useFriendStore();
 	const { authUser } = useAuthStore();
 	const { notifications } = useNotificationStore();
 
-	// Debug logging
+	// Debug logging (development only)
 	useEffect(() => {
-		if (import.meta.env.DEV) console.log('🔍 DiscoverPage mounted');
-		console.log('Auth user:', authUser);
-		console.log('Suggested users:', suggestedUsers);
-		console.log('Is loading:', isLoadingSuggested);
+		if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_DISCOVER) {
+			console.log('🔍 DiscoverPage mounted');
+			console.log('Auth user:', authUser);
+			console.log('Suggested users:', suggestedUsers);
+			console.log('Is loading:', isLoadingSuggested);
+		}
 	}, [authUser, suggestedUsers, isLoadingSuggested]);
 
 	// Calculate notification counts for each tab (only unread)
@@ -229,13 +235,15 @@ const DiscoverPage = () => {
 
 	// Fetch suggested users on mount
 	useEffect(() => {
-		if (activeTab === "discover") {
+		if (activeTab === "discover" && authUser?.id) {
 			fetchSuggestedUsers();
 		}
-	}, [activeTab]);
+	}, [activeTab, authUser?.id]);
 
 	const fetchSuggestedUsers = async () => {
-		console.log('📥 Fetching suggested users...');
+		if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_DISCOVER) {
+			console.log('📥 Fetching suggested users...');
+		}
 		// Check cache first
 		const cached = sessionStorage.getItem('suggestedUsers');
 		const cacheTime = sessionStorage.getItem('suggestedUsersTime');
@@ -243,9 +251,14 @@ const DiscoverPage = () => {
 		
 		// Show cached data immediately (stale-while-revalidate pattern)
 		if (cached) {
-			console.log('✅ Using cached suggested users');
+			if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_DISCOVER) {
+				console.log('✅ Using cached suggested users');
+			}
 			try {
-				setSuggestedUsers(JSON.parse(cached));
+				const cachedUsers = JSON.parse(cached);
+				// Filter out current user from cached data too
+				const filteredCachedUsers = cachedUsers.filter(user => getId(user) !== authUser?.id);
+				setSuggestedUsers(filteredCachedUsers);
 				setIsLoadingSuggested(false);
 			} catch (e) {
 				console.error('Error parsing cached data:', e);
@@ -254,7 +267,9 @@ const DiscoverPage = () => {
 			
 			// If cache is fresh (< 2 min), don't refetch
 			if (cacheTime && (now - parseInt(cacheTime)) < 120000) {
-				console.log('✅ Cache is fresh, skipping fetch');
+				if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_DISCOVER) {
+					console.log('✅ Cache is fresh, skipping fetch');
+				}
 				return;
 			}
 		} else {
@@ -263,13 +278,20 @@ const DiscoverPage = () => {
 		
 		// Fetch fresh data in background
 		try {
-			console.log('🌐 Fetching from API...');
+			if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_DISCOVER) {
+				console.log('🌐 Fetching from API...');
+			}
 			const res = await axiosInstance.get("/users/suggested");
 			const users = res.data || [];
-			console.log(`✅ Received ${users.length} suggested users:`, users);
-			setSuggestedUsers(users);
+			// Filter out the current user from suggestions
+			const filteredUsers = users.filter(user => getId(user) !== authUser?.id);
+			
+			if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_DISCOVER) {
+				console.log(`✅ Received ${users.length} suggested users, filtered to ${filteredUsers.length}:`, filteredUsers);
+			}
+			setSuggestedUsers(filteredUsers);
 			// Cache for 2 minutes (matches backend cache)
-			sessionStorage.setItem('suggestedUsers', JSON.stringify(users));
+			sessionStorage.setItem('suggestedUsers', JSON.stringify(filteredUsers));
 			sessionStorage.setItem('suggestedUsersTime', now.toString());
 		} catch (error) {
 			console.error("❌ Error fetching suggested users:", error);
@@ -282,6 +304,87 @@ const DiscoverPage = () => {
 			setIsLoadingSuggested(false);
 		}
 	};
+
+	// Handle sending friend request with proper event isolation and state management
+	const handleSendFriendRequest = useCallback(async (userId, event) => {
+		// Prevent event propagation and default behavior
+		if (event) {
+			event.preventDefault();
+			event.stopPropagation();
+			event.stopImmediatePropagation();
+		}
+
+		// Check if this specific button is already processing
+		const currentButtonState = buttonStates.get(userId);
+		if (currentButtonState?.isProcessing) {
+			if (import.meta.env.DEV) console.log("🚫 Button-specific lock: Request already in progress for user:", userId);
+			return;
+		}
+
+		// Global lock to prevent any friend request while one is processing
+		if (isProcessingRequest) {
+			if (import.meta.env.DEV) console.log("🚫 Global lock: Another friend request is already being processed");
+			return;
+		}
+
+		// Prevent multiple requests for the same user
+		if (loadingRequestId === userId || recentlyClicked.has(userId)) {
+			if (import.meta.env.DEV) console.log("🚫 User-specific lock: Request already in progress or recently clicked for user:", userId);
+			return;
+		}
+
+		try {
+			if (import.meta.env.DEV) console.log("✅ Sending friend request to user:", userId);
+			
+			// Set button-specific state
+			setButtonStates(prev => new Map(prev.set(userId, { isProcessing: true, timestamp: Date.now() })));
+			
+			// Set global lock immediately
+			setIsProcessingRequest(true);
+			
+			// Add to recently clicked set to prevent rapid clicks
+			setRecentlyClicked(prev => new Set([...prev, userId]));
+			setLoadingRequestId(userId);
+			
+			// Send the friend request (toast is handled in the store)
+			const success = await sendFriendRequest(userId);
+			
+		} catch (error) {
+			console.error("❌ Error sending friend request:", error);
+			toast.error("Failed to send friend request");
+			
+			// Remove from recently clicked on error
+			setRecentlyClicked(prev => {
+				const newSet = new Set(prev);
+				newSet.delete(userId);
+				return newSet;
+			});
+		} finally {
+			// Clear button-specific state
+			setButtonStates(prev => {
+				const newMap = new Map(prev);
+				newMap.delete(userId);
+				return newMap;
+			});
+			
+			// Always clear the loading state for this specific user
+			setLoadingRequestId(null);
+			
+			// Release global lock after a short delay to prevent rapid successive clicks
+			setTimeout(() => {
+				setIsProcessingRequest(false);
+			}, 300);
+			
+			// Remove from recently clicked after a longer delay
+			setTimeout(() => {
+				setRecentlyClicked(prev => {
+					const newSet = new Set(prev);
+					newSet.delete(userId);
+					return newSet;
+				});
+			}, 2000);
+		}
+	}, [isProcessingRequest, loadingRequestId, recentlyClicked, sendFriendRequest, buttonStates]);
 
 	// Debounced search
 	useEffect(() => {
@@ -323,6 +426,54 @@ const DiscoverPage = () => {
 
 	const displayUsers = searchQuery.trim() ? searchResults : suggestedUsers;
 	const isLoading = searchQuery.trim() ? isLoadingSearch : isLoadingSuggested;
+
+	// Get button configuration based on friendship status - Memoized for performance
+	const getButtonConfig = useCallback((userId) => {
+		const friendshipStatus = getFriendshipStatus(userId);
+		const isCurrentUserLoading = loadingRequestId === userId;
+		const isButtonProcessing = buttonStates.get(userId)?.isProcessing;
+		const isRecentlyClicked = recentlyClicked.has(userId);
+		
+		switch (friendshipStatus) {
+			case "FRIENDS":
+				return {
+					text: "Friends",
+					icon: UserCheck,
+					className: "btn-success",
+					disabled: true,
+					onClick: null
+				};
+			case "REQUEST_SENT":
+				return {
+					text: "Request Sent",
+					icon: UserCheck,
+					className: "btn-outline",
+					disabled: true,
+					onClick: null
+				};
+			case "REQUEST_RECEIVED":
+				return {
+					text: "Accept Request",
+					icon: UserCheck,
+					className: "btn-success",
+					disabled: isCurrentUserLoading || isProcessingRequest,
+					onClick: (e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						handleAccept(userId);
+					}
+				};
+			case "NOT_FRIENDS":
+			default:
+				return {
+					text: isCurrentUserLoading ? "Sending..." : "Add Friend",
+					icon: isCurrentUserLoading ? Loader2 : UserPlus,
+					className: "btn-primary",
+					disabled: isProcessingRequest || isCurrentUserLoading || isRecentlyClicked || isButtonProcessing,
+					onClick: (e) => handleSendFriendRequest(userId, e)
+				};
+		}
+	}, [getFriendshipStatus, loadingRequestId, buttonStates, recentlyClicked, isProcessingRequest, handleSendFriendRequest, handleAccept]);
 
 	return (
 		<div className="min-h-screen pt-14 xs:pt-16 sm:pt-18 md:pt-20 pb-16 xs:pb-18 sm:pb-20 md:pb-10 px-2 xs:px-3 sm:px-4 bg-base-200">
@@ -450,9 +601,11 @@ const DiscoverPage = () => {
 								</div>
 							) : (
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-									{displayUsers.map((user) => (
+									{displayUsers.map((user) => {
+										const userId = getId(user);
+										return (
 										<div
-											key={getId(user)}
+											key={userId}
 											className="card bg-base-200 hover:bg-base-300 transition-all duration-200 border border-base-300"
 										>
 											<div className="card-body p-3 sm:p-4">
@@ -495,7 +648,7 @@ const DiscoverPage = () => {
 																to={`/profile/${user.username}`}
 																className="btn btn-primary btn-xs sm:btn-sm flex-1 hover:scale-105 active:scale-95 transition-transform duration-200"
 															>
-																<UserPlus className="w-3 h-3 sm:w-4 sm:h-4" />
+																<Eye className="w-3 h-3 sm:w-4 sm:h-4" />
 																<span className="text-xs sm:text-sm">View Profile</span>
 															</Link>
 														</div>
@@ -503,7 +656,8 @@ const DiscoverPage = () => {
 												</div>
 											</div>
 										</div>
-									))}
+										);
+									})}
 								</div>
 							)}
 						</div>

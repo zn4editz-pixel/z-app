@@ -44,27 +44,45 @@ export const initNSFWModel = async () => {
 // Analyze video frame for inappropriate content
 export const analyzeFrame = async (videoElement) => {
   try {
+    // Validate input
+    if (!videoElement) {
+      return { safe: true, confidence: 0, error: 'No video element provided' };
+    }
+
     // Initialize model if not loaded
     if (!nsfwModel && !isModelLoading) {
       if (import.meta.env.DEV) console.log('🔄 Model not loaded, initializing...');
       await initNSFWModel();
     }
     
-    // Wait for model to be ready
+    // Wait for model to be ready with timeout
+    let waitTime = 0;
+    const maxWaitTime = 10000; // 10 seconds max wait
+    while (isModelLoading && waitTime < maxWaitTime) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      waitTime += 100;
+    }
+    
     if (isModelLoading) {
-      if (import.meta.env.DEV) console.log('⏳ Waiting for model to load...');
-      return { safe: true, confidence: 0, loading: true };
+      if (import.meta.env.DEV) console.warn('⚠️ Model loading timeout');
+      return { safe: true, confidence: 0, error: 'Model loading timeout' };
     }
     
     if (!nsfwModel) {
       if (import.meta.env.DEV) console.warn('⚠️ NSFW model not available:', modelLoadError);
-      return { safe: true, confidence: 0, error: modelLoadError };
+      return { safe: true, confidence: 0, error: modelLoadError || 'Model not available' };
     }
 
     // Check if video is ready
-    if (!videoElement || videoElement.readyState < 2) {
+    if (videoElement.readyState < 2) {
       if (import.meta.env.DEV) console.log('⏳ Video not ready yet');
       return { safe: true, confidence: 0, videoNotReady: true };
+    }
+
+    // Check video dimensions
+    if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+      if (import.meta.env.DEV) console.log('⚠️ Video has no dimensions');
+      return { safe: true, confidence: 0, error: 'Video has no dimensions' };
     }
 
     if (import.meta.env.DEV) console.log('🔍 Analyzing frame...');

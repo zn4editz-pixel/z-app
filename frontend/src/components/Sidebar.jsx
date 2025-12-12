@@ -236,13 +236,13 @@ const Sidebar = () => {
         {/* Scrollable Chat List - THIS IS THE KEY FIX */}
         <div className="flex-1 min-h-0 flex flex-col">
           {/* Online Filter - Compact for mobile */}
-          <div className="flex-shrink-0 px-2 sm:px-4 py-1 border-b border-base-200">
-            <label className="flex items-center gap-1.5 cursor-pointer group">
+          <div className="flex-shrink-0 px-2 sm:px-3 py-1 border-b border-base-200">
+            <label className="flex items-center gap-1 cursor-pointer">
               <input
                 type="checkbox"
                 checked={showOnlineOnly}
                 onChange={(e) => setShowOnlineOnly(e.target.checked)}
-                className="checkbox checkbox-primary w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-base-content/30"
+                className="checkbox checkbox-primary w-1.5 h-1.5 sm:w-1.5 sm:h-1.5 rounded-full border-base-content/30"
               />
               <span className="text-[10px] sm:text-xs font-medium text-base-content/70">Show Active only</span>
             </label>

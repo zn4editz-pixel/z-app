@@ -1,0 +1,199 @@
+/* 🔧 BUTTON FIX - Ensure all buttons work properly */
+
+/* Fix all button interactions */
+.btn,
+button,
+[role="button"] {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+/* Ensure buttons are clickable */
+.btn:not(:disabled),
+button:not(:disabled),
+[role="button"]:not(:disabled) {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Fix disabled state */
+.btn:disabled,
+button:disabled,
+[role="button"]:disabled {
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+}
+
+/* Fix button focus and active states */
+.btn:focus,
+button:focus,
+[role="button"]:focus {
+  outline: 2px solid hsl(var(--p)) !important;
+  outline-offset: 2px !important;
+}
+
+.btn:active,
+button:active,
+[role="button"]:active {
+  transform: scale(0.98) !important;
+  transition: transform 0.1s ease !important;
+}
+
+/* Fix primary button */
+.btn-primary {
+  background-color: hsl(var(--p)) !important;
+  border-color: hsl(var(--p)) !important;
+  color: hsl(var(--pc)) !important;
+}
+
+.btn-primary:hover {
+  background-color: hsl(var(--pf)) !important;
+  border-color: hsl(var(--pf)) !important;
+}
+
+/* Fix form submission */
+form button[type="submit"],
+form .btn[type="submit"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Fix navbar buttons */
+header .btn {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 1001 !important;
+}
+
+/* Fix link buttons */
+a.btn,
+.btn a {
+  text-decoration: none !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Fix button text selection */
+.btn *,
+button *,
+[role="button"] * {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+/* Fix loading state buttons */
+.btn.loading,
+button.loading {
+  pointer-events: none !important;
+  cursor: wait !important;
+}
+
+/* Fix button positioning */
+.btn,
+button {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Fix overlay issues */
+.btn::before,
+.btn::after,
+button::before,
+button::after {
+  pointer-events: none !important;
+}
+
+/* Fix mobile touch */
+@media (hover: none) and (pointer: coarse) {
+  .btn,
+  button,
+  [role="button"] {
+    -webkit-tap-highlight-color: transparent !important;
+    touch-action: manipulation !important;
+  }
+}
+
+/* Fix specific button types */
+.btn-ghost {
+  background-color: transparent !important;
+}
+
+.btn-ghost:hover {
+  background-color: hsl(var(--b2)) !important;
+}
+
+.btn-circle {
+  border-radius: 50% !important;
+}
+
+/* Fix admin buttons */
+.admin-btn-gold {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Fix View Profile buttons */
+.btn.border-yellow-400 {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Ensure all interactive elements work */
+[onclick],
+[onmousedown],
+[onmouseup],
+[ontouchstart],
+[ontouchend] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Fix any z-index issues */
+.modal .btn,
+.dropdown .btn,
+.tooltip .btn {
+  z-index: 9999 !important;
+}
+
+/* Fix button content alignment */
+.btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+}
+
+/* Fix button sizing */
+.btn {
+  min-height: 2.5rem !important;
+  padding: 0.5rem 1rem !important;
+}
+
+.btn-sm {
+  min-height: 2rem !important;
+  padding: 0.25rem 0.75rem !important;
+}
+
+.btn-lg {
+  min-height: 3rem !important;
+  padding: 0.75rem 1.5rem !important;
+}
+
+/* Fix button transitions */
+.btn {
+  transition: all 0.2s ease !important;
+}
+
+/* Remove any conflicting styles */
+.btn {
+  border: 1px solid transparent !important;
+}
+
+.btn:not(.btn-ghost):not(.btn-outline) {
+  border-color: currentColor !important;
+}

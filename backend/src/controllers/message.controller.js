@@ -18,20 +18,29 @@ export const getUsersForSidebar = async (req, res) => {
       return res.status(200).json(cached.data);
     }
 
-    // Fetch only friends
-    const user = await prisma.user.findUnique({
-      where: { id: loggedInUserId },
-      select: { friends: true }
+    // Fetch friends using FriendRequest table (SQLite compatible)
+    const friendRequests = await prisma.friendRequest.findMany({
+      where: {
+        OR: [
+          { senderId: loggedInUserId },
+          { receiverId: loggedInUserId }
+        ]
+      }
     });
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+    // Extract friend IDs
+    const friendIds = friendRequests.map(request => {
+      return request.senderId === loggedInUserId ? request.receiverId : request.senderId;
+    });
+
+    if (friendIds.length === 0) {
+      return res.status(200).json([]);
     }
 
     // Get friends details
     const friends = await prisma.user.findMany({
       where: {
-        id: { in: user.friends }
+        id: { in: friendIds }
       },
       select: {
         id: true,

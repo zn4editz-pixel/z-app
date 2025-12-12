@@ -1,0 +1,357 @@
+/* ===== BUG FIXES & OPTIMIZATIONS ===== */
+/* Comprehensive fixes for common UI issues */
+
+/* ===== LAYOUT FIXES ===== */
+/* Fix for iOS Safari viewport issues */
+.full-height {
+  height: 100vh;
+  height: -webkit-fill-available;
+}
+
+/* Fix for mobile keyboard pushing content */
+.mobile-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Fix for horizontal scroll issues */
+.no-horizontal-scroll {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* ===== BUTTON FIXES ===== */
+/* Fix for button text selection */
+.btn, button {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Fix for button focus states */
+.btn:focus-visible {
+  outline: 2px solid var(--p);
+  outline-offset: 2px;
+}
+
+/* Fix for disabled button states */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ===== INPUT FIXES ===== */
+/* Fix for iOS input zoom */
+input, textarea, select {
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* Fix for input autofill styles */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--b1) inset;
+  -webkit-text-fill-color: var(--bc);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Fix for number input spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+/* ===== SCROLL FIXES ===== */
+/* Fix for momentum scrolling on iOS */
+.smooth-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Fix for scroll snap */
+.scroll-snap-y {
+  scroll-snap-type: y mandatory;
+}
+
+.scroll-snap-item {
+  scroll-snap-align: start;
+}
+
+/* ===== IMAGE FIXES ===== */
+/* Fix for image loading */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Fix for avatar images */
+.avatar img {
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Fix for broken images */
+img[src=""], img:not([src]) {
+  opacity: 0;
+}
+
+/* ===== ANIMATION PERFORMANCE FIXES ===== */
+/* GPU acceleration for better performance */
+.animate-gpu {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Fix for animation flickering */
+.no-flicker {
+  -webkit-transform: translateZ(0);
+  -moz-transform: translateZ(0);
+  -ms-transform: translateZ(0);
+  -o-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* ===== TOUCH FIXES ===== */
+/* Fix for touch targets */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Fix for touch callouts */
+.no-callout {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Fix for tap highlights */
+.no-tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== MODAL FIXES ===== */
+/* Fix for modal backdrop */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Fix for modal scroll lock */
+.modal-open {
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* ===== LOADING STATE FIXES ===== */
+/* Fix for loading spinner centering */
+.loading-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+/* Fix for skeleton loading */
+.skeleton {
+  background: linear-gradient(90deg, 
+    rgba(var(--bc), 0.1) 25%, 
+    rgba(var(--bc), 0.15) 50%, 
+    rgba(var(--bc), 0.1) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ===== ACCESSIBILITY FIXES ===== */
+/* Fix for screen reader content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Fix for focus indicators */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--p);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ===== PERFORMANCE OPTIMIZATIONS ===== */
+/* Optimize repaints */
+.optimize-repaint {
+  contain: layout style paint;
+}
+
+/* Optimize animations */
+.optimize-animation {
+  will-change: transform, opacity;
+}
+
+/* Remove will-change after animation */
+.optimize-animation.animation-done {
+  will-change: auto;
+}
+
+/* ===== BROWSER COMPATIBILITY FIXES ===== */
+/* Fix for Safari flexbox bugs */
+.safari-flex-fix {
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Fix for IE11 flexbox */
+.ie-flex-fix {
+  flex-shrink: 0;
+}
+
+/* ===== MEMORY LEAK PREVENTION ===== */
+/* Prevent memory leaks from animations */
+.prevent-memory-leak {
+  animation-fill-mode: forwards;
+}
+
+/* ===== RESPONSIVE FIXES ===== */
+/* Fix for container queries */
+@container (max-width: 768px) {
+  .container-responsive {
+    padding: 1rem;
+  }
+}
+
+/* Fix for viewport units */
+.viewport-fix {
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height */
+}
+
+/* ===== DARK MODE FIXES ===== */
+/* Fix for dark mode flashing */
+.dark-mode-fix {
+  color-scheme: light dark;
+}
+
+[data-theme="dark"] .dark-mode-fix {
+  color-scheme: dark;
+}
+
+/* ===== PRINT FIXES ===== */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-break {
+    page-break-after: always;
+  }
+  
+  * {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}
+
+/* ===== SECURITY FIXES ===== */
+/* Prevent clickjacking */
+.prevent-clickjacking {
+  pointer-events: none;
+}
+
+.prevent-clickjacking * {
+  pointer-events: auto;
+}
+
+/* ===== PERFORMANCE MONITORING ===== */
+/* Mark critical rendering path */
+.critical-render {
+  contain: layout;
+}
+
+/* Lazy loading optimization */
+.lazy-load {
+  content-visibility: auto;
+  contain-intrinsic-size: 200px;
+}
+
+/* ===== ERROR BOUNDARY FIXES ===== */
+.error-boundary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* ===== NETWORK OPTIMIZATION ===== */
+/* Preload critical resources */
+.preload-critical {
+  font-display: swap;
+}
+
+/* ===== MEMORY OPTIMIZATION ===== */
+/* Optimize large lists */
+.virtual-scroll {
+  contain: strict;
+  height: 400px;
+  overflow-y: auto;
+}
+
+/* ===== BATTERY OPTIMIZATION ===== */
+/* Reduce animations on low battery */
+@media (prefers-reduced-motion: reduce) {
+  .battery-save * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== FINAL CLEANUP ===== */
+/* Remove default margins and paddings that cause issues */
+.reset-spacing {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Fix for text rendering */
+.optimize-text {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

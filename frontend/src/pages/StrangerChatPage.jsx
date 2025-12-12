@@ -290,6 +290,7 @@ const StrangerChatPage = () => {
 	
 	// AI Moderation
 	const [aiModerationActive, setAiModerationActive] = useState(false);
+	const [MODERATION_CONFIG, setModerationConfig] = useState({ enabled: false });
 	
 	// Refs
 	const chatTimerRef = useRef(null);
@@ -385,12 +386,21 @@ const StrangerChatPage = () => {
 					setConnectionQuality("poor");
 					console.error("❌ Connection failed, attempting restart...");
 					toast.error("Connection failed. Reconnecting...");
-					// Attempt ICE restart
-					setTimeout(() => {
-						if (pc.connectionState === 'failed') {
+					// Attempt ICE restart with retry logic
+					let retryCount = 0;
+					const maxRetries = 3;
+					const attemptRestart = () => {
+						if (pc && pc.connectionState === 'failed' && retryCount < maxRetries) {
+							retryCount++;
+							console.log(`🔄 ICE restart attempt ${retryCount}/${maxRetries}`);
 							pc.restartIce();
+							setTimeout(attemptRestart, 2000 * retryCount); // Exponential backoff
+						} else if (retryCount >= maxRetries) {
+							console.error("❌ Max restart attempts reached, connection failed");
+							toast.error("Unable to establish connection. Please try again.");
 						}
-					}, 1000);
+					};
+					setTimeout(attemptRestart, 1000);
 					break;
 			}
 		};
@@ -421,8 +431,10 @@ const StrangerChatPage = () => {
 					setIsConnected(false);
 					setConnectionQuality("poor");
 					console.error("❌ ICE connection failed");
-					// Immediate restart for failed ICE
-					pc.restartIce();
+					// Immediate restart for failed ICE with safety check
+					if (pc && pc.signalingState !== 'closed') {
+						pc.restartIce();
+					}
 					break;
 			}
 		};
@@ -891,8 +903,9 @@ const StrangerChatPage = () => {
 	useEffect(() => {
 		const initModeration = async () => {
 			try {
-				const { MODERATION_CONFIG, initNSFWModel } = await loadModerationUtils();
-				if (MODERATION_CONFIG.enabled) {
+				const { MODERATION_CONFIG: config, initNSFWModel } = await loadModerationUtils();
+				setModerationConfig(config);
+				if (config.enabled) {
 					await initNSFWModel();
 					setAiModerationActive(true);
 				}
@@ -1349,10 +1362,10 @@ const StrangerChatPage = () => {
 						<button
 							onClick={handleSkip}
 							disabled={status === "initializing"}
-							className="btn btn-lg gap-3 bg-gradient-to-r from-primary to-primary/80 border-none text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+							className="btn btn-lg gap-3 bg-gradient-to-r from-primary to-primary-focus border-none text-primary-content shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 font-semibold"
 						>
 							<SkipForward className="w-5 h-5" />
-							<span className="font-semibold">
+							<span className="font-bold text-primary-content">
 								{status === "connected" ? "Skip" : status === "waiting" ? "Searching..." : "Start"}
 							</span>
 						</button>

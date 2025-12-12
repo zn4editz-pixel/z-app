@@ -516,7 +516,17 @@ io.on("connection", (socket) => {
 
 			if (!sender || !receiver) throw new Error("User not found.");
 
-			if (sender.friends.includes(receiverId)) {
+			// Check if they are already friends using FriendRequest model
+			const existingFriendship = await prisma.friendRequest.findFirst({
+				where: {
+					OR: [
+						{ senderId: senderId, receiverId: receiverId },
+						{ senderId: receiverId, receiverId: senderId }
+					]
+				}
+			});
+
+			if (existingFriendship) {
 				throw new Error("You are already friends.");
 			}
 
@@ -539,25 +549,7 @@ io.on("connection", (socket) => {
                     }
                 });
 
-                // Update User model arrays so acceptFriendRequest can find the request
-                await Promise.all([
-                    prisma.user.update({
-                        where: { id: senderId },
-                        data: {
-                            friendRequestsSent: {
-                                push: receiverId
-                            }
-                        }
-                    }),
-                    prisma.user.update({
-                        where: { id: receiverId },
-                        data: {
-                            friendRequestsReceived: {
-                                push: senderId
-                            }
-                        }
-                    })
-                ]);
+                // Friend request is already created above - no need to update arrays in SQLite
 
                 // 4. Emit success events
                 console.log(`👥 Friend request from ${senderId} to ${receiverId} created`);

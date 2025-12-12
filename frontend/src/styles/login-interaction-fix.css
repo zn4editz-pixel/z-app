@@ -1,0 +1,41 @@
+/* 🎯 LOGIN INTERACTION FIX - Ensure inputs and buttons are clickable */
+
+/* Ensure login form has proper z-index and no interference */
+.login-form-container {
+  position: relative;
+  z-index: 100;
+}
+
+.login-form-container input,
+.login-form-container button,
+.login-form-container a {
+  position: relative;
+  z-index: 101;
+  pointer-events: auto;
+}
+
+/* Remove any potential overlays that might block interactions */
+.login-form-container * {
+  pointer-events: auto;
+}
+
+/* Ensure no animations interfere with form interactions */
+.login-form-container input:focus,
+.login-form-container button:hover,
+.login-form-container button:focus {
+  z-index: 102;
+}
+
+/* Fix any potential transform issues */
+.login-form-container {
+  transform: none !important;
+}
+
+/* Ensure proper touch targets on mobile */
+@media (max-width: 768px) {
+  .login-form-container input,
+  .login-form-container button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+}

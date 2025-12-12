@@ -117,8 +117,15 @@ const ProfilePage = () => {
   const handleUsernameChange = async () => {
     if (!usernameAvailable || !usernameChangeInfo?.canChange) return;
 
+    // Validate username format
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    if (!usernameRegex.test(newUsername)) {
+      toast.error("Username must be 3-20 characters and contain only letters, numbers, and underscores");
+      return;
+    }
+
     try {
-      await updateProfile({ username: newUsername });
+      await updateProfile({ username: newUsername.trim().toLowerCase() });
       toast.success("Username updated successfully!");
       setIsEditingUsername(false);
       setShowUsernameConfirm(false);
@@ -148,8 +155,20 @@ const ProfilePage = () => {
   };
 
   const handleSendEmailOTP = async () => {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (newEmail === authUser?.email) {
+      toast.error("New email cannot be the same as current email");
+      return;
+    }
+
     try {
-      await axiosInstance.post("/auth/send-email-otp", { newEmail });
+      await axiosInstance.post("/auth/send-email-otp", { newEmail: newEmail.trim().toLowerCase() });
       toast.success("OTP sent to your new email!");
       setShowEmailOTP(true);
     } catch (error) {

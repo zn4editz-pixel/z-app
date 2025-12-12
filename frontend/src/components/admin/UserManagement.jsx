@@ -1,6 +1,5 @@
-import { Users, Ban, Trash2, BadgeCheck, Search, Shield } from "lucide-react";
-import { useState } from "react";
-import VerifiedBadge from "../VerifiedBadge";
+import { Users, Ban, Trash2, BadgeCheck, Search, Shield, UserCheck, Activity, Clock } from "lucide-react";
+import { useState, useMemo } from "react";
 import CountryFlag from "../CountryFlag";
 
 // Format last seen time in a user-friendly way
@@ -20,7 +19,6 @@ const formatLastSeen = (lastSeenDate) => {
 	if (diffDays === 1) return "Yesterday";
 	if (diffDays < 7) return `${diffDays}d ago`;
 	
-	// For older dates, show full date and time
 	return lastSeen.toLocaleString('en-US', {
 		month: 'short',
 		day: 'numeric',
@@ -38,336 +36,288 @@ const UserManagement = ({
 	onToggleVerification 
 }) => {
 	const [searchTerm, setSearchTerm] = useState("");
+	const [filterStatus, setFilterStatus] = useState("all");
 	const [suspendModal, setSuspendModal] = useState({ open: false, userId: null, username: "" });
 	const [suspendReason, setSuspendReason] = useState("Violation of terms");
 	const [suspendDuration, setSuspendDuration] = useState("7d");
-	const [customReason, setCustomReason] = useState("");
 
-	const filteredUsers = users.filter(user => 
-		user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-		user.nickname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-		user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-	);
+	// Optimized filtering with useMemo
+	const filteredUsers = useMemo(() => {
+		return users
+			.filter(user => {
+				const matchesSearch = user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+									user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+									(user.nickname && user.nickname.toLowerCase().includes(searchTerm.toLowerCase()));
+				
+				const matchesFilter = filterStatus === "all" || 
+									(filterStatus === "online" && user.isOnline) ||
+									(filterStatus === "verified" && user.isVerified) ||
+									(filterStatus === "suspended" && user.isSuspended);
+				
+				return matchesSearch && matchesFilter;
+			})
+			.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+	}, [users, searchTerm, filterStatus]);
 
-	const handleSuspendClick = (userId, username) => {
+	const handleSuspend = (userId, username) => {
 		setSuspendModal({ open: true, userId, username });
-		setSuspendReason("Violation of terms");
-		setSuspendDuration("7d");
-		setCustomReason("");
 	};
 
-	const handleSuspendConfirm = () => {
-		const finalReason = suspendReason === "Other" ? customReason : suspendReason;
-		if (!finalReason.trim()) {
-			alert("Please provide a reason for suspension");
-			return;
+	const confirmSuspend = () => {
+		if (suspendModal.userId) {
+			onSuspend(suspendModal.userId, suspendReason, suspendDuration);
+			setSuspendModal({ open: false, userId: null, username: "" });
+			setSuspendReason("Violation of terms");
+			setSuspendDuration("7d");
 		}
-		onSuspend(suspendModal.userId, finalReason, suspendDuration);
-		setSuspendModal({ open: false, userId: null, username: "" });
 	};
-
-	const suspendReasons = [
-		"Violation of terms",
-		"Harassment or hate speech",
-		"Spam or scam activity",
-		"Inappropriate content",
-		"Underage user",
-		"Multiple reports",
-		"Other"
-	];
-
-	const suspendDurations = [
-		{ value: "1h", label: "1 Hour" },
-		{ value: "6h", label: "6 Hours" },
-		{ value: "24h", label: "24 Hours" },
-		{ value: "3d", label: "3 Days" },
-		{ value: "7d", label: "7 Days" },
-		{ value: "14d", label: "14 Days" },
-		{ value: "30d", label: "30 Days" },
-		{ value: "90d", label: "90 Days" },
-	];
 
 	return (
-		<div className="relative min-h-screen">
-			{/* Lightweight User Management Background */}
-			<div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-5">
-				<div className="absolute top-1/3 left-1/3 w-80 h-80 bg-amber-400 rounded-full blur-3xl will-change-transform" style={{ animation: 'float 22s ease-in-out infinite' }} />
-			</div>
-			
-		<div className="relative z-10 bg-black/80 backdrop-blur-sm rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 border-2 border-amber-400/30">
-			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-				<div>
-					<h2 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-3">
-						<div className="p-2 bg-gradient-to-br from-primary to-secondary rounded-xl">
-							<Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-						</div>
-						User Management
-					</h2>
-					<p className="text-sm sm:text-base text-base-content/70 mt-2 ml-1">
-						{loadingUsers ? "Loading..." : `${filteredUsers.length} user${filteredUsers.length !== 1 ? 's' : ''} found`}
-					</p>
-				</div>
-
-				{/* Search */}
-				<div className="relative w-full sm:w-auto">
-					<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-base-content/50 pointer-events-none z-10" />
-					<input
-						type="text"
-						placeholder="Search users..."
-						value={searchTerm}
-						onChange={(e) => setSearchTerm(e.target.value)}
-						className="input input-bordered input-sm sm:input-md w-full sm:w-72 pl-9 sm:pl-10 pr-3 bg-base-200/50 focus:bg-base-100 transition-colors border-base-300 focus:border-primary"
-					/>
-				</div>
-			</div>
-
-			{loadingUsers ? (
-				<div className="flex flex-col items-center justify-center py-16">
-					<span className="loading loading-spinner loading-lg text-primary"></span>
-					<p className="text-sm text-base-content/60 mt-4">Loading users...</p>
-				</div>
-			) : filteredUsers.length === 0 ? (
-				<div className="flex flex-col items-center justify-center py-16 text-base-content/60">
-					<div className="p-4 bg-base-200 rounded-full mb-4">
-						<Users className="w-12 h-12 opacity-50" />
+		<div className="space-y-6">
+			{/* Header Section */}
+			<div className="bg-gradient-to-br from-amber-50 via-yellow-100 to-orange-50 dark:from-yellow-900/20 dark:via-amber-900/30 dark:to-orange-900/20 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border-2 border-yellow-400/50">
+				<div className="flex items-center gap-4 mb-6">
+					<div className="relative p-4 rounded-2xl bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-500 shadow-2xl border-2 border-yellow-300/50">
+						{/* Golden shimmer effect */}
+						<div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-30 animate-pulse"></div>
+						{/* Golden glow */}
+						<div className="absolute inset-0 rounded-2xl bg-yellow-400/20 opacity-40 animate-pulse"></div>
+						<Users className="relative w-8 h-8 text-white drop-shadow-lg" />
 					</div>
-					<p className="text-lg font-medium">No users found</p>
-					<p className="text-sm mt-1">
-						{searchTerm ? "Try adjusting your search" : "No users in the system yet"}
-					</p>
+					<div>
+						<h2 className="text-3xl font-black bg-gradient-to-r from-yellow-600 via-amber-500 to-orange-600 bg-clip-text text-transparent animate-gradient bg-[length:200%_auto] admin-panel-gradient-wave">
+							USER MANAGEMENT
+						</h2>
+						<p className="text-amber-700 dark:text-amber-300 mt-1 flex items-center gap-2 font-medium">
+							<Users className="w-4 h-4 text-yellow-600" />
+							{users?.length || 0} total users • {users?.filter(u => u.isOnline).length || 0} online
+						</p>
+					</div>
 				</div>
-			) : (
-				<div className="overflow-x-auto rounded-xl border border-base-300">
-					<table className="table w-full">
-						<thead className="bg-base-200">
-							<tr className="text-xs sm:text-sm border-b border-base-300">
-								<th className="bg-base-200">User</th>
-								<th className="bg-base-200">Email</th>
-								<th className="bg-base-200">Location</th>
-								<th className="bg-base-200">Status</th>
-								<th className="bg-base-200">Joined</th>
-								<th className="bg-base-200">Actions</th>
-							</tr>
-						</thead>
-						<tbody>
-							{filteredUsers.map((user) => (
-								<tr key={user.id} className="text-xs sm:text-sm hover:bg-base-200/50 transition-colors border-b border-base-300 last:border-0">
-									<td>
-										<div className="flex items-center gap-2">
-											<div className="avatar">
-												<div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full">
-													<img src={user.profilePic || "/avatar.png"} alt={user.username} />
+
+				{/* Search and Filters */}
+				<div className="flex flex-col sm:flex-row gap-4">
+					<div className="relative flex-1">
+						<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-yellow-600" />
+						<input
+							type="text"
+							placeholder="Search users by username, email, or nickname..."
+							value={searchTerm}
+							onChange={(e) => setSearchTerm(e.target.value)}
+							className="w-full pl-10 pr-4 py-3 bg-gradient-to-r from-yellow-100/50 to-amber-100/50 dark:from-yellow-900/30 dark:to-amber-900/30 border-2 border-yellow-300/50 dark:border-yellow-600/30 rounded-lg text-amber-900 dark:text-amber-100 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-400/30 font-medium"
+						/>
+					</div>
+					<div className="flex gap-2">
+						{['all', 'online', 'verified', 'suspended'].map((filter) => (
+							<button
+								key={filter}
+								onClick={() => setFilterStatus(filter)}
+								className={`btn btn-sm transition-all duration-200 hover:scale-105 ${
+									filterStatus === filter
+										? 'bg-gradient-to-r from-yellow-400 to-amber-500 border-yellow-300/50 text-black shadow-lg hover:shadow-yellow-400/30'
+										: 'bg-gradient-to-r from-yellow-400/20 to-amber-500/20 border-yellow-400/50 text-yellow-600 dark:text-yellow-400 hover:bg-gradient-to-r hover:from-yellow-400/30 hover:to-amber-500/30'
+								}`}
+							>
+								{filter.charAt(0).toUpperCase() + filter.slice(1)}
+							</button>
+						))}
+					</div>
+				</div>
+			</div>
+
+			{/* Users List */}
+			<div className="bg-gradient-to-br from-amber-50 via-yellow-100/30 to-orange-50/50 dark:from-yellow-900/20 dark:via-amber-900/10 dark:to-orange-900/20 backdrop-blur-sm rounded-2xl shadow-xl p-6 border-2 border-yellow-300/50 dark:border-yellow-500/30">
+				{loadingUsers ? (
+					<div className="flex flex-col items-center justify-center py-16">
+						<span className="loading loading-spinner loading-lg text-primary"></span>
+						<p className="text-base-content/70 mt-4">Loading users...</p>
+					</div>
+				) : !filteredUsers || filteredUsers.length === 0 ? (
+					<div className="text-center py-16">
+						<Users className="w-20 h-20 mx-auto mb-4 text-primary" />
+						<p className="text-xl font-bold text-primary">No users found!</p>
+						<p className="text-base-content/60 mt-2">Try adjusting your search or filters</p>
+					</div>
+				) : (
+					<div className="space-y-4">
+						{filteredUsers.map((user) => (
+							<div
+								key={user.id}
+								className="bg-gradient-to-br from-base-200/50 to-base-300/50 rounded-2xl p-6 shadow-lg border border-base-300/30 hover:shadow-xl transition-all duration-200"
+							>
+								<div className="flex flex-col lg:flex-row items-start lg:items-center gap-6">
+									{/* User Info */}
+									<div className="flex items-center gap-4 flex-1">
+										<div className="relative">
+											<img
+												src={user.profilePic || "/avatar.png"}
+												alt={user.username}
+												className="w-16 h-16 rounded-full ring-4 ring-primary/50 ring-offset-2"
+											/>
+											{user.isOnline && (
+												<div className="absolute -bottom-1 -right-1 w-6 h-6 bg-success rounded-full border-3 border-base-100 flex items-center justify-center">
+													<Activity className="w-3 h-3 text-white" />
 												</div>
-											</div>
-											<div>
-												<div className="font-semibold flex items-center gap-1">
+											)}
+										</div>
+										<div className="flex-1">
+											<div className="flex items-center gap-2 mb-1">
+												<h3 className="font-bold text-lg text-base-content">
 													{user.nickname || user.username}
-													{user.isVerified && <VerifiedBadge size="sm" />}
-												</div>
-												<div className="text-xs text-base-content/60">@{user.username}</div>
+												</h3>
+												{user.isVerified && (
+													<div className="badge badge-primary badge-sm flex items-center gap-1">
+														<BadgeCheck className="w-3 h-3" />
+														Verified
+													</div>
+												)}
+												{user.isSuspended && (
+													<div className="badge badge-error badge-sm flex items-center gap-1">
+														<Ban className="w-3 h-3" />
+														Suspended
+													</div>
+												)}
+											</div>
+											<p className="text-sm text-base-content/70">@{user.username}</p>
+											<p className="text-xs text-base-content/60">{user.email}</p>
+											<div className="flex items-center gap-4 mt-2 text-xs text-base-content/60">
+												<span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+												{user.country && (
+													<div className="flex items-center gap-1">
+														<CountryFlag countryCode={user.countryCode} size="sm" />
+														<span>{user.country}</span>
+													</div>
+												)}
+												{!user.isOnline && user.lastSeen && (
+													<div className="flex items-center gap-1">
+														<Clock className="w-3 h-3" />
+														<span>{formatLastSeen(user.lastSeen)}</span>
+													</div>
+												)}
 											</div>
 										</div>
-									</td>
-									<td className="text-xs">{user.email}</td>
-									<td>
-										<div className="flex flex-col gap-1">
-											{user.country && user.country !== 'Unknown' ? (
-												<>
-													<div className="flex items-center gap-1">
-														{user.countryCode && user.countryCode !== 'XX' && (
-															<CountryFlag countryCode={user.countryCode} size="sm" />
-														)}
-														<span className="text-xs font-medium">
-															{user.city && user.city !== 'Unknown' ? `${user.city}, ` : ''}{user.country}
-														</span>
-													</div>
-													<div className="flex items-center gap-1">
-														{user.isVPN && (
-															<span className="badge badge-warning badge-xs gap-1">
-																<Shield className="w-3 h-3" />
-																VPN
-															</span>
-														)}
-														{user.lastIP && (
-															<span className="text-xs text-base-content/40 font-mono">{user.lastIP}</span>
-														)}
-													</div>
-												</>
-											) : (
-												<span className="text-xs text-base-content/40">Unknown</span>
-											)}
-										</div>
-									</td>
-									<td>
-										<div className="flex flex-col gap-1">
-											{user.isSuspended ? (
-												<span className="badge badge-error badge-xs sm:badge-sm">Suspended</span>
-											) : user.isOnline ? (
-												<span className="badge badge-success badge-xs sm:badge-sm">Online</span>
-											) : (
-												<>
-													<span className="badge badge-ghost badge-xs sm:badge-sm">Offline</span>
-													{user.lastSeen && (
-														<span className="text-xs text-base-content/50" title={new Date(user.lastSeen).toLocaleString()}>
-															{formatLastSeen(user.lastSeen)}
-														</span>
-													)}
-												</>
-											)}
-										</div>
-									</td>
-									<td className="text-xs">
-										{new Date(user.createdAt).toLocaleDateString()}
-									</td>
-									<td>
-										<div className="flex flex-wrap gap-1">
-											{user.isSuspended ? (
-												<button
-													onClick={() => onUnsuspend(user.id)}
-													className="btn btn-success btn-xs"
-													title="Unsuspend"
-												>
-													Unsuspend
-												</button>
-											) : (
-												<button
-													onClick={() => handleSuspendClick(user.id, user.nickname || user.username)}
-													className="btn btn-warning btn-xs"
-													title="Suspend"
-												>
-													<Ban className="w-3 h-3" />
-												</button>
-											)}
-											<button
-												onClick={() => onToggleVerification(user.id)}
-												className={`btn btn-xs ${user.isVerified ? 'btn-ghost' : 'btn-info'}`}
-												title={user.isVerified ? "Remove Verification" : "Verify"}
-											>
-												<BadgeCheck className="w-3 h-3" />
-											</button>
-											<button
-												onClick={() => onDelete(user.id)}
-												className="btn btn-error btn-xs"
-												title="Delete"
-											>
-												<Trash2 className="w-3 h-3" />
-											</button>
-										</div>
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
+									</div>
 
-			{/* Suspension Modal - Fixed Centered with Blur */}
+									{/* Actions */}
+									<div className="flex flex-wrap gap-2">
+										{!user.isSuspended ? (
+											<button
+												onClick={() => handleSuspend(user.id, user.username)}
+												className="btn btn-sm btn-error gap-2 hover:scale-105 transition-all duration-200"
+											>
+												<Ban className="w-4 h-4" />
+												Suspend
+											</button>
+										) : (
+											<button
+												onClick={() => onUnsuspend(user.id)}
+												className="btn btn-sm btn-success gap-2 hover:scale-105 transition-all duration-200"
+											>
+												<UserCheck className="w-4 h-4" />
+												Unsuspend
+											</button>
+										)}
+										<button
+											onClick={() => onToggleVerification(user.id)}
+											className="btn btn-sm btn-info gap-2 hover:scale-105 transition-all duration-200"
+										>
+											<BadgeCheck className="w-4 h-4" />
+											{user.isVerified ? 'Unverify' : 'Verify'}
+										</button>
+										<button
+											onClick={() => onDelete(user.id)}
+											className="btn btn-sm btn-neutral gap-2 hover:scale-105 transition-all duration-200"
+										>
+											<Trash2 className="w-4 h-4" />
+											Delete
+										</button>
+									</div>
+								</div>
+
+								{/* Suspension Details */}
+								{user.isSuspended && (
+									<div className="mt-4 p-4 bg-error/10 border border-error/30 rounded-xl">
+										<div className="flex items-center gap-2 mb-2">
+											<Shield className="w-4 h-4 text-error" />
+											<span className="font-medium text-error">Suspension Details</span>
+										</div>
+										<p className="text-sm text-base-content/70">
+											<strong>Reason:</strong> {user.suspensionReason || 'No reason provided'}
+										</p>
+										{user.suspensionEndTime && (
+											<p className="text-sm text-base-content/70">
+												<strong>Until:</strong> {new Date(user.suspensionEndTime).toLocaleString()}
+											</p>
+										)}
+									</div>
+								)}
+							</div>
+						))}
+					</div>
+				)}
+			</div>
+
+			{/* Suspend Modal */}
 			{suspendModal.open && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
-					<div 
-						className="absolute inset-0" 
-						onClick={() => setSuspendModal({ open: false, userId: null, username: "" })}
-					/>
-					<div className="relative bg-base-100 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-scaleIn">
-						<div className="p-6">
-							<h3 className="font-bold text-xl mb-2">Suspend User</h3>
-							<p className="text-sm text-base-content/70 mb-6">
-								You are about to suspend <span className="font-semibold text-warning">{suspendModal.username}</span>
-							</p>
-
-							{/* Reason Selection */}
-							<div className="form-control mb-4">
-								<label className="label">
-									<span className="label-text font-medium">Reason for Suspension</span>
+				<div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+					<div className="bg-base-100 p-8 rounded-2xl border border-base-300 max-w-md w-full shadow-2xl">
+						<h3 className="text-xl font-bold mb-4 text-base-content">
+							Suspend User: {suspendModal.username}
+						</h3>
+						
+						<div className="space-y-4">
+							<div>
+								<label className="block text-sm font-medium text-base-content/70 mb-2">
+									Reason
 								</label>
-								<select 
-									className="select select-bordered w-full"
+								<select
 									value={suspendReason}
 									onChange={(e) => setSuspendReason(e.target.value)}
+									className="select select-bordered w-full"
 								>
-									{suspendReasons.map(reason => (
-										<option key={reason} value={reason}>{reason}</option>
-									))}
+									<option value="Violation of terms">Violation of terms</option>
+									<option value="Inappropriate content">Inappropriate content</option>
+									<option value="Harassment">Harassment</option>
+									<option value="Spam">Spam</option>
+									<option value="Other">Other</option>
 								</select>
 							</div>
-
-							{/* Custom Reason Input */}
-							{suspendReason === "Other" && (
-								<div className="form-control mb-4">
-									<label className="label">
-										<span className="label-text font-medium">Custom Reason</span>
-									</label>
-									<textarea
-										className="textarea textarea-bordered w-full"
-										placeholder="Enter custom reason..."
-										value={customReason}
-										onChange={(e) => setCustomReason(e.target.value)}
-										rows={3}
-									/>
-								</div>
-							)}
-
-							{/* Duration Selection */}
-							<div className="form-control mb-6">
-								<label className="label">
-									<span className="label-text font-medium">Suspension Duration</span>
+							
+							<div>
+								<label className="block text-sm font-medium text-base-content/70 mb-2">
+									Duration
 								</label>
-								<select 
-									className="select select-bordered w-full"
+								<select
 									value={suspendDuration}
 									onChange={(e) => setSuspendDuration(e.target.value)}
+									className="select select-bordered w-full"
 								>
-									{suspendDurations.map(duration => (
-										<option key={duration.value} value={duration.value}>
-											{duration.label}
-										</option>
-									))}
+									<option value="1h">1 Hour</option>
+									<option value="24h">24 Hours</option>
+									<option value="7d">7 Days</option>
+									<option value="30d">30 Days</option>
+									<option value="permanent">Permanent</option>
 								</select>
 							</div>
-
-							{/* Actions */}
-							<div className="flex gap-3 justify-end">
-								<button 
-									className="btn btn-ghost"
-									onClick={() => setSuspendModal({ open: false, userId: null, username: "" })}
-								>
-									Cancel
-								</button>
-								<button 
-									className="btn btn-warning"
-									onClick={handleSuspendConfirm}
-								>
-									Suspend User
-								</button>
-							</div>
+						</div>
+						
+						<div className="flex gap-3 mt-6">
+							<button
+								onClick={() => setSuspendModal({ open: false, userId: null, username: "" })}
+								className="btn btn-neutral flex-1"
+							>
+								Cancel
+							</button>
+							<button
+								onClick={confirmSuspend}
+								className="btn btn-error flex-1"
+							>
+								Suspend User
+							</button>
 						</div>
 					</div>
 				</div>
 			)}
-
-			<style>{`
-				@keyframes fadeIn {
-					from { opacity: 0; }
-					to { opacity: 1; }
-				}
-				@keyframes scaleIn {
-					from { 
-						opacity: 0;
-						transform: scale(0.95);
-					}
-					to { 
-						opacity: 1;
-						transform: scale(1);
-					}
-				}
-				.animate-fadeIn {
-					animation: fadeIn 0.2s ease-out;
-				}
-				.animate-scaleIn {
-					animation: scaleIn 0.3s ease-out;
-				}
-			`}</style>
-		</div>
 		</div>
 	);
 };

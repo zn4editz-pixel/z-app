@@ -1,0 +1,227 @@
+// PRODUCTION-READY PRISMA SCHEMA FOR 500K+ USERS
+// Optimized for massive scale with advanced indexing and performance
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "debian-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// USERS TABLE - Optimized for massive scale
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique @db.VarChar(50)
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  nickname  String?  @db.VarChar(100)
+  profilePic String? @db.Text
+  
+  // Performance fields
+  isOnline     Boolean @default(false)
+  lastSeen     DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Verification system
+  isVerified   Boolean @default(false)
+  verificationReason String? @db.Text
+  verificationIdProof String? @db.Text
+  verificationRequestedAt DateTime?
+  
+  // Location & Analytics
+  country      String? @db.VarChar(100)
+  city         String? @db.VarChar(100)
+  latitude     Float?
+  longitude    Float?
+  timezone     String? @db.VarChar(50)
+  
+  // Relationships
+  sentMessages     Message[] @relation("MessageSender")
+  receivedMessages Message[] @relation("MessageReceiver")
+  sentFriendRequests     FriendRequest[] @relation("FriendRequestSender")
+  receivedFriendRequests FriendRequest[] @relation("FriendRequestReceiver")
+  friends         Friend[] @relation("UserFriends")
+  friendOf        Friend[] @relation("FriendOfUser")
+  reports         Report[]
+  
+  // Performance indexes
+  @@index([email])
+  @@index([username])
+  @@index([isOnline])
+  @@index([lastSeen])
+  @@index([createdAt])
+  @@index([country, city])
+  @@index([isVerified])
+  @@map("users")
+}
+
+// MESSAGES TABLE - Optimized for high throughput
+model Message {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  type      MessageType @default(TEXT)
+  
+  // Performance fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  
+  // Relationships with indexes
+  senderId  String
+  sender    User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  receiverId String
+  receiver   User     @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  // File attachments
+  fileUrl   String? @db.Text
+  fileName  String? @db.VarChar(255)
+  fileSize  Int?
+  
+  // Performance indexes for massive scale
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+  @@index([isRead])
+  @@index([senderId, receiverId])
+  @@index([receiverId, isRead])
+  @@index([createdAt, senderId])
+  @@index([createdAt, receiverId])
+  @@map("messages")
+}
+
+// FRIEND REQUESTS - Optimized
+model FriendRequest {
+  id        String   @id @default(cuid())
+  status    FriendRequestStatus @default(PENDING)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  senderId  String
+  sender    User     @relation("FriendRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  receiverId String
+  receiver   User     @relation("FriendRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  @@unique([senderId, receiverId])
+  @@index([receiverId, status])
+  @@index([senderId, status])
+  @@index([createdAt])
+  @@map("friend_requests")
+}
+
+// FRIENDS TABLE - Optimized
+model Friend {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  
+  userId   String
+  user     User   @relation("UserFriends", fields: [userId], references: [id], onDelete: Cascade)
+  
+  friendId String
+  friend   User   @relation("FriendOfUser", fields: [friendId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+  @@map("friends")
+}
+
+// REPORTS TABLE - Optimized
+model Report {
+  id          String   @id @default(cuid())
+  reason      String   @db.VarChar(500)
+  description String?  @db.Text
+  status      ReportStatus @default(PENDING)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resolvedAt  DateTime?
+  
+  reporterId  String
+  reporter    User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  
+  reportedUserId String?
+  reportedMessageId String?
+  
+  // Admin fields
+  adminNotes  String? @db.Text
+  adminId     String?
+  
+  @@index([status])
+  @@index([createdAt])
+  @@index([reporterId])
+  @@index([reportedUserId])
+  @@map("reports")
+}
+
+// SESSIONS TABLE - For session management at scale
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique @db.VarChar(500)
+  
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  lastUsed  DateTime @default(now())
+  
+  // Device info
+  userAgent String? @db.Text
+  ipAddress String? @db.VarChar(45)
+  device    String? @db.VarChar(100)
+  
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([lastUsed])
+  @@map("sessions")
+}
+
+// ANALYTICS TABLE - For performance monitoring
+model Analytics {
+  id        String   @id @default(cuid())
+  event     String   @db.VarChar(100)
+  data      Json?
+  
+  createdAt DateTime @default(now())
+  userId    String?
+  
+  // Performance tracking
+  responseTime Int?
+  errorCode    String? @db.VarChar(10)
+  
+  @@index([event])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("analytics")
+}
+
+// ENUMS
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  VOICE
+  VIDEO
+  SYSTEM
+}
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum ReportStatus {
+  PENDING
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+}

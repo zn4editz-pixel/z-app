@@ -57,9 +57,9 @@ export const protectRoute = async (req, res, next) => {
         verificationReviewedAt: true,
         verificationReviewedBy: true,
         verificationAdminNote: true,
-        friends: true,
-        friendRequestsSent: true,
-        friendRequestsReceived: true,
+        // friends: true, // Removed - not supported in SQLite
+        // friendRequestsSent: true, // Removed - not supported in SQLite
+        // friendRequestsReceived: true, // Removed - not supported in SQLite
         createdAt: true,
         updatedAt: true
       }

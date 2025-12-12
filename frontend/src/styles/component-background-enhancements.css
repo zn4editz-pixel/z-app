@@ -1,0 +1,445 @@
+/* ===== COMPONENT-SPECIFIC BACKGROUND ENHANCEMENTS ===== */
+/* Apply amazing background variations to existing components */
+
+/* ===== HOMEPAGE ENHANCEMENTS ===== */
+
+/* Hero section - Bright gradient */
+.homepage-hero,
+.hero-container {
+  background: var(--bg-gradient-bright) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.homepage-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, color-mix(in srgb, hsl(var(--p)) 6%, transparent 94%) 0%, transparent 70%);
+  animation: hero-glow 8s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes hero-glow {
+  0% { transform: rotate(0deg) scale(1); opacity: 0.3; }
+  100% { transform: rotate(180deg) scale(1.1); opacity: 0.1; }
+}
+
+/* Welcome section - Elevated */
+.welcome-section {
+  background: var(--bg-elevated) !important;
+  border-top: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+  border-bottom: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+}
+
+/* ===== CHAT INTERFACE ENHANCEMENTS ===== */
+
+/* Chat sidebar - Dark for contrast */
+.chat-sidebar,
+.conversations-list {
+  background: var(--bg-dark) !important;
+  border-right: 2px solid color-mix(in srgb, hsl(var(--p)) 12%, transparent 88%);
+}
+
+/* Active chat item - Accent highlight */
+.chat-item.active,
+.conversation-item.active {
+  background: var(--bg-accent-light) !important;
+  border-left: 4px solid hsl(var(--p));
+  transform: translateX(4px);
+}
+
+/* Chat messages area - Main background with subtle texture */
+.messages-container {
+  background: var(--bg-main);
+  position: relative;
+}
+
+.messages-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 20% 80%, color-mix(in srgb, hsl(var(--bc)) 2%, transparent 98%) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, color-mix(in srgb, hsl(var(--bc)) 2%, transparent 98%) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Message input area - Bright elevated */
+.message-input-area,
+.chat-input-wrapper {
+  background: var(--bg-bright) !important;
+  border-top: 2px solid color-mix(in srgb, hsl(var(--p)) 15%, transparent 85%);
+  box-shadow: 0 -4px 20px color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+}
+
+/* ===== PROFILE PAGE ENHANCEMENTS ===== */
+
+/* Profile banner - Gradient with overlay */
+.profile-banner,
+.profile-cover {
+  background: var(--bg-gradient-bright) !important;
+  position: relative;
+}
+
+.profile-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, hsl(var(--p)) 8%, transparent 92%) 0%, 
+    transparent 50%, 
+    color-mix(in srgb, hsl(var(--s)) 6%, transparent 94%) 100%);
+  pointer-events: none;
+}
+
+/* Profile content sections - Alternating backgrounds */
+.profile-section:nth-child(odd) {
+  background: var(--bg-elevated) !important;
+  border-radius: 16px;
+  margin: 1rem 0;
+  padding: 1.5rem;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+}
+
+.profile-section:nth-child(even) {
+  background: var(--bg-bright) !important;
+  border-radius: 16px;
+  margin: 1rem 0;
+  padding: 1.5rem;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 6%, transparent 94%);
+}
+
+/* Profile stats cards - Dark for contrast */
+.profile-stats-card,
+.stats-container {
+  background: var(--bg-dark) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 12%, transparent 88%);
+  border-radius: 20px;
+  position: relative;
+}
+
+.profile-stats-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, hsl(var(--p)), hsl(var(--s)), hsl(var(--a)));
+  border-radius: 20px 20px 0 0;
+}
+
+/* ===== DISCOVER PAGE ENHANCEMENTS ===== */
+
+/* Discover header - Bright with search focus */
+.discover-header {
+  background: var(--bg-bright) !important;
+  border-bottom: 2px solid color-mix(in srgb, hsl(var(--p)) 15%, transparent 85%);
+  padding: 2rem 1rem;
+}
+
+/* User cards grid - Alternating pattern */
+.user-card:nth-child(4n+1),
+.user-card:nth-child(4n+4) {
+  background: var(--bg-elevated) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+}
+
+.user-card:nth-child(4n+2),
+.user-card:nth-child(4n+3) {
+  background: var(--bg-bright) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 6%, transparent 94%);
+}
+
+/* Featured users - Special accent background */
+.user-card.featured,
+.user-card.verified {
+  background: var(--bg-accent-light) !important;
+  border: 2px solid color-mix(in srgb, hsl(var(--p)) 25%, transparent 75%);
+  position: relative;
+  overflow: hidden;
+}
+
+.user-card.featured::before,
+.user-card.verified::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  height: 4px;
+  background: linear-gradient(90deg, hsl(var(--p)), hsl(var(--s)), hsl(var(--a)), hsl(var(--p)));
+  background-size: 200% 100%;
+  animation: featured-border 3s linear infinite;
+}
+
+@keyframes featured-border {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+/* ===== ADMIN DASHBOARD ENHANCEMENTS ===== */
+
+/* Dashboard overview - Gradient header */
+.dashboard-overview {
+  background: var(--bg-gradient-bright) !important;
+  border-radius: 20px;
+  border: 2px solid color-mix(in srgb, hsl(var(--p)) 20%, transparent 80%);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-overview::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, white 10%, transparent 90%), transparent);
+  animation: dashboard-shine 4s ease-in-out infinite;
+}
+
+@keyframes dashboard-shine {
+  0% { left: -100%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
+}
+
+/* Admin panels - Alternating dark/bright */
+.admin-panel:nth-child(odd) {
+  background: var(--bg-dark) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 15%, transparent 85%);
+}
+
+.admin-panel:nth-child(even) {
+  background: var(--bg-bright) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+}
+
+/* Critical alerts - Special red-tinted background */
+.alert-critical,
+.notification-urgent {
+  background: color-mix(in srgb, hsl(var(--er)) 8%, var(--bg-bright) 92%) !important;
+  border: 2px solid color-mix(in srgb, hsl(var(--er)) 30%, transparent 70%);
+  animation: alert-pulse 2s ease-in-out infinite;
+}
+
+@keyframes alert-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 color-mix(in srgb, hsl(var(--er)) 20%, transparent 80%);
+  }
+  50% { 
+    box-shadow: 0 0 0 8px color-mix(in srgb, hsl(var(--er)) 5%, transparent 95%);
+  }
+}
+
+/* ===== SETTINGS PAGE ENHANCEMENTS ===== */
+
+/* Settings sections - Clean alternating pattern */
+.settings-section {
+  border-radius: 16px;
+  margin: 1rem 0;
+  padding: 2rem;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+  transition: all 0.3s ease;
+}
+
+.settings-section:nth-child(odd) {
+  background: var(--bg-elevated) !important;
+}
+
+.settings-section:nth-child(even) {
+  background: var(--bg-bright) !important;
+}
+
+.settings-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px color-mix(in srgb, hsl(var(--bc)) 12%, transparent 88%);
+}
+
+/* Settings header - Accent background */
+.settings-header {
+  background: var(--bg-accent-light) !important;
+  border-bottom: 3px solid hsl(var(--p));
+  border-radius: 16px 16px 0 0;
+}
+
+/* ===== STRANGER CHAT ENHANCEMENTS ===== */
+
+/* Video area - Dark for focus */
+.video-container,
+.stranger-video-area {
+  background: var(--bg-dark) !important;
+  border: 2px solid color-mix(in srgb, hsl(var(--bc)) 15%, transparent 85%);
+  position: relative;
+}
+
+.video-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 30%, color-mix(in srgb, hsl(var(--bc)) 5%, transparent 95%) 100%);
+  pointer-events: none;
+}
+
+/* Chat panel - Bright for readability */
+.stranger-chat-panel {
+  background: var(--bg-bright) !important;
+  border-left: 2px solid color-mix(in srgb, hsl(var(--p)) 15%, transparent 85%);
+}
+
+/* Control buttons area - Elevated */
+.video-controls,
+.stranger-controls {
+  background: var(--bg-elevated) !important;
+  border-top: 1px solid color-mix(in srgb, hsl(var(--bc)) 10%, transparent 90%);
+  border-radius: 0 0 16px 16px;
+}
+
+/* ===== MODAL ENHANCEMENTS ===== */
+
+/* Call modals - Special bright background */
+.call-modal,
+.video-call-modal {
+  background: var(--bg-bright) !important;
+  border: 3px solid color-mix(in srgb, hsl(var(--su)) 25%, transparent 75%);
+  box-shadow: 0 25px 50px color-mix(in srgb, hsl(var(--su)) 20%, transparent 80%);
+}
+
+/* Confirmation modals - Accent background */
+.confirmation-modal {
+  background: var(--bg-accent-light) !important;
+  border: 2px solid color-mix(in srgb, hsl(var(--wa)) 25%, transparent 75%);
+}
+
+/* Error modals - Error-tinted background */
+.error-modal {
+  background: color-mix(in srgb, hsl(var(--er)) 6%, var(--bg-bright) 94%) !important;
+  border: 2px solid color-mix(in srgb, hsl(var(--er)) 30%, transparent 70%);
+}
+
+/* ===== MOBILE SPECIFIC ENHANCEMENTS ===== */
+
+@media (max-width: 768px) {
+  /* Mobile header - Simplified bright */
+  .mobile-header {
+    background: var(--bg-bright) !important;
+    border-bottom: 1px solid color-mix(in srgb, hsl(var(--bc)) 10%, transparent 90%);
+  }
+  
+  /* Mobile bottom nav - Dark for thumb reach */
+  .mobile-bottom-nav {
+    background: var(--bg-dark) !important;
+    border-top: 2px solid color-mix(in srgb, hsl(var(--p)) 15%, transparent 85%);
+  }
+  
+  /* Mobile cards - Reduced contrast */
+  .mobile-card {
+    background: var(--bg-elevated) !important;
+    border: 1px solid color-mix(in srgb, hsl(var(--bc)) 6%, transparent 94%);
+  }
+  
+  /* Mobile chat - Full bright for readability */
+  .mobile-chat-container {
+    background: var(--bg-main);
+  }
+  
+  .mobile-message-input {
+    background: var(--bg-bright) !important;
+    border-top: 1px solid color-mix(in srgb, hsl(var(--p)) 12%, transparent 88%);
+  }
+}
+
+/* ===== LOADING STATES WITH BACKGROUNDS ===== */
+
+/* Loading containers - Subtle animated background */
+.loading-container {
+  background: var(--bg-main);
+  position: relative;
+}
+
+.loading-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, 
+    transparent 25%, 
+    color-mix(in srgb, hsl(var(--bc)) 3%, transparent 97%) 50%, 
+    transparent 75%);
+  background-size: 40px 40px;
+  animation: loading-pattern 2s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes loading-pattern {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 40px; }
+}
+
+/* Skeleton loaders - Enhanced backgrounds */
+.skeleton-item {
+  background: linear-gradient(90deg, 
+    var(--bg-elevated) 25%, 
+    var(--bg-bright) 50%, 
+    var(--bg-elevated) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ===== SPECIAL EFFECTS FOR AMAZING LOOK ===== */
+
+/* Floating elements - Subtle glow */
+.floating-element {
+  background: var(--bg-bright) !important;
+  box-shadow: 
+    0 4px 20px color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%),
+    0 0 0 1px color-mix(in srgb, hsl(var(--p)) 15%, transparent 85%);
+  animation: float-glow 4s ease-in-out infinite alternate;
+}
+
+@keyframes float-glow {
+  0% { 
+    transform: translateY(0px);
+    box-shadow: 
+      0 4px 20px color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%),
+      0 0 0 1px color-mix(in srgb, hsl(var(--p)) 15%, transparent 85%);
+  }
+  100% { 
+    transform: translateY(-4px);
+    box-shadow: 
+      0 8px 30px color-mix(in srgb, hsl(var(--bc)) 12%, transparent 88%),
+      0 0 0 1px color-mix(in srgb, hsl(var(--p)) 25%, transparent 75%);
+  }
+}
+
+/* Interactive zones - Hover background changes */
+.interactive-zone {
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.interactive-zone:hover {
+  background: var(--bg-accent-light) !important;
+  transform: scale(1.02);
+}
+
+/* Success states - Green-tinted backgrounds */
+.success-state {
+  background: color-mix(in srgb, hsl(var(--su)) 8%, var(--bg-bright) 92%) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--su)) 25%, transparent 75%);
+}
+
+/* Warning states - Yellow-tinted backgrounds */
+.warning-state {
+  background: color-mix(in srgb, hsl(var(--wa)) 8%, var(--bg-bright) 92%) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--wa)) 25%, transparent 75%);
+}

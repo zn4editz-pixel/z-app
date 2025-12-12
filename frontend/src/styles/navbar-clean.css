@@ -1,0 +1,52 @@
+/* 🎯 CLEAN NAVBAR - No backgrounds, only white icon when active */
+
+/* Remove all backgrounds from navbar buttons */
+header .btn {
+  background-color: transparent !important;
+  border: none !important;
+  color: hsl(var(--bc)) !important;
+}
+
+/* Hover state - no background, just keep same color */
+header .btn:hover {
+  background-color: transparent !important;
+  color: hsl(var(--bc)) !important;
+}
+
+/* Click/active state - no background */
+header .btn:active {
+  background-color: transparent !important;
+  color: hsl(var(--bc)) !important;
+}
+
+/* Focus state - no background */
+header .btn:focus {
+  background-color: transparent !important;
+  color: hsl(var(--bc)) !important;
+}
+
+/* Active page button - NO background, just white icon */
+header .btn-active,
+header .btn.btn-active {
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+
+/* Active page button hover - keep white icon, no background */
+header .btn-active:hover,
+header .btn.btn-active:hover {
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+/* Change View Profile button color to white */
+.btn.border-yellow-400 {
+  background-color: #ffffff !important;
+  border-color: #e5e7eb !important;
+  color: #000000 !important;
+}
+
+.btn.border-yellow-400:hover {
+  background-color: #f9fafb !important;
+  border-color: #d1d5db !important;
+  color: #000000 !important;
+}

@@ -1,44 +1,51 @@
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import path from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Load backend .env
-dotenv.config({ path: path.join(__dirname, '.env') });
-
-const userSchema = new mongoose.Schema({}, { strict: false });
-const User = mongoose.model('User', userSchema);
+import prisma from './src/lib/prisma.js';
 
 async function checkUsers() {
     try {
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log('✅ Connected to MongoDB');
+        console.log('🔍 Checking your database...\n');
         
-        const users = await User.find({}).select('username email fullName isAdmin');
-        console.log('\n📋 Users in database:');
-        console.log(JSON.stringify(users, null, 2));
+        const users = await prisma.user.findMany({
+            select: {
+                id: true,
+                fullName: true,
+                email: true,
+                username: true,
+                createdAt: true,
+                isVerified: true,
+                hasCompletedProfile: true
+            }
+        });
         
-        const adminEmail = process.env.ADMIN_EMAIL;
-        console.log(`\n🔍 Looking for admin with email: ${adminEmail}`);
+        console.log(`📊 TOTAL USERS FOUND: ${users.length}\n`);
         
-        const admin = await User.findOne({ email: adminEmail });
-        if (admin) {
-            console.log('\n✅ Admin found:');
-            console.log(`   Username: ${admin.username}`);
-            console.log(`   Email: ${admin.email}`);
-            console.log(`   Full Name: ${admin.fullName}`);
-            console.log(`   Is Admin: ${admin.isAdmin}`);
+        if (users.length > 0) {
+            console.log('👥 YOUR USERS:');
+            console.log('================');
+            users.forEach((user, i) => {
+                console.log(`${i+1}. ${user.fullName}`);
+                console.log(`   Email: ${user.email}`);
+                console.log(`   Username: ${user.username}`);
+                console.log(`   Created: ${new Date(user.createdAt).toLocaleDateString()}`);
+                console.log(`   Verified: ${user.isVerified ? '✅' : '❌'}`);
+                console.log(`   Profile Complete: ${user.hasCompletedProfile ? '✅' : '❌'}`);
+                console.log('   ---');
+            });
         } else {
-            console.log('\n❌ Admin not found!');
+            console.log('❌ No users found in database');
         }
         
-        await mongoose.disconnect();
-        console.log('\n✅ Disconnected from MongoDB');
+        // Check messages
+        const messageCount = await prisma.message.count();
+        console.log(`💬 TOTAL MESSAGES: ${messageCount}`);
+        
+        // Check friend requests
+        const friendRequestCount = await prisma.friendRequest.count();
+        console.log(`🤝 FRIEND REQUESTS: ${friendRequestCount}`);
+        
     } catch (error) {
-        console.error('❌ Error:', error);
+        console.error('❌ Error checking database:', error.message);
+    } finally {
+        await prisma.$disconnect();
     }
 }
 

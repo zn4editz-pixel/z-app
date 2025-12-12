@@ -82,28 +82,28 @@ const App = () => {
 	useEffect(() => {
 		checkAuth();
 	}, []); // eslint-disable-line react-hooks/exhaustive-deps
-	
+
 	// Performance optimizations are now built-in to components
-	
+
 	// Initialize Lenis smooth scrolling
 	useEffect(() => {
 		const lenis = initSmoothScroll();
 		return () => destroySmoothScroll();
 	}, []);
-	
+
 	// Fetch friend data when user is authenticated
 	useEffect(() => {
 		if (authUser?.id) {
 			fetchFriendData();
 		}
 	}, [authUser?.id, fetchFriendData]);
-	
+
 	useEffect(() => {
 		if (authUser?.isSuspended && window.location.pathname !== "/suspended") {
 			navigate("/suspended");
 		}
 	}, [authUser, navigate]);
-	
+
 	// --- MAIN SOCKET LISTENER EFFECT ---
 	// ✅ FIXED: Only register once when socket connects
 	useEffect(() => {
@@ -161,7 +161,7 @@ const App = () => {
 					messageText: text || "",
 					theme,
 				});
-				
+
 				// ✅ FIX: Add to notification store for persistence
 				const { addNotification } = useNotificationStore.getState();
 				addNotification({
@@ -196,9 +196,9 @@ const App = () => {
 		// Admin notification listeners
 		socket.on("admin-notification", (notification) => {
 			toast(notification.message, {
-				icon: notification.type === 'success' ? '✅' : 
-					  notification.type === 'error' ? '❌' : 
-					  notification.type === 'warning' ? '⚠️' : 'ℹ️',
+				icon: notification.type === 'success' ? '✅' :
+					notification.type === 'error' ? '❌' :
+						notification.type === 'warning' ? '⚠️' : 'ℹ️',
 				duration: 5000,
 			});
 			// Store notification for Social Hub
@@ -217,9 +217,9 @@ const App = () => {
 
 		socket.on("admin-broadcast", (notification) => {
 			toast(notification.message, {
-				icon: notification.type === 'success' ? '✅' : 
-					  notification.type === 'error' ? '❌' : 
-					  notification.type === 'warning' ? '⚠️' : 'ℹ️',
+				icon: notification.type === 'success' ? '✅' :
+					notification.type === 'error' ? '❌' :
+						notification.type === 'warning' ? '⚠️' : 'ℹ️',
 				duration: 5000,
 			});
 			// Store notification for Social Hub
@@ -281,7 +281,7 @@ const App = () => {
 			} else {
 				toast(message, { icon: "📋", duration: 5000 });
 			}
-			
+
 			// Add to notification store
 			const { addNotification } = useNotificationStore.getState();
 			addNotification({
@@ -308,8 +308,8 @@ const App = () => {
 			socket.off("admin-notification");
 			socket.off("admin-broadcast");
 		};
-	// ✅ FIXED: Only depend on socket and authUser.id to prevent duplicate listeners
-	}, [socket, authUser?.id, navigate, forceLogout, theme, addPendingReceived, setAuthUser]); 
+		// ✅ FIXED: Only depend on socket and authUser.id to prevent duplicate listeners
+	}, [socket, authUser?.id, navigate, forceLogout, theme, addPendingReceived, setAuthUser]);
 
 	const hasCompletedProfile = authUser?.hasCompletedProfile;
 
@@ -345,7 +345,7 @@ const App = () => {
 	const shouldShowNavbar = hasCompletedProfile && !hideNavbarPaths.includes(window.location.pathname);
 
 	return (
-		<div data-theme={theme} className="pt-14 md:pt-16">
+		<div data-theme={theme} className={`min-h-screen bg-base-100 ${shouldShowNavbar ? "pt-14 md:pt-16" : ""}`}>
 			<Suspense fallback={<LoadingScreen />}>
 				<ErrorBoundary>
 					{authUser && hasCompletedProfile && <PermissionHandler />}
@@ -356,161 +356,161 @@ const App = () => {
 			<Suspense fallback={<LoadingScreen />}>
 				<ErrorBoundary>
 					<Routes location={location} key={location.pathname}>
-				{/* --- Auth Routes --- */}
-				<Route
-					path="/signup"
-					element={!authUser ? <SignUpPage /> : <Navigate to="/" />}
-				/>
-				<Route
-					path="/login"
-					element={!authUser ? <LoginPage /> : <Navigate to="/" />}
-				/>
-				<Route
-					path="/forgot-password"
-					element={!authUser ? <ForgotPassword /> : <Navigate to="/" />}
-				/>
-				<Route
-					path="/reset-password/:token"
-					element={!authUser ? <ResetPassword /> : <Navigate to="/" />}
-				/>
+						{/* --- Auth Routes --- */}
+						<Route
+							path="/signup"
+							element={!authUser ? <SignUpPage /> : <Navigate to="/" />}
+						/>
+						<Route
+							path="/login"
+							element={!authUser ? <LoginPage /> : <Navigate to="/" />}
+						/>
+						<Route
+							path="/forgot-password"
+							element={!authUser ? <ForgotPassword /> : <Navigate to="/" />}
+						/>
+						<Route
+							path="/reset-password/:token"
+							element={!authUser ? <ResetPassword /> : <Navigate to="/" />}
+						/>
 
-				{/* --- Onboarding Route --- */}
-				<Route
-					path="/setup-profile"
-					element={
-						!authUser ? (
-							<Navigate to="/login" />
-						) : hasCompletedProfile ? (
-							<Navigate to="/" />
-						) : (
-							<SetupProfilePage />
-						)
-					}
-				/>
+						{/* --- Onboarding Route --- */}
+						<Route
+							path="/setup-profile"
+							element={
+								!authUser ? (
+									<Navigate to="/login" />
+								) : hasCompletedProfile ? (
+									<Navigate to="/" />
+								) : (
+									<SetupProfilePage />
+								)
+							}
+						/>
 
-				{/* --- Protected Routes --- */}
-				<Route
-					path="/"
-					element={
-						!authUser ? (
-							<Navigate to="/login" />
-						) : !hasCompletedProfile ? (
-							<Navigate to="/setup-profile" />
-						) : (
-							<HomePage />
-						)
-					}
-				/>
-				<Route
-					path="/settings"
-					element={
-						!authUser ? (
-							<Navigate to="/login" />
-						) : !hasCompletedProfile ? (
-							<Navigate to="/setup-profile" />
-						) : (
-							<SettingsPage />
-						)
-					}
-				/>
-				<Route
-					path="/change-password"
-					element={
-						!authUser ? (
-							<Navigate to="/login" />
-						) : !hasCompletedProfile ? (
-							<Navigate to="/setup-profile" />
-						) : (
-							<ChangePasswordPage />
-						)
-					}
-				/>
-				<Route
-					path="/profile/:username"
-					element={
-						!authUser ? (
-							<Navigate to="/login" />
-						) : !hasCompletedProfile ? (
-							<Navigate to="/setup-profile" />
-						) : (
-							<PublicProfilePage />
-						)
-					}
-				/>
-				<Route
-					path="/profile"
-					element={
-						!authUser ? (
-							<Navigate to="/login" />
-						) : !hasCompletedProfile ? (
-							<Navigate to="/setup-profile" />
-						) : (
-							<MyProfilePage />
-						)
-					}
-				/>
-				<Route
-					path="/admin"
-					element={
-						!authUser ? (
-							<Navigate to="/login" />
-						) : !hasCompletedProfile ? (
-							<Navigate to="/setup-profile" />
-						) : authUser.isAdmin ? (
-							<AdminDashboard />
-						) : (
-							<Navigate to="/" />
-						)
-					}
-				/>
-				
-				{/* Discover Users Page */}
-				<Route
-					path="/discover"
-					element={
-						!authUser ? (
-							<Navigate to="/login" />
-						) : !hasCompletedProfile ? (
-							<Navigate to="/setup-profile" />
-						) : (
-							<DiscoverPage />
-						)
-					}
-				/>
-				
-				{/* Stranger Chat Settings route */}
-				<Route
-					path="/stranger-settings"
-					element={
-						!authUser ? (
-							<Navigate to="/login" />
-						) : !hasCompletedProfile ? (
-							<Navigate to="/setup-profile" />
-						) : (
-							<StrangerChatSettings />
-						)
-					}
-				/>
+						{/* --- Protected Routes --- */}
+						<Route
+							path="/"
+							element={
+								!authUser ? (
+									<Navigate to="/login" />
+								) : !hasCompletedProfile ? (
+									<Navigate to="/setup-profile" />
+								) : (
+									<HomePage />
+								)
+							}
+						/>
+						<Route
+							path="/settings"
+							element={
+								!authUser ? (
+									<Navigate to="/login" />
+								) : !hasCompletedProfile ? (
+									<Navigate to="/setup-profile" />
+								) : (
+									<SettingsPage />
+								)
+							}
+						/>
+						<Route
+							path="/change-password"
+							element={
+								!authUser ? (
+									<Navigate to="/login" />
+								) : !hasCompletedProfile ? (
+									<Navigate to="/setup-profile" />
+								) : (
+									<ChangePasswordPage />
+								)
+							}
+						/>
+						<Route
+							path="/profile/:username"
+							element={
+								!authUser ? (
+									<Navigate to="/login" />
+								) : !hasCompletedProfile ? (
+									<Navigate to="/setup-profile" />
+								) : (
+									<PublicProfilePage />
+								)
+							}
+						/>
+						<Route
+							path="/profile"
+							element={
+								!authUser ? (
+									<Navigate to="/login" />
+								) : !hasCompletedProfile ? (
+									<Navigate to="/setup-profile" />
+								) : (
+									<MyProfilePage />
+								)
+							}
+						/>
+						<Route
+							path="/admin"
+							element={
+								!authUser ? (
+									<Navigate to="/login" />
+								) : !hasCompletedProfile ? (
+									<Navigate to="/setup-profile" />
+								) : authUser.isAdmin ? (
+									<AdminDashboard />
+								) : (
+									<Navigate to="/" />
+								)
+							}
+						/>
 
-				{/* Stranger Chat route */}
-				<Route
-					path="/stranger"
-					element={
-						!authUser ? (
-							<Navigate to="/login" />
-						) : !hasCompletedProfile ? (
-							<Navigate to="/setup-profile" />
-						) : (
-							<StrangerChatPage />
-						)
-					}
-				/>
+						{/* Discover Users Page */}
+						<Route
+							path="/discover"
+							element={
+								!authUser ? (
+									<Navigate to="/login" />
+								) : !hasCompletedProfile ? (
+									<Navigate to="/setup-profile" />
+								) : (
+									<DiscoverPage />
+								)
+							}
+						/>
 
-				{/* --- Special Pages --- */}
-				<Route path="/suspended" element={<SuspendedPage />} />
-				<Route path="/goodbye" element={<GoodbyePage />} />
-				<Route path="/blocked" element={<BlockedPage />} /> {/* ✅ FIXED: Use BlockedPage */}
-				<Route path="/debug" element={<DebugPage />} />
+						{/* Stranger Chat Settings route */}
+						<Route
+							path="/stranger-settings"
+							element={
+								!authUser ? (
+									<Navigate to="/login" />
+								) : !hasCompletedProfile ? (
+									<Navigate to="/setup-profile" />
+								) : (
+									<StrangerChatSettings />
+								)
+							}
+						/>
+
+						{/* Stranger Chat route */}
+						<Route
+							path="/stranger"
+							element={
+								!authUser ? (
+									<Navigate to="/login" />
+								) : !hasCompletedProfile ? (
+									<Navigate to="/setup-profile" />
+								) : (
+									<StrangerChatPage />
+								)
+							}
+						/>
+
+						{/* --- Special Pages --- */}
+						<Route path="/suspended" element={<SuspendedPage />} />
+						<Route path="/goodbye" element={<GoodbyePage />} />
+						<Route path="/blocked" element={<BlockedPage />} /> {/* ✅ FIXED: Use BlockedPage */}
+						<Route path="/debug" element={<DebugPage />} />
 					</Routes>
 				</ErrorBoundary>
 			</Suspense>

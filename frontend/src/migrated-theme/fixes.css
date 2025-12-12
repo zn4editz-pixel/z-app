@@ -1,0 +1,106 @@
+/* 🎨 THEME FIX: Remove purple colors and use DaisyUI theme colors */
+/* Source: theme-fix.css */
+
+/* Override purple colors with theme-appropriate colors */
+.border-t-purple-500 {
+    border-top-color: hsl(var(--p));
+}
+
+.bg-purple-500 {
+    background-color: hsl(var(--p));
+}
+
+.text-purple-400 {
+    color: hsl(var(--p));
+}
+
+.border-purple-500 {
+    border-color: hsl(var(--p));
+}
+
+/* Fix loading spinner colors */
+.ultra-spinner::after {
+    border-bottom-color: hsl(var(--p));
+    border-left-color: hsl(var(--p));
+}
+
+/* Fix button gradients to use theme colors */
+.btn-primary {
+    background: hsl(var(--p)) !important;
+    border-color: hsl(var(--p)) !important;
+    color: hsl(var(--pc)) !important;
+}
+
+.btn-primary:hover {
+    background: hsl(var(--pf)) !important;
+    border-color: hsl(var(--pf)) !important;
+}
+
+/* Fix text gradients */
+.text-gradient {
+    @apply text-primary;
+    background: none;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: unset;
+}
+
+/* Fix scrollbar colors */
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--p));
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--p)) rgba(0, 0, 0, 0.1);
+}
+
+/* Fix View Profile buttons & Blue remapping */
+.bg-blue-500,
+.bg-blue-600 {
+    background-color: hsl(var(--p));
+}
+
+.bg-blue-500:hover,
+.bg-blue-600:hover {
+    background-color: hsl(var(--pf));
+}
+
+.text-blue-400,
+.text-blue-500 {
+    color: hsl(var(--p));
+}
+
+.border-blue-500,
+.border-blue-600 {
+    border-color: hsl(var(--p));
+}
+
+/* Fix notification backgrounds */
+.bg-blue-500\/10 {
+    background-color: hsl(var(--p) / 0.1);
+}
+
+.bg-purple-500\/10 {
+    background-color: hsl(var(--s) / 0.1);
+}
+
+.border-blue-500\/30 {
+    border-color: hsl(var(--p) / 0.3);
+}
+
+.border-purple-500\/30 {
+    border-color: hsl(var(--s) / 0.3);
+}
+
+/* Ensure consistent theme colors throughout */
+:root[data-theme="dark"] {
+    --loading-bg: hsl(var(--b1));
+    --loading-spinner: hsl(var(--p));
+}
+
+:root[data-theme="light"] {
+    --loading-bg: hsl(var(--b1));
+    --loading-spinner: hsl(var(--p));
+}

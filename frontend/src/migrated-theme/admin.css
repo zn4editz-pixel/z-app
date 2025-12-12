@@ -1,0 +1,235 @@
+/* 🤖 PREMIUM AI ADMIN PANEL - PROFESSIONAL NEURAL DESIGN 🤖 */
+/* Source: admin-custom.css */
+
+:root {
+    /* PREMIUM THEME VARIABLES - MAPPED TO DAISYUI */
+    --admin-gold: oklch(var(--p));
+    /* Use Primary for main accent */
+    --admin-gold-dim: oklch(var(--pf, var(--p)));
+    --admin-dark-bg: oklch(var(--b1));
+    /* Base 100 */
+    --admin-dark-card: oklch(var(--b2));
+    /* Base 200 */
+    --admin-success: oklch(var(--su));
+    /* Success */
+    --admin-error: oklch(var(--er));
+    /* Error */
+
+    /* NEURAL GRID COLORS */
+    --neural-bg: oklch(var(--b1));
+    --neural-line: oklch(var(--p) / 0.1);
+    --neural-dot: oklch(var(--p) / 0.2);
+}
+
+/* OPTIMIZED CSS-ONLY BACKGROUND */
+.admin-optimized-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-color: oklch(var(--b1));
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* Aurora Effect - GPU Accelerated */
+.admin-optimized-bg::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    right: -50%;
+    bottom: -50%;
+    background:
+        radial-gradient(circle at 50% 50%, oklch(var(--p)/0.2), transparent 60%),
+        radial-gradient(circle at 80% 20%, oklch(var(--s)/0.15), transparent 50%),
+        radial-gradient(circle at 20% 80%, oklch(var(--a)/0.15), transparent 50%);
+    animation: admin-aurora-spin 20s linear infinite;
+    will-change: transform;
+    transform-origin: center center;
+}
+
+/* Grid Overlay - Static Image for Perf */
+.admin-optimized-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(var(--neural-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--neural-line) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    opacity: 0.4;
+}
+
+@keyframes admin-aurora-spin {
+    from {
+        transform: rotate(0deg) scale(1.5);
+    }
+
+    to {
+        transform: rotate(360deg) scale(1.5);
+    }
+}
+
+/* ===== UTILITY CLASSES ===== */
+.admin-card-glass {
+    background: oklch(var(--b2) / 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid oklch(var(--bc) / 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+}
+
+.admin-text-gold {
+    color: var(--admin-gold);
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+}
+
+.admin-border-gold {
+    border-color: var(--admin-gold);
+}
+
+/* ===== AI NEURAL NETWORK GRID ===== */
+.admin-neural-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--neural-bg);
+    background-image:
+        linear-gradient(var(--neural-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--neural-line) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    opacity: 0.6;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* ===== FLOATING AI PARTICLES ===== */
+.admin-ai-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.admin-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: radial-gradient(circle, oklch(var(--p)), oklch(var(--s) / 0.5), transparent);
+    border-radius: 50%;
+    box-shadow:
+        0 0 10px oklch(var(--p) / 0.6),
+        0 0 20px oklch(var(--p) / 0.4),
+        0 0 30px oklch(var(--p) / 0.2);
+}
+
+.admin-particle-1 {
+    top: 10%;
+    left: 15%;
+    animation: admin-particle-float-1 25s ease-in-out infinite;
+    animation-delay: 0s;
+}
+
+/* (Including full animation set for admin-particles) */
+@keyframes admin-particle-float-1 {
+
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.8;
+    }
+
+    25% {
+        transform: translate(30vw, -20vh) scale(1.5);
+        opacity: 1;
+    }
+
+    50% {
+        transform: translate(60vw, 10vh) scale(0.8);
+        opacity: 0.6;
+    }
+
+    75% {
+        transform: translate(20vw, 30vh) scale(1.2);
+        opacity: 0.9;
+    }
+}
+
+/* ===== PREMIUM THEME-RESPONSIVE CARDS ===== */
+.admin-card {
+    @apply bg-base-100 border border-base-300 rounded-2xl text-base-content shadow-xl;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    backdrop-filter: blur(10px);
+}
+
+.admin-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, transparent 0%, oklch(var(--p) / 0.05) 30%, oklch(var(--s) / 0.03) 60%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.4s ease-out;
+    border-radius: 1rem;
+}
+
+.admin-card:hover {
+    transform: translateY(-2px) scale(1.01);
+    @apply shadow-2xl;
+    box-shadow: 0 20px 40px oklch(var(--p) / 0.1), 0 0 0 1px oklch(var(--p) / 0.2);
+}
+
+.admin-card:hover::before {
+    opacity: 1;
+}
+
+/* ===== PREMIUM THEME-RESPONSIVE BUTTONS ===== */
+.admin-btn-primary {
+    @apply bg-primary text-primary-content border-none font-semibold rounded-2xl px-6 py-3;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 4px 20px oklch(var(--p) / 0.3), inset 0 1px 0 oklch(var(--pc) / 0.2);
+}
+
+.admin-btn-primary:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 30px oklch(var(--p) / 0.4), inset 0 1px 0 oklch(var(--pc) / 0.3);
+}
+
+/* ===== PREMIUM STAT CARDS ===== */
+.admin-stat-card {
+    @apply bg-base-100 border border-primary/20 rounded-2xl p-8 text-base-content shadow-xl;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    backdrop-filter: blur(10px);
+}
+
+.admin-stat-number {
+    @apply text-primary text-4xl font-bold;
+    text-shadow: 0 0 20px oklch(var(--p) / 0.4);
+    animation: admin-stat-glow 3s ease-in-out infinite;
+}
+
+@keyframes admin-stat-glow {
+
+    0%,
+    100% {
+        text-shadow: 0 0 20px oklch(var(--p) / 0.4);
+    }
+
+    50% {
+        text-shadow: 0 0 30px oklch(var(--p) / 0.6), 0 0 40px oklch(var(--p) / 0.3);
+    }
+}

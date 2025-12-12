@@ -1,0 +1,127 @@
+
+> frontend@0.0.0 build
+> vite build
+
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+
+????   [35mdaisyUI[39m [2m4.12.14[22m
+?????? [32m??????[39m 32 themes added[2m		https://daisyui.com/docs/themes[22m
+?????? [32m??????[39m [0mSupport daisyUI project:[0m	[2mhttps://opencollective.com/daisyui[22m
+
+
+????   [35mdaisyUI[39m [2m4.12.14[22m
+?????? [32m??????[39m 32 themes added[2m		https://daisyui.com/docs/themes[22m
+?????? [32m??????[39m [0mSupport daisyUI project:[0m	[2mhttps://opencollective.com/daisyui[22m
+
+[32m???[39m 1602 modules transformed.
+node.exe : 
+[31mx[39m Build 
+failed in 6.95s
+At C:\Program Files\n
+odejs\npm.ps1:29 
+char:3
++   & $NODE_EXE 
+$NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: ([31mx   
+ [39m Build faile    
+d in 6.95s:Strin    
+g) [], RemoteExc    
+eption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+[31merror during 
+build:
+[31m[vite:esbuild] 
+Transform failed 
+with 1 error:
+C:/Users/z4fwa/OneDri
+ve/Desktop/z.om/front
+end/src/pages/Strange
+rChatPage.jsx:84:6: 
+ERROR: The symbol 
+"ReportModal" has 
+already been 
+declared[31m
+file: [36mC:/Users/z
+4fwa/OneDrive/Desktop
+/z.om/frontend/src/pa
+ges/StrangerChatPage.
+jsx:84:6[31m
+[33m
+[33mThe symbol 
+"ReportModal" has 
+already been 
+declared[33m
+82 |  
+83 |  // Enhanced 
+Report Modal
+84 |  const 
+ReportModal = 
+memo(({ isOpen, 
+onClose, onSubmit, 
+screenshotPreview, 
+isSubmitting }) => {
+   |        ^
+85 |  	const 
+[reason, setReason] 
+= useState("");
+86 |  	const 
+[description, 
+setDescription] = 
+useState("");
+[31m
+    at 
+failureErrorWithLog (
+C:\Users\z4fwa\OneDri
+ve\Desktop\z.om\front
+end\node_modules\esbu
+ild\lib\main.js:1472:
+15)
+    at C:\Users\z4fwa
+\OneDrive\Desktop\z.o
+m\frontend\node_modul
+es\esbuild\lib\main.j
+s:755:50
+    at responseCallba
+cks.<computed> (C:\Us
+ers\z4fwa\OneDrive\De
+sktop\z.om\frontend\n
+ode_modules\esbuild\l
+ib\main.js:622:9)
+    at 
+handleIncomingPacket 
+(C:\Users\z4fwa\OneDr
+ive\Desktop\z.om\fron
+tend\node_modules\esb
+uild\lib\main.js:677:
+12)
+    at Socket.readFro
+mStdout (C:\Users\z4f
+wa\OneDrive\Desktop\z
+.om\frontend\node_mod
+ules\esbuild\lib\main
+.js:600:7)
+    at Socket.emit 
+(node:events:518:28)
+    at addChunk (node
+:internal/streams/rea
+dable:561:12)
+    at readableAddChu
+nkPushByteMode (node:
+internal/streams/read
+able:512:3)
+    at Readable.push 
+(node:internal/stream
+s/readable:392:5)
+    at 
+Pipe.onStreamRead (no
+de:internal/stream_ba
+se_commons:189:23)[3
+9m

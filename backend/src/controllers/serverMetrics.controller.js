@@ -131,7 +131,7 @@ const getSocketMetrics = async () => {
 	try {
 		const { io, userSocketMap } = await import("../lib/socket.js");
 		
-		const connectedUsers = Object.keys(userSocketMap).length;
+		const connectedUsers = Object.keys(userSocketMap || {}).length;
 		const totalSockets = io?.sockets?.sockets?.size || 0;
 		
 		// Estimate latency (you can enhance with actual ping/pong)

@@ -231,7 +231,8 @@ export const useChatStore = create((set, get) => ({
 
             if (isForCurrentChat) {
                 // ✅ CRITICAL: Check for duplicates FIRST (before any state updates)
-                const isDuplicate = messages.some(m => m.id === newMessage.id);
+                let currentMessages = get().messages; // Get fresh messages state
+                const isDuplicate = currentMessages.some(m => m.id === newMessage.id);
                 
                 if (isDuplicate) {
                     console.log(`⚠️ Duplicate message detected, skipping: ${newMessage.id}`);
@@ -241,15 +242,17 @@ export const useChatStore = create((set, get) => ({
                 // ✅ INSTANT: Check if this is replacing an optimistic message (my own message)
                 if (msgSenderId === authUserId) {
                     // Find matching optimistic message by tempId or recent sending status
-                    const optimisticIndex = messages.findIndex(m => 
+                    currentMessages = get().messages; // Refresh messages state
+                    const optimisticIndex = currentMessages.findIndex(m => 
                         (m.tempId && m.status === 'sending') || 
-                        (m.status === 'sending' && m.senderId === authUserId)
+                        (m.status === 'sending' && m.senderId === authUserId && 
+                         Math.abs(new Date(m.createdAt) - new Date(newMessage.createdAt)) < 5000) // Within 5 seconds
                     );
                     
                     if (optimisticIndex !== -1) {
                         // Replace optimistic message with real one INSTANTLY
                         console.log(`✅ Replacing optimistic message with real one`);
-                        const updatedMessages = messages.map((m, idx) => 
+                        const updatedMessages = currentMessages.map((m, idx) => 
                             idx === optimisticIndex ? { ...newMessage, status: 'sent' } : m
                         );
                         set({ messages: updatedMessages });
@@ -263,7 +266,8 @@ export const useChatStore = create((set, get) => ({
                 
                 // Add new message from other person
                 console.log(`✅ Adding new message to current chat`);
-                const updatedMessages = [...messages, newMessage];
+                currentMessages = get().messages; // Refresh messages state
+                const updatedMessages = [...currentMessages, newMessage];
                 set({ messages: updatedMessages });
                 
                 // ✅ Update cache with new message

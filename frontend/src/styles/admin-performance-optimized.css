@@ -1,0 +1,160 @@
+/* PERFORMANCE OPTIMIZED ADMIN ANIMATIONS */
+
+/* Disable excessive animations for better performance */
+.admin-performance-mode {
+  /* Reduce animation frequency and intensity */
+}
+
+/* Static golden effects instead of animated ones */
+.golden-static-shimmer {
+  background: linear-gradient(
+    135deg,
+    rgba(251, 191, 36, 0.1) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(251, 191, 36, 0.1) 100%
+  );
+  opacity: 0.3;
+}
+
+.golden-static-glow {
+  background: rgba(251, 191, 36, 0.15);
+  opacity: 0.4;
+}
+
+/* Minimal pulse for live indicators only */
+.minimal-pulse {
+  animation: minimalPulse 3s ease-in-out infinite;
+}
+
+@keyframes minimalPulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Performance-first gradient animations */
+.performance-gradient {
+  background: linear-gradient(
+    45deg,
+    #f59e0b,
+    #fbbf24,
+    #fcd34d,
+    #fbbf24,
+    #f59e0b
+  );
+  background-size: 200% 200%;
+  animation: slowGradient 8s ease-in-out infinite;
+}
+
+@keyframes slowGradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Optimized card hover effects */
+.performance-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.performance-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.15);
+}
+
+/* Disable intensive animations on mobile */
+@media (max-width: 768px) {
+  .performance-gradient {
+    animation: none;
+    background: linear-gradient(45deg, #f59e0b, #fbbf24);
+  }
+  
+  .minimal-pulse {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
+/* Disable all animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .performance-gradient,
+  .minimal-pulse {
+    animation: none;
+  }
+  
+  .performance-card {
+    transition: none;
+  }
+}
+
+/* CPU-friendly loading states */
+.performance-loading {
+  background: linear-gradient(90deg, 
+    rgba(251, 191, 36, 0.1) 25%, 
+    rgba(251, 191, 36, 0.2) 50%, 
+    rgba(251, 191, 36, 0.1) 75%
+  );
+  background-size: 200% 100%;
+  animation: performanceShimmer 2s ease-in-out infinite;
+}
+
+@keyframes performanceShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Optimized status indicators */
+.status-indicator {
+  position: relative;
+  overflow: hidden;
+}
+
+.status-indicator::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: statusSweep 3s ease-in-out infinite;
+}
+
+@keyframes statusSweep {
+  0%, 90%, 100% {
+    left: -100%;
+  }
+  10%, 80% {
+    left: 100%;
+  }
+}
+
+/* Performance metrics */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}

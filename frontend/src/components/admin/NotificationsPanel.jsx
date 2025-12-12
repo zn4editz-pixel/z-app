@@ -39,37 +39,38 @@ const NotificationsPanel = ({ onSendNotification }) => {
 	};
 
 	return (
-		<div className="relative min-h-screen">
-			{/* Lightweight Notifications Background */}
-			<div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-5">
-				<div className="absolute top-1/4 right-1/2 w-84 h-84 bg-blue-400 rounded-full blur-3xl will-change-transform" style={{ animation: 'float 24s ease-in-out infinite' }} />
-			</div>
-			
-		<div className="relative z-10 space-y-6">
+		<div className="space-y-6">
 			{/* Send Notification Form */}
-			<div className="bg-black/80 rounded-xl shadow-lg p-4 sm:p-6 border-2 border-amber-400/30">
-				<div className="flex items-center gap-3 mb-4">
-					<div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-500/20 border-2 border-amber-400/40 flex items-center justify-center">
-						<FileText className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" />
+			<div className="bg-gradient-to-br from-base-100/90 to-base-200/90 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-primary/20">
+				<div className="flex items-center gap-4 mb-6">
+					<div className="bg-gradient-to-br from-primary to-purple-600 p-4 rounded-2xl shadow-lg">
+						<FileText className="w-8 h-8 text-white" />
 					</div>
 					<div>
-						<h2 className="text-xl sm:text-2xl font-semibold text-amber-300">Send Notification</h2>
-						<p className="text-xs sm:text-sm text-base-content/60">Send notifications to users</p>
+						<h2 className="text-3xl font-black text-primary">
+							SEND NOTIFICATION
+						</h2>
+						<p className="text-base-content/70 mt-1 flex items-center gap-2">
+							<Send className="w-4 h-4 text-primary" />
+							Broadcast messages to users
+						</p>
 					</div>
 				</div>
 
-				<form onSubmit={handleSend} className="space-y-4">
+				<form onSubmit={handleSend} className="space-y-6">
 					{/* Notification Type */}
 					<div className="form-control">
 						<label className="label">
-							<span className="label-text font-medium">Notification Type</span>
+							<span className="label-text font-bold text-primary uppercase tracking-wide">Notification Type</span>
 						</label>
-						<div className="flex gap-2">
+						<div className="flex gap-3">
 							<button
 								type="button"
 								onClick={() => setNotificationType("broadcast")}
-								className={`btn btn-sm flex-1 gap-2 ${
-									notificationType === "broadcast" ? "btn-primary" : "btn-outline"
+								className={`btn btn-sm flex-1 gap-2 transition-all duration-200 ${
+									notificationType === "broadcast" 
+										? "btn-primary" 
+										: "btn-outline btn-primary"
 								}`}
 							>
 								<Users className="w-4 h-4" />
@@ -78,8 +79,10 @@ const NotificationsPanel = ({ onSendNotification }) => {
 							<button
 								type="button"
 								onClick={() => setNotificationType("personal")}
-								className={`btn btn-sm flex-1 gap-2 ${
-									notificationType === "personal" ? "btn-primary" : "btn-outline"
+								className={`btn btn-sm flex-1 gap-2 transition-all duration-200 ${
+									notificationType === "personal" 
+										? "btn-primary" 
+										: "btn-outline btn-primary"
 								}`}
 							>
 								<User className="w-4 h-4" />
@@ -92,14 +95,14 @@ const NotificationsPanel = ({ onSendNotification }) => {
 					{notificationType === "personal" && (
 						<div className="form-control">
 							<label className="label">
-								<span className="label-text font-medium">User ID</span>
+								<span className="label-text font-bold text-primary uppercase tracking-wide">User ID</span>
 							</label>
 							<input
 								type="text"
 								placeholder="Enter user ID"
 								value={userId}
 								onChange={(e) => setUserId(e.target.value)}
-								className="input input-bordered"
+								className="input input-bordered input-primary"
 								required
 							/>
 						</div>
@@ -108,14 +111,14 @@ const NotificationsPanel = ({ onSendNotification }) => {
 					{/* Title */}
 					<div className="form-control">
 						<label className="label">
-							<span className="label-text font-medium">Title</span>
+							<span className="label-text font-bold text-primary uppercase tracking-wide">Title</span>
 						</label>
 						<input
 							type="text"
 							placeholder="Notification title"
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
-							className="input input-bordered"
+							className="input input-bordered input-primary"
 							required
 						/>
 					</div>
@@ -123,13 +126,13 @@ const NotificationsPanel = ({ onSendNotification }) => {
 					{/* Message */}
 					<div className="form-control">
 						<label className="label">
-							<span className="label-text font-medium">Message</span>
+							<span className="label-text font-bold text-primary uppercase tracking-wide">Message</span>
 						</label>
 						<textarea
 							placeholder="Notification message"
 							value={message}
 							onChange={(e) => setMessage(e.target.value)}
-							className="textarea textarea-bordered h-24"
+							className="textarea textarea-bordered textarea-primary h-24 resize-none"
 							required
 						/>
 					</div>
@@ -138,7 +141,7 @@ const NotificationsPanel = ({ onSendNotification }) => {
 					<button
 						type="submit"
 						disabled={isSending}
-						className="btn btn-primary w-full gap-2"
+						className="btn btn-primary w-full gap-2 hover:scale-105 transition-all duration-200 disabled:opacity-50"
 					>
 						{isSending ? (
 							<>
@@ -156,11 +159,13 @@ const NotificationsPanel = ({ onSendNotification }) => {
 			</div>
 
 			{/* Recent Notifications */}
-			<div className="bg-black/80 rounded-xl shadow-lg p-4 sm:p-6 border-2 border-amber-400/30">
-				<h3 className="text-lg sm:text-xl font-semibold mb-4 text-amber-300">Recent Notifications</h3>
+			<div className="bg-gradient-to-br from-base-100/90 to-base-200/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-primary/20">
+				<h3 className="text-xl font-bold mb-4 text-primary flex items-center gap-2">
+					<FileText className="w-5 h-5" />
+					Recent Notifications
+				</h3>
 				<AdminNotifications />
 			</div>
-		</div>
 		</div>
 	);
 };

@@ -110,7 +110,10 @@ export const login = async (req, res) => {
 	const { emailOrUsername, password } = req.body;
 
 	try {
+		console.log(`🔐 Login attempt: ${emailOrUsername}`);
+		
 		if (!emailOrUsername || !password) {
+			console.log('❌ Missing credentials');
 			return res.status(400).json({ message: "Email/Username and password are required." });
 		}
 
@@ -125,10 +128,19 @@ export const login = async (req, res) => {
 			});
 		}
 
-		if (!user) return res.status(401).json({ message: "Invalid credentials." });
+		if (!user) {
+			console.log(`❌ User not found: ${emailOrUsername}`);
+			return res.status(401).json({ message: "Invalid credentials." });
+		}
 
+		console.log(`✅ User found: ${user.email}`);
 		const isMatch = await bcrypt.compare(password, user.password);
-		if (!isMatch) return res.status(401).json({ message: "Invalid credentials." });
+		console.log(`🔑 Password match: ${isMatch}`);
+		
+		if (!isMatch) {
+			console.log('❌ Password mismatch');
+			return res.status(401).json({ message: "Invalid credentials." });
+		}
 
 		if (user.isBlocked) return res.status(403).json({ message: "Your account is blocked." });
 		if (user.isSuspended) return res.status(403).json({ message: "Your account is suspended." });

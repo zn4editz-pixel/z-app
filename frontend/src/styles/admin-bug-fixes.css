@@ -1,0 +1,599 @@
+/* 🐛 ADMIN PANEL BUG FIXES - COMPREHENSIVE UI FIXES */
+
+/* 🔧 Fix CSS Variable Issues */
+:root {
+  /* Ensure fallback values for all theme variables */
+  --theme-primary: #FFD700;
+  --theme-secondary: #FFA500;
+  --theme-accent: #FFFF00;
+  --theme-bg: #000000;
+  --theme-surface: #1A1A1A;
+  --theme-text: #FFFFFF;
+  --theme-glow: rgba(255, 215, 0, 0.3);
+  --theme-primary-rgb: 255, 215, 0;
+  --theme-surface-rgb: 26, 26, 26;
+}
+
+/* 🎨 Fix Theme Variable Application */
+[data-theme="coffee"] {
+  --theme-primary: #8B4513;
+  --theme-secondary: #D2691E;
+  --theme-accent: #CD853F;
+  --theme-bg: #2F1B14;
+  --theme-surface: #3D2317;
+  --theme-text: #F5DEB3;
+  --theme-glow: rgba(139, 69, 19, 0.3);
+  --theme-primary-rgb: 139, 69, 19;
+  --theme-surface-rgb: 61, 35, 23;
+}
+
+[data-theme="forest"] {
+  --theme-primary: #228B22;
+  --theme-secondary: #32CD32;
+  --theme-accent: #90EE90;
+  --theme-bg: #0F2F0F;
+  --theme-surface: #1A3D1A;
+  --theme-text: #E0FFE0;
+  --theme-glow: rgba(34, 139, 34, 0.3);
+  --theme-primary-rgb: 34, 139, 34;
+  --theme-surface-rgb: 26, 61, 26;
+}
+
+[data-theme="ocean"] {
+  --theme-primary: #1E90FF;
+  --theme-secondary: #00BFFF;
+  --theme-accent: #87CEEB;
+  --theme-bg: #0F1F2F;
+  --theme-surface: #1A2F3D;
+  --theme-text: #E0F0FF;
+  --theme-glow: rgba(30, 144, 255, 0.3);
+  --theme-primary-rgb: 30, 144, 255;
+  --theme-surface-rgb: 26, 47, 61;
+}
+
+[data-theme="sunset"] {
+  --theme-primary: #FF6347;
+  --theme-secondary: #FF7F50;
+  --theme-accent: #FFA07A;
+  --theme-bg: #2F1F0F;
+  --theme-surface: #3D2A1A;
+  --theme-text: #FFE4E1;
+  --theme-glow: rgba(255, 99, 71, 0.3);
+  --theme-primary-rgb: 255, 99, 71;
+  --theme-surface-rgb: 61, 42, 26;
+}
+
+[data-theme="lavender"] {
+  --theme-primary: #9370DB;
+  --theme-secondary: #BA55D3;
+  --theme-accent: #DDA0DD;
+  --theme-bg: #1F0F2F;
+  --theme-surface: #2A1A3D;
+  --theme-text: #F0E0FF;
+  --theme-glow: rgba(147, 112, 219, 0.3);
+  --theme-primary-rgb: 147, 112, 219;
+  --theme-surface-rgb: 42, 26, 61;
+}
+
+[data-theme="cyberpunk"] {
+  --theme-primary: #00FFFF;
+  --theme-secondary: #FF00FF;
+  --theme-accent: #FFFF00;
+  --theme-bg: #0A0A0A;
+  --theme-surface: #1A1A1A;
+  --theme-text: #E0FFFF;
+  --theme-glow: rgba(0, 255, 255, 0.4);
+  --theme-primary-rgb: 0, 255, 255;
+  --theme-surface-rgb: 26, 26, 26;
+}
+
+[data-theme="monochrome"] {
+  --theme-primary: #FFFFFF;
+  --theme-secondary: #C0C0C0;
+  --theme-accent: #808080;
+  --theme-bg: #000000;
+  --theme-surface: #1A1A1A;
+  --theme-text: #FFFFFF;
+  --theme-glow: rgba(255, 255, 255, 0.2);
+  --theme-primary-rgb: 255, 255, 255;
+  --theme-surface-rgb: 26, 26, 26;
+}
+
+[data-theme="retro"] {
+  --theme-primary: #FFD700;
+  --theme-secondary: #FF6B35;
+  --theme-accent: #F7931E;
+  --theme-bg: #2C1810;
+  --theme-surface: #3D2317;
+  --theme-text: #FFF8DC;
+  --theme-glow: rgba(255, 215, 0, 0.3);
+  --theme-primary-rgb: 255, 215, 0;
+  --theme-surface-rgb: 61, 35, 23;
+}
+
+/* 🔧 Fix Background Issues */
+.admin-theme-bg {
+  background: linear-gradient(135deg, 
+    var(--theme-bg) 0%, 
+    var(--theme-surface) 50%, 
+    var(--theme-bg) 100%
+  ) !important;
+  color: var(--theme-text) !important;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* 🔧 Fix Card Styling Issues */
+.admin-card-theme {
+  background: linear-gradient(135deg, 
+    rgba(var(--theme-surface-rgb), 0.9) 0%, 
+    rgba(var(--theme-surface-rgb), 0.7) 100%
+  ) !important;
+  border: 2px solid rgba(var(--theme-primary-rgb), 0.3) !important;
+  border-radius: 1rem !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 20px var(--theme-glow) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-card-theme:hover {
+  border-color: rgba(var(--theme-primary-rgb), 0.6) !important;
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 0 30px var(--theme-glow) !important;
+  transform: translateY(-2px) scale(1.01) !important;
+}
+
+/* 🔧 Fix Tab Styling Issues */
+.admin-tab-theme {
+  background: rgba(var(--theme-surface-rgb), 0.6) !important;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.2) !important;
+  color: var(--theme-text) !important;
+  padding: 0.75rem 1rem !important;
+  border-radius: 0.75rem !important;
+  cursor: pointer;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  white-space: nowrap;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  min-width: fit-content;
+  flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-tab-theme.active {
+  background: linear-gradient(135deg, 
+    var(--theme-primary) 0%, 
+    var(--theme-secondary) 100%
+  ) !important;
+  color: var(--theme-bg) !important;
+  border-color: var(--theme-primary) !important;
+  box-shadow: 
+    0 4px 20px var(--theme-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1px) !important;
+}
+
+.admin-tab-theme:hover:not(.active) {
+  background: rgba(var(--theme-primary-rgb), 0.1) !important;
+  border-color: rgba(var(--theme-primary-rgb), 0.4) !important;
+  color: var(--theme-primary) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 🔧 Fix Metric Card Issues */
+.metric-card-theme {
+  background: linear-gradient(135deg, 
+    rgba(var(--theme-surface-rgb), 0.9) 0%, 
+    rgba(var(--theme-surface-rgb), 0.7) 100%
+  ) !important;
+  border: 2px solid rgba(var(--theme-primary-rgb), 0.3) !important;
+  border-radius: 1rem !important;
+  padding: 1.5rem !important;
+  backdrop-filter: blur(15px) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card-theme:hover {
+  border-color: rgba(var(--theme-primary-rgb), 0.6) !important;
+  transform: translateY(-4px) scale(1.02) !important;
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 0 30px var(--theme-glow) !important;
+}
+
+.metric-value-theme {
+  font-size: 2.5rem !important;
+  font-weight: 800 !important;
+  color: var(--theme-primary) !important;
+  text-shadow: 0 0 20px var(--theme-glow) !important;
+  margin-bottom: 0.5rem !important;
+  line-height: 1 !important;
+}
+
+.metric-label-theme {
+  color: var(--theme-text) !important;
+  opacity: 0.8 !important;
+  font-size: 0.875rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  font-weight: 600 !important;
+}
+
+/* 🔧 Fix Chart Container Issues */
+.chart-container-theme {
+  background: linear-gradient(135deg, 
+    rgba(var(--theme-surface-rgb), 0.9) 0%, 
+    rgba(var(--theme-surface-rgb), 0.7) 100%
+  ) !important;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.2) !important;
+  border-radius: 1rem !important;
+  backdrop-filter: blur(15px) !important;
+  padding: 1.5rem !important;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 🔧 Fix Animation Issues */
+.admin-animate-in {
+  animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.admin-animate-in-delay-1 {
+  animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both !important;
+}
+
+.admin-animate-in-delay-2 {
+  animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both !important;
+}
+
+.admin-animate-in-delay-3 {
+  animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both !important;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 🔧 Fix Scrollbar Issues */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* 🔧 Fix Responsive Issues */
+@media (max-width: 768px) {
+  .admin-tab-theme {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.75rem !important;
+    gap: 0.375rem !important;
+  }
+  
+  .admin-card-theme {
+    padding: 1rem !important;
+  }
+  
+  .metric-card-theme {
+    padding: 1rem !important;
+  }
+  
+  .metric-value-theme {
+    font-size: 2rem !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-tab-theme .tab-text {
+    display: none !important;
+  }
+  
+  .admin-tab-theme {
+    padding: 0.5rem !important;
+    min-width: 2.5rem !important;
+    justify-content: center !important;
+  }
+  
+  .metric-value-theme {
+    font-size: 1.75rem !important;
+  }
+}
+
+/* 🔧 Fix Z-Index Issues */
+.admin-theme-bg {
+  z-index: 1;
+}
+
+.admin-theme-bg > * {
+  position: relative;
+  z-index: 10;
+}
+
+/* 🔧 Fix Text Contrast Issues */
+.admin-theme-bg h1,
+.admin-theme-bg h2,
+.admin-theme-bg h3,
+.admin-theme-bg h4,
+.admin-theme-bg h5,
+.admin-theme-bg h6 {
+  color: var(--theme-text) !important;
+}
+
+.admin-theme-bg p {
+  color: var(--theme-text) !important;
+  opacity: 0.8;
+}
+
+/* 🔧 Fix Button Issues */
+.admin-theme-bg button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.admin-theme-bg button:hover {
+  transform: translateY(-1px) !important;
+}
+
+.admin-theme-bg button:active {
+  transform: translateY(0) !important;
+}
+
+/* 🔧 Fix Loading State Issues */
+.admin-theme-bg .loading {
+  border-color: var(--theme-primary) !important;
+  border-top-color: transparent !important;
+}
+
+/* 🔧 Fix Input Issues */
+.admin-theme-bg input,
+.admin-theme-bg textarea,
+.admin-theme-bg select {
+  background: rgba(var(--theme-surface-rgb), 0.8) !important;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.3) !important;
+  color: var(--theme-text) !important;
+  border-radius: 0.5rem !important;
+}
+
+.admin-theme-bg input:focus,
+.admin-theme-bg textarea:focus,
+.admin-theme-bg select:focus {
+  border-color: rgba(var(--theme-primary-rgb), 0.6) !important;
+  box-shadow: 0 0 0 2px var(--theme-glow) !important;
+  outline: none !important;
+}
+
+/* 🔧 Fix Modal Issues */
+.admin-theme-bg .modal,
+.admin-theme-bg .fixed {
+  z-index: 9999 !important;
+}
+
+/* 🔧 Fix Performance Issues */
+.admin-card-theme,
+.admin-tab-theme,
+.metric-card-theme,
+.chart-container-theme {
+  will-change: transform !important;
+  backface-visibility: hidden !important;
+  transform: translateZ(0) !important;
+}
+
+/* 🔧 Fix Overflow Issues */
+.admin-theme-bg {
+  overflow-x: hidden !important;
+}
+
+.admin-card-theme,
+.metric-card-theme,
+.chart-container-theme {
+  overflow: hidden !important;
+}
+
+/* 🔧 Fix Border Radius Issues */
+.admin-theme-bg * {
+  border-radius: inherit;
+}
+
+/* 🔧 Fix Gradient Issues */
+.bg-gradient-to-r {
+  background: linear-gradient(to right, var(--theme-primary), var(--theme-secondary)) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* 🔧 Fix Icon Color Issues */
+.admin-theme-bg svg {
+  color: inherit !important;
+}
+
+/* 🔧 Fix Backdrop Filter Support */
+@supports not (backdrop-filter: blur(20px)) {
+  .admin-card-theme,
+  .metric-card-theme,
+  .chart-container-theme {
+    background: rgba(var(--theme-surface-rgb), 0.95) !important;
+  }
+}
+
+/* 🔧 Fix Dark Mode Issues */
+@media (prefers-color-scheme: dark) {
+  .admin-theme-bg {
+    color-scheme: dark;
+  }
+}
+
+/* 🔧 Fix High Contrast Mode */
+@media (prefers-contrast: high) {
+  .admin-card-theme,
+  .metric-card-theme,
+  .chart-container-theme {
+    border-width: 3px !important;
+  }
+  
+  .admin-tab-theme {
+    border-width: 2px !important;
+  }
+}
+
+/* 🔧 Fix Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .admin-theme-bg,
+  .admin-theme-bg::before,
+  .admin-theme-bg::after,
+  .admin-card-theme,
+  .admin-tab-theme,
+  .metric-card-theme,
+  .chart-container-theme,
+  .admin-animate-in,
+  .admin-animate-in-delay-1,
+  .admin-animate-in-delay-2,
+  .admin-animate-in-delay-3 {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* 🔧 Fix Print Styles */
+@media print {
+  .admin-theme-bg {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .admin-card-theme,
+  .metric-card-theme,
+  .chart-container-theme {
+    background: white !important;
+    border: 1px solid black !important;
+    box-shadow: none !important;
+  }
+}
+
+/* 🔧 Fix ServerIntelligenceCenter Specific Issues */
+.server-intelligence-container {
+  background: var(--theme-bg) !important;
+  color: var(--theme-text) !important;
+}
+
+.server-intelligence-container .recharts-cartesian-grid line {
+  stroke: var(--theme-primary) !important;
+  opacity: 0.1 !important;
+}
+
+.server-intelligence-container .recharts-text {
+  fill: var(--theme-text) !important;
+  opacity: 0.8 !important;
+}
+
+.server-intelligence-container .recharts-tooltip-wrapper {
+  background: var(--theme-surface) !important;
+  border: 1px solid var(--theme-primary) !important;
+  border-radius: 8px !important;
+  color: var(--theme-text) !important;
+}
+
+/* 🔧 Fix Chart Responsiveness */
+.recharts-responsive-container {
+  min-height: 200px !important;
+}
+
+/* 🔧 Fix Custom Scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-primary) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--theme-primary);
+  border-radius: 3px;
+  opacity: 0.5;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  opacity: 0.8;
+}
+
+/* 🔧 Fix Badge Styling */
+.badge {
+  background: var(--theme-primary) !important;
+  color: var(--theme-bg) !important;
+  border: none !important;
+}
+
+.badge-success {
+  background: #22c55e !important;
+  color: white !important;
+}
+
+.badge-neutral {
+  background: #6b7280 !important;
+  color: white !important;
+}
+
+/* 🔧 Fix Avatar Styling */
+.avatar.online .ring {
+  ring-color: #22c55e !important;
+}
+
+.avatar.offline .ring {
+  ring-color: #6b7280 !important;
+}
+
+/* 🔧 Fix Button Variants */
+.btn-primary {
+  background: var(--theme-primary) !important;
+  color: var(--theme-bg) !important;
+  border-color: var(--theme-primary) !important;
+}
+
+.btn-success {
+  background: #22c55e !important;
+  color: white !important;
+  border-color: #22c55e !important;
+}
+
+.btn-neutral {
+  background: #6b7280 !important;
+  color: white !important;
+  border-color: #6b7280 !important;
+}
+
+.btn-outline {
+  background: transparent !important;
+  color: var(--theme-text) !important;
+  border-color: rgba(var(--theme-primary-rgb), 0.3) !important;
+}
+
+.btn-outline:hover {
+  background: rgba(var(--theme-primary-rgb), 0.1) !important;
+  border-color: var(--theme-primary) !important;
+}

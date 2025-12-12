@@ -73,6 +73,9 @@ export const useAuthStore = create((set, get) => ({
 				set({ authUser: null, isCheckingAuth: false });
 				localStorage.removeItem("authUser");
 				localStorage.removeItem("token");
+				delete axiosInstance.defaults.headers.common['Authorization'];
+				get().disconnectSocket();
+				useFriendStore.getState().clearFriendData();
 				return;
 			}
 			if (user.isSuspended && user.suspensionEndTime && new Date(user.suspensionEndTime) > new Date()) { 
@@ -81,6 +84,9 @@ export const useAuthStore = create((set, get) => ({
 				set({ authUser: null, isCheckingAuth: false });
 				localStorage.removeItem("authUser");
 				localStorage.removeItem("token");
+				delete axiosInstance.defaults.headers.common['Authorization'];
+				get().disconnectSocket();
+				useFriendStore.getState().clearFriendData();
 				return;
 			}
 
@@ -154,8 +160,14 @@ export const useAuthStore = create((set, get) => ({
             if (!user || typeof user !== 'object') {
                  throw new Error("Invalid login response");
             }
-			if (user.isBlocked) { toast.error("Account is blocked"); return; }
-			if (user.suspension && new Date(user.suspension.endTime) > new Date()) { toast.error("Account is suspended"); return; }
+			if (user.isBlocked) { 
+				toast.error("Account is blocked"); 
+				return false; 
+			}
+			if (user.isSuspended && user.suspensionEndTime && new Date(user.suspensionEndTime) > new Date()) { 
+				toast.error("Account is suspended"); 
+				return false; 
+			}
 
 			// Store token for mobile compatibility
 			if (token) {
@@ -297,9 +309,13 @@ export const useAuthStore = create((set, get) => ({
 		newSocket.io.on("reconnect", async (attempt) => {
 			console.log(`🔄 Socket reconnected after ${attempt} attempts`);
 			// Re-register user and fetch data upon successful reconnect
-            if (get().authUser) { // Check if user is still logged in client-side
-                newSocket.emit("register-user", get().authUser.id); // Re-register
-                await get().checkAuth(); // Re-check auth and fetch friend data
+            const currentUser = get().authUser;
+            if (currentUser) { // Check if user is still logged in client-side
+                newSocket.emit("register-user", currentUser.id); // Re-register
+                // Don't await checkAuth to avoid blocking the reconnection
+                setTimeout(() => {
+                    get().checkAuth(); // Re-check auth and fetch friend data
+                }, 100);
             }
 		});
         newSocket.io.on("reconnect_attempt", (attempt) => {

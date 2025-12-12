@@ -122,9 +122,9 @@ export const getUserByUsername = async (req, res) => {
 				city: true,
 				isOnline: true,
 				lastSeen: true,
-				friends: true,
-				friendRequestsSent: true,
-				friendRequestsReceived: true,
+				// friends: true, // Removed - not supported in SQLite
+				// friendRequestsSent: true, // Removed - not supported in SQLite
+				// friendRequestsReceived: true, // Removed - not supported in SQLite
 				createdAt: true,
 				updatedAt: true
 			}

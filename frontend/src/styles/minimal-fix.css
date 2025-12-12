@@ -1,0 +1,11 @@
+/* 🎯 MINIMAL FIX - Just fix the white space issue */
+
+/* Fix white space at bottom during scroll */
+html, body {
+  background-color: hsl(var(--b1));
+}
+
+/* Ensure consistent background */
+#root {
+  background-color: hsl(var(--b1));
+}

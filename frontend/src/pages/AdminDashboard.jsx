@@ -3,10 +3,16 @@ import { toast } from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "../store/useAuthStore";
 import { 
-	Users, UserCheck, AlertTriangle, Shield, TrendingUp,
+	Users, AlertTriangle, Shield, TrendingUp,
 	BadgeCheck, FileText, Activity, Brain
 } from "lucide-react";
 import "../styles/admin-custom.css";
+import "../styles/admin-golden-animations.css";
+import "../styles/admin-particles-animation.css";
+import "../styles/admin-performance-optimized.css";
+import "../styles/admin-smooth-gradients.css";
+import "../styles/admin-enhanced-background.css";
+import GoldenParticles from "../components/admin/GoldenParticles";
 
 // Import tab components
 import DashboardOverview from "../components/admin/DashboardOverview";
@@ -51,6 +57,8 @@ const AdminDashboard = () => {
 		{ id: "notifications", label: "Notifications", icon: FileText },
 	];
 
+
+
 	// Fetch Data
 	useEffect(() => {
 		fetchStats();
@@ -64,7 +72,7 @@ const AdminDashboard = () => {
 	useEffect(() => {
 		if (!socket) return;
 		
-		const handleUserOnline = ({ userId, isOnline }) => {
+		const handleUserOnline = ({ userId }) => {
 			console.log(`📡 Admin: User ${userId} is now online`);
 			setUsers(prevUsers => 
 				prevUsers.map(user => 
@@ -78,7 +86,7 @@ const AdminDashboard = () => {
 			} : null);
 		};
 		
-		const handleUserOffline = ({ userId, isOnline, lastSeen }) => {
+		const handleUserOffline = ({ userId, lastSeen }) => {
 			console.log(`📡 Admin: User ${userId} is now offline`);
 			setUsers(prevUsers => 
 				prevUsers.map(user => 
@@ -119,14 +127,14 @@ const AdminDashboard = () => {
 		};
 	}, [socket]);
 	
-	// Periodic refresh to ensure accuracy (every 30 seconds, only when server is available)
+	// Periodic refresh to ensure accuracy (every 2 minutes to reduce disruption)
 	useEffect(() => {
 		const interval = setInterval(() => {
-			// Only refresh if we're not already in an error state
+			// Only refresh if we're not already in an error state and user is on relevant tabs
 			if ((activeTab === "users" || activeTab === "dashboard") && !loadingUsers) {
 				fetchUsers(true); // Force refresh with cache bypass
 			}
-		}, 30000); // Every 30 seconds instead of 10
+		}, 120000); // Every 2 minutes instead of 30 seconds
 		
 		return () => clearInterval(interval);
 	}, [activeTab, loadingUsers]);
@@ -154,12 +162,15 @@ const AdminDashboard = () => {
 			// Add timestamp to bypass cache if force refresh
 			const url = forceRefresh ? `/admin/users?t=${Date.now()}` : "/admin/users";
 			const res = await axiosInstance.get(url);
-			setUsers(Array.isArray(res.data) ? res.data : []);
-			console.log(`Fetched ${res.data?.length || 0} users${forceRefresh ? ' (force refresh)' : ''}`);
+			const userData = Array.isArray(res.data) ? res.data : [];
+			setUsers(userData);
+			console.log(`Fetched ${userData.length} users${forceRefresh ? ' (force refresh)' : ''}`);
 		} catch (err) {
 			console.error("Error fetching users:", err.response?.data || err.message);
 			if (err.response?.status === 403) {
 				toast.error("Access denied. Admin privileges required.");
+			} else if (err.response?.status === 500) {
+				toast.error("Server error. Please try again later.");
 			} else {
 				toast.error(err.response?.data?.error || "Failed to load users");
 			}
@@ -510,14 +521,53 @@ const AdminDashboard = () => {
 	};
 
 	return (
-		<div className="min-h-screen pt-14 xs:pt-16 sm:pt-18 md:pt-20 px-2 xs:px-3 sm:px-4 lg:px-6 bg-gradient-to-br from-base-200 via-base-300 to-base-200 pb-16 xs:pb-18 sm:pb-20 md:pb-10">
-			<div className="max-w-7xl mx-auto">
+		<div className="min-h-screen pt-14 xs:pt-16 sm:pt-18 md:pt-20 px-2 xs:px-3 sm:px-4 lg:px-6 bg-gradient-to-br from-base-200 via-base-300 to-base-200 pb-16 xs:pb-18 sm:pb-20 md:pb-10 relative admin-performance-mode">
+			{/* Enhanced Background Animation */}
+			<div className="admin-enhanced-background">
+				{/* Floating Geometric Shapes */}
+				<div className="admin-floating-shapes">
+					<div className="admin-shape admin-shape-1"></div>
+					<div className="admin-shape admin-shape-2"></div>
+					<div className="admin-shape admin-shape-3"></div>
+					<div className="admin-shape admin-shape-4"></div>
+				</div>
+				
+				{/* Animated Grid Overlay */}
+				<div className="admin-grid-overlay"></div>
+				
+				{/* Status Connection Lines */}
+				<div className="admin-status-lines">
+					<div className="status-line status-line-1 status-healthy"></div>
+					<div className="status-line status-line-2 status-warning"></div>
+					<div className="status-line status-line-3 status-info"></div>
+					<div className="status-line status-line-4 status-critical"></div>
+					
+					{/* Vertical Lines */}
+					<div className="vertical-status-line vertical-line-1 status-healthy"></div>
+					<div className="vertical-status-line vertical-line-2 status-warning"></div>
+					<div className="vertical-status-line vertical-line-3 status-info"></div>
+					<div className="vertical-status-line vertical-line-4 status-critical"></div>
+				</div>
+				
+				{/* Status Nodes */}
+				<div className="status-nodes">
+					<div className="status-node node-backend status-healthy" title="Backend - Healthy"></div>
+					<div className="status-node node-frontend status-info" title="Frontend - Info"></div>
+					<div className="status-node node-database status-warning" title="Database - Warning"></div>
+					<div className="status-node node-websocket status-critical" title="WebSocket - Critical"></div>
+				</div>
+			</div>
+			
+			{/* Golden Particles Background */}
+			<GoldenParticles particleCount={8} intensity="minimal" />
+			
+			<div className="max-w-7xl mx-auto relative z-10">
 				{/* Header */}
 				<div className="mb-6 sm:mb-8">
-					<h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2 bg-gradient-to-r from-base-content via-warning to-base-content bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]">
+					<h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2 admin-panel-gradient-wave">
 						Admin Panel
 					</h1>
-					<p className="text-sm sm:text-base text-base-content/70">
+					<p className="text-sm sm:text-base text-base-content opacity-80">
 						Manage users, content, and platform settings
 					</p>
 				</div>
@@ -546,7 +596,7 @@ const AdminDashboard = () => {
 				</div>
 
 				{/* Tab Content */}
-				<div className="animate-fadeIn">
+				<div className="animate-fadeIn relative">
 					{renderActiveTab()}
 				</div>
 			</div>
