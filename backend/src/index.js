@@ -10,29 +10,76 @@ import process from 'process';
 // Import modules (fallback to basic if production modules fail)
 let prisma, rateLimiters, errorHandler, securityMiddleware;
 
-try {
-  // Use production DB only in production environment
-  if (process.env.NODE_ENV === 'production') {
-    try {
-      const dbModule = await import('./lib/db.production.js');
-      prisma = dbModule.prisma;
-      console.log('✅ Production database loaded');
-    } catch (prodError) {
-      console.log('⚠️ Production database failed, using simple fallback...');
-      const dbModule = await import('./lib/db.simple.js');
-      prisma = dbModule.prisma;
-      console.log('✅ Simple database loaded');
+// Database initialization with multiple fallbacks
+async function initializeDatabase() {
+  try {
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        const dbModule = await import('./lib/db.production.js');
+        prisma = dbModule.prisma;
+        
+        // Test connection without crashing
+        try {
+          await prisma.$connect();
+          console.log('✅ Production database connected');
+          return;
+        } catch (connectError) {
+          console.log('⚠️ Production database connection failed:', connectError.message);
+          throw connectError;
+        }
+      } catch (prodError) {
+        console.log('⚠️ Production database module failed, using simple fallback...');
+      }
     }
-  } else {
-    const dbModule = await import('./lib/db.js');
+    
+    // Fallback to simple database
+    const dbModule = await import('./lib/db.simple.js');
     prisma = dbModule.prisma;
-    console.log('✅ Development database loaded');
+    
+    try {
+      await prisma.$connect();
+      console.log('✅ Simple database connected');
+    } catch (simpleError) {
+      console.log('⚠️ Simple database connection failed:', simpleError.message);
+      // Create a mock prisma for graceful degradation
+      prisma = createMockPrisma();
+      console.log('⚠️ Using mock database - limited functionality');
+    }
+    
+  } catch (error) {
+    console.log('⚠️ All database options failed, using mock database');
+    prisma = createMockPrisma();
   }
-} catch (error) {
-  console.log('⚠️ Database not available, using simple fallback...');
-  const dbModule = await import('./lib/db.simple.js');
-  prisma = dbModule.prisma;
 }
+
+// Mock Prisma for graceful degradation
+function createMockPrisma() {
+  return {
+    $connect: async () => {},
+    $disconnect: async () => {},
+    user: {
+      findUnique: async () => null,
+      findMany: async () => [],
+      create: async () => ({ id: 'mock' }),
+      update: async () => ({ id: 'mock' }),
+      delete: async () => ({ id: 'mock' }),
+    },
+    message: {
+      findMany: async () => [],
+      create: async () => ({ id: 'mock' }),
+      update: async () => ({ id: 'mock' }),
+      delete: async () => ({ id: 'mock' }),
+    },
+    friendRequest: {
+      findMany: async () => [],
+      create: async () => ({ id: 'mock' }),
+      update: async () => ({ id: 'mock' }),
+      delete: async () => ({ id: 'mock' }),
+    }
+  };
+}
+
+await initializeDatabase();
 
 try {
   // Use simple rate limiter for production to avoid Redis issues

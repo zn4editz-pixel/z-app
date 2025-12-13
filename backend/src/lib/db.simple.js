@@ -11,10 +11,10 @@ const prisma = new PrismaClient({
   },
 });
 
-// Connection pool optimization
+// Connection pool optimization - don't crash on failure
 prisma.$connect().catch(error => {
-  console.error('❌ Database connection failed:', error);
-  process.exit(1);
+  console.error('❌ Database connection failed:', error.message);
+  console.log('⚠️ App will continue in limited mode');
 });
 
 // Database connection monitoring
