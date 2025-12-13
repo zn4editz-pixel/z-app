@@ -5,6 +5,7 @@ import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { cacheFriends, getCachedFriends } from "../utils/cache.js";
 import { getId, includesId, filterOutId } from "../utils/idHelper.js";
+import { useAuthStore } from "./useAuthStore.js";
 
 export const useFriendStore = create((set, get) => ({
     friends: [],
