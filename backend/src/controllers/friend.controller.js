@@ -265,18 +265,58 @@ export const getFriends = async (req, res) => {
 			}
 		});
 
-		// Extract friends (the other person in each request)
-		const friends = friendRequests.map(request => {
-			return request.senderId === userId ? request.receiver : request.sender;
-		});
+		// Extract friends (the other person in each request) and get their last messages
+		const friendsWithLastMessage = await Promise.all(
+			friendRequests.map(async (request) => {
+				const friend = request.senderId === userId ? request.receiver : request.sender;
+				
+				// Get the last message between current user and this friend
+				const lastMessage = await prisma.message.findFirst({
+					where: {
+						OR: [
+							{ senderId: userId, receiverId: friend.id },
+							{ senderId: friend.id, receiverId: userId }
+						],
+						isDeleted: false
+					},
+					orderBy: { createdAt: 'desc' },
+					select: {
+						id: true,
+						text: true,
+						image: true,
+						voice: true,
+						voiceDuration: true,
+						senderId: true,
+						receiverId: true,
+						createdAt: true,
+						status: true,
+						deliveredAt: true,
+						readAt: true,
+						reactions: true,
+						isCallLog: true,
+						callType: true,
+						callStatus: true,
+						callDuration: true
+					}
+				});
+
+				return {
+					...friend,
+					lastMessage: lastMessage ? {
+						...lastMessage,
+						timestamp: lastMessage.createdAt
+					} : null
+				};
+			})
+		);
 
 		// Cache result
 		friendsCache.set(userId, {
-			data: friends,
+			data: friendsWithLastMessage,
 			timestamp: Date.now()
 		});
 
-		res.status(200).json(friends);
+		res.status(200).json(friendsWithLastMessage);
 	} catch (error) {
 		console.error("Get friends error:", error);
 		res.status(500).json({ message: "Failed to get friends." });

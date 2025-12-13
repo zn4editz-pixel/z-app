@@ -26,17 +26,47 @@ const Sidebar = () => {
   const [query, setQuery] = useState("");
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
 
-  // ✅ FIXED: Enhanced message preview with proper status sync
+  // ✅ ENHANCED: Smart message preview with better logic
   const getMessagePreview = (user, unreadCount) => {
     const lastMsg = user.lastMessage;
     
+    // Debug logging
+    if (import.meta.env.DEV) {
+      console.log(`📋 Message preview for ${user.nickname || user.username}:`, {
+        lastMsg,
+        unreadCount,
+        hasText: !!lastMsg?.text,
+        hasImage: !!lastMsg?.image,
+        hasVoice: !!lastMsg?.voice
+      });
+    }
+    
     // No messages yet - show "Tap to chat"
-    if (!lastMsg || (!lastMsg.text && !lastMsg.image && !lastMsg.voice)) {
+    if (!lastMsg || (!lastMsg.text && !lastMsg.image && !lastMsg.voice && !lastMsg.isCallLog)) {
       return { text: "Tap to chat", icon: null, bold: false, muted: true };
     }
 
     const isFromMe = lastMsg.senderId === authUser?.id;
     const isReceiverOnline = onlineUsers.includes(user.id);
+    
+    // Handle call logs
+    if (lastMsg.isCallLog) {
+      const callIcon = lastMsg.callType === 'video' ? '📹' : '📞';
+      let callText = '';
+      
+      if (lastMsg.callStatus === 'completed') {
+        const duration = lastMsg.callDuration ? ` (${Math.floor(lastMsg.callDuration / 60)}:${String(lastMsg.callDuration % 60).padStart(2, '0')})` : '';
+        callText = isFromMe ? `You called${duration}` : `Called you${duration}`;
+      } else if (lastMsg.callStatus === 'missed') {
+        callText = isFromMe ? 'You missed a call' : 'Missed call';
+      } else if (lastMsg.callStatus === 'declined') {
+        callText = isFromMe ? 'Call declined' : 'You declined a call';
+      } else {
+        callText = isFromMe ? 'You called' : 'Called you';
+      }
+      
+      return { text: callText, icon: callIcon, bold: unreadCount > 0, muted: false };
+    }
     
     // Handle reactions
     if (lastMsg.reactions && Array.isArray(lastMsg.reactions) && lastMsg.reactions.length > 0) {

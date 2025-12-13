@@ -366,21 +366,35 @@ export const useFriendStore = create((set, get) => ({
 
     // Update lastMessage for a friend (called when message is sent/received)
     updateFriendLastMessage: (friendId, messageData) => {
+        if (import.meta.env.DEV) console.log('📝 Updating last message for friend:', friendId, messageData);
+        
         set((state) => {
             const updatedFriends = state.friends.map(friend => {
                 if (friend.id === friendId) {
-                    return {
+                    const updatedFriend = {
                         ...friend,
                         lastMessage: {
+                            id: messageData.id,
                             text: messageData.text || null,
                             image: messageData.image || null,
                             voice: messageData.voice || null,
+                            voiceDuration: messageData.voiceDuration || null,
                             senderId: messageData.senderId,
                             receiverId: messageData.receiverId,
-                            timestamp: messageData.createdAt || new Date().toISOString(),
-                            reactions: messageData.reactions || []
+                            timestamp: messageData.createdAt || messageData.timestamp || new Date().toISOString(),
+                            reactions: messageData.reactions || [],
+                            status: messageData.status || 'sent',
+                            deliveredAt: messageData.deliveredAt || null,
+                            readAt: messageData.readAt || null,
+                            isCallLog: messageData.isCallLog || false,
+                            callType: messageData.callType || null,
+                            callStatus: messageData.callStatus || null,
+                            callDuration: messageData.callDuration || null
                         }
                     };
+                    
+                    if (import.meta.env.DEV) console.log('✅ Updated friend with last message:', updatedFriend);
+                    return updatedFriend;
                 }
                 return friend;
             });
