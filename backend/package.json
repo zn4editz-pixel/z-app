@@ -9,8 +9,8 @@
   },
   "scripts": {
     "dev": "nodemon src/index.js",
-    "start": "node scripts/setup-schema.js && npx prisma generate && node src/index.js",
-    "build": "npm install && node scripts/setup-schema.js && npx prisma generate",
+    "start": "node scripts/runtime-schema.js && npx prisma generate && node src/index.js",
+    "build": "npm install && node scripts/setup-schema.js --build && npx prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",

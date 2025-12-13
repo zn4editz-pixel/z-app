@@ -1,0 +1,202 @@
+// BUILD-SAFE PRISMA SCHEMA - DUMMY DATABASE FOR GENERATION ONLY
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://dummy:dummy@localhost:5432/dummy"
+}
+
+// ─── User Model (Build Safe) ───────────────────────────────────────────
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Basic Info
+  fullName  String
+  email     String   @unique
+  username  String   @unique
+  nickname  String?
+  bio       String?
+  password  String
+  profilePic String?
+
+  // Profile Status
+  hasCompletedProfile Boolean @default(false)
+  isVerified         Boolean @default(false)
+  isBlocked          Boolean @default(false)
+  isSuspended        Boolean @default(false)
+
+  // Location Data
+  country     String?
+  countryCode String?
+  city        String?
+  region      String?
+  timezone    String?
+  isVPN       Boolean @default(false)
+  lastIP      String?
+
+  // Online Status
+  isOnline Boolean   @default(false)
+  lastSeen DateTime?
+
+  // Verification Request
+  verificationStatus    String   @default("none") // none, pending, approved, rejected
+  verificationReason    String?
+  verificationIdProof   String?
+  verificationRequestedAt DateTime?
+  verificationReviewedAt  DateTime?
+  verificationReviewedBy  String?
+  verificationAdminNote   String?
+
+  // Suspension
+  suspensionReason    String?
+  suspensionStartTime DateTime?
+  suspensionEndTime   DateTime?
+  suspensionDuration  Int?
+
+  // Password Reset
+  resetPasswordToken  String?
+  resetPasswordExpire DateTime?
+
+  // Email Change
+  emailChangeOTP        String?
+  emailChangeOTPExpires DateTime?
+  pendingEmail          String?
+
+  // Username Change Tracking
+  lastUsernameChange       DateTime?
+  usernameChangesThisWeek  Int      @default(0)
+  weekStartDate            DateTime?
+
+  // Password Change
+  passwordChangeOTP        String?
+  passwordChangeOTPExpires DateTime?
+
+  // Relations
+  sentMessages     Message[]       @relation("SentMessages")
+  receivedMessages Message[]       @relation("ReceivedMessages")
+  sentReports      Report[]        @relation("ReportSender")
+  receivedReports  Report[]        @relation("ReportedUser")
+  sentFriendRequests     FriendRequest[] @relation("FriendRequestSender")
+  receivedFriendRequests FriendRequest[] @relation("FriendRequestReceiver")
+
+  // Indexes for performance
+  @@index([email])
+  @@index([username])
+  @@index([isOnline])
+  @@index([createdAt])
+}
+
+// ─── Message Model (Build Safe) ────────────────────────────────────────
+model Message {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  text      String?
+  image     String?
+  voice     String?
+  voiceDuration Int?
+
+  senderId   String
+  receiverId String
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  // Message status
+  status        String   @default("sent") // sent, delivered, read
+  deliveredAt   DateTime?
+  readAt        DateTime?
+
+  // Call logs
+  isCallLog      Boolean @default(false)
+  callType       String? // voice, video
+  callDuration   Int?
+  callStatus     String? // completed, missed, rejected
+  callInitiator  String?
+
+  // Reply To
+  replyToId String?
+  isDeleted Boolean @default(false)
+  deletedAt DateTime?
+  
+  // Message Reactions (JSON field for PostgreSQL)
+  reactions Json? @default("[]")
+
+  // Performance indexes
+  @@index([senderId, receiverId])
+  @@index([createdAt])
+  @@index([status])
+  @@index([isCallLog])
+}
+
+// ─── Friend Request Model ─────────────────────────────────────────────
+model FriendRequest {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  senderId   String
+  receiverId String
+  status     String   @default("pending") // pending, accepted, rejected
+
+  sender   User @relation("FriendRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("FriendRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+  @@index([status])
+}
+
+// ─── Report Model (Build Safe) ─────────────────────────────────────────
+model Report {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reporterId String
+  reportedUserId String
+  reason     String
+  description String?
+  status     String   @default("pending") // pending, reviewed, resolved, dismissed
+  screenshot String?
+  
+  // AI Analysis
+  isAIDetected Boolean @default(false)
+  aiCategory   String?
+  aiConfidence Float?
+  severity     String?
+  category     String?
+  actionTaken  String?
+  
+  reviewedBy String?
+  reviewedAt DateTime?
+  adminNotes String?
+
+  reporter     User @relation("ReportSender", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser User @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([reporterId])
+  @@index([reportedUserId])
+}
+
+// ─── Admin Notification Model ─────────────────────────────────────────
+model AdminNotification {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  type      String   // report, verification, user_action
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  link      String?
+
+  @@index([type])
+  @@index([isRead])
+  @@index([createdAt])
+}

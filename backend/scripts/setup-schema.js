@@ -8,11 +8,13 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const isProduction = process.env.NODE_ENV === 'production' || process.env.DATABASE_URL;
+const isProduction = process.env.NODE_ENV === 'production' || process.env.DATABASE_URL || process.env.RENDER;
+const isBuild = process.argv.includes('--build') || process.env.RENDER_BUILD || !process.env.DATABASE_URL;
 
 const schemaPath = path.join(__dirname, '../prisma/schema.prisma');
 const productionSchemaPath = path.join(__dirname, '../prisma/schema.production.prisma');
 const developmentSchemaPath = path.join(__dirname, '../prisma/schema.development.prisma');
+const buildSchemaPath = path.join(__dirname, '../prisma/schema.build.prisma');
 
 // Backup current schema as development schema if it doesn't exist
 if (!fs.existsSync(developmentSchemaPath) && fs.existsSync(schemaPath)) {
@@ -21,7 +23,17 @@ if (!fs.existsSync(developmentSchemaPath) && fs.existsSync(schemaPath)) {
 }
 
 try {
-  if (isProduction) {
+  if (isBuild && isProduction) {
+    // Use build schema (dummy database for Prisma generation only)
+    if (fs.existsSync(buildSchemaPath)) {
+      fs.copyFileSync(buildSchemaPath, schemaPath);
+      console.log('✅ Using build schema (dummy database for generation)');
+      console.log('🔧 Build mode - no database connection required');
+    } else {
+      console.error('❌ Build schema not found!');
+      process.exit(1);
+    }
+  } else if (isProduction) {
     // Use production schema (PostgreSQL)
     if (fs.existsSync(productionSchemaPath)) {
       fs.copyFileSync(productionSchemaPath, schemaPath);
