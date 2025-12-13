@@ -595,24 +595,25 @@ export const useChatStore = create((set, get) => ({
                     .then(res => {
                         console.log('✅ Reaction persisted to database via API');
                         const currentMessages = get().messages;
-                    const serverUpdatedMessages = currentMessages.map(msg => 
-                        msg.id === messageId ? { ...msg, reactions: res.data.reactions } : msg
-                    );
-                    set({ messages: serverUpdatedMessages });
-                    
-                    if (selectedUser) {
-                        const chatId = `${selectedUser.id}`;
-                        cacheMessagesDB(chatId, serverUpdatedMessages);
-                    }
-                })
-                .catch(error => {
-                    console.error('❌ Failed to persist reaction:', error);
-                    const revertedMessages = messages.map(msg => 
-                        msg.id === messageId ? { ...msg, reactions: msg.reactions } : msg
-                    );
-                    set({ messages: revertedMessages });
-                    toast.error("Failed to add reaction");
-                });
+                        const serverUpdatedMessages = currentMessages.map(msg => 
+                            msg.id === messageId ? { ...msg, reactions: res.data.reactions } : msg
+                        );
+                        set({ messages: serverUpdatedMessages });
+                        
+                        if (selectedUser) {
+                            const chatId = `${selectedUser.id}`;
+                            cacheMessagesDB(chatId, serverUpdatedMessages);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Failed to persist reaction:', error);
+                        const revertedMessages = messages.map(msg => 
+                            msg.id === messageId ? { ...msg, reactions: msg.reactions } : msg
+                        );
+                        set({ messages: revertedMessages });
+                        toast.error("Failed to add reaction");
+                    });
+            }
                 
         } catch (error) {
             console.error('❌ Add reaction error:', error);
@@ -658,24 +659,25 @@ export const useChatStore = create((set, get) => ({
                     .then(res => {
                         console.log('✅ Reaction removal persisted to database via API');
                         const currentMessages = get().messages;
-                    const serverUpdatedMessages = currentMessages.map(msg => 
-                        msg.id === messageId ? { ...msg, reactions: res.data.reactions } : msg
-                    );
-                    set({ messages: serverUpdatedMessages });
-                    
-                    if (selectedUser) {
-                        const chatId = `${selectedUser.id}`;
-                        cacheMessagesDB(chatId, serverUpdatedMessages);
-                    }
-                })
-                .catch(error => {
-                    console.error('❌ Failed to persist reaction removal:', error);
-                    const revertedMessages = messages.map(msg => 
-                        msg.id === messageId ? { ...msg, reactions: msg.reactions } : msg
-                    );
-                    set({ messages: revertedMessages });
-                    toast.error("Failed to remove reaction");
-                });
+                        const serverUpdatedMessages = currentMessages.map(msg => 
+                            msg.id === messageId ? { ...msg, reactions: res.data.reactions } : msg
+                        );
+                        set({ messages: serverUpdatedMessages });
+                        
+                        if (selectedUser) {
+                            const chatId = `${selectedUser.id}`;
+                            cacheMessagesDB(chatId, serverUpdatedMessages);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Failed to persist reaction removal:', error);
+                        const revertedMessages = messages.map(msg => 
+                            msg.id === messageId ? { ...msg, reactions: msg.reactions } : msg
+                        );
+                        set({ messages: revertedMessages });
+                        toast.error("Failed to remove reaction");
+                    });
+            }
                 
         } catch (error) {
             console.error('❌ Remove reaction error:', error);
