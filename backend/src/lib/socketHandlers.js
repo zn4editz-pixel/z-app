@@ -209,10 +209,45 @@ export function initializeSocketHandlers(io) {
 			userSocketMap[socket.userId] = socket.id;
 			console.log(`👤 User ${socket.userId} registered with socket ${socket.id}`);
 			
-			// Emit online users
-			const onlineUserIds = Object.keys(userSocketMap);
-			io.emit("getOnlineUsers", onlineUserIds);
+			// Update user's online status in database
+			prisma.user.update({ 
+				where: { id: socket.userId }, 
+				data: { isOnline: true } 
+			})
+				.then(user => {
+					if (user) {
+						console.log(`✅ User ${socket.userId} marked as online in database`);
+						// Emit online users to ALL clients
+						const onlineUserIds = Object.keys(userSocketMap);
+						console.log(`📡 Broadcasting online users: ${onlineUserIds.length} users online`);
+						io.emit("getOnlineUsers", onlineUserIds);
+					}
+				})
+				.catch(err => console.error('Failed to update online status:', err));
 		}
+
+		// Handle manual user registration (for compatibility)
+		socket.on("register-user", (userId) => {
+			if (userId) {
+				userSocketMap[userId] = socket.id;
+				socket.userId = userId;
+				console.log(`✅ Manually registered user ${userId} → socket ${socket.id}`);
+				
+				// Update user's online status in database
+				prisma.user.update({
+					where: { id: userId },
+					data: { isOnline: true }
+				})
+					.then(user => {
+						if (user) {
+							console.log(`✅ User ${userId} marked as online`);
+							const onlineUserIds = Object.keys(userSocketMap);
+							io.emit("getOnlineUsers", onlineUserIds);
+						}
+					})
+					.catch(err => console.error('Failed to update online status:', err));
+			}
+		});
 
 		// === STRANGER CHAT EVENTS ===
 		socket.on("stranger:joinQueue", (payload) => {
@@ -295,11 +330,47 @@ export function initializeSocketHandlers(io) {
 		});
 
 		// === PRIVATE CHAT EVENTS ===
-		socket.on("sendMessage", (messageData) => {
-			const receiverSocketId = getReceiverSocketId(messageData.receiverId);
-			if (receiverSocketId) {
-				console.log(`📨 Private message from ${socket.userId} to ${messageData.receiverId}`);
-				io.to(receiverSocketId).emit("newMessage", messageData);
+		// ⚡ ULTRA-FAST MESSAGE SENDING via Socket.IO (REAL-TIME)
+		socket.on("sendMessage", async ({ receiverId, text, image, voice, voiceDuration, replyTo, tempId }) => {
+			try {
+				const senderId = socket.userId;
+				console.log(`📤 INSTANT message from ${senderId} to ${receiverId}`);
+				
+				if (!senderId || !receiverId) {
+					throw new Error('Sender or receiver ID missing');
+				}
+				
+				// ⚡ OPTIMIZATION: Create message WITHOUT includes (10x faster!)
+				const newMessage = await prisma.message.create({
+					data: {
+						senderId: senderId,
+						receiverId: receiverId,
+						text: text || null,
+						image: image || null,
+						voice: voice || null,
+						voiceDuration: voiceDuration || null,
+						status: 'sent' // ✅ Set status immediately
+					}
+				});
+				
+				console.log(`⚡ Message saved in database: ${newMessage.id}`);
+				
+				// ⚡ OPTIMIZATION: Send to sockets IMMEDIATELY (don't wait for cache clear)
+				const receiverSocketId = getReceiverSocketId(receiverId);
+				if (receiverSocketId) {
+					io.to(receiverSocketId).emit("newMessage", newMessage);
+					console.log(`⚡ INSTANT: Sent to receiver ${receiverId} (socket: ${receiverSocketId})`);
+				} else {
+					console.log(`⚠️ Receiver ${receiverId} not online - message will be delivered when they connect`);
+				}
+				
+				// ⚡ INSTANT: Send back to sender (replace optimistic message)
+				socket.emit("newMessage", newMessage);
+				console.log(`⚡ INSTANT: Confirmed to sender ${senderId}`);
+				
+			} catch (error) {
+				console.error('❌ Socket sendMessage error:', error);
+				socket.emit("messageError", { error: error.message, tempId });
 			}
 		});
 
@@ -617,20 +688,37 @@ export function initializeSocketHandlers(io) {
 		// Handle disconnect
 		socket.on("disconnect", (reason) => {
 			console.log(`🔌 Socket disconnected: ${socket.id}, reason: ${reason}`);
-			
-			// Clean up private chat
-			if (socket.userId) {
-				delete userSocketMap[socket.userId];
-				
-				// Emit updated online users
-				const onlineUserIds = Object.keys(userSocketMap);
-				io.emit("getOnlineUsers", onlineUserIds);
-			}
-			
+			const disconnectedUserId = socket.userId || getUserIdFromSocketId(socket.id);
+
 			// Clean up stranger chat
 			const partnerSocket = cleanupMatch(socket, io);
 			if (partnerSocket) {
 				partnerSocket.emit("stranger:disconnected");
+			}
+
+			// Clean up private chat
+			if (disconnectedUserId) {
+				console.log(`❌ User ${disconnectedUserId} disconnected fully.`);
+				delete userSocketMap[disconnectedUserId];
+				
+				// Update user's online status and last seen in database
+				prisma.user.update({
+					where: { id: disconnectedUserId },
+					data: { 
+						isOnline: false,
+						lastSeen: new Date()
+					}
+				})
+					.then(user => {
+						if (user) {
+							console.log(`✅ User ${disconnectedUserId} marked as offline`);
+							// Emit updated online users to ALL clients
+							const onlineUserIds = Object.keys(userSocketMap);
+							console.log(`📡 Broadcasting online users: ${onlineUserIds.length} users online`);
+							io.emit("getOnlineUsers", onlineUserIds);
+						}
+					})
+					.catch(err => console.error('Failed to update offline status:', err));
 			}
 		});
 	});
