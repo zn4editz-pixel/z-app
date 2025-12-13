@@ -147,24 +147,36 @@ const HomePage = () => {
   }, [authUser, friends.length, selectedUser, restoreSelectedUser]);
 
   useEffect(() => {
-    if (!socket || !socket.connected) return;
+    if (!socket) return;
 
-    // ✅ CRITICAL: Wait for socket to be fully connected before subscribing
+    // ✅ CRITICAL: Initialize socket listeners with proper timing and registration
     const initializeSocketListeners = () => {
       const { subscribeToMessages, subscribeToReactions } = useChatStore.getState();
       console.log('🔌 HomePage: Initializing socket listeners for realtime updates');
       console.log('🔌 Socket connected status:', socket.connected);
-      subscribeToMessages();
-      subscribeToReactions();
+      console.log('🔌 Socket ID:', socket.id);
+      
+      // Ensure user is registered before subscribing to events
+      if (authUser?.id && socket.connected) {
+        console.log(`📝 Ensuring user ${authUser.id} is registered with socket`);
+        socket.emit("register-user", authUser.id);
+        
+        // Add small delay to ensure registration completes
+        setTimeout(() => {
+          subscribeToMessages();
+          subscribeToReactions();
+        }, 200);
+      }
     };
 
     if (socket.connected) {
       // Socket is already connected, initialize immediately
+      console.log('🔌 Socket already connected, initializing listeners');
       initializeSocketListeners();
     } else {
       // Wait for socket to connect
       const handleConnect = () => {
-        console.log('🔌 Socket connected, initializing listeners');
+        console.log('🔌 Socket connected event received, initializing listeners');
         initializeSocketListeners();
       };
       
@@ -207,7 +219,7 @@ const HomePage = () => {
     return () => {
       socket.off("private:incoming-call", handleIncomingCall);
     };
-  }, [socket]);
+  }, [socket, authUser]);
 
   const handleStartCall = (callType) => {
     if (!selectedUser) {

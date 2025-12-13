@@ -295,6 +295,12 @@ export const useAuthStore = create((set, get) => ({
 		newSocket.on("connect", () => {
 			console.log("✅ Socket connected:", newSocket.id);
 			
+			// 🔥 CRITICAL: Register user immediately on connection
+			if (authUser?.id) {
+				console.log(`📝 Registering user ${authUser.id} with socket ${newSocket.id}`);
+				newSocket.emit("register-user", authUser.id);
+			}
+			
 			// 🔥 REAL-TIME: Subscribe to friend events when socket connects
 			useFriendStore.getState().subscribeToFriendEvents(newSocket);
 		});

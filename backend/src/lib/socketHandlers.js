@@ -232,6 +232,7 @@ export function initializeSocketHandlers(io) {
 				userSocketMap[userId] = socket.id;
 				socket.userId = userId;
 				console.log(`✅ Manually registered user ${userId} → socket ${socket.id}`);
+				console.log(`📊 Current userSocketMap:`, Object.keys(userSocketMap));
 				
 				// Update user's online status in database
 				prisma.user.update({
@@ -240,8 +241,9 @@ export function initializeSocketHandlers(io) {
 				})
 					.then(user => {
 						if (user) {
-							console.log(`✅ User ${userId} marked as online`);
+							console.log(`✅ User ${userId} marked as online in database`);
 							const onlineUserIds = Object.keys(userSocketMap);
+							console.log(`📡 Broadcasting online users: ${onlineUserIds.length} users`);
 							io.emit("getOnlineUsers", onlineUserIds);
 						}
 					})
@@ -334,9 +336,14 @@ export function initializeSocketHandlers(io) {
 		socket.on("sendMessage", async ({ receiverId, text, image, voice, voiceDuration, replyTo, tempId }) => {
 			try {
 				const senderId = socket.userId;
-				console.log(`📤 INSTANT message from ${senderId} to ${receiverId}`);
+				console.log(`📤 SOCKET MESSAGE RECEIVED:`);
+				console.log(`   From: ${senderId} (socket: ${socket.id})`);
+				console.log(`   To: ${receiverId}`);
+				console.log(`   Text: ${text?.substring(0, 50)}...`);
+				console.log(`   TempId: ${tempId}`);
 				
 				if (!senderId || !receiverId) {
+					console.error('❌ Missing sender or receiver ID:', { senderId, receiverId });
 					throw new Error('Sender or receiver ID missing');
 				}
 				
@@ -357,16 +364,20 @@ export function initializeSocketHandlers(io) {
 				
 				// ⚡ OPTIMIZATION: Send to sockets IMMEDIATELY (don't wait for cache clear)
 				const receiverSocketId = getReceiverSocketId(receiverId);
+				console.log(`📊 Looking for receiver ${receiverId} in userSocketMap...`);
+				console.log(`📊 Current userSocketMap:`, Object.keys(userSocketMap));
+				console.log(`📊 Receiver socket ID: ${receiverSocketId}`);
+				
 				if (receiverSocketId) {
 					io.to(receiverSocketId).emit("newMessage", newMessage);
-					console.log(`⚡ INSTANT: Sent to receiver ${receiverId} (socket: ${receiverSocketId})`);
+					console.log(`⚡ SUCCESS: Message sent to receiver ${receiverId} (socket: ${receiverSocketId})`);
 				} else {
-					console.log(`⚠️ Receiver ${receiverId} not online - message will be delivered when they connect`);
+					console.log(`⚠️ OFFLINE: Receiver ${receiverId} not online - message saved but not delivered`);
 				}
 				
 				// ⚡ INSTANT: Send back to sender (replace optimistic message)
 				socket.emit("newMessage", newMessage);
-				console.log(`⚡ INSTANT: Confirmed to sender ${senderId}`);
+				console.log(`⚡ SUCCESS: Message confirmed to sender ${senderId}`);
 				
 			} catch (error) {
 				console.error('❌ Socket sendMessage error:', error);

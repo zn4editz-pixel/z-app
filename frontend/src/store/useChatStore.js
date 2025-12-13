@@ -176,11 +176,15 @@ export const useChatStore = create((set, get) => ({
 
     subscribeToMessages: () => {
         const { socket } = useAuthStore.getState();
-        if (!socket || !socket.connected) {
-            console.warn('⚠️ Socket not available or not connected, skipping subscription');
+        if (!socket) {
+            console.warn('⚠️ Socket not available, skipping subscription');
             set({ socketConnected: false });
             return;
         }
+        
+        console.log('🔄 SUBSCRIBING TO MESSAGES:');
+        console.log(`   Socket connected: ${socket.connected}`);
+        console.log(`   Socket ID: ${socket.id}`);
         
         socket.removeAllListeners("newMessage");
         socket.removeAllListeners("messageDelivered");
@@ -204,6 +208,8 @@ export const useChatStore = create((set, get) => ({
         });
 
         const messageHandler = (newMessage) => {
+            console.log(`🔥 SOCKET EVENT: newMessage received!`, newMessage);
+            
             const { selectedUser, messages } = get();
             const { authUser } = useAuthStore.getState();
 
@@ -217,8 +223,12 @@ export const useChatStore = create((set, get) => ({
             const msgSenderId = newMessage.senderId?.id?.toString() || newMessage.senderId?.toString();
             const msgReceiverId = newMessage.receiverId?.id?.toString() || newMessage.receiverId?.toString();
 
-            console.log(`📨 REALTIME: New message received from ${msgSenderId} to ${msgReceiverId}:`, newMessage.text?.substring(0, 50));
-            console.log(`📨 Current chat: ${selectedUserId}, Auth user: ${authUserId}`);
+            console.log(`📨 REALTIME MESSAGE ANALYSIS:`);
+            console.log(`   Message ID: ${newMessage.id}`);
+            console.log(`   From: ${msgSenderId} → To: ${msgReceiverId}`);
+            console.log(`   Text: ${newMessage.text?.substring(0, 50)}...`);
+            console.log(`   Current chat: ${selectedUserId}`);
+            console.log(`   Auth user: ${authUserId}`);
             
             const isForCurrentChat = selectedUser && (
                 (msgSenderId === selectedUserId && msgReceiverId === authUserId) ||
@@ -319,7 +329,11 @@ export const useChatStore = create((set, get) => ({
         socket.on("messagesDelivered", messagesDeliveredHandler);
         socket.on("messagesRead", messagesReadHandler);
         
-        console.log('✅ Chat Store: Fresh message listeners attached');
+        console.log('✅ SOCKET LISTENERS ATTACHED:');
+        console.log('   - newMessage handler attached');
+        console.log('   - messageDelivered handler attached');
+        console.log('   - messagesDelivered handler attached');
+        console.log('   - messagesRead handler attached');
     },
 
     markMessagesAsRead: async (userId) => {
