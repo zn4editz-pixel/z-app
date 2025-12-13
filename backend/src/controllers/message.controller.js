@@ -12,7 +12,7 @@ export const getUsersForSidebar = async (req, res) => {
   try {
     const loggedInUserId = req.user.id;
     const now = Date.now();
-    
+
     // Check cache
     const cached = sidebarUsersCache.get(loggedInUserId);
     if (cached && (now - cached.timestamp) < SIDEBAR_CACHE_TTL) {
@@ -58,7 +58,7 @@ export const getUsersForSidebar = async (req, res) => {
         isVerified: true
       }
     });
-    
+
     // Cache result
     sidebarUsersCache.set(loggedInUserId, {
       data: friends,
@@ -76,9 +76,9 @@ export const getMessages = async (req, res) => {
   try {
     const { id: userToChatId } = req.params;
     const myId = req.user.id;
-    
+
     console.log(`📥 getMessages: Fetching messages between ${myId} and ${userToChatId}`);
-    
+
     const page = parseInt(req.query.page) || 0;
     const limit = parseInt(req.query.limit) || 50;
 
@@ -120,7 +120,7 @@ export const getMessages = async (req, res) => {
     const messagesWithParsedReactions = await Promise.all(
       messages.map(async (message) => {
         let replyTo = null;
-        
+
         // Fetch reply-to message if replyToId exists
         if (message.replyToId) {
           try {
@@ -143,7 +143,7 @@ export const getMessages = async (req, res) => {
 
         return {
           ...message,
-          reactions: message.reactions ? JSON.parse(message.reactions) : [],
+          reactions: typeof message.reactions === 'string' ? JSON.parse(message.reactions || "[]") : (message.reactions || []),
           replyTo
         };
       })
@@ -205,7 +205,7 @@ export const sendMessage = async (req, res) => {
 
     // Process uploads in parallel for speed
     const uploadPromises = [];
-    
+
     if (image) {
       uploadPromises.push(
         cloudinary.uploader.upload(image, {
@@ -262,9 +262,9 @@ export const sendMessage = async (req, res) => {
       where: { id: senderId },
       select: { fullName: true, profilePic: true }
     });
-    
+
     const receiverSocketId = getReceiverSocketId(receiverId);
-    
+
     // Prepare message data for socket
     const messageData = {
       ...newMessage,
@@ -280,7 +280,7 @@ export const sendMessage = async (req, res) => {
       // Update message status to delivered in database
       await prisma.message.update({
         where: { id: newMessage.id },
-        data: { 
+        data: {
           status: 'delivered',
           deliveredAt: new Date()
         }
@@ -373,17 +373,17 @@ export const addReaction = async (req, res) => {
       return res.status(404).json({ error: "Message not found" });
     }
 
-    // Get current reactions (parse JSON string)
+    // Get current reactions (parse JSON string or use object)
     let reactions = [];
     try {
-      reactions = message.reactions ? JSON.parse(message.reactions) : [];
+      reactions = typeof message.reactions === 'string' ? JSON.parse(message.reactions || "[]") : (message.reactions || []);
     } catch (error) {
       reactions = [];
     }
-    
+
     // Remove existing reaction from this user (if any)
     reactions = reactions.filter(r => r.userId !== userId);
-    
+
     // Add new reaction
     reactions.push({
       emoji,
@@ -391,7 +391,8 @@ export const addReaction = async (req, res) => {
       createdAt: new Date().toISOString()
     });
 
-    // Update message with new reactions (stringify for SQLite)
+    // Update message with new reactions
+    // For SQLite we need string, for Postgres we can pass object but stringify is safe if schema expects Json
     const updatedMessage = await prisma.message.update({
       where: { id: messageId },
       data: { reactions: JSON.stringify(reactions) },
@@ -402,12 +403,12 @@ export const addReaction = async (req, res) => {
     });
 
     // 🔥 REAL-TIME: Notify both users about reaction
-    const parsedReactions = updatedMessage.reactions ? JSON.parse(updatedMessage.reactions) : [];
+    const parsedReactions = typeof updatedMessage.reactions === 'string' ? JSON.parse(updatedMessage.reactions) : updatedMessage.reactions;
     const reactionData = {
       messageId,
       reactions: parsedReactions
     };
-    
+
     emitToUser(message.receiverId, "messageReaction", reactionData);
     emitToUser(message.senderId, "messageReaction", reactionData);
 
@@ -435,16 +436,16 @@ export const removeReaction = async (req, res) => {
       return res.status(404).json({ error: "Message not found" });
     }
 
-    // Get current reactions and remove this user's reaction (parse JSON string)
+    // Get current reactions
     let reactions = [];
     try {
-      reactions = message.reactions ? JSON.parse(message.reactions) : [];
+      reactions = typeof message.reactions === 'string' ? JSON.parse(message.reactions || "[]") : (message.reactions || []);
     } catch (error) {
       reactions = [];
     }
     reactions = reactions.filter(r => r.userId !== userId);
 
-    // Update message with new reactions (stringify for SQLite)
+    // Update message with new reactions
     const updatedMessage = await prisma.message.update({
       where: { id: messageId },
       data: { reactions: JSON.stringify(reactions) },
@@ -455,12 +456,12 @@ export const removeReaction = async (req, res) => {
     });
 
     // 🔥 REAL-TIME: Notify both users about reaction removal
-    const parsedReactions = updatedMessage.reactions ? JSON.parse(updatedMessage.reactions) : [];
+    const parsedReactions = typeof updatedMessage.reactions === 'string' ? JSON.parse(updatedMessage.reactions) : updatedMessage.reactions;
     const reactionData = {
       messageId,
       reactions: parsedReactions
     };
-    
+
     emitToUser(message.receiverId, "messageReaction", reactionData);
     emitToUser(message.senderId, "messageReaction", reactionData);
 
@@ -505,11 +506,11 @@ export const deleteMessage = async (req, res) => {
     }
 
     // 🔥 REAL-TIME: Notify both users about message deletion
-    const deleteData = { 
-      messageId, 
-      deletedBy: userId, 
-      isDeleted: true, 
-      deletedAt: new Date() 
+    const deleteData = {
+      messageId,
+      deletedBy: userId,
+      isDeleted: true,
+      deletedAt: new Date()
     };
 
     emitToUser(message.receiverId, "messageDeleted", deleteData);
