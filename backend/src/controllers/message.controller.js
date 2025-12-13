@@ -102,16 +102,6 @@ export const getMessages = async (req, res) => {
         callInitiator: true,
         reactions: true,
         replyToId: true,
-        replyTo: {
-          select: {
-            id: true,
-            senderId: true,
-            text: true,
-            image: true,
-            voice: true,
-            createdAt: true
-          }
-        },
         isDeleted: true,
         deletedAt: true,
         status: true,
@@ -124,11 +114,38 @@ export const getMessages = async (req, res) => {
       skip: page * limit
     });
 
-    // Parse reactions JSON for each message
-    const messagesWithParsedReactions = messages.map(message => ({
-      ...message,
-      reactions: message.reactions ? JSON.parse(message.reactions) : []
-    }));
+    // Parse reactions JSON and fetch reply-to messages separately
+    const messagesWithParsedReactions = await Promise.all(
+      messages.map(async (message) => {
+        let replyTo = null;
+        
+        // Fetch reply-to message if replyToId exists
+        if (message.replyToId) {
+          try {
+            replyTo = await prisma.message.findUnique({
+              where: { id: message.replyToId },
+              select: {
+                id: true,
+                senderId: true,
+                text: true,
+                image: true,
+                voice: true,
+                createdAt: true
+              }
+            });
+          } catch (error) {
+            console.error('Error fetching reply-to message:', error);
+            // Continue without reply-to data
+          }
+        }
+
+        return {
+          ...message,
+          reactions: message.reactions ? JSON.parse(message.reactions) : [],
+          replyTo
+        };
+      })
+    );
 
     res.status(200).json(messagesWithParsedReactions.reverse());
   } catch (error) {
