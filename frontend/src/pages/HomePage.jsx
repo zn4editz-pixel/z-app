@@ -147,10 +147,17 @@ const HomePage = () => {
   }, [authUser, friends.length, selectedUser, restoreSelectedUser]);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !authUser?.id) return;
+
+    let isSubscribed = false;
 
     // ✅ CRITICAL: Initialize socket listeners with proper timing and registration
     const initializeSocketListeners = () => {
+      if (isSubscribed) {
+        console.log('🔌 Already subscribed, skipping duplicate subscription');
+        return;
+      }
+
       const { subscribeToMessages, subscribeToReactions } = useChatStore.getState();
       console.log('🔌 HomePage: Initializing socket listeners for realtime updates');
       console.log('🔌 Socket connected status:', socket.connected);
@@ -163,8 +170,12 @@ const HomePage = () => {
         
         // Add small delay to ensure registration completes
         setTimeout(() => {
-          subscribeToMessages();
-          subscribeToReactions();
+          if (!isSubscribed) {
+            subscribeToMessages();
+            subscribeToReactions();
+            isSubscribed = true;
+            console.log('✅ Socket listeners initialized successfully');
+          }
         }, 200);
       }
     };
@@ -218,6 +229,8 @@ const HomePage = () => {
 
     return () => {
       socket.off("private:incoming-call", handleIncomingCall);
+      isSubscribed = false;
+      console.log('🧹 HomePage: Cleaned up socket listeners');
     };
   }, [socket, authUser]);
 

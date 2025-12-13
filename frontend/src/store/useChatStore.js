@@ -133,8 +133,9 @@ export const useChatStore = create((set, get) => ({
         
         useFriendStore.getState().updateFriendLastMessage(selectedUser.id, optimisticMessage);
         
+        // 🔥 FIXED: Use socket for real-time, API as fallback only
         if (socket && socket.connected) {
-            console.log('📤 SENDING MESSAGE VIA SOCKET:');
+            console.log('📤 SENDING MESSAGE VIA SOCKET (PRIMARY):');
             console.log(`   Socket connected: ${socket.connected}`);
             console.log(`   Socket ID: ${socket.id}`);
             console.log(`   To: ${selectedUser.id}`);
@@ -151,41 +152,54 @@ export const useChatStore = create((set, get) => ({
                 tempId: tempId
             });
             
-            console.log('📤 Socket emit completed');
+            console.log('📤 Socket emit completed - NO API CALL NEEDED');
+            
+            // Set a timeout to fallback to API if socket fails
+            setTimeout(() => {
+                const currentMessages = get().messages;
+                const messageStillSending = currentMessages.find(m => 
+                    m.tempId === tempId && m.status === 'sending'
+                );
+                
+                if (messageStillSending) {
+                    console.log('⚠️ Socket message timeout, falling back to API');
+                    sendViaAPI();
+                }
+            }, 5000); // 5 second timeout
+            
         } else {
-            console.warn('⚠️ Socket not available for real-time delivery:', {
-                hasSocket: !!socket,
-                connected: socket?.connected,
-                socketId: socket?.id
-            });
+            console.warn('⚠️ Socket not available, using API fallback');
+            sendViaAPI();
         }
         
-        axiosInstance.post(`/messages/send/${selectedUser.id}`, messageData)
-            .then(res => {
-                console.log('✅ Message sent successfully via API:', res.data);
-                const currentUser = get().selectedUser;
-                if (currentUser?.id === selectedUser.id && res.data?.id) {
-                    const normalizedMessage = {
-                        ...res.data,
-                        reactions: Array.isArray(res.data.reactions) ? res.data.reactions : []
-                    };
-                    
+        function sendViaAPI() {
+            axiosInstance.post(`/messages/send/${selectedUser.id}`, messageData)
+                .then(res => {
+                    console.log('✅ Message sent successfully via API:', res.data);
+                    const currentUser = get().selectedUser;
+                    if (currentUser?.id === selectedUser.id && res.data?.id) {
+                        const normalizedMessage = {
+                            ...res.data,
+                            reactions: Array.isArray(res.data.reactions) ? res.data.reactions : []
+                        };
+                        
+                        set(state => ({
+                            messages: state.messages.map(m => 
+                                m.tempId === tempId ? normalizedMessage : m
+                            )
+                        }));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Send failed:', error);
                     set(state => ({
                         messages: state.messages.map(m => 
-                            m.tempId === tempId ? normalizedMessage : m
+                            m.tempId === tempId ? { ...m, status: 'failed' } : m
                         )
                     }));
-                }
-            })
-            .catch(error => {
-                console.error('❌ Send failed:', error);
-                set(state => ({
-                    messages: state.messages.map(m => 
-                        m.tempId === tempId ? { ...m, status: 'failed' } : m
-                    )
-                }));
-                toast.error("Failed to send message");
-            });
+                    toast.error("Failed to send message");
+                });
+        }
     },
 
     subscribeToMessages: () => {
@@ -251,10 +265,22 @@ export const useChatStore = create((set, get) => ({
 
             if (isForCurrentChat) {
                 let currentMessages = get().messages;
-                const isDuplicate = currentMessages.some(m => m.id === newMessage.id);
                 
-                if (isDuplicate) {
-                    console.log(`⚠️ Duplicate message detected, skipping: ${newMessage.id}`);
+                // 🔥 ENHANCED: Check for duplicates by ID and similar content
+                const isDuplicateById = currentMessages.some(m => m.id === newMessage.id);
+                const isDuplicateByContent = currentMessages.some(m => 
+                    m.senderId === newMessage.senderId &&
+                    m.text === newMessage.text &&
+                    Math.abs(new Date(m.createdAt) - new Date(newMessage.createdAt)) < 2000 // Within 2 seconds
+                );
+                
+                if (isDuplicateById) {
+                    console.log(`⚠️ Duplicate message by ID detected, skipping: ${newMessage.id}`);
+                    return;
+                }
+                
+                if (isDuplicateByContent) {
+                    console.log(`⚠️ Duplicate message by content detected, skipping similar message`);
                     return;
                 }
                 
@@ -550,19 +576,25 @@ export const useChatStore = create((set, get) => ({
             
             set({ messages: optimisticMessages });
             
-            if (socket && selectedUser) {
+            // 🔥 FIXED: Use socket for real-time, API as fallback only
+            if (socket && socket.connected && selectedUser) {
+                console.log('📤 SENDING REACTION VIA SOCKET (PRIMARY):');
+                console.log(`   Message ID: ${messageId}`);
+                console.log(`   Emoji: ${emoji}`);
+                console.log(`   To: ${selectedUser.id}`);
+                
                 socket.emit("messageReaction", {
                     messageId,
                     emoji,
                     receiverId: selectedUser.id
                 });
-                console.log('📤 Emitted reaction via socket for realtime delivery');
-            }
-            
-            axiosInstance.post(`/messages/reaction/${messageId}`, { emoji })
-                .then(res => {
-                    console.log('✅ Reaction persisted to database');
-                    const currentMessages = get().messages;
+                console.log('📤 Reaction socket emit completed - NO API CALL NEEDED');
+            } else {
+                console.warn('⚠️ Socket not available for reaction, using API fallback');
+                axiosInstance.post(`/messages/reaction/${messageId}`, { emoji })
+                    .then(res => {
+                        console.log('✅ Reaction persisted to database via API');
+                        const currentMessages = get().messages;
                     const serverUpdatedMessages = currentMessages.map(msg => 
                         msg.id === messageId ? { ...msg, reactions: res.data.reactions } : msg
                     );
@@ -609,18 +641,23 @@ export const useChatStore = create((set, get) => ({
             
             set({ messages: optimisticMessages });
             
-            if (socket && selectedUser) {
+            // 🔥 FIXED: Use socket for real-time, API as fallback only
+            if (socket && socket.connected && selectedUser) {
+                console.log('📤 REMOVING REACTION VIA SOCKET (PRIMARY):');
+                console.log(`   Message ID: ${messageId}`);
+                console.log(`   From: ${selectedUser.id}`);
+                
                 socket.emit("messageReactionRemove", {
                     messageId,
                     receiverId: selectedUser.id
                 });
-                console.log('📤 Emitted reaction removal via socket for realtime delivery');
-            }
-            
-            axiosInstance.delete(`/messages/reaction/${messageId}`)
-                .then(res => {
-                    console.log('✅ Reaction removal persisted to database');
-                    const currentMessages = get().messages;
+                console.log('📤 Reaction removal socket emit completed - NO API CALL NEEDED');
+            } else {
+                console.warn('⚠️ Socket not available for reaction removal, using API fallback');
+                axiosInstance.delete(`/messages/reaction/${messageId}`)
+                    .then(res => {
+                        console.log('✅ Reaction removal persisted to database via API');
+                        const currentMessages = get().messages;
                     const serverUpdatedMessages = currentMessages.map(msg => 
                         msg.id === messageId ? { ...msg, reactions: res.data.reactions } : msg
                     );
