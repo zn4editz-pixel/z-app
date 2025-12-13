@@ -2,25 +2,30 @@
 import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
 
-// Fallback to memory store if Redis not available
-let redisStore;
+// Create Redis connection for rate limiting
+let redis;
 try {
-  const { redis } = await import('../lib/db.production.js');
-  redisStore = new RedisStore({
-    sendCommand: (...args) => redis.call(...args),
-    prefix: 'rl:general:',
-  });
+  const dbModule = await import('../lib/db.production.js');
+  redis = dbModule.redis;
+  console.log('✅ Rate limiter: Redis connection established');
 } catch (error) {
   console.log('⚠️ Redis not available, using memory store for rate limiting');
-  redisStore = undefined; // Use default memory store
+  redis = null;
 }
+
+// Helper function to create Redis store with unique prefix
+const createRedisStore = (prefix) => {
+  if (!redis) return undefined;
+  
+  return new RedisStore({
+    sendCommand: (...args) => redis.call(...args),
+    prefix: `rl:${prefix}:`,
+  });
+};
 
 // General API rate limiting
 export const generalLimiter = rateLimit({
-  store: redisStore ? new RedisStore({
-    sendCommand: (...args) => redisStore.sendCommand(...args),
-    prefix: 'rl:general:',
-  }) : undefined,
+  store: createRedisStore('general'),
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // Limit each IP to 1000 requests per windowMs
   message: {
@@ -33,10 +38,7 @@ export const generalLimiter = rateLimit({
 
 // Authentication rate limiting (stricter)
 export const authLimiter = rateLimit({
-  store: redisStore ? new RedisStore({
-    sendCommand: (...args) => redisStore.sendCommand(...args),
-    prefix: 'rl:auth:',
-  }) : undefined,
+  store: createRedisStore('auth'),
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // Limit each IP to 10 auth attempts per windowMs
   message: {
@@ -50,10 +52,7 @@ export const authLimiter = rateLimit({
 
 // Message sending rate limiting
 export const messageLimiter = rateLimit({
-  store: redisStore ? new RedisStore({
-    sendCommand: (...args) => redisStore.sendCommand(...args),
-    prefix: 'rl:messages:',
-  }) : undefined,
+  store: createRedisStore('messages'),
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 60, // 60 messages per minute per user
   message: {
@@ -64,74 +63,72 @@ export const messageLimiter = rateLimit({
 
 // File upload rate limiting
 export const uploadLimiter = rateLimit({
-  store: redisStore,
+  store: createRedisStore('uploads'),
   windowMs: 5 * 60 * 1000, // 5 minutes
   max: 20, // 20 uploads per 5 minutes
   message: {
     error: 'Upload rate limit exceeded. Please wait before uploading more files.',
     retryAfter: '5 minutes'
   },
-  keyGenerator: (req) => `uploads:${req.user.id}`,
+  keyGenerator: (req) => req.user?.id || req.ip,
 });
 
 // Friend request rate limiting
 export const friendRequestLimiter = rateLimit({
-  store: redisStore,
+  store: createRedisStore('friends'),
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 50, // 50 friend requests per hour
   message: {
     error: 'Friend request rate limit exceeded. Please wait before sending more requests.',
     retryAfter: '1 hour'
   },
-  keyGenerator: (req) => `friend_requests:${req.user.id}`,
+  keyGenerator: (req) => req.user?.id || req.ip,
 });
 
 // Admin API rate limiting (more permissive for admin users)
 export const adminLimiter = rateLimit({
-  store: redisStore,
+  store: createRedisStore('admin'),
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5000, // Higher limit for admin operations
   message: {
     error: 'Admin API rate limit exceeded.',
     retryAfter: '15 minutes'
   },
-  keyGenerator: (req) => `admin:${req.user.id}`,
+  keyGenerator: (req) => req.user?.id || req.ip,
 });
 
 // Search rate limiting
 export const searchLimiter = rateLimit({
-  store: redisStore,
+  store: createRedisStore('search'),
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 30, // 30 searches per minute
   message: {
     error: 'Search rate limit exceeded. Please wait before searching again.',
     retryAfter: '1 minute'
   },
-  keyGenerator: (req) => `search:${req.user?.id || req.ip}`,
+  keyGenerator: (req) => req.user?.id || req.ip,
 });
 
 // Password reset rate limiting
 export const passwordResetLimiter = rateLimit({
-  store: redisStore,
+  store: createRedisStore('password'),
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // 3 password reset attempts per hour
   message: {
     error: 'Too many password reset attempts. Please try again later.',
     retryAfter: '1 hour'
   },
-  keyGenerator: (req) => `password_reset:${req.ip}`,
 });
 
 // Registration rate limiting
 export const registrationLimiter = rateLimit({
-  store: redisStore,
+  store: createRedisStore('registration'),
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 5, // 5 registrations per hour per IP
   message: {
     error: 'Registration rate limit exceeded. Please try again later.',
     retryAfter: '1 hour'
   },
-  keyGenerator: (req) => `registration:${req.ip}`,
 });
 
 // Advanced rate limiting with sliding window

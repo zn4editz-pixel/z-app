@@ -28,10 +28,8 @@ try {
 }
 
 try {
-  // Use local rate limiter for development, production for production
-  const rateLimitModule = process.env.NODE_ENV === 'production' 
-    ? await import('./middleware/rateLimiter.js')
-    : await import('./middleware/rateLimiter.local.js');
+  // Use simple rate limiter for production to avoid Redis issues
+  const rateLimitModule = await import('./middleware/rateLimiter.simple.js');
   rateLimiters = rateLimitModule.default;
   console.log('✅ Rate limiter loaded successfully');
 } catch (error) {
