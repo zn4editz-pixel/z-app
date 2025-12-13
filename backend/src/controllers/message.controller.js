@@ -102,6 +102,16 @@ export const getMessages = async (req, res) => {
         callInitiator: true,
         reactions: true,
         replyToId: true,
+        replyTo: {
+          select: {
+            id: true,
+            senderId: true,
+            text: true,
+            image: true,
+            voice: true,
+            createdAt: true
+          }
+        },
         isDeleted: true,
         deletedAt: true,
         status: true,
@@ -164,7 +174,7 @@ export const createCallLog = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image, voice, voiceDuration } = req.body;
+    const { text, image, voice, voiceDuration, replyTo } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user.id;
 
@@ -217,7 +227,8 @@ export const sendMessage = async (req, res) => {
         text: text || "",
         image: imageUrl,
         voice: voiceUrl,
-        voiceDuration: voiceDuration || null
+        voiceDuration: voiceDuration || null,
+        replyToId: replyTo || null
       }
     });
 

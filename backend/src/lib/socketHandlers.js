@@ -347,7 +347,7 @@ export function initializeSocketHandlers(io) {
 					throw new Error('Sender or receiver ID missing');
 				}
 				
-				// ⚡ OPTIMIZATION: Create message WITHOUT includes (10x faster!)
+				// ⚡ CREATE MESSAGE WITH REPLY SUPPORT
 				const newMessage = await prisma.message.create({
 					data: {
 						senderId: senderId,
@@ -356,7 +356,20 @@ export function initializeSocketHandlers(io) {
 						image: image || null,
 						voice: voice || null,
 						voiceDuration: voiceDuration || null,
+						replyToId: replyTo || null, // ✅ ADD REPLY SUPPORT
 						status: 'sent' // ✅ Set status immediately
+					},
+					include: {
+						replyTo: {
+							select: {
+								id: true,
+								senderId: true,
+								text: true,
+								image: true,
+								voice: true,
+								createdAt: true
+							}
+						}
 					}
 				});
 				
