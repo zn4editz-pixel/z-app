@@ -518,9 +518,10 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                     <div className={`text-[11px] leading-tight truncate ${
                       isMyMessage ? "text-primary-content/80" : "text-base-content/70"
                     }`}>
-                      {message.replyTo.image && "📷 "}
-                      {message.replyTo.voice && "🎤 "}
-                      {message.replyTo.text || (message.replyTo.image ? "Photo" : message.replyTo.voice ? "Voice message" : "Message")}
+                      {message.replyTo.text ? message.replyTo.text : 
+                       (message.replyTo.image ? "📷 Photo" : 
+                        message.replyTo.voice ? "🎤 Voice message" : 
+                        "Message")}
                     </div>
                   </div>
                 )}

@@ -206,7 +206,18 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
         {/* ✅ INSTAGRAM/WHATSAPP STYLE: Enhanced Reply Preview */}
       {replyingTo && (
         <div className="mb-2 sm:mb-3 reply-preview-container animate-slide-down">
-          <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-base-200/80 to-base-200/60 rounded-2xl border border-base-300/50 shadow-sm backdrop-blur-sm">
+          <div 
+            className="flex items-start gap-3 p-3 bg-gradient-to-r from-base-200/80 to-base-200/60 rounded-2xl border border-base-300/50 shadow-sm backdrop-blur-sm cursor-pointer hover:bg-gradient-to-r hover:from-base-200/90 hover:to-base-200/70 transition-all duration-200 active:scale-[0.98]"
+            onClick={() => {
+              // ✅ CLICK TO SCROLL: Jump to original message
+              const replyElement = document.getElementById(`message-${replyingTo.id}`);
+              if (replyElement) {
+                replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                replyElement.classList.add('highlight-flash');
+                setTimeout(() => replyElement.classList.remove('highlight-flash'), 1500);
+              }
+            }}
+          >
             {/* Reply Icon */}
             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
               <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -223,6 +234,9 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
                 </span>
                 <span className="text-xs font-medium text-base-content/80">
                   {replyingTo.senderId === selectedUser?.id ? selectedUser.fullName || selectedUser.nickname || "User" : "You"}
+                </span>
+                <span className="text-xs text-base-content/50 ml-auto">
+                  Tap to view
                 </span>
               </div>
               
@@ -243,9 +257,9 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
                 {/* Message Text */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-base-content/70 truncate leading-tight">
-                    {replyingTo.text || 
-                     (replyingTo.image ? "Photo" : 
-                      replyingTo.voice ? "Voice message" : 
+                    {replyingTo.text ? replyingTo.text : 
+                     (replyingTo.image ? "📷 Photo" : 
+                      replyingTo.voice ? "🎤 Voice message" : 
                       "Message")}
                   </p>
                 </div>
