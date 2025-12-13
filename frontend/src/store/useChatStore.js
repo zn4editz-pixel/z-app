@@ -128,14 +128,16 @@ export const useChatStore = create((set, get) => ({
         const updatedMessages = [...messages, optimisticMessage];
         set({ messages: updatedMessages });
         
+        // 🔥 OPTIMIZED: Cache in background (non-blocking)
         const chatId = `${selectedUser.id}`;
-        cacheMessagesDB(chatId, updatedMessages);
+        setTimeout(() => cacheMessagesDB(chatId, updatedMessages), 0);
         
         useFriendStore.getState().updateFriendLastMessage(selectedUser.id, optimisticMessage);
         
-        // 🔥 FIXED: Use socket for real-time, API as fallback only
+        // 🔥 OPTIMIZED: Use socket for real-time, API as fallback only
+        const sendStartTime = performance.now();
         if (socket && socket.connected) {
-            console.log('📤 SENDING MESSAGE VIA SOCKET (PRIMARY):');
+            console.log(`📤 SENDING MESSAGE VIA SOCKET (${sendStartTime.toFixed(2)}ms):`);
             console.log(`   Socket connected: ${socket.connected}`);
             console.log(`   Socket ID: ${socket.id}`);
             console.log(`   To: ${selectedUser.id}`);
@@ -152,7 +154,8 @@ export const useChatStore = create((set, get) => ({
                 tempId: tempId
             });
             
-            console.log('📤 Socket emit completed - NO API CALL NEEDED');
+            const emitTime = performance.now();
+            console.log(`📤 Socket emit completed in ${(emitTime - sendStartTime).toFixed(2)}ms`);
             
             // Set a timeout to fallback to API if socket fails
             setTimeout(() => {
@@ -165,7 +168,7 @@ export const useChatStore = create((set, get) => ({
                     console.log('⚠️ Socket message timeout, falling back to API');
                     sendViaAPI();
                 }
-            }, 5000); // 5 second timeout
+            }, 2000); // 2 second timeout (reduced from 5 seconds)
             
         } else {
             console.warn('⚠️ Socket not available, using API fallback');
@@ -236,7 +239,8 @@ export const useChatStore = create((set, get) => ({
         });
 
         const messageHandler = (newMessage) => {
-            console.log(`🔥 SOCKET EVENT: newMessage received!`, newMessage);
+            const receiveTime = performance.now();
+            console.log(`🔥 SOCKET EVENT: newMessage received at ${receiveTime.toFixed(2)}ms!`, newMessage);
             
             const { selectedUser, messages } = get();
             const { authUser } = useAuthStore.getState();
@@ -286,21 +290,22 @@ export const useChatStore = create((set, get) => ({
                 
                 if (msgSenderId === authUserId) {
                     currentMessages = get().messages;
+                    // 🔥 OPTIMIZED: Find optimistic message by tempId first (fastest), then by status
                     const optimisticIndex = currentMessages.findIndex(m => 
-                        (m.tempId && m.status === 'sending') || 
-                        (m.status === 'sending' && m.senderId === authUserId && 
-                         Math.abs(new Date(m.createdAt) - new Date(newMessage.createdAt)) < 5000)
+                        (m.tempId && (m.status === 'sending' || m.status === 'sent')) ||
+                        (m.status === 'sending' && m.senderId === authUserId)
                     );
                     
                     if (optimisticIndex !== -1) {
-                        console.log(`✅ Replacing optimistic message with real one`);
+                        console.log(`✅ INSTANT: Replacing optimistic message with real one`);
                         const updatedMessages = currentMessages.map((m, idx) => 
                             idx === optimisticIndex ? { ...newMessage, status: 'sent' } : m
                         );
                         set({ messages: updatedMessages });
                         
+                        // 🔥 OPTIMIZED: Cache in background (non-blocking)
                         const chatId = `${selectedUserId}`;
-                        cacheMessagesDB(chatId, updatedMessages);
+                        setTimeout(() => cacheMessagesDB(chatId, updatedMessages), 0);
                         return;
                     }
                 }
@@ -310,8 +315,9 @@ export const useChatStore = create((set, get) => ({
                 const updatedMessages = [...currentMessages, newMessage];
                 set({ messages: updatedMessages });
                 
+                // 🔥 OPTIMIZED: Cache in background (non-blocking)
                 const chatId = `${selectedUserId}`;
-                cacheMessagesDB(chatId, updatedMessages);
+                setTimeout(() => cacheMessagesDB(chatId, updatedMessages), 0);
                 
                 useFriendStore.getState().updateFriendLastMessage(msgSenderId, newMessage);
                 

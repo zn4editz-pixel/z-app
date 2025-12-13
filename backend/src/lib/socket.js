@@ -375,15 +375,17 @@ io.on("connection", (socket) => {
 
 	// ⚡ ULTRA-FAST MESSAGE SENDING via Socket.IO (OPTIMIZED)
 	socket.on("sendMessage", async ({ receiverId, text, image, voice, voiceDuration, replyTo, tempId }) => {
+		const startTime = Date.now();
 		try {
 			const senderId = socket.userId;
-			console.log(`📤 INSTANT message from ${senderId} to ${receiverId}`);
+			console.log(`📤 INSTANT message from ${senderId} to ${receiverId} (Start: ${startTime}ms)`);
 			
 			if (!senderId || !receiverId) {
 				throw new Error('Sender or receiver ID missing');
 			}
 			
 			// ⚡ OPTIMIZATION: Create message WITHOUT includes (10x faster!)
+			const dbStartTime = Date.now();
 			const newMessage = await prisma.message.create({
 				data: {
 					senderId: senderId,
@@ -395,8 +397,9 @@ io.on("connection", (socket) => {
 					status: 'sent' // ✅ Set status immediately
 				}
 			});
+			const dbEndTime = Date.now();
 			
-			console.log(`⚡ Message saved in ${Date.now()}ms: ${newMessage.id}`);
+			console.log(`⚡ Message saved in ${dbEndTime - dbStartTime}ms: ${newMessage.id}`);
 			
 			// ⚡ OPTIMIZATION: Send to sockets IMMEDIATELY (don't wait for cache clear)
 			const receiverSocketId = getReceiverSocketId(receiverId);
@@ -409,7 +412,8 @@ io.on("connection", (socket) => {
 			
 			// ⚡ INSTANT: Send back to sender (replace optimistic message)
 			socket.emit("newMessage", newMessage);
-			console.log(`⚡ INSTANT: Confirmed to sender ${senderId}`);
+			const totalTime = Date.now() - startTime;
+			console.log(`⚡ INSTANT: Confirmed to sender ${senderId} (Total: ${totalTime}ms)`);
 			
 			// ⚡ OPTIMIZATION: Clear cache in background (non-blocking)
 			setImmediate(() => {
