@@ -1,11 +1,8 @@
 #!/usr/bin/env node
 
-// ULTRA ROBUST FIX FOR RENDER DEPLOYMENT ISSUES
-// 1. Force fix DATABASE_URL (append :5432 if missing)
-// 2. Force fix missing '@' symbol (Correctly identifying the split between password and slug)
-// 3. Force PRODUCTION schema copy
-// 4. Run Prisma Generate
-// 5. Start Server via Child Process
+// PRODUCTION STARTUP SCRIPT - SQLITE EDITION
+// Switched to SQLite due to Neon connection limits.
+// NOTE: On Render, this database is EPHEMERAL unless a Disk is mounted.
 
 import { execSync, spawn } from "child_process";
 import fs from "fs";
@@ -15,87 +12,28 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 1. Fix DATABASE_URL
-console.log("🛠️  Checking DATABASE_URL for common malformations...");
-let dbUrl = process.env.DATABASE_URL;
+console.log("🚀  Starting Production Server (SQLite Mode)...");
 
-if (dbUrl) {
-    let modified = false;
+// 1. Ensure we are using the SQLite schema
+// The default 'prisma/schema.prisma' is ALREADY SQLite. 
+// We just need to make sure we DO NOT overwrite it with the Postgres one.
 
-    // FIX 1: Missing @ symbol check
-    // Malformation: postgres://user:password-endpoint-pooler... (Missing @ separator)
-    // Goal: postgres://user:password@endpoint-pooler...
-
-    if (dbUrl.includes("postgresql://") && !dbUrl.includes("@")) {
-        console.log("⚠️  Malformation detected: Missing '@' separator in DATABASE_URL!");
-
-        // Improved Heuristic: Search for the Neon Endpoint Slug pattern (word-word-chars)
-        // Pattern: [something]-[something]-[something]-pooler
-        // Example: wispy-mud-a1h6xwvk-pooler
-        const slugRegex = /([a-z]+-[a-z]+-[a-z0-9]+)-pooler/;
-        const match = dbUrl.match(slugRegex);
-
-        if (match) {
-            // match[0] is like "wispy-mud-a1h6xwvk-pooler"
-            // match[1] is like "wispy-mud-a1h6xwvk"
-            const slugStart = dbUrl.indexOf(match[0]);
-
-            // Check the character immediately preceding the slug start
-            // If it's a hyphen, we assume that's the "missing @" spot
-            if (slugStart > 0 && dbUrl[slugStart - 1] === '-') {
-                console.log(`✅  Heuristic found split point at index ${slugStart - 1} (before '${match[1]}')`);
-
-                // Reconstruct string: ...PasswordChars@EndpointSlug...
-                const before = dbUrl.substring(0, slugStart - 1);
-                const after = dbUrl.substring(slugStart); // Includes the slug and the rest
-                dbUrl = before + "@" + after;
-
-                modified = true;
-                console.log("✅  Fixed missing '@' (Correctly placed before endpoint slug)");
-            } else {
-                console.log("⚠️  Could not safely determine split point for missing '@'.");
-            }
-        } else if (dbUrl.includes("-pooler.ap-southeast")) {
-            // Fallback: If we can't find the slug pattern, but see pooler, 
-            // we might be in a weird state. 
-            // But previously we replaced -pooler with @pooler which was WRONG.
-            // Better to do nothing than break it further if we aren't sure.
-            console.log("⚠️  detected '-pooler' but seemingly invalid slug structure. Skipping auto-fix to avoid host corruption.");
-        }
-    }
-
-    // FIX 2: Missing Port
-    if (dbUrl.includes("neon.tech") && !dbUrl.includes("neon.tech:5432")) {
-        console.log("⚠️  Missing port detected!");
-        dbUrl = dbUrl.replace("neon.tech", "neon.tech:5432");
-        modified = true;
-        console.log("✅  Fixed DATABASE_URL (added :5432)");
-    }
-
-    if (modified) {
-        process.env.DATABASE_URL = dbUrl;
-        console.log("🔗  Final URL Structure (masked): " + dbUrl.replace(/:[^:@]*@/, ":****@"));
-    } else {
-        console.log("✅  DATABASE_URL looks okay (or could not be safely auto-patched).");
-    }
-} else {
-    console.log("⚠️  DATABASE_URL is MISSING or empty.");
-}
-
-// 2. Force Schema Copy
 const schemaPath = path.join(__dirname, "../prisma/schema.prisma");
-const productionSchemaPath = path.join(__dirname, "../prisma/schema.production.prisma");
 
-if (fs.existsSync(productionSchemaPath)) {
-    try {
-        fs.copyFileSync(productionSchemaPath, schemaPath);
-        console.log("✅  Copied schema.production.prisma -> schema.prisma");
-    } catch (e) {
-        console.error("⚠️ Failed to copy schema:", e.message);
-    }
-} else {
-    console.error("❌  schema.production.prisma NOT FOUND! Proceeding with existing schema...");
+// Check if schema exists, if not, something is wrong
+if (!fs.existsSync(schemaPath)) {
+    console.error("❌  schema.prisma not found!");
+    process.exit(1);
 }
+
+// 2. Set DATABASE_URL for SQLite
+// Render creates a persistent disk at /var/data if configured, or we use local.
+// We'll default to a local file for now.
+const dbPath = "file:./prod.db";
+// Overwrite DATABASE_URL in the process env to ensure Prisma Client picks it up
+// regardless of what's in the Render Dashboard variables.
+process.env.DATABASE_URL = dbPath;
+console.log(`✅  Forced DATABASE_URL to: ${dbPath}`);
 
 // 3. Run Prisma Generate
 console.log("🔄  Running Prisma Generate...");
@@ -106,12 +44,22 @@ try {
     console.error(`❌  Prisma Generate Failed: ${error.message}`);
 }
 
-// 4. Start Server (Spawn new process with modified env)
+// 4. Push Schema to Database (Ensure tables exist)
+// Since we are using SQLite, we need to make sure the file has the tables.
+console.log("📦  Pushing DB Schema...");
+try {
+    execSync("npx prisma db push --accept-data-loss", { stdio: "inherit", env: process.env });
+    console.log("✅  Database Push Complete");
+} catch (error) {
+    console.error(`❌  DB Push Failed: ${error.message}`);
+}
+
+// 5. Start Server (Spawn new process with modified env)
 console.log("🚀  Starting Node Server (Child Process)...");
 
 const serverProcess = spawn("node", ["src/index.js"], {
     stdio: "inherit",
-    env: { ...process.env, DATABASE_URL: dbUrl } // Explicitly pass fixed env
+    env: { ...process.env, DATABASE_URL: dbPath, NODE_ENV: 'production' }
 });
 
 serverProcess.on("close", (code) => {
