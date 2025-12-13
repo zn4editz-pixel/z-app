@@ -1,11 +1,20 @@
-import { Phone, Video, PhoneIncoming, PhoneOutgoing } from "lucide-react";
+import { Phone, Video, PhoneIncoming, PhoneOutgoing, PhoneMissed, PhoneOff } from "lucide-react";
 
 const CallLogMessage = ({ message, isOwnMessage }) => {
-  const { callData } = message;
+  // Handle both old callData format and new direct message format
+  const callData = message.callData || {
+    type: message.callType,
+    duration: message.callDuration || 0,
+    status: message.callStatus || 'completed',
+    timestamp: message.createdAt
+  };
   
-  if (!callData) return null;
+  if (!message.isCallLog && !callData) return null;
 
   const formatDuration = (seconds) => {
+    if (!seconds || seconds === 0) {
+      return "0 seconds";
+    }
     if (seconds < 60) {
       return `${seconds} second${seconds !== 1 ? 's' : ''}`;
     }
@@ -17,9 +26,42 @@ const CallLogMessage = ({ message, isOwnMessage }) => {
     return `${mins} minute${mins !== 1 ? 's' : ''} ${secs} second${secs !== 1 ? 's' : ''}`;
   };
 
+  const getCallStatus = () => {
+    const status = callData.status || 'completed';
+    const duration = callData.duration || 0;
+    
+    if (status === 'rejected' || status === 'declined') {
+      return { text: 'Declined', color: 'text-error' };
+    }
+    if (status === 'missed') {
+      return { text: 'Missed', color: 'text-warning' };
+    }
+    if (status === 'failed') {
+      return { text: 'Failed', color: 'text-error' };
+    }
+    if (duration === 0) {
+      return { text: 'No answer', color: 'text-base-content/50' };
+    }
+    return { text: 'Completed', color: 'text-success' };
+  };
+
+  const getCallIcon = () => {
+    const status = callData.status || 'completed';
+    const isVideo = callData.type === "video";
+    
+    if (status === 'missed' || status === 'rejected' || status === 'failed') {
+      return PhoneMissed;
+    }
+    if (isVideo) {
+      return Video;
+    }
+    return Phone;
+  };
+
   const isVideo = callData.type === "video";
-  const Icon = isVideo ? Video : Phone;
+  const Icon = getCallIcon();
   const DirectionIcon = isOwnMessage ? PhoneOutgoing : PhoneIncoming;
+  const statusInfo = getCallStatus();
 
   return (
     <div className={`flex items-center gap-3 p-3 rounded-lg ${
@@ -31,7 +73,9 @@ const CallLogMessage = ({ message, isOwnMessage }) => {
         isOwnMessage ? 'bg-primary/20' : 'bg-base-300'
       }`}>
         <Icon className={`w-4 h-4 ${
-          isOwnMessage ? 'text-primary' : 'text-base-content/70'
+          statusInfo.color === 'text-error' || statusInfo.color === 'text-warning' 
+            ? statusInfo.color
+            : isOwnMessage ? 'text-primary' : 'text-base-content/70'
         }`} />
       </div>
       
@@ -45,9 +89,12 @@ const CallLogMessage = ({ message, isOwnMessage }) => {
           }`}>
             {isOwnMessage ? 'Outgoing' : 'Incoming'} {isVideo ? 'Video' : 'Voice'} Call
           </span>
+          <span className={`text-xs ${statusInfo.color}`}>
+            • {statusInfo.text}
+          </span>
         </div>
         <p className="text-xs text-base-content/60">
-          Duration: {formatDuration(callData.duration)}
+          {callData.duration > 0 ? `Duration: ${formatDuration(callData.duration)}` : 'No connection established'}
         </p>
       </div>
       

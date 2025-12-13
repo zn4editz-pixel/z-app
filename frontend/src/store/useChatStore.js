@@ -762,6 +762,38 @@ export const useChatStore = create((set, get) => ({
         });
     },
 
+    // 🔥 NEW: Add call log to chat
+    addCallLog: async (receiverId, callType, duration = 0, status = 'completed') => {
+        try {
+            console.log(`📞 Adding call log: ${callType} call to ${receiverId}, duration: ${duration}s, status: ${status}`);
+            
+            const response = await axiosInstance.post('/messages/call-log', {
+                receiverId,
+                callType,
+                duration,
+                status
+            });
+
+            console.log('✅ Call log created:', response.data);
+            
+            // Add to current messages if this is the active chat
+            const { selectedUser, messages } = get();
+            if (selectedUser?.id === receiverId) {
+                const updatedMessages = [...messages, response.data];
+                set({ messages: updatedMessages });
+                
+                // Cache the updated messages
+                const chatId = `${receiverId}`;
+                cacheMessagesDB(chatId, updatedMessages);
+            }
+            
+            return response.data;
+        } catch (error) {
+            console.error('❌ Failed to create call log:', error);
+            toast.error('Failed to log call');
+        }
+    },
+
     initiateCall: (partner, type) => {
         const { callState } = get();
         if (callState !== "idle") {

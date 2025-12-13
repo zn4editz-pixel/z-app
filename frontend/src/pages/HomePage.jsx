@@ -225,10 +225,50 @@ const HomePage = () => {
       });
     };
 
+    // 🔥 NEW: Handle call rejection
+    const handleCallRejected = async ({ rejectorId, reason }) => {
+      console.log("🚫 Call rejected by user:", rejectorId, "Reason:", reason);
+      toast.error(`Call ${reason || 'declined'} by user`);
+      
+      // Log the rejected outgoing call
+      const { addCallLog } = useChatStore.getState();
+      await addCallLog(rejectorId, callState.callType || 'voice', 0, 'rejected');
+      
+      setCallState({
+        isCallActive: false,
+        callType: null,
+        isInitiator: false,
+        otherUser: null,
+      });
+    };
+
+    // 🔥 NEW: Handle call failure
+    const handleCallFailed = async ({ reason }) => {
+      console.log("❌ Call failed:", reason);
+      toast.error(`Call failed: ${reason}`);
+      
+      // Log the failed call if we have call state
+      if (callState.otherUser) {
+        const { addCallLog } = useChatStore.getState();
+        await addCallLog(callState.otherUser.id, callState.callType || 'voice', 0, 'failed');
+      }
+      
+      setCallState({
+        isCallActive: false,
+        callType: null,
+        isInitiator: false,
+        otherUser: null,
+      });
+    };
+
     socket.on("private:incoming-call", handleIncomingCall);
+    socket.on("private:call-rejected", handleCallRejected);
+    socket.on("private:call-failed", handleCallFailed);
 
     return () => {
       socket.off("private:incoming-call", handleIncomingCall);
+      socket.off("private:call-rejected", handleCallRejected);
+      socket.off("private:call-failed", handleCallFailed);
       isSubscribed = false;
       console.log('🧹 HomePage: Cleaned up socket listeners');
     };
@@ -303,13 +343,17 @@ const HomePage = () => {
     setIncomingCall(null);
   };
 
-  const handleRejectCall = () => {
+  const handleRejectCall = async () => {
     if (incomingCall && socket) {
       console.log("🚫 Rejecting call from:", incomingCall.callerInfo.nickname);
       socket.emit("private:reject-call", { 
         callerId: incomingCall.callerInfo.id,
         reason: "declined"
       });
+
+      // 🔥 NEW: Log rejected call
+      const { addCallLog } = useChatStore.getState();
+      await addCallLog(incomingCall.callerInfo.id, incomingCall.callType, 0, 'rejected');
     }
     setIncomingCall(null);
   };
