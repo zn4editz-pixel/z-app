@@ -1,11 +1,11 @@
-// BUILD-SAFE PRISMA SCHEMA - DUMMY DATABASE FOR GENERATION ONLY
+// BUILD-SAFE PRISMA SCHEMA - SQLITE FOR GENERATION ONLY (NO CONNECTION NEEDED)
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = "postgresql://dummy:dummy@localhost:5432/dummy"
+  provider = "sqlite"
+  url      = "file:./build-dummy.db"
 }
 
 // ─── User Model (Build Safe) ───────────────────────────────────────────
@@ -124,8 +124,8 @@ model Message {
   isDeleted Boolean @default(false)
   deletedAt DateTime?
   
-  // Message Reactions (JSON field for PostgreSQL)
-  reactions Json? @default("[]")
+  // Message Reactions (JSON string for SQLite)
+  reactions String? @default("[]")
 
   // Performance indexes
   @@index([senderId, receiverId])

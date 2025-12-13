@@ -3,11 +3,13 @@ services:
     name: z-app-backend
     env: node
     plan: free
-    buildCommand: cd backend && npm install && node scripts/setup-schema.js && npx prisma generate
+    buildCommand: cd backend && node build-safe.js
     startCommand: cd backend && npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
+      - key: SKIP_DB_PUSH
+        value: "true"
     healthCheckPath: /health/ping
