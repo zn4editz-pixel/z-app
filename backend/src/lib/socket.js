@@ -401,25 +401,18 @@ io.on("connection", (socket) => {
 			
 			console.log(`⚡ Message saved in ${dbEndTime - dbStartTime}ms: ${newMessage.id}`);
 			
-			// ⚡ OPTIMIZATION: Send to sockets IMMEDIATELY (don't wait for cache clear)
+			// 🚀 ULTRA-FAST: Send to receiver immediately
 			const receiverSocketId = getReceiverSocketId(receiverId);
 			if (receiverSocketId) {
 				io.to(receiverSocketId).emit("newMessage", newMessage);
-				console.log(`⚡ INSTANT: Sent to receiver ${receiverId} (socket: ${receiverSocketId})`);
-			} else {
-				console.log(`⚠️ Receiver ${receiverId} not online - message will be delivered when they connect`);
 			}
 			
-			// ⚡ INSTANT: Send back to sender (replace optimistic message)
+			// 🚀 ULTRA-FAST: Confirm to sender immediately
 			socket.emit("newMessage", newMessage);
 			const totalTime = Date.now() - startTime;
-			console.log(`⚡ INSTANT: Confirmed to sender ${senderId} (Total: ${totalTime}ms)`);
+			console.log(`🚀 ULTRA-FAST: Message processed in ${totalTime}ms`);
 			
-			// ⚡ OPTIMIZATION: Clear cache in background (non-blocking)
-			setImmediate(() => {
-				clearFriendsCache(senderId);
-				clearFriendsCache(receiverId);
-			});
+			// 🚀 SKIP CACHE CLEARING: Remove cache operations for maximum speed
 			
 		} catch (error) {
 			console.error('❌ Socket sendMessage error:', error);

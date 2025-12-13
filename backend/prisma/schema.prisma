@@ -120,6 +120,12 @@ model Message {
   
   // Message Reactions (JSON field for SQLite)
   reactions String? @default("[]") // JSON string storing reactions array
+
+  // 🚀 PERFORMANCE INDEXES for ultra-fast message operations
+  @@index([senderId, receiverId])
+  @@index([createdAt])
+  @@index([status])
+  @@index([isCallLog])
 }
 
 // ─── Friend Request Model ─────────────────────────────────────────────
@@ -136,6 +142,7 @@ model FriendRequest {
   receiver User @relation("FriendRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@unique([senderId, receiverId])
+  @@index([status])
 }
 
 // ─── Report Model (Simplified) ─────────────────────────────────────────
