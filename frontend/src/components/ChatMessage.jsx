@@ -100,7 +100,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
     console.log('⏱️ Long press timer started');
   };
 
-  // ✅ ENHANCED: Touch move handler with better debugging
+  // ✅ ENHANCED: Touch move handler with better debugging and haptic feedback
   const handleTouchMove = (e) => {
     const touch = e.touches[0];
     const deltaX = touch.clientX - touchStartPos.current.x;
@@ -120,7 +120,14 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
     // Swipe to reply (only horizontal swipe)
     if (Math.abs(deltaX) > 10 && deltaY < 30) {
       const offset = isMyMessage ? Math.min(0, deltaX) : Math.max(0, deltaX);
-      setSwipeOffset(Math.abs(offset) > SWIPE_THRESHOLD ? (isMyMessage ? -SWIPE_THRESHOLD : SWIPE_THRESHOLD) : offset);
+      const newOffset = Math.abs(offset) > SWIPE_THRESHOLD ? (isMyMessage ? -SWIPE_THRESHOLD : SWIPE_THRESHOLD) : offset;
+      
+      // ✅ HAPTIC FEEDBACK: Vibrate when threshold is reached
+      if (Math.abs(newOffset) >= SWIPE_THRESHOLD && Math.abs(swipeOffset) < SWIPE_THRESHOLD) {
+        if (navigator.vibrate) navigator.vibrate(30);
+      }
+      
+      setSwipeOffset(newOffset);
     }
   };
 
@@ -425,13 +432,22 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
             data-message-id={message.id}
             data-touch-enabled="true"
           >
-            {/* Swipe Reply Icon */}
+            {/* ✅ ENHANCED: Instagram/WhatsApp Style Swipe Reply Icon */}
             {Math.abs(swipeOffset) > 20 && (
               <div 
-                className={`absolute top-1/2 -translate-y-1/2 ${isMyMessage ? '-right-10' : '-left-10'}`}
-                style={{ opacity: Math.min(Math.abs(swipeOffset) / SWIPE_THRESHOLD, 1) }}
+                className={`absolute top-1/2 -translate-y-1/2 ${isMyMessage ? '-right-12' : '-left-12'} transition-all duration-200`}
+                style={{ 
+                  opacity: Math.min(Math.abs(swipeOffset) / SWIPE_THRESHOLD, 1),
+                  transform: `translateY(-50%) scale(${Math.min(Math.abs(swipeOffset) / SWIPE_THRESHOLD, 1)})`
+                }}
               >
-                <Reply className={`w-5 h-5 text-base-content/50 ${isMyMessage ? '' : 'scale-x-[-1]'}`} />
+                <div className={`w-8 h-8 rounded-full bg-base-300/80 backdrop-blur-sm flex items-center justify-center shadow-lg ${
+                  Math.abs(swipeOffset) >= SWIPE_THRESHOLD ? 'bg-primary/20 scale-110' : ''
+                } transition-all duration-200`}>
+                  <Reply className={`w-4 h-4 ${
+                    Math.abs(swipeOffset) >= SWIPE_THRESHOLD ? 'text-primary' : 'text-base-content/70'
+                  } ${isMyMessage ? '' : 'scale-x-[-1]'} transition-colors duration-200`} />
+                </div>
               </div>
             )}
 

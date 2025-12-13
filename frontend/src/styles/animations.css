@@ -2831,3 +2831,40 @@ html {
   font-weight: bold;
   z-index: 1000;
 }
+
+/* ===== INSTAGRAM/WHATSAPP REPLY PREVIEW ANIMATIONS ===== */
+
+/* Slide Down Animation for Reply Preview */
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 120px;
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reply Preview Container Styling */
+.reply-preview-container {
+  overflow: hidden;
+}
+
+/* Enhanced Reply Preview Hover Effects */
+.reply-preview-container:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Smooth Backdrop Blur Effect */
+.backdrop-blur-reply {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}

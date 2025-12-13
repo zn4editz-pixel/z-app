@@ -51,6 +51,16 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
     };
   }, [socket, selectedUser]);
 
+  // ✅ INSTAGRAM/WHATSAPP: Auto-focus input when replying
+  useEffect(() => {
+    if (replyingTo && inputRef.current) {
+      // Small delay to ensure the reply preview is rendered first
+      setTimeout(() => {
+        inputRef.current.focus();
+      }, 100);
+    }
+  }, [replyingTo]);
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file || !file.type.startsWith("image/")) {
@@ -193,25 +203,65 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
       )}
 
       <div className="p-2.5 sm:p-4 w-full bg-base-100 border-t border-base-300 sticky bottom-0 z-10" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
-        {/* Reply Preview */}
+        {/* ✅ INSTAGRAM/WHATSAPP STYLE: Enhanced Reply Preview */}
       {replyingTo && (
-        <div className="mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-base-200 rounded-xl border-l-4 border-primary reply-slide-in">
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-semibold text-primary mb-0.5">
-              Replying to {replyingTo.senderId === selectedUser?.id ? selectedUser.fullName : "You"}
+        <div className="mb-2 sm:mb-3 reply-preview-container animate-slide-down">
+          <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-base-200/80 to-base-200/60 rounded-2xl border border-base-300/50 shadow-sm backdrop-blur-sm">
+            {/* Reply Icon */}
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
+              <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              </svg>
             </div>
-            <div className="text-sm text-base-content/70 truncate">
-              {replyingTo.text || (replyingTo.image ? "📷 Image" : replyingTo.voice ? "🎤 Voice message" : "Message")}
+            
+            {/* Reply Content */}
+            <div className="flex-1 min-w-0">
+              {/* Header */}
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-semibold text-primary">
+                  Replying to
+                </span>
+                <span className="text-xs font-medium text-base-content/80">
+                  {replyingTo.senderId === selectedUser?.id ? selectedUser.fullName || selectedUser.nickname || "User" : "You"}
+                </span>
+              </div>
+              
+              {/* Message Preview */}
+              <div className="flex items-center gap-2">
+                {/* Message Type Icon */}
+                {replyingTo.image && (
+                  <div className="flex-shrink-0 w-6 h-6 rounded bg-base-300/50 flex items-center justify-center">
+                    <span className="text-xs">📷</span>
+                  </div>
+                )}
+                {replyingTo.voice && (
+                  <div className="flex-shrink-0 w-6 h-6 rounded bg-base-300/50 flex items-center justify-center">
+                    <span className="text-xs">🎤</span>
+                  </div>
+                )}
+                
+                {/* Message Text */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-base-content/70 truncate leading-tight">
+                    {replyingTo.text || 
+                     (replyingTo.image ? "Photo" : 
+                      replyingTo.voice ? "Voice message" : 
+                      "Message")}
+                  </p>
+                </div>
+              </div>
             </div>
+            
+            {/* Cancel Button */}
+            <button
+              onClick={onCancelReply}
+              className="flex-shrink-0 w-7 h-7 rounded-full bg-base-300/50 hover:bg-error/20 hover:text-error flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
+              type="button"
+              aria-label="Cancel reply"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={onCancelReply}
-            className="btn btn-ghost btn-xs btn-circle flex-shrink-0 hover:bg-error/20 hover:text-error transition-colors"
-            type="button"
-            aria-label="Cancel reply"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
       )}
 
