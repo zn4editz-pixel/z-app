@@ -292,10 +292,12 @@ async function startServer() {
   });
 
   // Basic performance monitoring (less frequent for free tier)
-  setInterval(() => {
-    const memUsage = process.memoryUsage();
-    console.log(`📊 Memory: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
-  }, 300000); // Every 5 minutes
+  if (process.env.NODE_ENV === 'development') {
+    setInterval(() => {
+      const memUsage = process.memoryUsage();
+      console.log(`📊 Memory: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
+    }, 300000); // Every 5 minutes
+  }
 }
 
 export default app;

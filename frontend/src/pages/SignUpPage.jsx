@@ -8,18 +8,19 @@ import {
 	Mail,
 	MessageSquare,
 	User,
-	AtSign, // ✅ Added AtSign icon
+	AtSign,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthImagePattern from "../components/AuthImagePattern";
 import toast from "react-hot-toast";
+import "../styles/login-interaction-fix.css"; // ✅ Added CSS Fix
 
 const SignUpPage = () => {
 	const navigate = useNavigate();
 	const [showPassword, setShowPassword] = useState(false);
 	const [formData, setFormData] = useState({
 		fullName: "",
-		username: "", // ✅ Added username to state
+		username: "",
 		email: "",
 		password: "",
 	});
@@ -28,17 +29,13 @@ const SignUpPage = () => {
 
 	const validateForm = () => {
 		if (!formData.fullName.trim()) return toast.error("Full name is required");
-
-		// ✅ Username validation
 		if (!formData.username.trim()) return toast.error("Username is required");
 		if (formData.username.length < 3)
 			return toast.error("Username must be at least 3 characters");
-		// ✅ FIXED: Allow hyphens in usernames
 		if (!/^[a-zA-Z0-9_.-]+$/.test(formData.username))
 			return toast.error(
 				"Username can only contain letters, numbers, underscores, periods, and hyphens."
 			);
-
 		if (!formData.email.trim()) return toast.error("Email is required");
 		if (!/\S+@\S+\.\S+/.test(formData.email))
 			return toast.error("Invalid email format");
@@ -52,7 +49,6 @@ const SignUpPage = () => {
 		e.preventDefault();
 		const isValid = validateForm();
 		if (isValid === true) {
-			// ✅ Send username as lowercase to match backend logic
 			const dataToSend = {
 				...formData,
 				username: formData.username.toLowerCase(),
@@ -65,30 +61,50 @@ const SignUpPage = () => {
 	return (
 		<div className="min-h-screen grid lg:grid-cols-2">
 			{/* Left Side */}
-			<div className="flex flex-col justify-center items-center px-4 py-8 sm:px-8 lg:px-12">
-				<div className="w-full max-w-md space-y-8">
+			<div className="flex flex-col justify-center items-center p-6 sm:p-12 login-form-container relative overflow-hidden">
+
+				{/* 🌟 Lightweight Background Animation */}
+				<div className="absolute inset-0 bg-base-100/50 -z-10" />
+				<div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] opacity-40 animate-pan-slow pointer-events-none -z-10" />
+				<div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-[80px] animate-pulse-slow pointer-events-none -z-10" />
+				<div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-secondary/5 rounded-full blur-[80px] animate-pulse-slow delay-1000 pointer-events-none -z-10" />
+
+				<div className="w-full max-w-md space-y-6 relative z-10">
 					{/* Logo / Heading */}
-					<div className="text-center mb-6 sm:mb-8">
+					<div className="text-center mb-6">
 						<div className="flex flex-col items-center gap-2 group">
-							<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-								<MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
+							<div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+								{/* ✅ CSS Mask to make PNG take theme color */}
+								<div
+									className="w-10 h-10 bg-base-content"
+									style={{
+										maskImage: 'url("/z-app-logo.png")',
+										WebkitMaskImage: 'url("/z-app-logo.png")',
+										maskSize: 'contain',
+										WebkitMaskSize: 'contain',
+										maskRepeat: 'no-repeat',
+										WebkitMaskRepeat: 'no-repeat',
+										maskPosition: 'center',
+										WebkitMaskPosition: 'center',
+									}}
+								/>
 							</div>
-							<h1 className="text-xl sm:text-2xl font-bold mt-2">Create Account</h1>
-							<p className="text-sm sm:text-base text-base-content/60">
+							<h1 className="text-2xl font-bold mt-2">Create Account</h1>
+							<p className="text-base-content/60">
 								Get started with your free account
 							</p>
 						</div>
 					</div>
 
 					{/* Form */}
-					<form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+					<form onSubmit={handleSubmit} className="space-y-4">
 						{/* Full Name */}
 						<div className="form-control">
 							<label className="label">
 								<span className="label-text font-medium">Full Name</span>
 							</label>
 							<div className="relative">
-								<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+								<div className="!absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none !z-[102]">
 									<User className="w-5 h-5 text-base-content/40" />
 								</div>
 								<input
@@ -103,13 +119,13 @@ const SignUpPage = () => {
 							</div>
 						</div>
 
-						{/* ✅ START: New Username Field */}
+						{/* Username */}
 						<div className="form-control">
 							<label className="label">
 								<span className="label-text font-medium">Username</span>
 							</label>
 							<div className="relative">
-								<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+								<div className="!absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none !z-[102]">
 									<AtSign className="w-5 h-5 text-base-content/40" />
 								</div>
 								<input
@@ -123,7 +139,6 @@ const SignUpPage = () => {
 								/>
 							</div>
 						</div>
-						{/* ✅ END: New Username Field */}
 
 						{/* Email */}
 						<div className="form-control">
@@ -131,7 +146,7 @@ const SignUpPage = () => {
 								<span className="label-text font-medium">Email</span>
 							</label>
 							<div className="relative">
-								<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+								<div className="!absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none !z-[102]">
 									<Mail className="w-5 h-5 text-base-content/40" />
 								</div>
 								<input
@@ -152,7 +167,7 @@ const SignUpPage = () => {
 								<span className="label-text font-medium">Password</span>
 							</label>
 							<div className="relative">
-								<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+								<div className="!absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none !z-[102]">
 									<Lock className="w-5 h-5 text-base-content/40" />
 								</div>
 								<input
@@ -166,7 +181,7 @@ const SignUpPage = () => {
 								/>
 								<button
 									type="button"
-									className="absolute inset-y-0 right-0 pr-3 flex items-center"
+									className="!absolute inset-y-0 right-0 pr-3 flex items-center !z-[102]"
 									onClick={() => setShowPassword(!showPassword)}
 								>
 									{showPassword ? (
@@ -181,7 +196,7 @@ const SignUpPage = () => {
 						{/* Submit */}
 						<button
 							type="submit"
-							className="btn btn-primary w-full text-sm sm:text-base py-2 sm:py-3"
+							className="btn btn-primary w-full shadow-lg"
 							disabled={isSigningUp}
 						>
 							{isSigningUp ? (
@@ -196,10 +211,10 @@ const SignUpPage = () => {
 					</form>
 
 					{/* Already have account */}
-					<div className="text-center text-sm sm:text-base">
+					<div className="text-center">
 						<p className="text-base-content/60">
 							Already have an account?{" "}
-							<Link to="/login" className="link link-primary">
+							<Link to="/login" className="link link-primary font-medium">
 								Sign in
 							</Link>
 						</p>
@@ -209,6 +224,7 @@ const SignUpPage = () => {
 
 			{/* Right Side - Image */}
 			<AuthImagePattern
+				variant="signup"
 				title="Join our community"
 				subtitle="Connect with friends, share moments, and stay in touch with your loved ones."
 			/>

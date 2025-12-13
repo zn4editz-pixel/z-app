@@ -55,14 +55,14 @@ io.use((socket, next) => {
 	try {
 		// Get token from query or auth header
 		const token = socket.handshake.auth.token || socket.handshake.query.token;
-		
+
 		if (token) {
 			// Verify token
 			const decoded = jwt.verify(token, process.env.JWT_SECRET);
 			socket.userId = decoded.userId;
 			console.log(`✅ Socket authenticated for user ${decoded.userId}`);
 		}
-		
+
 		next();
 	} catch (error) {
 		console.error("Socket authentication error:", error.message);
@@ -98,7 +98,7 @@ export const emitToUser = (userId, event, data) => {
 const markPendingMessagesAsDelivered = async (userId) => {
 	try {
 		console.log(`📬 Marking pending messages as delivered for user ${userId}`);
-		
+
 		// Find all undelivered messages sent to this user
 		const pendingMessages = await prisma.message.findMany({
 			where: {
@@ -110,7 +110,7 @@ const markPendingMessagesAsDelivered = async (userId) => {
 
 		if (pendingMessages.length > 0) {
 			console.log(`📬 Found ${pendingMessages.length} pending messages for user ${userId}`);
-			
+
 			// Update all pending messages to delivered
 			const messageIds = pendingMessages.map(msg => msg.id);
 			await prisma.message.updateMany({
@@ -157,42 +157,42 @@ const recentMatches = new Map(); // socketId -> Set of recent partner socketIds 
 const findMatch = (socket) => {
 	console.log(`🔍 Finding match for ${socket.id}. Queue size: ${waitingQueue.length}`);
 	console.log(`🔍 Socket has strangerData:`, !!socket.strangerData);
-	
+
 	// ✅ Check if this socket is already matched
 	if (matchedPairs.has(socket.id)) {
 		console.log(`⚠️ ${socket.id} is already matched, skipping`);
 		return;
 	}
-	
+
 	// Remove current socket from queue if present
 	waitingQueue = waitingQueue.filter(id => id !== socket.id);
 	console.log(`🔍 After removing self from queue, size: ${waitingQueue.length}`);
-	
+
 	if (waitingQueue.length > 0) {
 		// Find first person in queue who is NOT already matched and NOT a recent match
 		let partnerSocketId = null;
 		let partnerSocket = null;
 		const myRecentMatches = recentMatches.get(socket.id) || new Set();
 		console.log(`🔍 My recent matches count: ${myRecentMatches.size}`);
-		
+
 		while (waitingQueue.length > 0) {
 			partnerSocketId = waitingQueue.shift();
 			console.log(`🔍 Checking potential partner: ${partnerSocketId}`);
-			
+
 			// Skip if partner is already matched
 			if (matchedPairs.has(partnerSocketId)) {
 				console.log(`⚠️ ${partnerSocketId} is already matched, skipping`);
 				continue;
 			}
-			
+
 			// ✅ Skip if this was a recent match (prevent immediate re-matching)
 			if (myRecentMatches.has(partnerSocketId)) {
 				console.log(`⚠️ ${partnerSocketId} is a recent match, skipping`);
 				continue;
 			}
-			
+
 			partnerSocket = io.sockets.sockets.get(partnerSocketId);
-			
+
 			if (partnerSocket) {
 				console.log(`✅ Found valid partner socket: ${partnerSocketId}`);
 				break; // Found a valid partner
@@ -200,12 +200,12 @@ const findMatch = (socket) => {
 				console.log(`⚠️ Partner socket ${partnerSocketId} not found, trying next`);
 			}
 		}
-		
+
 		if (partnerSocket && partnerSocketId) {
 			// Create match
 			matchedPairs.set(socket.id, partnerSocketId);
 			matchedPairs.set(partnerSocketId, socket.id);
-			
+
 			// ✅ Add to recent matches to prevent immediate re-matching
 			if (!recentMatches.has(socket.id)) {
 				recentMatches.set(socket.id, new Set());
@@ -215,7 +215,7 @@ const findMatch = (socket) => {
 			}
 			recentMatches.get(socket.id).add(partnerSocketId);
 			recentMatches.get(partnerSocketId).add(socket.id);
-			
+
 			// ✅ Limit recent matches to last 3 partners (allow re-matching after 3 skips)
 			if (recentMatches.get(socket.id).size > 3) {
 				const oldestMatch = Array.from(recentMatches.get(socket.id))[0];
@@ -225,7 +225,7 @@ const findMatch = (socket) => {
 				const oldestMatch = Array.from(recentMatches.get(partnerSocketId))[0];
 				recentMatches.get(partnerSocketId).delete(oldestMatch);
 			}
-			
+
 			// ✅ Clear recent matches after 30 seconds (allow re-matching after timeout)
 			setTimeout(() => {
 				if (recentMatches.has(socket.id)) {
@@ -235,35 +235,35 @@ const findMatch = (socket) => {
 					recentMatches.get(partnerSocketId).delete(socket.id);
 				}
 			}, 30000); // 30 seconds
-			
+
 			console.log(`✅ Matched ${socket.id} with ${partnerSocketId}`);
-			
+
 			// ✅ FIX: Send COMPLETE user data to both partners with privacy settings
 			const partnerDisplayData = {
 				userId: partnerSocket.strangerData?.userId,
-				displayName: partnerSocket.strangerData?.username || partnerSocket.strangerData?.nickname ? 
+				displayName: partnerSocket.strangerData?.username || partnerSocket.strangerData?.nickname ?
 					(partnerSocket.strangerData?.nickname || partnerSocket.strangerData?.username) : "Stranger",
 				profilePic: partnerSocket.strangerData?.profilePic || null,
 				isVerified: partnerSocket.strangerData?.isVerified || false,
 				allowFriendRequests: partnerSocket.strangerData?.allowFriendRequests !== false
 			};
-			
+
 			const myDisplayData = {
 				userId: socket.strangerData?.userId,
-				displayName: socket.strangerData?.username || socket.strangerData?.nickname ? 
+				displayName: socket.strangerData?.username || socket.strangerData?.nickname ?
 					(socket.strangerData?.nickname || socket.strangerData?.username) : "Stranger",
 				profilePic: socket.strangerData?.profilePic || null,
 				isVerified: socket.strangerData?.isVerified || false,
 				allowFriendRequests: socket.strangerData?.allowFriendRequests !== false
 			};
-			
-			socket.emit("stranger:matched", { 
+
+			socket.emit("stranger:matched", {
 				partnerId: partnerSocketId,
 				partnerUserId: partnerSocket.strangerData?.userId,
 				partnerUserData: partnerDisplayData
 			});
-			
-			partnerSocket.emit("stranger:matched", { 
+
+			partnerSocket.emit("stranger:matched", {
 				partnerId: socket.id,
 				partnerUserId: socket.strangerData?.userId,
 				partnerUserData: myDisplayData
@@ -285,26 +285,26 @@ const findMatch = (socket) => {
 // ✅ Clean up matches when user disconnects or skips
 const cleanupMatch = (socket) => {
 	const partnerSocketId = matchedPairs.get(socket.id);
-	
+
 	if (partnerSocketId) {
 		const partnerSocket = io.sockets.sockets.get(partnerSocketId);
-		
+
 		// Remove both from matched pairs
 		matchedPairs.delete(socket.id);
 		matchedPairs.delete(partnerSocketId);
-		
+
 		console.log(`🧹 Cleaned up match: ${socket.id} <-> ${partnerSocketId}`);
-		
+
 		if (partnerSocket) {
 			// Notify partner that stranger disconnected
 			partnerSocket.emit("stranger:disconnected");
 			return partnerSocket;
 		}
 	}
-	
+
 	// Also remove from waiting queue
 	waitingQueue = waitingQueue.filter(id => id !== socket.id);
-	
+
 	return null;
 };
 // === END STRANGER CHAT LOGIC ===
@@ -312,34 +312,34 @@ const cleanupMatch = (socket) => {
 // Socket.IO connection logic
 io.on("connection", (socket) => {
 	console.log("✅ User connected:", socket.id);
-	
+
 	const initialUserId = socket.handshake.query.userId;
 	if (initialUserId && initialUserId !== 'undefined') {
 		console.log(`✅ User ${initialUserId} connected with socket ${socket.id}`);
 		userSocketMap[initialUserId] = socket.id;
 		socket.userId = initialUserId;
-		
+
 		// Update user's online status in database (await to ensure it completes)
 		prisma.user.update({ where: { id: initialUserId }, data: { isOnline: true } })
 			.then(user => {
 				if (user) {
-					console.log(`✅ User ${initialUserId} marked as online in database`);
-					
+					if (process.env.NODE_ENV === 'development') console.log(`✅ User ${initialUserId} marked as online in database`);
+
 					// ✅ FIX: Mark pending messages as delivered when user comes online
 					markPendingMessagesAsDelivered(initialUserId);
-					
+
 					// Emit immediately after database update to ALL clients
 					const onlineUserIds = Object.keys(userSocketMap);
 					console.log(`📡 Broadcasting online users to ALL clients: ${onlineUserIds.length} users online`);
 					console.log(`📡 Online user IDs:`, onlineUserIds);
 					io.emit("getOnlineUsers", onlineUserIds);
-					
+
 					// Emit to admin dashboard for real-time updates
 					io.emit("admin:userOnline", { userId: initialUserId, isOnline: true });
 				}
 			})
 			.catch(err => console.error('Failed to update online status:', err));
-		
+
 		// Message delivery tracking disabled (not needed for core functionality)
 	}
 
@@ -349,7 +349,7 @@ io.on("connection", (socket) => {
 			userSocketMap[userId] = socket.id;
 			socket.userId = userId;
 			console.log(`✅ Registered user ${userId} → socket ${socket.id}`);
-			
+
 			// Update user's online status in database (Prisma)
 			prisma.user.update({
 				where: { id: userId },
@@ -358,13 +358,13 @@ io.on("connection", (socket) => {
 				.then(user => {
 					if (user) {
 						console.log(`✅ User ${userId} marked as online`);
-						
+
 						// ✅ FIX: Mark pending messages as delivered when user comes online
 						markPendingMessagesAsDelivered(userId);
-						
+
 						const onlineUserIds = Object.keys(userSocketMap);
 						io.emit("getOnlineUsers", onlineUserIds);
-						
+
 						// Emit to admin dashboard for real-time updates
 						io.emit("admin:userOnline", { userId, isOnline: true });
 					}
@@ -379,11 +379,11 @@ io.on("connection", (socket) => {
 		try {
 			const senderId = socket.userId;
 			console.log(`📤 INSTANT message from ${senderId} to ${receiverId} (Start: ${startTime}ms)`);
-			
+
 			if (!senderId || !receiverId) {
 				throw new Error('Sender or receiver ID missing');
 			}
-			
+
 			// ⚡ OPTIMIZATION: Create message WITHOUT includes (10x faster!)
 			const dbStartTime = Date.now();
 			const newMessage = await prisma.message.create({
@@ -398,22 +398,22 @@ io.on("connection", (socket) => {
 				}
 			});
 			const dbEndTime = Date.now();
-			
+
 			console.log(`⚡ Message saved in ${dbEndTime - dbStartTime}ms: ${newMessage.id}`);
-			
+
 			// 🚀 ULTRA-FAST: Send to receiver immediately
 			const receiverSocketId = getReceiverSocketId(receiverId);
 			if (receiverSocketId) {
 				io.to(receiverSocketId).emit("newMessage", newMessage);
 			}
-			
+
 			// 🚀 ULTRA-FAST: Confirm to sender immediately
 			socket.emit("newMessage", newMessage);
 			const totalTime = Date.now() - startTime;
 			console.log(`🚀 ULTRA-FAST: Message processed in ${totalTime}ms`);
-			
+
 			// 🚀 SKIP CACHE CLEARING: Remove cache operations for maximum speed
-			
+
 		} catch (error) {
 			console.error('❌ Socket sendMessage error:', error);
 			socket.emit("messageError", { error: error.message, tempId });
@@ -510,7 +510,7 @@ io.on("connection", (socket) => {
 
 			// Remove existing reaction from this user
 			reactions = reactions.filter(r => r.userId !== senderId);
-			
+
 			// Add new reaction
 			reactions.push({
 				userId: senderId,
@@ -616,6 +616,41 @@ io.on("connection", (socket) => {
 		console.log(`👮 Admin action: ${action} for user ${targetUserId}`);
 		emitToUser(targetUserId, "admin-action", { action, payload });
 	});
+
+	// ✅ TYPING INDICATOR EVENTS
+	socket.on("typing", ({ receiverId }) => {
+		// Robust Sender ID resolution:
+		// 1. Try socket.userId (set by auth middleware)
+		// 2. Try to find user ID from the socket map (fallback)
+		const senderId = socket.userId || getUserIdFromSocketId(socket.id);
+
+		console.log(`⌨️ BACKEND: typing event from ${senderId} (socket: ${socket.userId ? 'auth' : 'map'}) to ${receiverId}`);
+
+		if (!senderId) {
+			console.log("   -> ❌ Could not identify sender! Aborting.");
+			return;
+		}
+
+		const receiverSocketId = getReceiverSocketId(receiverId);
+		if (receiverSocketId) {
+			console.log(`   -> Relaying to socket ${receiverSocketId}`);
+			io.to(receiverSocketId).emit("typing", { senderId: senderId }); // Send resolved senderId
+		} else {
+			console.log(`   -> Receiver ${receiverId} is OFFLINE or socket not found`);
+		}
+	});
+
+	socket.on("stopTyping", ({ receiverId }) => {
+		const senderId = socket.userId || getUserIdFromSocketId(socket.id);
+		console.log(`🛑 BACKEND: stopTyping from ${senderId} to ${receiverId}`);
+
+		if (!senderId) return;
+
+		const receiverSocketId = getReceiverSocketId(receiverId);
+		if (receiverSocketId) {
+			io.to(receiverSocketId).emit("stopTyping", { senderId: senderId });
+		}
+	});
 	// === END PRIVATE CHAT EVENTS ===
 
 	// === STRANGER CHAT (OMEGLE) EVENTS ===
@@ -631,12 +666,12 @@ io.on("connection", (socket) => {
 	socket.on("stranger:skip", () => {
 		console.log(`⏭️ ${socket.id} skipping stranger`);
 		const partnerSocket = cleanupMatch(socket);
-		
+
 		// Notify partner if they exist
 		if (partnerSocket) {
 			partnerSocket.emit("stranger:disconnected");
 		}
-		
+
 		// Re-queue the user who skipped
 		findMatch(socket);
 	});
@@ -644,7 +679,7 @@ io.on("connection", (socket) => {
 	socket.on("stranger:chatMessage", (payload) => {
 		const { message } = payload;
 		const partnerSocketId = matchedPairs.get(socket.id);
-		
+
 		if (partnerSocketId) {
 			const partnerSocket = io.sockets.sockets.get(partnerSocketId);
 			if (partnerSocket) {
@@ -658,7 +693,7 @@ io.on("connection", (socket) => {
 	socket.on("stranger:reaction", (payload) => {
 		const { emoji } = payload;
 		const partnerSocketId = matchedPairs.get(socket.id);
-		
+
 		if (partnerSocketId) {
 			const partnerSocket = io.sockets.sockets.get(partnerSocketId);
 			if (partnerSocket) {
@@ -668,22 +703,22 @@ io.on("connection", (socket) => {
 		}
 	});
 
-    // --- *** THIS FUNCTION IS NOW FIXED *** ---
+	// --- *** THIS FUNCTION IS NOW FIXED *** ---
 	socket.on("stranger:addFriend", async (payload) => {
 		const { partnerUserId } = payload || {}; // ✅ Get from payload
 		const partnerSocketId = matchedPairs.get(socket.id);
-		
+
 		if (!partnerSocketId) {
-			socket.emit("stranger:addFriendError", { 
-				error: "No active stranger chat connection" 
+			socket.emit("stranger:addFriendError", {
+				error: "No active stranger chat connection"
 			});
 			return;
 		}
 
 		const partnerSocket = io.sockets.sockets.get(partnerSocketId);
 		if (!partnerSocket) {
-			socket.emit("stranger:addFriendError", { 
-				error: "Partner disconnected" 
+			socket.emit("stranger:addFriendError", {
+				error: "Partner disconnected"
 			});
 			return;
 		}
@@ -730,44 +765,44 @@ io.on("connection", (socket) => {
 			}
 
 			if (reverseRequest) {
-                // If a request already exists from the other person, notify sender
-                socket.emit("stranger:addFriendError", { 
-                    error: "This user has already sent you a friend request. Check your Social Hub!" 
-                });
-                throw new Error("This user has already sent you a friend request.");
+				// If a request already exists from the other person, notify sender
+				socket.emit("stranger:addFriendError", {
+					error: "This user has already sent you a friend request. Check your Social Hub!"
+				});
+				throw new Error("This user has already sent you a friend request.");
 			} else {
-                // 3. Create new friend request using Prisma
-                const newRequest = await prisma.friendRequest.create({
-                    data: {
-                        senderId: senderId,
-                        receiverId: receiverId,
-                    }
-                });
+				// 3. Create new friend request using Prisma
+				const newRequest = await prisma.friendRequest.create({
+					data: {
+						senderId: senderId,
+						receiverId: receiverId,
+					}
+				});
 
-                // Friend request is already created above - no need to update arrays in SQLite
+				// Friend request is already created above - no need to update arrays in SQLite
 
-                // 4. Emit success events
-                console.log(`👥 Friend request from ${senderId} to ${receiverId} created`);
-                
-                // Emit to stranger chat UI
-                partnerSocket.emit("stranger:friendRequest", { // Notify receiver
-                    userData: socket.strangerData,
-                    fromSocketId: socket.id
-                });
-                
-                socket.emit("stranger:friendRequestSent", { // Confirm to sender
-                    userData: partnerSocket.strangerData
-                });
-                
-                // Also emit to Social Hub (for pending requests)
-                const senderProfile = await prisma.user.findUnique({
-                    where: { id: senderId },
-                    select: { id: true, username: true, nickname: true, profilePic: true, isVerified: true }
-                });
-                console.log(`📤 Emitting friendRequest:received to ${receiverId} with profile:`, senderProfile);
-                partnerSocket.emit("friendRequest:received", senderProfile);
-                console.log(`✅ Friend request event emitted successfully`);
-            }
+				// 4. Emit success events
+				console.log(`👥 Friend request from ${senderId} to ${receiverId} created`);
+
+				// Emit to stranger chat UI
+				partnerSocket.emit("stranger:friendRequest", { // Notify receiver
+					userData: socket.strangerData,
+					fromSocketId: socket.id
+				});
+
+				socket.emit("stranger:friendRequestSent", { // Confirm to sender
+					userData: partnerSocket.strangerData
+				});
+
+				// Also emit to Social Hub (for pending requests)
+				const senderProfile = await prisma.user.findUnique({
+					where: { id: senderId },
+					select: { id: true, username: true, nickname: true, profilePic: true, isVerified: true }
+				});
+				console.log(`📤 Emitting friendRequest:received to ${receiverId} with profile:`, senderProfile);
+				partnerSocket.emit("friendRequest:received", senderProfile);
+				console.log(`✅ Friend request event emitted successfully`);
+			}
 
 		} catch (error) {
 			console.error("Error creating friend request:", error.message);
@@ -775,14 +810,14 @@ io.on("connection", (socket) => {
 			socket.emit("stranger:addFriendError", { error: error.message });
 		}
 	});
-    // --- *** END OF FIXED FUNCTION *** ---
+	// --- *** END OF FIXED FUNCTION *** ---
 
-    // --- *** ENABLED AND FIXED WITH PRISMA *** ---
+	// --- *** ENABLED AND FIXED WITH PRISMA *** ---
 	socket.on("stranger:report", async (payload) => {
-        // ✅ FIX: Destructure reportedUserId from payload (not from partnerSocket)
+		// ✅ FIX: Destructure reportedUserId from payload (not from partnerSocket)
 		const { reporterId, reportedUserId, reason, description, category, screenshot, isAIDetected, aiConfidence, aiCategory } = payload;
 		const partnerSocketId = matchedPairs.get(socket.id);
-		
+
 		console.log('📥 Received report:', {
 			reporterId,
 			reportedUserId,
@@ -790,32 +825,32 @@ io.on("connection", (socket) => {
 			isAIDetected,
 			hasScreenshot: !!screenshot
 		});
-		
+
 		if (partnerSocketId) {
 			const partnerSocket = io.sockets.sockets.get(partnerSocketId);
-			
+
 			// ✅ FIX: Use reportedUserId from payload, not from socket
 			if (reportedUserId) {
 				try {
-                    // Validate that the screenshot exists
-                    if (!screenshot) {
-                        throw new Error("A screenshot is required as proof.");
-                    }
+					// Validate that the screenshot exists
+					if (!screenshot) {
+						throw new Error("A screenshot is required as proof.");
+					}
 
-                    // Upload the screenshot to Cloudinary
-                    console.log('📤 Uploading screenshot to Cloudinary...');
-                    const uploadResponse = await cloudinary.uploader.upload(screenshot, {
-                        resource_type: "image",
-                        folder: "reports",
-                    });
-                    const screenshotUrl = uploadResponse.secure_url;
-                    console.log('✅ Screenshot uploaded:', screenshotUrl);
+					// Upload the screenshot to Cloudinary
+					console.log('📤 Uploading screenshot to Cloudinary...');
+					const uploadResponse = await cloudinary.uploader.upload(screenshot, {
+						resource_type: "image",
+						folder: "reports",
+					});
+					const screenshotUrl = uploadResponse.secure_url;
+					console.log('✅ Screenshot uploaded:', screenshotUrl);
 
-                    if (!screenshotUrl) {
-                        throw new Error("Failed to upload screenshot.");
-                    }
+					if (!screenshotUrl) {
+						throw new Error("Failed to upload screenshot.");
+					}
 
-                    // ✅ FIX: Save the report with correct reporter and violator IDs
+					// ✅ FIX: Save the report with correct reporter and violator IDs
 					const report = await prisma.report.create({
 						data: {
 							reporterId: reporterId, // ✅ The person who saw the violation
@@ -831,11 +866,11 @@ io.on("connection", (socket) => {
 						}
 					});
 					console.log(`✅ Report saved: Reporter ${reporterId} reported Violator ${reportedUserId}${isAIDetected ? ' (AI Detected)' : ''}`);
-					
+
 					socket.emit("stranger:reportSuccess", { message: "Report submitted successfully" });
 				} catch (error) {
-                    // Send the specific validation error message back to the user
-                    const errorMessage = error.errors?.screenshot?.message || error.message || "Failed to submit report";
+					// Send the specific validation error message back to the user
+					const errorMessage = error.errors?.screenshot?.message || error.message || "Failed to submit report";
 					console.error("❌ Error saving report:", errorMessage);
 					socket.emit("stranger:reportError", { error: errorMessage });
 				}
@@ -848,24 +883,24 @@ io.on("connection", (socket) => {
 			socket.emit("stranger:reportError", { error: "Partner not found" });
 		}
 	});
-    // --- *** END OF FIXED FUNCTION *** ---
+	// --- *** END OF FIXED FUNCTION *** ---
 
 	// Silent AI Suspicion Report (Low confidence detections for admin review)
 	socket.on("stranger:aiSuspicion", async (payload) => {
 		// ✅ FIX: Use reportedUserId from payload
 		const { reporterId, reportedUserId, reason, description, category, screenshot, isAIDetected, aiConfidence, aiCategory, isSilentReport } = payload;
 		const partnerSocketId = matchedPairs.get(socket.id);
-		
+
 		console.log('📋 Silent AI suspicion:', {
 			reporterId,
 			reportedUserId,
 			aiCategory,
 			aiConfidence: aiConfidence ? `${(aiConfidence * 100).toFixed(1)}%` : 'N/A'
 		});
-		
+
 		if (partnerSocketId) {
 			const partnerSocket = io.sockets.sockets.get(partnerSocketId);
-			
+
 			// ✅ FIX: Use reportedUserId from payload
 			if (reportedUserId) {
 				try {
@@ -905,7 +940,7 @@ io.on("connection", (socket) => {
 						}
 					});
 					console.log(`✅ Silent AI suspicion saved: Reporter ${reporterId} flagged Violator ${reportedUserId} - ${aiCategory} at ${(aiConfidence * 100).toFixed(1)}%`);
-					
+
 					// No response to user - silent
 				} catch (error) {
 					console.error("❌ Error saving AI suspicion:", error.message);
@@ -920,7 +955,7 @@ io.on("connection", (socket) => {
 	socket.on("webrtc:offer", (payload) => {
 		const { sdp } = payload;
 		const partnerSocketId = matchedPairs.get(socket.id);
-		
+
 		if (partnerSocketId) {
 			const partnerSocket = io.sockets.sockets.get(partnerSocketId);
 			if (partnerSocket) {
@@ -933,7 +968,7 @@ io.on("connection", (socket) => {
 	socket.on("webrtc:answer", (payload) => {
 		const { sdp } = payload;
 		const partnerSocketId = matchedPairs.get(socket.id);
-		
+
 		if (partnerSocketId) {
 			const partnerSocket = io.sockets.sockets.get(partnerSocketId);
 			if (partnerSocket) {
@@ -946,7 +981,7 @@ io.on("connection", (socket) => {
 	socket.on("webrtc:ice-candidate", (payload) => {
 		const { candidate } = payload;
 		const partnerSocketId = matchedPairs.get(socket.id);
-		
+
 		if (partnerSocketId) {
 			const partnerSocket = io.sockets.sockets.get(partnerSocketId);
 			if (partnerSocket) {
@@ -962,7 +997,7 @@ io.on("connection", (socket) => {
 		const { receiverId, callerInfo, callType } = payload;
 		const callerId = socket.userId;
 		console.log(`📞 Call initiated from ${callerId} to ${receiverId} (Type: ${callType})`);
-		
+
 		if (callerId) {
 			emitToUser(receiverId, "private:incoming-call", {
 				callerId,
@@ -978,7 +1013,7 @@ io.on("connection", (socket) => {
 		const { callerId, acceptorInfo } = payload;
 		const acceptorId = socket.userId;
 		console.log(`✅ Call accepted by ${acceptorId} for caller ${callerId}`);
-		
+
 		if (acceptorId) {
 			emitToUser(callerId, "private:call-accepted", {
 				acceptorId,
@@ -996,7 +1031,7 @@ io.on("connection", (socket) => {
 		const { callerId, reason } = payload;
 		const rejectorId = socket.userId;
 		console.log(`❌ Call rejected by ${rejectorId} for caller ${callerId}. Reason: ${reason || 'declined'}`);
-		
+
 		if (rejectorId) {
 			emitToUser(callerId, "private:call-rejected", {
 				rejectorId,
@@ -1011,7 +1046,7 @@ io.on("connection", (socket) => {
 		const { receiverId, sdp } = payload;
 		const callerId = socket.userId;
 		console.log(`🔒 private:offer from ${callerId} to ${receiverId}`);
-		
+
 		if (callerId) {
 			emitToUser(receiverId, "private:offer", { callerId, sdp });
 		} else {
@@ -1023,7 +1058,7 @@ io.on("connection", (socket) => {
 		const { callerId, sdp } = payload;
 		const acceptorId = socket.userId;
 		console.log(`🔒 private:answer from ${acceptorId} to ${callerId}`);
-		
+
 		if (acceptorId) {
 			emitToUser(callerId, "private:answer", { acceptorId, sdp });
 		} else {
@@ -1034,7 +1069,7 @@ io.on("connection", (socket) => {
 	socket.on("private:ice-candidate", (payload) => {
 		const { targetUserId, candidate } = payload;
 		const senderId = socket.userId;
-		
+
 		if (senderId) {
 			emitToUser(targetUserId, "private:ice-candidate", { senderId, candidate });
 		} else {
@@ -1046,7 +1081,7 @@ io.on("connection", (socket) => {
 		const { targetUserId } = payload;
 		const userId = socket.userId;
 		console.log(`📞 Ending call between ${userId} and ${targetUserId}`);
-		
+
 		if (userId) {
 			emitToUser(targetUserId, "private:call-ended", { userId });
 		} else {
@@ -1059,7 +1094,7 @@ io.on("connection", (socket) => {
 	socket.on("typing", (payload) => {
 		const { receiverId } = payload;
 		const senderId = socket.userId;
-		
+
 		if (senderId) {
 			emitToUser(receiverId, "typing", { senderId });
 		}
@@ -1068,7 +1103,7 @@ io.on("connection", (socket) => {
 	socket.on("stopTyping", (payload) => {
 		const { receiverId } = payload;
 		const senderId = socket.userId;
-		
+
 		if (senderId) {
 			emitToUser(receiverId, "stopTyping", { senderId });
 		}
@@ -1092,11 +1127,11 @@ io.on("connection", (socket) => {
 		if (disconnectedUserId) {
 			console.log(`❌ User ${disconnectedUserId} disconnected fully.`);
 			delete userSocketMap[disconnectedUserId];
-			
+
 			// Update user's online status and last seen in database (Prisma)
 			prisma.user.update({
 				where: { id: disconnectedUserId },
-				data: { 
+				data: {
 					isOnline: false,
 					lastSeen: new Date()
 				}
@@ -1109,7 +1144,7 @@ io.on("connection", (socket) => {
 						console.log(`📡 Broadcasting online users to ALL clients: ${onlineUserIds.length} users online`);
 						console.log(`📡 Online user IDs:`, onlineUserIds);
 						io.emit("getOnlineUsers", onlineUserIds);
-						
+
 						// Emit to admin dashboard for real-time updates
 						io.emit("admin:userOffline", { userId: disconnectedUserId, isOnline: false, lastSeen: new Date() });
 					}

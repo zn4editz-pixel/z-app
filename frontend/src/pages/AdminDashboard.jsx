@@ -2,16 +2,11 @@ import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "../store/useAuthStore";
-import { 
+import {
 	Users, AlertTriangle, Shield, TrendingUp,
 	BadgeCheck, FileText, Activity, Brain
 } from "lucide-react";
-import "../styles/admin-custom.css";
-import "../styles/admin-golden-animations.css";
-import "../styles/admin-particles-animation.css";
-import "../styles/admin-performance-optimized.css";
-import "../styles/admin-smooth-gradients.css";
-import "../styles/admin-enhanced-background.css";
+import "../styles/admin-dashboard-imports.css";
 import GoldenParticles from "../components/admin/GoldenParticles";
 
 // Import tab components
@@ -26,7 +21,7 @@ import AIAnalysisAgent from "../components/admin/AIAnalysisAgent";
 
 const AdminDashboard = () => {
 	const { socket } = useAuthStore();
-	
+
 	// Active Tab State
 	const [activeTab, setActiveTab] = useState("dashboard");
 
@@ -67,15 +62,15 @@ const AdminDashboard = () => {
 		fetchAIReports();
 		fetchVerificationRequests();
 	}, []);
-	
+
 	// Real-time socket listeners for online status updates
 	useEffect(() => {
 		if (!socket) return;
-		
+
 		const handleUserOnline = ({ userId }) => {
 			console.log(`📡 Admin: User ${userId} is now online`);
-			setUsers(prevUsers => 
-				prevUsers.map(user => 
+			setUsers(prevUsers =>
+				prevUsers.map(user =>
 					user.id === userId ? { ...user, isOnline: true } : user
 				)
 			);
@@ -85,11 +80,11 @@ const AdminDashboard = () => {
 				onlineUsers: prevStats.onlineUsers + 1
 			} : null);
 		};
-		
+
 		const handleUserOffline = ({ userId, lastSeen }) => {
 			console.log(`📡 Admin: User ${userId} is now offline`);
-			setUsers(prevUsers => 
-				prevUsers.map(user => 
+			setUsers(prevUsers =>
+				prevUsers.map(user =>
 					user.id === userId ? { ...user, isOnline: false, lastSeen } : user
 				)
 			);
@@ -99,11 +94,11 @@ const AdminDashboard = () => {
 				onlineUsers: Math.max(0, prevStats.onlineUsers - 1)
 			} : null);
 		};
-		
+
 		// Listen for global online users updates
 		const handleOnlineUsers = (onlineUserIds) => {
 			console.log(`📡 Admin: Online users updated - ${onlineUserIds.length} users online`);
-			setUsers(prevUsers => 
+			setUsers(prevUsers =>
 				prevUsers.map(user => ({
 					...user,
 					isOnline: onlineUserIds.includes(user.id)
@@ -115,18 +110,18 @@ const AdminDashboard = () => {
 				onlineUsers: onlineUserIds.length
 			} : null);
 		};
-		
+
 		socket.on("admin:userOnline", handleUserOnline);
 		socket.on("admin:userOffline", handleUserOffline);
 		socket.on("getOnlineUsers", handleOnlineUsers); // Sync with global online users
-		
+
 		return () => {
 			socket.off("admin:userOnline", handleUserOnline);
 			socket.off("admin:userOffline", handleUserOffline);
 			socket.off("getOnlineUsers", handleOnlineUsers);
 		};
 	}, [socket]);
-	
+
 	// Periodic refresh to ensure accuracy (every 2 minutes to reduce disruption)
 	useEffect(() => {
 		const interval = setInterval(() => {
@@ -135,7 +130,7 @@ const AdminDashboard = () => {
 				fetchUsers(true); // Force refresh with cache bypass
 			}
 		}, 120000); // Every 2 minutes instead of 30 seconds
-		
+
 		return () => clearInterval(interval);
 	}, [activeTab, loadingUsers]);
 
@@ -247,27 +242,27 @@ const AdminDashboard = () => {
 				reason: reason || "Violation of terms",
 				duration: duration || "7d"
 			});
-			
+
 			console.log("Suspend response:", response.data);
-			
+
 			// Immediately update the local state with response data
 			setUsers(prevUsers => {
-				const updated = prevUsers.map(user => 
-					user.id === userId 
-						? { 
-							...user, 
-							isSuspended: true, 
-							suspensionEndTime: response.data.user?.suspensionEndTime, 
-							suspensionReason: response.data.user?.suspensionReason 
+				const updated = prevUsers.map(user =>
+					user.id === userId
+						? {
+							...user,
+							isSuspended: true,
+							suspensionEndTime: response.data.user?.suspensionEndTime,
+							suspensionReason: response.data.user?.suspensionReason
 						}
 						: user
 				);
 				console.log("Updated users state after suspend");
 				return updated;
 			});
-			
+
 			toast.success("User suspended successfully");
-			
+
 			// Force refresh after a short delay with cache bypass
 			setTimeout(() => {
 				console.log("Fetching fresh user data...");
@@ -284,27 +279,27 @@ const AdminDashboard = () => {
 	const handleUnsuspendUser = async (userId) => {
 		try {
 			const response = await axiosInstance.put(`/admin/unsuspend/${userId}`);
-			
+
 			console.log("Unsuspend response:", response.data);
-			
+
 			// Immediately update the local state with response data
 			setUsers(prevUsers => {
-				const updated = prevUsers.map(user => 
-					user.id === userId 
-						? { 
-							...user, 
-							isSuspended: false, 
-							suspensionEndTime: null, 
-							suspensionReason: null 
+				const updated = prevUsers.map(user =>
+					user.id === userId
+						? {
+							...user,
+							isSuspended: false,
+							suspensionEndTime: null,
+							suspensionReason: null
 						}
 						: user
 				);
 				console.log("Updated users state after unsuspend");
 				return updated;
 			});
-			
+
 			toast.success("User unsuspended successfully");
-			
+
 			// Force refresh after a short delay with cache bypass
 			setTimeout(() => {
 				console.log("Fetching fresh user data...");
@@ -322,12 +317,12 @@ const AdminDashboard = () => {
 		if (!confirm("Are you sure you want to permanently delete this user? This will delete all their messages, friend requests, and related data. This action cannot be undone.")) return;
 		try {
 			const response = await axiosInstance.delete(`/admin/delete/${userId}`);
-			
+
 			// Immediately remove from local state
 			setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
-			
+
 			toast.success(response.data?.message || "User deleted successfully");
-			
+
 			// Refresh stats
 			fetchStats();
 		} catch (err) {
@@ -339,18 +334,18 @@ const AdminDashboard = () => {
 	const handleToggleVerification = async (userId) => {
 		try {
 			const response = await axiosInstance.put(`/admin/verify/${userId}`);
-			
+
 			// Immediately update the local state
-			setUsers(prevUsers => 
-				prevUsers.map(user => 
-					user.id === userId 
+			setUsers(prevUsers =>
+				prevUsers.map(user =>
+					user.id === userId
 						? { ...user, isVerified: !user.isVerified }
 						: user
 				)
 			);
-			
+
 			toast.success(response.data?.message || "Verification status updated successfully");
-			
+
 			// Refresh data from server
 			fetchUsers();
 			fetchStats();
@@ -411,7 +406,7 @@ const AdminDashboard = () => {
 	const handleApproveVerification = async (userId) => {
 		// ✅ FIX: Optimistic update
 		setVerificationRequests(prev => prev.filter(req => req.id !== userId));
-		
+
 		try {
 			await axiosInstance.put(`/admin/verification/approve/${userId}`);
 			toast.success("Verification approved");
@@ -431,10 +426,10 @@ const AdminDashboard = () => {
 	const handleRejectVerification = async (userId) => {
 		const reason = prompt("Enter rejection reason:");
 		if (!reason) return;
-		
+
 		// ✅ FIX: Optimistic update
 		setVerificationRequests(prev => prev.filter(req => req.id !== userId));
-		
+
 		try {
 			await axiosInstance.put(`/admin/verification/reject/${userId}`, { reason });
 			toast.success("Verification rejected");
@@ -531,24 +526,24 @@ const AdminDashboard = () => {
 					<div className="admin-shape admin-shape-3"></div>
 					<div className="admin-shape admin-shape-4"></div>
 				</div>
-				
+
 				{/* Animated Grid Overlay */}
 				<div className="admin-grid-overlay"></div>
-				
+
 				{/* Status Connection Lines */}
 				<div className="admin-status-lines">
 					<div className="status-line status-line-1 status-healthy"></div>
 					<div className="status-line status-line-2 status-warning"></div>
 					<div className="status-line status-line-3 status-info"></div>
 					<div className="status-line status-line-4 status-critical"></div>
-					
+
 					{/* Vertical Lines */}
 					<div className="vertical-status-line vertical-line-1 status-healthy"></div>
 					<div className="vertical-status-line vertical-line-2 status-warning"></div>
 					<div className="vertical-status-line vertical-line-3 status-info"></div>
 					<div className="vertical-status-line vertical-line-4 status-critical"></div>
 				</div>
-				
+
 				{/* Status Nodes */}
 				<div className="status-nodes">
 					<div className="status-node node-backend status-healthy" title="Backend - Healthy"></div>
@@ -557,10 +552,10 @@ const AdminDashboard = () => {
 					<div className="status-node node-websocket status-critical" title="WebSocket - Critical"></div>
 				</div>
 			</div>
-			
+
 			{/* Golden Particles Background */}
 			<GoldenParticles particleCount={8} intensity="minimal" />
-			
+
 			<div className="max-w-7xl mx-auto relative z-10">
 				{/* Header */}
 				<div className="mb-6 sm:mb-8">
@@ -581,11 +576,10 @@ const AdminDashboard = () => {
 								<button
 									key={tab.id}
 									onClick={() => setActiveTab(tab.id)}
-									className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium ${
-										activeTab === tab.id
+									className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium ${activeTab === tab.id
 											? "bg-gradient-to-r from-warning/20 via-base-content/10 to-warning/20 text-base-content shadow-lg scale-105 border border-warning/30"
 											: "hover:bg-base-200 text-base-content/70 hover:text-base-content hover:scale-102"
-									}`}
+										}`}
 								>
 									<Icon className="w-4 h-4 sm:w-5 sm:h-5" />
 									<span className="text-xs sm:text-sm">{tab.label}</span>

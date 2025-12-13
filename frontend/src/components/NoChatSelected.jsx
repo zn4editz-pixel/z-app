@@ -5,7 +5,20 @@ const NoChatSelected = () => {
       <div className="max-w-md text-center space-y-6">
         <div className="flex justify-center gap-4 mb-4">
           <div className="w-32 h-32 rounded-2xl bg-primary/10 flex items-center justify-center animate-bounce">
-            <img src="/z-app-logo.png" alt="Z-APP Logo" className="w-20 h-20 object-contain" />
+            {/* ✅ Animated Gradient Logo */}
+            <div
+              className="w-20 h-20 bg-gradient-to-r from-base-content via-base-content/50 to-base-content animate-gradient"
+              style={{
+                maskImage: 'url("/z-app-logo.png")',
+                WebkitMaskImage: 'url("/z-app-logo.png")',
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+              }}
+            />
           </div>
         </div>
 

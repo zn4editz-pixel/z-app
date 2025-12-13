@@ -5,14 +5,18 @@ const sendEmail = async (to, subject, html) => {
   try {
     // Check if email credentials are configured
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.error("❌ Email credentials not configured. Set EMAIL_USER and EMAIL_PASS environment variables.");
-      console.error("💡 For Gmail: Use App Password, not your regular password");
-      console.error("💡 Generate App Password: https://myaccount.google.com/apppasswords");
+      if (process.env.NODE_ENV === 'development') {
+        console.error("❌ Email credentials not configured. Set EMAIL_USER and EMAIL_PASS environment variables.");
+        console.error("💡 For Gmail: Use App Password, not your regular password");
+        console.error("💡 Generate App Password: https://myaccount.google.com/apppasswords");
+      }
       throw new Error("Email service not configured");
     }
 
-    console.log(`📧 Attempting to send email to ${to}...`);
-    console.log(`📧 Using email service: ${process.env.EMAIL_USER}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📧 Attempting to send email to ${to}...`);
+      console.log(`📧 Using email service: ${process.env.EMAIL_USER}`);
+    }
 
     // Create a transporter using Gmail SMTP
     const transporter = nodemailer.createTransport({

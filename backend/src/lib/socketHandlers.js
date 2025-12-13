@@ -241,9 +241,8 @@ export function initializeSocketHandlers(io) {
 				})
 					.then(user => {
 						if (user) {
-							console.log(`✅ User ${userId} marked as online in database`);
+							if (process.env.NODE_ENV === 'development') console.log(`✅ User ${userId} marked as online in database`);
 							const onlineUserIds = Object.keys(userSocketMap);
-							console.log(`📡 Broadcasting online users: ${onlineUserIds.length} users`);
 							io.emit("getOnlineUsers", onlineUserIds);
 						}
 					})
@@ -347,7 +346,7 @@ export function initializeSocketHandlers(io) {
 					throw new Error('Sender or receiver ID missing');
 				}
 				
-				// ⚡ CREATE MESSAGE WITH REPLY SUPPORT
+				// ⚡ CREATE MESSAGE WITH REPLY SUPPORT (ULTRA-FAST)
 				const newMessage = await prisma.message.create({
 					data: {
 						senderId: senderId,
@@ -358,9 +357,15 @@ export function initializeSocketHandlers(io) {
 						voiceDuration: voiceDuration || null,
 						replyToId: replyTo || null, // ✅ ADD REPLY SUPPORT
 						status: 'sent' // ✅ Set status immediately
-					},
-					include: {
-						replyTo: {
+					}
+				});
+				
+				// 🔥 ULTRA-FAST: Fetch replyTo separately if needed (non-blocking)
+				let replyToMessage = null;
+				if (replyTo) {
+					try {
+						replyToMessage = await prisma.message.findUnique({
+							where: { id: replyTo },
 							select: {
 								id: true,
 								senderId: true,
@@ -369,9 +374,17 @@ export function initializeSocketHandlers(io) {
 								voice: true,
 								createdAt: true
 							}
-						}
+						});
+					} catch (error) {
+						console.warn('⚠️ Could not fetch reply-to message:', error.message);
 					}
-				});
+				}
+				
+				// Add replyTo to message object
+				const messageWithReply = {
+					...newMessage,
+					replyTo: replyToMessage
+				};
 				
 				console.log(`⚡ Message saved in database: ${newMessage.id}`);
 				
@@ -382,14 +395,14 @@ export function initializeSocketHandlers(io) {
 				console.log(`📊 Receiver socket ID: ${receiverSocketId}`);
 				
 				if (receiverSocketId) {
-					io.to(receiverSocketId).emit("newMessage", newMessage);
+					io.to(receiverSocketId).emit("newMessage", messageWithReply);
 					console.log(`⚡ SUCCESS: Message sent to receiver ${receiverId} (socket: ${receiverSocketId})`);
 				} else {
 					console.log(`⚠️ OFFLINE: Receiver ${receiverId} not online - message saved but not delivered`);
 				}
 				
 				// ⚡ INSTANT: Send back to sender (replace optimistic message)
-				socket.emit("newMessage", newMessage);
+				socket.emit("newMessage", messageWithReply);
 				console.log(`⚡ SUCCESS: Message confirmed to sender ${senderId}`);
 				
 			} catch (error) {

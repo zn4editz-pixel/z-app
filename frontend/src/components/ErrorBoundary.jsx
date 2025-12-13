@@ -11,17 +11,24 @@ class ErrorBoundary extends React.Component {
     return { hasError: true };
   }
 
+
   componentDidCatch(error, errorInfo) {
     // Log error to console for debugging
     if (import.meta.env.DEV) console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     this.setState({
       error,
       errorInfo
     });
-    
-    // TODO: Send error to logging service (e.g., Sentry)
-    // logErrorToService(error, errorInfo);
+
+    // Log to a remote service if configured (Placeholder)
+    try {
+      if (window.logErrorToService) {
+        window.logErrorToService({ error, componentStack: errorInfo?.componentStack });
+      }
+    } catch (e) {
+      console.error("Failed to send error to remote service", e);
+    }
   }
 
   handleReload = () => {

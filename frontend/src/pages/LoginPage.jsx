@@ -51,16 +51,36 @@ const LoginPage = () => {
 	return (
 		<div className="min-h-screen grid lg:grid-cols-2">
 			{/* Left Side - Form */}
-			<div className="flex flex-col justify-center items-center p-6 sm:p-12 login-form-container">
-				<div className="w-full max-w-md space-y-8">
+			<div className="flex flex-col justify-center items-center p-6 sm:p-12 login-form-container relative overflow-hidden">
+
+				{/* 🌟 Lightweight Background Animation */}
+				<div className="absolute inset-0 bg-base-100/50 -z-10" />
+				<div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] opacity-40 animate-pan-slow pointer-events-none -z-10" />
+				<div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-[80px] animate-pulse-slow pointer-events-none -z-10" />
+				<div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-secondary/5 rounded-full blur-[80px] animate-pulse-slow delay-1000 pointer-events-none -z-10" />
+
+				<div className="w-full max-w-md space-y-6 relative z-10">
 					{/* Logo */}
-					<div className="text-center mb-8">
+					<div className="text-center mb-6">
 						<div className="flex flex-col items-center gap-2 group">
 							<div
 								className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20
                                 transition-colors"
 							>
-								<MessageSquare className="w-6 h-6 text-primary" />
+								{/* ✅ CSS Mask to make PNG take theme color */}
+								<div
+									className="w-10 h-10 bg-base-content"
+									style={{
+										maskImage: 'url("/z-app-logo.png")',
+										WebkitMaskImage: 'url("/z-app-logo.png")',
+										maskSize: 'contain',
+										WebkitMaskSize: 'contain',
+										maskRepeat: 'no-repeat',
+										WebkitMaskRepeat: 'no-repeat',
+										maskPosition: 'center',
+										WebkitMaskPosition: 'center',
+									}}
+								/>
 							</div>
 							<h1 className="text-2xl font-bold mt-2">Welcome Back</h1>
 							<p className="text-base-content/60">Sign in to your account</p>
@@ -68,7 +88,7 @@ const LoginPage = () => {
 					</div>
 
 					{/* Form */}
-					<form onSubmit={handleSubmit} className="space-y-6">
+					<form onSubmit={handleSubmit} className="space-y-4">
 						{/* ✅ CHANGED: Email field is now Email/Username field */}
 						<div className="form-control">
 							<label className="label">
@@ -126,7 +146,7 @@ const LoginPage = () => {
 							<div className="text-right mt-2">
 								<Link
 									to="/forgot-password"
-									className="text-sm text-primary hover:underline"
+									className="text-sm text-primary hover:underline font-medium"
 								>
 									Forgot Password?
 								</Link>
@@ -135,7 +155,7 @@ const LoginPage = () => {
 
 						<button
 							type="submit"
-							className="btn btn-primary w-full"
+							className="btn btn-primary w-full shadow-lg"
 							disabled={isLoggingIn}
 						>
 							{isLoggingIn ? (
@@ -152,7 +172,7 @@ const LoginPage = () => {
 					<div className="text-center">
 						<p className="text-base-content/60">
 							Don&apos;t have an account?{" "}
-							<Link to="/signup" className="link link-primary">
+							<Link to="/signup" className="link link-primary font-medium">
 								Create account
 							</Link>
 						</p>
@@ -162,6 +182,7 @@ const LoginPage = () => {
 
 			{/* Right Side - Image/Pattern */}
 			<AuthImagePattern
+				variant="login"
 				title={"Welcome back!"}
 				subtitle={
 					"Sign in to continue your conversations and catch up with your messages."

@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useCallback, lazy, Suspense } from "react";
+import { useEffect, useCallback, lazy, Suspense, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
 
 // ✅ CRITICAL IMPORTS: Import essential components directly to prevent loading errors
@@ -32,7 +32,9 @@ import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
 import { initSmoothScroll, destroySmoothScroll } from "./utils/smoothScroll";
 import { useFriendStore } from "./store/useFriendStore"; // ✅ 1. Import Friend Store
+import { useChatStore } from "./store/useChatStore"; // 🔥 Import Chat Store for global message handling
 import { useNotificationStore } from "./store/useNotificationStore";
+import { useProductionOptimizations } from "./utils/performanceOptimizer.production";
 
 // Toast UI (no changes)
 const showMessageToast = ({ senderName, senderAvatar, messageText, theme }) => {
@@ -69,7 +71,41 @@ const App = () => {
 	const addPendingReceived = useFriendStore((state) => state.addPendingReceived);
 	const fetchFriendData = useFriendStore((state) => state.fetchFriendData);
 	const navigate = useNavigate();
-	const location = useLocation();
+	// 🔄 REFRESH REDIRECT: Redirect to home on page refresh
+	useEffect(() => {
+		const handleBeforeUnload = () => {
+			sessionStorage.setItem('z_refresh_flag', 'true');
+		};
+
+		const handleLoad = () => {
+			if (sessionStorage.getItem('z_refresh_flag') === 'true') {
+				// We don't remove it here immediately because HomePage might need it
+				// But we do want to ensure we redirect if needed
+				console.log('🔄 Session refresh detected in App.jsx');
+
+				// Cleanup the flag slightly later to ensure children read it
+				setTimeout(() => {
+					sessionStorage.removeItem('z_refresh_flag');
+				}, 1000);
+
+				// FORCE REDIRECT if needed
+				const isNotRoot = location.pathname !== '/';
+				const hasQueryParams = location.search && location.search.length > 0;
+
+				if (authUser && (isNotRoot || hasQueryParams) && location.pathname !== '/login' && location.pathname !== '/signup') {
+					navigate('/', { replace: true });
+				}
+			}
+		};
+
+		window.addEventListener('beforeunload', handleBeforeUnload);
+		handleLoad(); // Check on component mount
+
+		return () => {
+			window.removeEventListener('beforeunload', handleBeforeUnload);
+		};
+	}, [authUser, location.pathname, navigate]);
+
 
 	const forceLogout = useCallback(
 		(message, redirect = "/login") => {
@@ -83,6 +119,9 @@ const App = () => {
 	useEffect(() => {
 		checkAuth();
 	}, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// 🚀 PRODUCTION OPTIMIZATIONS
+	useProductionOptimizations();
 
 	// Performance optimizations are now built-in to components
 
@@ -178,6 +217,29 @@ const App = () => {
 					createdAt: new Date().toISOString(),
 					id: `msg-${Date.now()}-${sender?.id}`
 				});
+			}
+		});
+
+		// 🔥 GLOBAL: Additional message listener to catch all real-time messages
+		socket.on("newMessage", (messageData) => {
+			console.log('🌍 GLOBAL: newMessage received in App.jsx:', messageData);
+
+			// Force chat store to handle this message if it's not already handled
+			const { messages, selectedUser } = useChatStore.getState();
+			const authUserId = authUser?.id;
+			const msgSenderId = messageData.senderId?.toString();
+			const msgReceiverId = messageData.receiverId?.toString();
+
+			// If this is for the current chat and not from me, ensure it's added
+			if (selectedUser && msgSenderId !== authUserId &&
+				(msgSenderId === selectedUser.id || msgReceiverId === selectedUser.id)) {
+
+				const messageExists = messages.some(m => m.id === messageData.id);
+				if (!messageExists) {
+					console.log('🔥 GLOBAL: Adding missed message to chat store');
+					const updatedMessages = [...messages, messageData];
+					useChatStore.setState({ messages: updatedMessages });
+				}
 			}
 		});
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useFriendStore } from "../store/useFriendStore";
@@ -14,25 +14,33 @@ const HomePage = () => {
   const { selectedUser, restoreSelectedUser } = useChatStore();
   const { socket, authUser } = useAuthStore();
   const { friends, fetchFriendData } = useFriendStore();
-  
+
   const [callState, setCallState] = useState({
     isCallActive: false,
     callType: null,
     isInitiator: false,
     otherUser: null,
   });
-  
+
   const [incomingCall, setIncomingCall] = useState(null);
-  const [isRestoringChat, setIsRestoringChat] = useState(true);
+
+  // ✅ ROBUST: Use sessionStorage to detect refresh (set by App.jsx)
+  const isRefresh = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('z_refresh_flag') === 'true';
+
+  const [isRestoringChat, setIsRestoringChat] = useState(() => {
+    // If it's a refresh, don't restore
+    if (isRefresh) return false;
+    return !!new URLSearchParams(window.location.search).get('chat');
+  });
 
   // Enhanced chat restoration with better timing and error handling
   useEffect(() => {
     const restoreChat = async () => {
       console.log('🔄 Starting enhanced chat restoration...');
-      console.log('📊 Current state:', { 
-        authUser: !!authUser, 
+      console.log('📊 Current state:', {
+        authUser: !!authUser,
         friendsCount: friends.length,
-        selectedUser: !!selectedUser 
+        selectedUser: !!selectedUser
       });
 
       // Wait for auth user
@@ -44,7 +52,26 @@ const HomePage = () => {
 
       // If we already have a selected user, don't restore
       if (selectedUser) {
-        console.log('✅ Chat already active, skipping restoration');
+        setIsRestoringChat(false);
+        return;
+      }
+
+      // 🔥 Optimization: If no URL param, don't even try to restore from legacy storage
+      const urlParams = new URLSearchParams(window.location.search);
+
+      // 🛑 STRICT REFRESH CHECK: If this is a refresh, clear URL and stop
+      if (isRefresh) {
+        console.log('🛑 Refresh detected via session flag - Cleaning URL and skipping restoration');
+        const currentUrl = new URL(window.location);
+        if (currentUrl.searchParams.get('chat')) {
+          currentUrl.searchParams.delete('chat');
+          window.history.replaceState({}, '', currentUrl);
+        }
+        setIsRestoringChat(false);
+        return;
+      }
+
+      if (!urlParams.get('chat')) {
         setIsRestoringChat(false);
         return;
       }
@@ -73,13 +100,13 @@ const HomePage = () => {
       } else {
         console.log('ℹ️ No previous chat to restore');
       }
-      
+
       setIsRestoringChat(false);
     };
 
     // Add longer delay to ensure all stores are initialized
     const timeoutId = setTimeout(restoreChat, 500);
-    
+
     return () => clearTimeout(timeoutId);
   }, [authUser, selectedUser]); // Simplified dependencies
 
@@ -96,11 +123,11 @@ const HomePage = () => {
     const handleUrlChatParam = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const chatUserId = urlParams.get('chat');
-      
+
       if (chatUserId && authUser && friends.length > 0 && !selectedUser) {
         console.log('🔗 Found chat parameter in URL:', chatUserId);
         const targetUser = friends.find(friend => friend.id === chatUserId);
-        
+
         if (targetUser) {
           console.log('✅ Restoring chat from URL parameter');
           const { setSelectedUser } = useChatStore.getState();
@@ -162,21 +189,27 @@ const HomePage = () => {
       console.log('🔌 HomePage: Initializing socket listeners for realtime updates');
       console.log('🔌 Socket connected status:', socket.connected);
       console.log('🔌 Socket ID:', socket.id);
-      
+
       // Ensure user is registered before subscribing to events
       if (authUser?.id && socket.connected) {
         console.log(`📝 Ensuring user ${authUser.id} is registered with socket`);
         socket.emit("register-user", authUser.id);
-        
-        // Add small delay to ensure registration completes
-        setTimeout(() => {
-          if (!isSubscribed) {
+
+        // 🔥 IMMEDIATE: Subscribe to events immediately after registration
+        if (!isSubscribed) {
+          console.log('🔄 Subscribing to real-time events immediately...');
+          subscribeToMessages();
+          subscribeToReactions();
+          isSubscribed = true;
+          console.log('✅ Socket listeners initialized successfully');
+
+          // 🔥 FORCE: Re-subscribe after a short delay to ensure connection
+          setTimeout(() => {
+            console.log('🔄 Re-subscribing to ensure real-time events...');
             subscribeToMessages();
             subscribeToReactions();
-            isSubscribed = true;
-            console.log('✅ Socket listeners initialized successfully');
-          }
-        }, 200);
+          }, 500);
+        }
       }
     };
 
@@ -190,9 +223,9 @@ const HomePage = () => {
         console.log('🔌 Socket connected event received, initializing listeners');
         initializeSocketListeners();
       };
-      
+
       socket.on('connect', handleConnect);
-      
+
       return () => {
         socket.off('connect', handleConnect);
       };
@@ -201,14 +234,14 @@ const HomePage = () => {
     const handleIncomingCall = ({ callerInfo, callType, callerId }) => {
       console.log("📞 Incoming call from:", callerInfo?.nickname || callerId, "Type:", callType);
       console.log("📞 Full call data:", { callerInfo, callType, callerId });
-      
+
       // Validate callerInfo
       if (!callerInfo || !callerInfo.id) {
         console.error("❌ Invalid caller info received:", callerInfo);
         toast.error("Invalid call data received");
         return;
       }
-      
+
       // Check if already in a call using the latest state
       setCallState((prevState) => {
         console.log("📊 Current call state:", prevState);
@@ -217,7 +250,7 @@ const HomePage = () => {
           socket.emit("private:reject-call", { callerId: callerInfo.id });
           return prevState; // Don't update state
         }
-        
+
         // Not in a call, show incoming call modal
         console.log("✅ Showing incoming call modal for:", callerInfo.nickname);
         setIncomingCall({ callerInfo, callType });
@@ -229,11 +262,11 @@ const HomePage = () => {
     const handleCallRejected = async ({ rejectorId, reason }) => {
       console.log("🚫 Call rejected by user:", rejectorId, "Reason:", reason);
       toast.error(`Call ${reason || 'declined'} by user`);
-      
+
       // Log the rejected outgoing call
       const { addCallLog } = useChatStore.getState();
       await addCallLog(rejectorId, callState.callType || 'voice', 0, 'rejected');
-      
+
       setCallState({
         isCallActive: false,
         callType: null,
@@ -246,13 +279,13 @@ const HomePage = () => {
     const handleCallFailed = async ({ reason }) => {
       console.log("❌ Call failed:", reason);
       toast.error(`Call failed: ${reason}`);
-      
+
       // Log the failed call if we have call state
       if (callState.otherUser) {
         const { addCallLog } = useChatStore.getState();
         await addCallLog(callState.otherUser.id, callState.callType || 'voice', 0, 'failed');
       }
-      
+
       setCallState({
         isCallActive: false,
         callType: null,
@@ -279,25 +312,25 @@ const HomePage = () => {
       toast.error("No user selected");
       return;
     }
-    
+
     if (callState.isCallActive) {
       toast.error("Already in a call");
       return;
     }
-    
+
     console.log(`📞 Starting ${callType} call with:`, selectedUser.nickname || selectedUser.username);
-    
+
     // ✅ ENHANCED: Add haptic feedback and notification
     if (navigator.vibrate) {
       navigator.vibrate([100, 50, 100]); // Call vibration pattern
     }
-    
+
     // Show calling notification
     toast.success(`Calling ${selectedUser.nickname || selectedUser.username}...`, {
       icon: callType === 'video' ? '📹' : '📞',
       duration: 3000
     });
-    
+
     // Emit call request to backend
     if (socket) {
       socket.emit("private:start-call", {
@@ -310,7 +343,7 @@ const HomePage = () => {
         }
       });
     }
-    
+
     setCallState({
       isCallActive: true,
       callType,
@@ -321,9 +354,9 @@ const HomePage = () => {
 
   const handleAcceptCall = () => {
     if (!incomingCall || !socket) return;
-    
+
     console.log("✅ Accepting call from:", incomingCall.callerInfo.nickname);
-    
+
     // Immediately notify caller that call was accepted
     socket.emit("private:call-accepted", {
       callerId: incomingCall.callerInfo.id,
@@ -333,7 +366,7 @@ const HomePage = () => {
         profilePic: authUser.profilePic,
       },
     });
-    
+
     setCallState({
       isCallActive: true,
       callType: incomingCall.callType,
@@ -346,7 +379,7 @@ const HomePage = () => {
   const handleRejectCall = async () => {
     if (incomingCall && socket) {
       console.log("🚫 Rejecting call from:", incomingCall.callerInfo.nickname);
-      socket.emit("private:reject-call", { 
+      socket.emit("private:reject-call", {
         callerId: incomingCall.callerInfo.id,
         reason: "declined"
       });
@@ -373,7 +406,7 @@ const HomePage = () => {
       <div className="h-full w-full flex flex-col overflow-hidden">
         {/* Spacer for navbar */}
         <div className="h-14 sm:h-16 flex-shrink-0"></div>
-        
+
         {/* Chat container - Full screen on mobile, contained on desktop */}
         <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0">
           <div className="bg-base-100 w-full h-full max-w-7xl flex overflow-hidden md:border-x border-base-300">
@@ -395,7 +428,7 @@ const HomePage = () => {
             )}
           </div>
         </div>
-        
+
         {/* Bottom padding for mobile safe area */}
         <div className="h-0 md:h-0 safe-area-bottom"></div>
       </div>

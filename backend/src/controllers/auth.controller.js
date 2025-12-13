@@ -20,15 +20,15 @@ export const signup = async (req, res) => {
 			return res.status(400).json({ message: "Password must be at least 6 characters long." });
 		}
 
-		const existingUserByEmail = await prisma.user.findUnique({ 
-			where: { email } 
+		const existingUserByEmail = await prisma.user.findUnique({
+			where: { email }
 		});
 		if (existingUserByEmail) {
 			return res.status(409).json({ message: "Email is already registered." });
 		}
 
-		const existingUserByUsername = await prisma.user.findUnique({ 
-			where: { username: username.toLowerCase() } 
+		const existingUserByUsername = await prisma.user.findUnique({
+			where: { username: username.toLowerCase() }
 		});
 		if (existingUserByUsername) {
 			return res.status(409).json({ message: "Username is already taken." });
@@ -111,7 +111,7 @@ export const login = async (req, res) => {
 
 	try {
 		console.log(`🔐 Login attempt: ${emailOrUsername}`);
-		
+
 		if (!emailOrUsername || !password) {
 			console.log('❌ Missing credentials');
 			return res.status(400).json({ message: "Email/Username and password are required." });
@@ -136,7 +136,7 @@ export const login = async (req, res) => {
 		console.log(`✅ User found: ${user.email}`);
 		const isMatch = await bcrypt.compare(password, user.password);
 		console.log(`🔑 Password match: ${isMatch}`);
-		
+
 		if (!isMatch) {
 			console.log('❌ Password mismatch');
 			return res.status(401).json({ message: "Invalid credentials." });
@@ -148,7 +148,7 @@ export const login = async (req, res) => {
 		// Update user location on login
 		const clientIP = getClientIP(req);
 		const locationData = await getLocationData(clientIP);
-		
+
 		const updatedUser = await prisma.user.update({
 			where: { id: user.id },
 			data: {
@@ -194,16 +194,16 @@ export const login = async (req, res) => {
 // --- *** THIS FUNCTION IS NOW FIXED *** ---
 export const logout = (req, res) => {
 	try {
-        // The options to clear the cookie MUST match the options
-        // used in generateToken.js
+		// The options to clear the cookie MUST match the options
+		// used in generateToken.js
 		res.cookie("jwt", "", {
-            httpOnly: true,
-            expires: new Date(0), // Set expiry to a past date
-            
-            // Use the same conditional logic as generateToken
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-        });
+			httpOnly: true,
+			expires: new Date(0), // Set expiry to a past date
+
+			// Use the same conditional logic as generateToken
+			secure: process.env.NODE_ENV === "production",
+			sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+		});
 		res.status(200).json({ message: "Logged out successfully." });
 	} catch (error) {
 		console.error("Logout Error:", error);
@@ -348,14 +348,14 @@ export const checkUsernameAvailability = async (req, res) => {
 
 		// Check if username is valid format
 		if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-			return res.status(400).json({ 
-				available: false, 
-				message: "Username must be 3-20 characters (letters, numbers, underscore only)" 
+			return res.status(400).json({
+				available: false,
+				message: "Username must be 3-20 characters (letters, numbers, underscore only)"
 			});
 		}
 
 		// Check if username is taken by another user
-		const existingUser = await prisma.user.findFirst({ 
+		const existingUser = await prisma.user.findFirst({
 			where: {
 				username: username.toLowerCase(),
 				NOT: { id: userId } // Exclude current user
@@ -363,15 +363,15 @@ export const checkUsernameAvailability = async (req, res) => {
 		});
 
 		if (existingUser) {
-			return res.status(200).json({ 
-				available: false, 
-				message: "Username is already taken" 
+			return res.status(200).json({
+				available: false,
+				message: "Username is already taken"
 			});
 		}
 
-		res.status(200).json({ 
-			available: true, 
-			message: "Username is available" 
+		res.status(200).json({
+			available: true,
+			message: "Username is available"
 		});
 	} catch (error) {
 		console.error("Check Username Error:", error);
@@ -391,13 +391,13 @@ export const updateUsername = async (req, res) => {
 
 		// Validate username format
 		if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-			return res.status(400).json({ 
-				message: "Username must be 3-20 characters (letters, numbers, underscore only)" 
+			return res.status(400).json({
+				message: "Username must be 3-20 characters (letters, numbers, underscore only)"
 			});
 		}
 
 		// Check if username is already taken
-		const existingUser = await prisma.user.findFirst({ 
+		const existingUser = await prisma.user.findFirst({
 			where: {
 				username: username.toLowerCase(),
 				NOT: { id: userId }
@@ -498,8 +498,8 @@ export const forgotPassword = async (req, res) => {
 		}
 
 		// Find user by username
-		const user = await prisma.user.findUnique({ 
-			where: { username: username.toLowerCase() } 
+		const user = await prisma.user.findUnique({
+			where: { username: username.toLowerCase() }
 		});
 		if (!user) {
 			return res.status(404).json({ message: "No account with that username" });
@@ -700,10 +700,10 @@ export const forgotPassword = async (req, res) => {
 			console.log(`📧 Sending OTP to ${user.email} for username: ${username}`);
 			await sendEmail(user.email, "Password Reset OTP - Z-APP", message);
 			console.log(`✅ OTP sent successfully to ${user.email}`);
-			
+
 			// Return masked email for security
 			const maskedEmail = user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
-			res.status(200).json({ 
+			res.status(200).json({
 				message: "OTP sent to your email",
 				email: maskedEmail,
 				expiresIn: 600 // 10 minutes in seconds
@@ -717,20 +717,20 @@ export const forgotPassword = async (req, res) => {
 					resetPasswordExpire: null
 				}
 			});
-			
+
 			// Check if it's an email configuration error
 			if (emailError.message.includes("Email service not configured")) {
-				res.status(500).json({ 
+				res.status(500).json({
 					message: "Email service is not configured. Please contact support.",
 					error: "EMAIL_NOT_CONFIGURED"
 				});
 			} else if (emailError.message.includes("Authentication failed")) {
-				res.status(500).json({ 
+				res.status(500).json({
 					message: "Email authentication failed. Please contact support.",
 					error: "EMAIL_AUTH_FAILED"
 				});
 			} else {
-				res.status(500).json({ 
+				res.status(500).json({
 					message: "Failed to send OTP email. Please try again later.",
 					error: "EMAIL_SEND_FAILED"
 				});
@@ -799,7 +799,7 @@ export const resetPassword = async (req, res) => {
 		// Hash new password
 		const salt = await bcrypt.genSalt(10);
 		const hashedPassword = await bcrypt.hash(password, salt);
-		
+
 		// Update password and clear OTP fields
 		await prisma.user.update({
 			where: { id: user.id },
@@ -945,7 +945,7 @@ export const sendPasswordChangeOTP = async (req, res) => {
 			console.log(`✅ OTP sent successfully to ${user.email}`);
 
 			const maskedEmail = user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
-			res.status(200).json({ 
+			res.status(200).json({
 				message: "OTP sent to your email",
 				email: maskedEmail,
 				expiresIn: 600 // 10 minutes in seconds
@@ -959,20 +959,20 @@ export const sendPasswordChangeOTP = async (req, res) => {
 					passwordChangeOTPExpires: null
 				}
 			});
-			
+
 			// Check if it's an email configuration error
 			if (emailError.message.includes("Email service not configured")) {
-				return res.status(500).json({ 
+				return res.status(500).json({
 					message: "Email service is not configured. Please contact support.",
 					error: "EMAIL_NOT_CONFIGURED"
 				});
 			} else if (emailError.message.includes("Authentication failed")) {
-				return res.status(500).json({ 
+				return res.status(500).json({
 					message: "Email authentication failed. Please contact support.",
 					error: "EMAIL_AUTH_FAILED"
 				});
 			} else {
-				return res.status(500).json({ 
+				return res.status(500).json({
 					message: "Failed to send OTP email. Please try again later.",
 					error: "EMAIL_SEND_FAILED"
 				});
@@ -1023,7 +1023,7 @@ export const changePassword = async (req, res) => {
 		// Hash new password
 		const salt = await bcrypt.genSalt(10);
 		const hashedPassword = await bcrypt.hash(newPassword, salt);
-		
+
 		// Update password and clear OTP fields
 		await prisma.user.update({
 			where: { id: userId },
@@ -1052,8 +1052,8 @@ export const sendEmailChangeOTP = async (req, res) => {
 		}
 
 		// Check if email already exists
-		const existingUser = await prisma.user.findUnique({ 
-			where: { email: newEmail.toLowerCase() } 
+		const existingUser = await prisma.user.findUnique({
+			where: { email: newEmail.toLowerCase() }
 		});
 		if (existingUser) {
 			return res.status(400).json({ error: "Email already in use" });
@@ -1061,7 +1061,7 @@ export const sendEmailChangeOTP = async (req, res) => {
 
 		// Generate 6-digit OTP
 		const otp = Math.floor(100000 + Math.random() * 900000).toString();
-		
+
 		// Store OTP in user document (expires in 10 minutes)
 		await prisma.user.update({
 			where: { id: userId },
@@ -1072,17 +1072,100 @@ export const sendEmailChangeOTP = async (req, res) => {
 			}
 		});
 
-		// TODO: Send email with OTP using nodemailer
-		// For now, we'll just return the OTP in development
-		console.log(`Email Change OTP for ${newEmail}: ${otp}`);
-		
-		// In production, send actual email
 
-		res.status(200).json({ 
-			message: "OTP sent to new email",
+		// Send OTP via email
+		const message = `
+			<!DOCTYPE html>
+			<html>
+			<head>
+				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<title>Email Change Verification - Z-APP</title>
+			</head>
+			<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0f172a;">
+				<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0f172a; padding: 40px 20px;">
+					<tr>
+						<td align="center">
+							<table width="600" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+								<!-- Header with Logo -->
+								<tr>
+									<td style="padding: 40px 40px 30px; text-align: center; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+										<div style="background: white; width: 80px; height: 80px; border-radius: 20px; margin: 0 auto 20px; display: inline-flex; align-items: center; justify-center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+											<span style="font-size: 48px; font-weight: 900; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Z</span>
+										</div>
+										<h1 style="margin: 0; color: white; font-size: 32px; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.2);">Z-APP</h1>
+										<p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 16px; font-weight: 500;">Connect. Chat. Discover.</p>
+									</td>
+								</tr>
+								
+								<!-- Content -->
+								<tr>
+									<td style="padding: 40px; background-color: white;">
+										<div style="text-align: center; margin-bottom: 30px;">
+											<div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 20px; display: inline-flex; align-items: center; justify-content: center;">
+												<span style="font-size: 30px;">📧</span>
+											</div>
+											<h2 style="margin: 0; color: #1e293b; font-size: 28px; font-weight: 700;">Email Change Request</h2>
+										</div>
+										
+										<p style="font-size: 16px; color: #475569; line-height: 1.6; margin: 0 0 20px;">
+											You requested to change your email to <strong style="color: #1e293b;">${newEmail}</strong>.
+										</p>
+										
+										<p style="font-size: 16px; color: #475569; line-height: 1.6; margin: 0 0 30px;">
+											Use the verification code below to confirm this change:
+										</p>
+										
+										<!-- OTP Box -->
+										<div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 3px dashed #3b82f6; border-radius: 15px; padding: 30px; text-align: center; margin: 30px 0;">
+											<p style="margin: 0 0 15px; color: #475569; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+												Your Verification Code
+											</p>
+											<div style="background: white; border-radius: 10px; padding: 20px; display: inline-block; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);">
+												<p style="margin: 0; font-size: 48px; font-weight: 900; letter-spacing: 12px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-family: 'Courier New', monospace;">
+													${otp}
+												</p>
+											</div>
+										</div>
+										
+										<!-- Timer Warning -->
+										<div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; border-radius: 10px; padding: 20px; margin: 30px 0;">
+											<p style="margin: 0; color: #92400e; font-size: 15px; font-weight: 600;">
+												⏰ <strong>Important:</strong> This code will expire in <strong>10 minutes</strong>
+											</p>
+										</div>
+									</td>
+								</tr>
+								
+								<!-- Footer -->
+								<tr>
+									<td style="padding: 30px 40px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); text-align: center;">
+										<p style="margin: 0 0 15px; color: rgba(255,255,255,0.7); font-size: 14px;">
+											Need help? Contact us at <a href="mailto:support@z-app.com" style="color: #a78bfa; text-decoration: none; font-weight: 600;">support@z-app.com</a>
+										</p>
+										<p style="margin: 0 0 20px; color: rgba(255,255,255,0.5); font-size: 12px;">
+											© ${new Date().getFullYear()} Z-APP. All rights reserved.
+										</p>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+			</body>
+			</html>
+		`;
+
+		console.log(`📧 Sending Email Change OTP to ${newEmail}`);
+		await sendEmail(newEmail, "Verify Email Change - Z-APP", message);
+		console.log(`✅ Email Change OTP sent successfully`);
+
+		res.status(200).json({
+			message: "We sent a verification code to your new email address.",
 			// Remove this in production:
 			otp: process.env.NODE_ENV === "development" ? otp : undefined
 		});
+
 	} catch (error) {
 		console.log("Error in sendEmailChangeOTP controller", error.message);
 		res.status(500).json({ message: "Internal Server Error" });
@@ -1102,7 +1185,7 @@ export const verifyEmailChangeOTP = async (req, res) => {
 		const user = await prisma.user.findUnique({
 			where: { id: userId }
 		});
-		
+
 		if (!user.emailChangeOTP || !user.emailChangeOTPExpires) {
 			return res.status(400).json({ error: "No OTP request found" });
 		}
@@ -1133,7 +1216,7 @@ export const verifyEmailChangeOTP = async (req, res) => {
 		// Remove password from response
 		const { password, ...userWithoutPassword } = updatedUser;
 
-		res.status(200).json({ 
+		res.status(200).json({
 			message: "Email updated successfully",
 			user: userWithoutPassword
 		});
