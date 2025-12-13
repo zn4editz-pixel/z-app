@@ -77,6 +77,8 @@ export const getMessages = async (req, res) => {
     const { id: userToChatId } = req.params;
     const myId = req.user.id;
     
+    console.log(`📥 getMessages: Fetching messages between ${myId} and ${userToChatId}`);
+    
     const page = parseInt(req.query.page) || 0;
     const limit = parseInt(req.query.limit) || 50;
 
@@ -147,10 +149,12 @@ export const getMessages = async (req, res) => {
       })
     );
 
+    console.log(`✅ getMessages: Returning ${messagesWithParsedReactions.length} messages`);
     res.status(200).json(messagesWithParsedReactions.reverse());
   } catch (error) {
-    console.error("Error in getMessages:", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("❌ Error in getMessages:", error);
+    console.error("❌ Error stack:", error.stack);
+    res.status(500).json({ error: "Internal server error", details: error.message });
   }
 };
 
