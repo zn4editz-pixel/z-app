@@ -299,6 +299,23 @@ export const useAuthStore = create((set, get) => ({
 			if (authUser?.id) {
 				console.log(`📝 Registering user ${authUser.id} with socket ${newSocket.id}`);
 				newSocket.emit("register-user", authUser.id);
+				
+				// 🧪 TEST: Add global test function for debugging
+				window.testSocketConnection = () => {
+					console.log('🧪 SOCKET CONNECTION TEST:');
+					console.log(`   Connected: ${newSocket.connected}`);
+					console.log(`   Socket ID: ${newSocket.id}`);
+					console.log(`   User ID: ${authUser.id}`);
+					
+					// Test message sending
+					newSocket.emit("sendMessage", {
+						receiverId: authUser.id, // Send to self for testing
+						text: `🧪 Socket test message - ${new Date().toISOString()}`,
+						tempId: `test-${Date.now()}`
+					});
+					
+					console.log('🧪 Test message sent via socket');
+				};
 			}
 			
 			// 🔥 REAL-TIME: Subscribe to friend events when socket connects

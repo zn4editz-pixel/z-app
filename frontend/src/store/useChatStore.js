@@ -134,7 +134,13 @@ export const useChatStore = create((set, get) => ({
         useFriendStore.getState().updateFriendLastMessage(selectedUser.id, optimisticMessage);
         
         if (socket && socket.connected) {
-            console.log('📤 Sending via SOCKET for realtime delivery');
+            console.log('📤 SENDING MESSAGE VIA SOCKET:');
+            console.log(`   Socket connected: ${socket.connected}`);
+            console.log(`   Socket ID: ${socket.id}`);
+            console.log(`   To: ${selectedUser.id}`);
+            console.log(`   Text: ${messageData.text?.substring(0, 50)}...`);
+            console.log(`   TempId: ${tempId}`);
+            
             socket.emit("sendMessage", {
                 receiverId: selectedUser.id,
                 text: messageData.text || null,
@@ -143,6 +149,14 @@ export const useChatStore = create((set, get) => ({
                 voiceDuration: messageData.voiceDuration || null,
                 replyTo: messageData.replyTo || null,
                 tempId: tempId
+            });
+            
+            console.log('📤 Socket emit completed');
+        } else {
+            console.warn('⚠️ Socket not available for real-time delivery:', {
+                hasSocket: !!socket,
+                connected: socket?.connected,
+                socketId: socket?.id
             });
         }
         
