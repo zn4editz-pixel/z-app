@@ -13,17 +13,24 @@ let prisma, rateLimiters, errorHandler, securityMiddleware;
 try {
   // Use production DB only in production environment
   if (process.env.NODE_ENV === 'production') {
-    const dbModule = await import('./lib/db.production.js');
-    prisma = dbModule.prisma;
-    console.log('✅ Production database loaded');
+    try {
+      const dbModule = await import('./lib/db.production.js');
+      prisma = dbModule.prisma;
+      console.log('✅ Production database loaded');
+    } catch (prodError) {
+      console.log('⚠️ Production database failed, using simple fallback...');
+      const dbModule = await import('./lib/db.simple.js');
+      prisma = dbModule.prisma;
+      console.log('✅ Simple database loaded');
+    }
   } else {
     const dbModule = await import('./lib/db.js');
     prisma = dbModule.prisma;
     console.log('✅ Development database loaded');
   }
 } catch (error) {
-  console.log('⚠️ Database not available, using fallback...');
-  const dbModule = await import('./lib/db.js');
+  console.log('⚠️ Database not available, using simple fallback...');
+  const dbModule = await import('./lib/db.simple.js');
   prisma = dbModule.prisma;
 }
 

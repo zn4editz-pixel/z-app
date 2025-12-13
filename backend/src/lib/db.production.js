@@ -15,24 +15,44 @@ const prisma = new PrismaClient({
 // Connection pool optimization
 prisma.$connect();
 
-// Redis cluster configuration for caching
-const redis = new Redis.Cluster([
-  {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: process.env.REDIS_PORT || 6379,
-  },
-  // Add more Redis nodes for clustering
-], {
-  redisOptions: {
-    password: process.env.REDIS_PASSWORD,
-    maxRetriesPerRequest: 3,
-    retryDelayOnFailover: 100,
-    enableReadyCheck: false,
-    maxRetriesPerRequest: null,
-  },
-  enableOfflineQueue: false,
-  scaleReads: 'slave',
-});
+// Redis configuration with fallback
+let redis = null;
+
+try {
+  if (process.env.REDIS_URL) {
+    // Single Redis instance (most hosting providers)
+    redis = new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      retryDelayOnFailover: 100,
+      enableReadyCheck: false,
+      lazyConnect: true,
+      connectTimeout: 10000,
+      commandTimeout: 5000,
+    });
+  } else if (process.env.REDIS_HOST) {
+    // Redis cluster configuration
+    redis = new Redis.Cluster([
+      {
+        host: process.env.REDIS_HOST,
+        port: process.env.REDIS_PORT || 6379,
+      },
+    ], {
+      redisOptions: {
+        password: process.env.REDIS_PASSWORD,
+        maxRetriesPerRequest: 3,
+        retryDelayOnFailover: 100,
+        enableReadyCheck: false,
+        connectTimeout: 10000,
+        commandTimeout: 5000,
+      },
+      enableOfflineQueue: false,
+      scaleReads: 'slave',
+    });
+  }
+} catch (error) {
+  console.log('⚠️ Redis not available, using in-memory cache fallback');
+  redis = null;
+}
 
 // Database connection monitoring
 prisma.$on('query', (e) => {
@@ -41,21 +61,40 @@ prisma.$on('query', (e) => {
   }
 });
 
-// Redis connection monitoring
-redis.on('connect', () => {
-  console.log('✅ Redis cluster connected');
-});
+// Redis connection monitoring (only if Redis is available)
+if (redis) {
+  redis.on('connect', () => {
+    console.log('✅ Redis connected');
+  });
 
-redis.on('error', (err) => {
-  console.error('❌ Redis cluster error:', err);
-});
+  redis.on('error', (err) => {
+    console.error('❌ Redis error:', err);
+    // Don't crash the app, just log the error
+  });
 
-// Advanced caching utilities
+  redis.on('close', () => {
+    console.log('🔴 Redis connection closed');
+  });
+}
+
+// Advanced caching utilities with Redis fallback
+const inMemoryCache = new Map();
+
 export class DatabaseCache {
   static async get(key) {
     try {
-      const cached = await redis.get(key);
-      return cached ? JSON.parse(cached) : null;
+      if (redis && redis.status === 'ready') {
+        const cached = await redis.get(key);
+        return cached ? JSON.parse(cached) : null;
+      } else {
+        // Fallback to in-memory cache
+        const cached = inMemoryCache.get(key);
+        if (cached && cached.expires > Date.now()) {
+          return cached.value;
+        }
+        inMemoryCache.delete(key);
+        return null;
+      }
     } catch (error) {
       console.error('Cache get error:', error);
       return null;
@@ -64,7 +103,15 @@ export class DatabaseCache {
 
   static async set(key, value, ttl = 300) {
     try {
-      await redis.setex(key, ttl, JSON.stringify(value));
+      if (redis && redis.status === 'ready') {
+        await redis.setex(key, ttl, JSON.stringify(value));
+      } else {
+        // Fallback to in-memory cache
+        inMemoryCache.set(key, {
+          value,
+          expires: Date.now() + (ttl * 1000)
+        });
+      }
     } catch (error) {
       console.error('Cache set error:', error);
     }
@@ -72,7 +119,11 @@ export class DatabaseCache {
 
   static async del(key) {
     try {
-      await redis.del(key);
+      if (redis && redis.status === 'ready') {
+        await redis.del(key);
+      } else {
+        inMemoryCache.delete(key);
+      }
     } catch (error) {
       console.error('Cache delete error:', error);
     }
@@ -80,9 +131,14 @@ export class DatabaseCache {
 
   static async invalidatePattern(pattern) {
     try {
-      const keys = await redis.keys(pattern);
-      if (keys.length > 0) {
-        await redis.del(...keys);
+      if (redis && redis.status === 'ready') {
+        const keys = await redis.keys(pattern);
+        if (keys.length > 0) {
+          await redis.del(...keys);
+        }
+      } else {
+        // Fallback: clear all in-memory cache for simplicity
+        inMemoryCache.clear();
       }
     } catch (error) {
       console.error('Cache invalidate error:', error);
@@ -238,7 +294,9 @@ export class ConnectionMonitor {
 process.on('SIGINT', async () => {
   console.log('🔄 Gracefully shutting down database connections...');
   await prisma.$disconnect();
-  redis.disconnect();
+  if (redis) {
+    redis.disconnect();
+  }
   process.exit(0);
 });
 

@@ -257,24 +257,10 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
                 {/* Message Text */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-base-content/70 truncate leading-tight">
-                    {(() => {
-                      // ✅ DEBUG: Log the replyingTo object to see what's inside
-                      console.log('🔍 Reply preview - replyingTo object:', replyingTo);
-                      console.log('🔍 Reply preview - replyingTo.text:', replyingTo.text);
-                      console.log('🔍 Reply preview - replyingTo.image:', replyingTo.image);
-                      console.log('🔍 Reply preview - replyingTo.voice:', replyingTo.voice);
-                      
-                      // Return the actual text or fallback
-                      if (replyingTo.text && replyingTo.text.trim()) {
-                        return replyingTo.text;
-                      } else if (replyingTo.image) {
-                        return "📷 Photo";
-                      } else if (replyingTo.voice) {
-                        return "🎤 Voice message";
-                      } else {
-                        return "Message";
-                      }
-                    })()}
+                    {replyingTo.text && replyingTo.text.trim() ? replyingTo.text : 
+                     (replyingTo.image ? "📷 Photo" : 
+                      replyingTo.voice ? "🎤 Voice message" : 
+                      "Message")}
                   </p>
                 </div>
               </div>
