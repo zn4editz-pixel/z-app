@@ -326,11 +326,23 @@ export const useChatStore = create((set, get) => ({
         };
 
         const messageDeliveredHandler = ({ messageId, deliveredAt }) => {
-            const { messages } = get();
+            const { messages, selectedUser } = get();
             const updatedMessages = messages.map(msg => 
                 msg.id === messageId ? { ...msg, status: 'delivered', deliveredAt } : msg
             );
             set({ messages: updatedMessages });
+            
+            // ✅ REAL-TIME: Update friend's last message status immediately
+            const updatedMessage = updatedMessages.find(msg => msg.id === messageId);
+            if (updatedMessage) {
+                // Find which friend this message belongs to
+                const friendId = updatedMessage.senderId === useAuthStore.getState().authUser?.id 
+                    ? updatedMessage.receiverId 
+                    : updatedMessage.senderId;
+                
+                console.log('📝 Real-time: Updating friend message status to delivered');
+                useFriendStore.getState().updateFriendMessageStatus(friendId, messageId, 'delivered', deliveredAt);
+            }
         };
 
         const messagesDeliveredHandler = ({ messageIds, deliveredAt }) => {
@@ -339,6 +351,20 @@ export const useChatStore = create((set, get) => ({
                 messageIds.includes(msg.id) ? { ...msg, status: 'delivered', deliveredAt } : msg
             );
             set({ messages: updatedMessages });
+            
+            // ✅ REAL-TIME: Update friend's last message status for all delivered messages
+            const authUserId = useAuthStore.getState().authUser?.id;
+            messageIds.forEach(messageId => {
+                const message = updatedMessages.find(msg => msg.id === messageId);
+                if (message) {
+                    const friendId = message.senderId === authUserId 
+                        ? message.receiverId 
+                        : message.senderId;
+                    
+                    console.log('📝 Real-time: Updating friend message status to delivered (bulk)');
+                    useFriendStore.getState().updateFriendMessageStatus(friendId, messageId, 'delivered', deliveredAt);
+                }
+            });
         };
 
         const messagesReadHandler = ({ readBy }) => {
@@ -362,6 +388,18 @@ export const useChatStore = create((set, get) => ({
             console.log(`📘 Total messages with read status: ${readCount}`);
             
             set({ messages: updatedMessages });
+            
+            // ✅ REAL-TIME: Update friend's last message status for all read messages
+            const authUserId = useAuthStore.getState().authUser?.id;
+            const readAt = new Date();
+            
+            updatedMessages.forEach(msg => {
+                if (msg.status === 'read' && msg.senderId === authUserId) {
+                    const friendId = msg.receiverId;
+                    console.log('📝 Real-time: Updating friend message status to read');
+                    useFriendStore.getState().updateFriendMessageStatus(friendId, msg.id, 'read', null, readAt);
+                }
+            });
         };
 
         socket.on("newMessage", messageHandler);

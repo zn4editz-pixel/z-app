@@ -124,6 +124,10 @@ const App = () => {
 		// Listen for reconnections
 		socket.on('connect', handleConnect);
 
+		// ✅ NEW: Setup real-time listeners for friend store
+		const { setupRealtimeListeners } = useFriendStore.getState();
+		setupRealtimeListeners();
+
 		// 1. User/Admin actions listener
 		socket.on("user-action", ({ type, reason, until }) => {
 			switch (type) {

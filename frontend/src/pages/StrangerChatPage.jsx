@@ -300,6 +300,7 @@ const StrangerChatPage = () => {
 	const localVideoRef = useRef(null);
 	const remoteVideoRef = useRef(null);
 	const iceCandidateQueueRef = useRef([]);
+	const reportTimeoutRef = useRef(null);
 
 	// Optimized WebRTC Configuration for faster connections
 	const rtcConfig = useMemo(() => ({
@@ -837,17 +838,33 @@ const StrangerChatPage = () => {
 		};
 
 		const onReportSuccess = ({ message }) => {
+			console.log('✅ Report success received:', message);
 			if (isMounted) {
-				toast.success(message);
+				// Clear timeout
+				if (reportTimeoutRef.current) {
+					clearTimeout(reportTimeoutRef.current);
+					reportTimeoutRef.current = null;
+				}
+				
+				toast.success(message || "Report submitted successfully");
 				setIsSubmittingReport(false);
 				setIsReportModalOpen(false);
+				setReportScreenshot(null); // Clear screenshot after successful report
 			}
 		};
 
 		const onReportError = ({ error }) => {
+			console.error('❌ Report error received:', error);
 			if (isMounted) {
-				toast.error(error);
+				// Clear timeout
+				if (reportTimeoutRef.current) {
+					clearTimeout(reportTimeoutRef.current);
+					reportTimeoutRef.current = null;
+				}
+				
+				toast.error(error || "Failed to submit report");
 				setIsSubmittingReport(false);
+				// Keep modal open so user can try again
 			}
 		};
 
@@ -874,6 +891,12 @@ const StrangerChatPage = () => {
 			if (localStreamRef.current) {
 				localStreamRef.current.getTracks().forEach(t => t.stop());
 				localStreamRef.current = null;
+			}
+			
+			// Clear report timeout
+			if (reportTimeoutRef.current) {
+				clearTimeout(reportTimeoutRef.current);
+				reportTimeoutRef.current = null;
 			}
 			
 			closeConnection();
@@ -999,37 +1022,84 @@ const StrangerChatPage = () => {
 	}, [showChatMessages]);
 
 	const captureScreenshot = useCallback(() => {
-		if (!remoteVideoRef.current || remoteVideoRef.current.videoWidth === 0) {
+		console.log('📸 Attempting to capture screenshot...');
+		
+		if (!remoteVideoRef.current) {
+			console.error('❌ No remote video element');
+			toast.error("Cannot capture screenshot - video element not found.");
+			return null;
+		}
+		
+		if (remoteVideoRef.current.videoWidth === 0 || remoteVideoRef.current.videoHeight === 0) {
+			console.error('❌ Remote video dimensions are 0:', {
+				width: remoteVideoRef.current.videoWidth,
+				height: remoteVideoRef.current.videoHeight,
+				readyState: remoteVideoRef.current.readyState
+			});
 			toast.error("Cannot capture screenshot - partner video not ready.");
 			return null;
 		}
 		
-		const canvas = document.createElement("canvas");
-		canvas.width = remoteVideoRef.current.videoWidth;
-		canvas.height = remoteVideoRef.current.videoHeight;
-		const ctx = canvas.getContext("2d");
-		
-		ctx.drawImage(remoteVideoRef.current, 0, 0);
-		return canvas.toDataURL("image/jpeg", 0.9);
+		try {
+			const canvas = document.createElement("canvas");
+			canvas.width = remoteVideoRef.current.videoWidth;
+			canvas.height = remoteVideoRef.current.videoHeight;
+			const ctx = canvas.getContext("2d");
+			
+			ctx.drawImage(remoteVideoRef.current, 0, 0);
+			const screenshot = canvas.toDataURL("image/jpeg", 0.9);
+			
+			console.log('✅ Screenshot captured successfully:', {
+				width: canvas.width,
+				height: canvas.height,
+				dataSize: screenshot.length
+			});
+			
+			return screenshot;
+		} catch (error) {
+			console.error('❌ Error capturing screenshot:', error);
+			toast.error("Failed to capture screenshot. Please try again.");
+			return null;
+		}
 	}, []);
 
 	const handleReport = useCallback(() => {
+		console.log('🚨 Report button clicked');
 		const screenshot = captureScreenshot();
 		if (screenshot) {
+			console.log('✅ Screenshot captured, opening report modal');
 			setReportScreenshot(screenshot);
 			setIsReportModalOpen(true);
+		} else {
+			console.error('❌ Failed to capture screenshot');
 		}
 	}, [captureScreenshot]);
 
 	const handleSubmitReport = useCallback((reason, description) => {
+		console.log('📝 Submitting report:', { reason, description, partnerUserId, hasScreenshot: !!reportScreenshot });
+		
 		if (!reportScreenshot || !reason || !partnerUserId) {
 			toast.error("Missing report information");
+			console.error('❌ Missing report data:', { reportScreenshot: !!reportScreenshot, reason, partnerUserId });
 			return;
 		}
 		
 		setIsSubmittingReport(true);
 		
-		socket?.emit("stranger:report", {
+		// Clear any existing timeout
+		if (reportTimeoutRef.current) {
+			clearTimeout(reportTimeoutRef.current);
+		}
+		
+		// Add timeout fallback in case socket events don't fire
+		reportTimeoutRef.current = setTimeout(() => {
+			console.warn('⏰ Report submission timed out');
+			setIsSubmittingReport(false);
+			toast.error("Report submission timed out. Please try again.");
+			reportTimeoutRef.current = null;
+		}, 15000); // 15 second timeout
+		
+		const reportData = {
 			reporterId: authUser.id,
 			reportedUserId: partnerUserId,
 			reason,
@@ -1037,7 +1107,10 @@ const StrangerChatPage = () => {
 			screenshot: reportScreenshot,
 			category: 'stranger_chat',
 			isAIDetected: false
-		});
+		};
+		
+		console.log('📤 Emitting report to socket:', { ...reportData, screenshot: 'base64_data_hidden' });
+		socket?.emit("stranger:report", reportData);
 	}, [reportScreenshot, partnerUserId, authUser, socket]);
 
 	const sendReaction = useCallback((emoji) => {

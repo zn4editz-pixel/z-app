@@ -1,74 +1,84 @@
-import http from 'http';
-
-function makeRequest(path, method = 'GET', data = null) {
-    return new Promise((resolve, reject) => {
-        const options = {
-            hostname: 'localhost',
-            port: 5001,
-            path: path,
-            method: method,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        };
-
-        const req = http.request(options, (res) => {
-            let body = '';
-            res.on('data', (chunk) => {
-                body += chunk;
-            });
-            res.on('end', () => {
-                try {
-                    const parsed = JSON.parse(body);
-                    resolve({ status: res.statusCode, data: parsed, headers: res.headers });
-                } catch (e) {
-                    resolve({ status: res.statusCode, data: body, headers: res.headers });
-                }
-            });
-        });
-
-        req.on('error', (err) => {
-            reject(err);
-        });
-
-        if (data) {
-            req.write(JSON.stringify(data));
-        }
-        req.end();
-    });
-}
+import bcrypt from 'bcryptjs';
+import sqlite3 from 'sqlite3';
+import { open } from 'sqlite';
 
 async function testAdminLogin() {
-    console.log('🧪 Testing Admin Login...\n');
-    
     try {
-        // Test admin login
-        const loginData = {
-            emailOrUsername: 'ronaldo@gmail.com',
-            password: 'safwan123'
-        };
+        console.log('🔍 Testing admin login credentials...\n');
         
-        console.log('Attempting admin login...');
-        const loginResponse = await makeRequest('/api/auth/login', 'POST', loginData);
+        // Open SQLite database
+        const db = await open({
+            filename: './dev.db',
+            driver: sqlite3.Database
+        });
         
-        console.log(`Login Status: ${loginResponse.status}`);
-        console.log('Login Response:', loginResponse.data);
+        const testEmail = 'z4fwan77@gmail.com';
+        const testPassword = 'admin123';
         
-        if (loginResponse.status === 200 && loginResponse.data.token) {
-            console.log('\n✅ Admin login successful!');
-            console.log('Token:', loginResponse.data.token.substring(0, 20) + '...');
+        console.log(`📧 Testing email: ${testEmail}`);
+        console.log(`🔑 Testing password: ${testPassword}`);
+        
+        // Find user by email
+        const userByEmail = await db.get('SELECT * FROM User WHERE email = ?', [testEmail]);
+        
+        if (!userByEmail) {
+            console.log('❌ User not found by email');
             
-            // Test protected route with token
-            console.log('\nTesting protected route with token...');
-            const authResponse = await makeRequest('/api/auth/check', 'GET');
-            console.log(`Auth Check Status: ${authResponse.status}`);
-            console.log('Auth Response:', authResponse.data);
-        } else {
-            console.log('❌ Admin login failed');
+            // Try to find by username
+            const userByUsername = await db.get('SELECT * FROM User WHERE username = ?', ['admin']);
+            if (userByUsername) {
+                console.log('✅ Found user by username:', userByUsername.username);
+                console.log('   Email:', userByUsername.email);
+            } else {
+                console.log('❌ User not found by username either');
+            }
+            return;
         }
         
+        console.log('✅ User found by email:');
+        console.log(`   ID: ${userByEmail.id}`);
+        console.log(`   Email: ${userByEmail.email}`);
+        console.log(`   Username: ${userByEmail.username}`);
+        console.log(`   Full Name: ${userByEmail.fullName}`);
+        console.log(`   Profile Complete: ${userByEmail.hasCompletedProfile}`);
+        console.log(`   Verified: ${userByEmail.isVerified}`);
+        
+        // Test password
+        const isPasswordValid = await bcrypt.compare(testPassword, userByEmail.password);
+        console.log(`\n🔑 Password test: ${isPasswordValid ? '✅ VALID' : '❌ INVALID'}`);
+        
+        if (!isPasswordValid) {
+            console.log('\n🔧 Fixing password...');
+            const hashedPassword = await bcrypt.hash(testPassword, 10);
+            await db.run('UPDATE User SET password = ? WHERE id = ?', [hashedPassword, userByEmail.id]);
+            
+            // Test again
+            const retestPassword = await bcrypt.compare(testPassword, hashedPassword);
+            console.log(`   Retest: ${retestPassword ? '✅ FIXED' : '❌ STILL BROKEN'}`);
+        }
+        
+        // Check if user is blocked or suspended
+        if (userByEmail.isBlocked) {
+            console.log('⚠️  User is BLOCKED');
+        }
+        if (userByEmail.isSuspended) {
+            console.log('⚠️  User is SUSPENDED');
+        }
+        
+        await db.close();
+        
+        console.log('\n🎯 LOGIN TEST SUMMARY:');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(`📧 Email: ${testEmail}`);
+        console.log(`🔑 Password: ${testPassword}`);
+        console.log(`✅ User exists: ${userByEmail ? 'Yes' : 'No'}`);
+        console.log(`🔐 Password valid: ${isPasswordValid ? 'Yes' : 'Fixed'}`);
+        console.log(`🚫 Blocked: ${userByEmail.isBlocked ? 'Yes' : 'No'}`);
+        console.log(`⏸️  Suspended: ${userByEmail.isSuspended ? 'Yes' : 'No'}`);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
     } catch (error) {
-        console.error('❌ Error:', error.message);
+        console.error('❌ Error testing admin login:', error);
     }
 }
 

@@ -115,6 +115,18 @@ const Sidebar = () => {
       const themeColors = getThemeColors(theme);
       const statusInfo = getMessageStatusInfo(lastMsg, true, isReceiverOnline, themeColors);
       
+      // Debug logging for message status
+      if (import.meta.env.DEV) {
+        console.log(`📊 Message status for ${user.nickname || user.username}:`, {
+          messageId: lastMsg.id,
+          status: lastMsg.status,
+          isReceiverOnline,
+          statusInfo,
+          deliveredAt: lastMsg.deliveredAt,
+          readAt: lastMsg.readAt
+        });
+      }
+      
       if (statusInfo.show) {
         if (statusInfo.type === 'double-tick') {
           // Double tick for delivered/read

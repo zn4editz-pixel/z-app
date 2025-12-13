@@ -3,13 +3,12 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-async function createAdminUser() {
+async function createAdminWithPrisma() {
     try {
-        console.log('🔧 Setting up admin user...\n');
+        console.log('🔧 Creating admin user with Prisma...\n');
         
-        // Admin details from .env
-        const adminEmail = process.env.ADMIN_EMAIL || 'z4fwan77@gmail.com';
-        const adminPassword = 'admin123'; // Default admin password
+        const adminEmail = 'z4fwan77@gmail.com';
+        const adminPassword = 'admin123';
         const adminUsername = 'admin';
         
         console.log(`📧 Admin Email: ${adminEmail}`);
@@ -27,29 +26,36 @@ async function createAdminUser() {
         });
         
         if (existingAdmin) {
-            console.log('\n👤 Admin user already exists!');
-            console.log(`   Email: ${existingAdmin.email}`);
-            console.log(`   Username: ${existingAdmin.username}`);
+            console.log('\n👤 Admin user already exists, updating...');
+            console.log(`   Current email: ${existingAdmin.email}`);
+            console.log(`   Current username: ${existingAdmin.username}`);
             
-            // Update password to ensure it works
+            // Update the existing user
             const hashedPassword = await bcrypt.hash(adminPassword, 10);
-            await prisma.user.update({
+            const updatedUser = await prisma.user.update({
                 where: { id: existingAdmin.id },
-                data: { 
+                data: {
+                    email: adminEmail,
+                    username: adminUsername,
                     password: hashedPassword,
+                    fullName: 'System Administrator',
+                    nickname: 'Admin',
                     hasCompletedProfile: true,
-                    isVerified: true
+                    isVerified: true,
+                    bio: 'System Administrator',
+                    country: 'System'
                 }
             });
             
-            console.log('✅ Admin password updated and profile completed');
+            console.log('✅ Admin user updated successfully!');
+            console.log(`   ID: ${updatedUser.id}`);
         } else {
             console.log('\n👤 Creating new admin user...');
             
             // Hash password
             const hashedPassword = await bcrypt.hash(adminPassword, 10);
             
-            // Create admin user
+            // Create admin user with Prisma
             const adminUser = await prisma.user.create({
                 data: {
                     email: adminEmail,
@@ -61,7 +67,7 @@ async function createAdminUser() {
                     isVerified: true,
                     bio: 'System Administrator',
                     country: 'System',
-                    profilePic: 'https://res.cloudinary.com/dsol2p21u/image/upload/v1734095234/admin-avatar.png'
+                    profilePic: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin'
                 }
             });
             
@@ -71,16 +77,39 @@ async function createAdminUser() {
             console.log(`   Username: ${adminUser.username}`);
         }
         
-        // Test password verification
-        console.log('\n🔑 Testing password verification...');
-        const adminUser = await prisma.user.findUnique({
+        // Test the login process
+        console.log('\n🔍 Testing login process...');
+        
+        // Find user (same as auth controller)
+        let user = await prisma.user.findUnique({
             where: { email: adminEmail }
         });
         
-        const isPasswordValid = await bcrypt.compare(adminPassword, adminUser.password);
-        console.log(`Password test: ${isPasswordValid ? '✅ VALID' : '❌ INVALID'}`);
+        if (!user) {
+            user = await prisma.user.findUnique({
+                where: { username: adminUsername }
+            });
+        }
         
-        console.log('\n🎯 ADMIN ACCESS READY!');
+        if (user) {
+            console.log('✅ User found via Prisma');
+            const isPasswordValid = await bcrypt.compare(adminPassword, user.password);
+            console.log(`🔑 Password valid: ${isPasswordValid ? '✅ YES' : '❌ NO'}`);
+            
+            console.log('\n📋 User details:');
+            console.log(`   ID: ${user.id}`);
+            console.log(`   Email: ${user.email}`);
+            console.log(`   Username: ${user.username}`);
+            console.log(`   Full Name: ${user.fullName}`);
+            console.log(`   Profile Complete: ${user.hasCompletedProfile}`);
+            console.log(`   Verified: ${user.isVerified}`);
+            console.log(`   Blocked: ${user.isBlocked}`);
+            console.log(`   Suspended: ${user.isSuspended}`);
+        } else {
+            console.log('❌ User not found after creation');
+        }
+        
+        console.log('\n🎯 ADMIN SETUP COMPLETE!');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('📧 Email:', adminEmail);
         console.log('🔑 Password:', adminPassword);
@@ -89,11 +118,10 @@ async function createAdminUser() {
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         
     } catch (error) {
-        console.error('❌ Error creating admin user:', error);
+        console.error('❌ Error creating admin with Prisma:', error);
     } finally {
         await prisma.$disconnect();
     }
 }
 
-// Run the function
-createAdminUser();
+createAdminWithPrisma();

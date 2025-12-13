@@ -273,13 +273,25 @@ export const sendMessage = async (req, res) => {
     };
 
     // 🔥 REAL-TIME: Emit new message to receiver
-    emitToUser(receiverId, "newMessage", messageData);
+    const messageDelivered = emitToUser(receiverId, "newMessage", messageData);
 
-    // 🔥 REAL-TIME: Notify sender that message was delivered
-    emitToUser(senderId, "messageDelivered", {
-      messageId: newMessage.id,
-      deliveredAt: new Date()
-    });
+    // ✅ FIX: Only mark as delivered if receiver is online and message was actually delivered
+    if (messageDelivered) {
+      // Update message status to delivered in database
+      await prisma.message.update({
+        where: { id: newMessage.id },
+        data: { 
+          status: 'delivered',
+          deliveredAt: new Date()
+        }
+      });
+
+      // Notify sender that message was delivered
+      emitToUser(senderId, "messageDelivered", {
+        messageId: newMessage.id,
+        deliveredAt: new Date()
+      });
+    }
 
     // Return response immediately
     res.status(201).json(newMessage);

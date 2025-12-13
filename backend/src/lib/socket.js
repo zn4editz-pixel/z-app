@@ -87,15 +87,64 @@ export const emitToUser = (userId, event, data) => {
 	if (socketId) {
 		console.log(`Emitting ['${event}'] to user ${userId} (socket ${socketId})`);
 		io.to(socketId).emit(event, data);
+		return true; // Message was delivered to online user
 	} else {
 		console.log(`Could not find socket for user ${userId} to emit ['${event}']`);
+		return false; // User is offline, message not delivered
 	}
 };
 
 // Mark pending messages as delivered when user comes online
-// DISABLED: Message status tracking not in Prisma schema (not needed for core functionality)
 const markPendingMessagesAsDelivered = async (userId) => {
-	// Disabled - message delivery can be tracked client-side
+	try {
+		console.log(`📬 Marking pending messages as delivered for user ${userId}`);
+		
+		// Find all undelivered messages sent to this user
+		const pendingMessages = await prisma.message.findMany({
+			where: {
+				receiverId: userId,
+				status: 'sent' // Only messages that haven't been delivered yet
+			},
+			orderBy: { createdAt: 'asc' }
+		});
+
+		if (pendingMessages.length > 0) {
+			console.log(`📬 Found ${pendingMessages.length} pending messages for user ${userId}`);
+			
+			// Update all pending messages to delivered
+			const messageIds = pendingMessages.map(msg => msg.id);
+			await prisma.message.updateMany({
+				where: {
+					id: { in: messageIds }
+				},
+				data: {
+					status: 'delivered',
+					deliveredAt: new Date()
+				}
+			});
+
+			// Notify senders that their messages were delivered
+			const senderNotifications = {};
+			pendingMessages.forEach(msg => {
+				if (!senderNotifications[msg.senderId]) {
+					senderNotifications[msg.senderId] = [];
+				}
+				senderNotifications[msg.senderId].push(msg.id);
+			});
+
+			// Send delivery notifications to each sender
+			Object.entries(senderNotifications).forEach(([senderId, msgIds]) => {
+				emitToUser(senderId, "messagesDelivered", {
+					messageIds: msgIds,
+					deliveredAt: new Date()
+				});
+			});
+
+			console.log(`✅ Marked ${pendingMessages.length} messages as delivered for user ${userId}`);
+		}
+	} catch (error) {
+		console.error('❌ Error marking pending messages as delivered:', error);
+	}
 };
 // === END PRIVATE CHAT LOGIC ===
 
@@ -275,6 +324,10 @@ io.on("connection", (socket) => {
 			.then(user => {
 				if (user) {
 					console.log(`✅ User ${initialUserId} marked as online in database`);
+					
+					// ✅ FIX: Mark pending messages as delivered when user comes online
+					markPendingMessagesAsDelivered(initialUserId);
+					
 					// Emit immediately after database update to ALL clients
 					const onlineUserIds = Object.keys(userSocketMap);
 					console.log(`📡 Broadcasting online users to ALL clients: ${onlineUserIds.length} users online`);
@@ -305,6 +358,10 @@ io.on("connection", (socket) => {
 				.then(user => {
 					if (user) {
 						console.log(`✅ User ${userId} marked as online`);
+						
+						// ✅ FIX: Mark pending messages as delivered when user comes online
+						markPendingMessagesAsDelivered(userId);
+						
 						const onlineUserIds = Object.keys(userSocketMap);
 						io.emit("getOnlineUsers", onlineUserIds);
 						

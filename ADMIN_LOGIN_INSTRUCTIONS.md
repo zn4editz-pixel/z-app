@@ -4,15 +4,15 @@
 - ✅ Backend server running on port 5001
 - ✅ SQLite database connected
 - ✅ All API routes working (auth, friends, admin)
-- ✅ Admin user exists: ronaldo@gmail.com / safwan123
+- ✅ Admin user exists: z4fwan77@gmail.com / admin123
 
 ## 🔑 HOW TO ACCESS ADMIN PANEL
 
 ### Step 1: Login to the Application
 1. Go to: http://localhost:5173/login
 2. Use admin credentials:
-   - **Email**: ronaldo@gmail.com
-   - **Password**: safwan123
+   - **Email**: z4fwan77@gmail.com
+   - **Password**: admin123
 
 ### Step 2: Access Admin Panel
 1. After login, go to: http://localhost:5173/admin
@@ -40,7 +40,7 @@
 - **Frontend**: ✅ Ready, just needs login
 
 ## 🚀 NEXT STEPS
-1. **Login**: Use ronaldo@gmail.com / safwan123
+1. **Login**: Use z4fwan77@gmail.com / admin123
 2. **Admin Panel**: Navigate to /admin after login
 3. **Enjoy**: All features working with beautiful golden theme!
 

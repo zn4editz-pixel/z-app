@@ -403,8 +403,99 @@ export const useFriendStore = create((set, get) => ({
         });
     },
 
+    // ✅ NEW: Update message status for a specific friend's last message
+    updateFriendMessageStatus: (friendId, messageId, status, deliveredAt = null, readAt = null) => {
+        if (import.meta.env.DEV) console.log('🔄 Updating message status for friend:', friendId, messageId, status);
+        
+        set((state) => {
+            const updatedFriends = state.friends.map(friend => {
+                if (friend.id === friendId && friend.lastMessage && friend.lastMessage.id === messageId) {
+                    const updatedFriend = {
+                        ...friend,
+                        lastMessage: {
+                            ...friend.lastMessage,
+                            status,
+                            deliveredAt: deliveredAt || friend.lastMessage.deliveredAt,
+                            readAt: readAt || friend.lastMessage.readAt
+                        }
+                    };
+                    
+                    if (import.meta.env.DEV) console.log('✅ Updated friend message status:', updatedFriend.lastMessage);
+                    return updatedFriend;
+                }
+                return friend;
+            });
+
+            return { friends: updatedFriends };
+        });
+    },
+
+    // ✅ NEW: Setup real-time listeners for message status updates
+    setupRealtimeListeners: () => {
+        const { socket } = useAuthStore.getState();
+        if (!socket) return;
+
+        console.log('🔄 Setting up real-time listeners for friend store');
+
+        // Listen for message delivery updates globally
+        socket.on("messageDelivered", ({ messageId, deliveredAt }) => {
+            console.log('📡 Global: Message delivered', messageId);
+            const { friends } = get();
+            
+            // Find which friend has this message as their last message
+            friends.forEach(friend => {
+                if (friend.lastMessage && friend.lastMessage.id === messageId) {
+                    get().updateFriendMessageStatus(friend.id, messageId, 'delivered', deliveredAt);
+                }
+            });
+        });
+
+        // Listen for bulk message delivery updates
+        socket.on("messagesDelivered", ({ messageIds, deliveredAt }) => {
+            console.log('📡 Global: Messages delivered (bulk)', messageIds);
+            const { friends } = get();
+            
+            messageIds.forEach(messageId => {
+                friends.forEach(friend => {
+                    if (friend.lastMessage && friend.lastMessage.id === messageId) {
+                        get().updateFriendMessageStatus(friend.id, messageId, 'delivered', deliveredAt);
+                    }
+                });
+            });
+        });
+
+        // Listen for message read updates globally
+        socket.on("messagesRead", ({ readBy }) => {
+            console.log('📡 Global: Messages read by', readBy);
+            const { friends } = get();
+            const authUserId = useAuthStore.getState().authUser?.id;
+            const readAt = new Date();
+            
+            // Update status for messages I sent that were read by this user
+            friends.forEach(friend => {
+                if (friend.id === readBy && friend.lastMessage && friend.lastMessage.senderId === authUserId) {
+                    get().updateFriendMessageStatus(friend.id, friend.lastMessage.id, 'read', null, readAt);
+                }
+            });
+        });
+    },
+
+    // ✅ NEW: Cleanup real-time listeners
+    cleanupRealtimeListeners: () => {
+        const { socket } = useAuthStore.getState();
+        if (!socket) return;
+
+        console.log('🧹 Cleaning up real-time listeners for friend store');
+        socket.off("messageDelivered");
+        socket.off("messagesDelivered");
+        socket.off("messagesRead");
+    },
+
     // Clear data on logout
     clearFriendData: () => {
+        // Cleanup listeners first
+        get().cleanupRealtimeListeners();
+        
         set({
             friends: [],
             pendingReceived: [],
