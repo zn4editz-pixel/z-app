@@ -446,9 +446,13 @@ export const useFriendStore = create((set, get) => ({
             // Find which friend has this message as their last message
             friends.forEach(friend => {
                 if (friend.lastMessage && friend.lastMessage.id === messageId) {
+                    console.log('🔄 Updating friend message status to delivered:', friend.id);
                     get().updateFriendMessageStatus(friend.id, messageId, 'delivered', deliveredAt);
                 }
             });
+            
+            // 🔥 FORCE UPDATE: Trigger re-render for real-time updates
+            set({ friends: [...friends] });
         });
 
         // Listen for bulk message delivery updates
@@ -475,9 +479,13 @@ export const useFriendStore = create((set, get) => ({
             // Update status for messages I sent that were read by this user
             friends.forEach(friend => {
                 if (friend.id === readBy && friend.lastMessage && friend.lastMessage.senderId === authUserId) {
+                    console.log('🔄 Updating friend message status to read:', friend.id);
                     get().updateFriendMessageStatus(friend.id, friend.lastMessage.id, 'read', null, readAt);
                 }
             });
+            
+            // 🔥 FORCE UPDATE: Trigger re-render for real-time updates
+            set({ friends: [...friends] });
         });
     },
 

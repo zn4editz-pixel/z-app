@@ -399,7 +399,7 @@ const ChatContainer = ({ onStartCall }) => {
               const mine = message.senderId === authUser?.id;
               
               // Render call log message
-              if (message.messageType === "call" || message.callData) {
+              if (message.messageType === "call" || message.callData || message.isCallLog) {
                 return (
                   <div
                     key={message.id || message.id}

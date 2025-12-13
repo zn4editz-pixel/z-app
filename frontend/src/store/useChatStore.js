@@ -129,6 +129,10 @@ export const useChatStore = create((set, get) => ({
         // 🚀 INSTANT: Update friend's last message immediately
         useFriendStore.getState().updateFriendLastMessage(selectedUser.id, optimisticMessage);
         
+        // 🔥 FORCE UPDATE: Trigger sidebar re-render
+        const friendStore = useFriendStore.getState();
+        useFriendStore.setState({ friends: [...friendStore.friends] });
+        
         // 🔥 ULTRA-OPTIMIZED: Send via socket with no timeout delays
         if (socket && socket.connected) {
             console.log(`🚀 INSTANT MESSAGE SEND: ${tempId}`);
@@ -807,6 +811,9 @@ export const useChatStore = create((set, get) => ({
                 const chatId = `${receiverId}`;
                 cacheMessagesDB(chatId, updatedMessages);
             }
+            
+            // 🔥 REAL-TIME: Update friend's last message with call log
+            useFriendStore.getState().updateFriendLastMessage(receiverId, response.data);
             
             return response.data;
         } catch (error) {

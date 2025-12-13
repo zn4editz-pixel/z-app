@@ -23,6 +23,15 @@ const Sidebar = () => {
   const { theme } = useThemeStore();
 
   const [searchOpen, setSearchOpen] = useState(false);
+  
+  // 🔥 REAL-TIME: Force re-render for live status updates
+  const [, forceUpdate] = useState({});
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceUpdate({});
+    }, 500); // Update every 500ms for real-time status changes
+    return () => clearInterval(interval);
+  }, []);
   const [query, setQuery] = useState("");
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
 
