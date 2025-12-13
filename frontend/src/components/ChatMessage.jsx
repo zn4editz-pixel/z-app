@@ -518,10 +518,21 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                     <div className={`text-[11px] leading-tight truncate ${
                       isMyMessage ? "text-primary-content/80" : "text-base-content/70"
                     }`}>
-                      {message.replyTo.text ? message.replyTo.text : 
-                       (message.replyTo.image ? "📷 Photo" : 
-                        message.replyTo.voice ? "🎤 Voice message" : 
-                        "Message")}
+                      {(() => {
+                        // ✅ DEBUG: Log the message.replyTo object
+                        console.log('🔍 ChatMessage reply-to object:', message.replyTo);
+                        console.log('🔍 ChatMessage reply-to text:', message.replyTo.text);
+                        
+                        if (message.replyTo.text && message.replyTo.text.trim()) {
+                          return message.replyTo.text;
+                        } else if (message.replyTo.image) {
+                          return "📷 Photo";
+                        } else if (message.replyTo.voice) {
+                          return "🎤 Voice message";
+                        } else {
+                          return "Message";
+                        }
+                      })()}
                     </div>
                   </div>
                 )}
