@@ -1,0 +1,269 @@
+/* Private Call Modal Styles */
+
+/* Ensure call modal is always on top */
+.call-modal {
+  z-index: 9999 !important;
+}
+
+/* Enhanced button styles for call controls */
+.call-control-btn {
+  min-width: 60px !important;
+  min-height: 60px !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  transition: all 0.2s ease !important;
+}
+
+.call-control-btn:hover {
+  transform: scale(1.05) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* End call button special styling */
+.end-call-btn {
+  min-width: 80px !important;
+  min-height: 80px !important;
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  border: none !important;
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4) !important;
+}
+
+.end-call-btn:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+  transform: scale(1.1) !important;
+  box-shadow: 0 12px 30px rgba(239, 68, 68, 0.6) !important;
+}
+
+/* Mute button states */
+.mute-btn-active {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  color: white !important;
+}
+
+.mute-btn-inactive {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Video button states */
+.video-btn-active {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.video-btn-inactive {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  color: white !important;
+}
+
+/* Control panel always visible - Only for Audio Calls */
+.call-controls {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(20px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  z-index: 1000 !important;
+  padding: 20px !important;
+}
+
+/* Floating transparent buttons for video calls */
+.floating-video-controls {
+  position: absolute !important;
+  bottom: 32px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 1000 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.floating-control-btn {
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(16px) !important;
+  transition: all 0.2s ease !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+.floating-control-btn:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+}
+
+.floating-control-btn:active {
+  transform: scale(0.95) !important;
+}
+
+/* Floating end call button */
+.floating-end-call-btn {
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(239, 68, 68, 0.9) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(239, 68, 68, 0.5) !important;
+  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.4) !important;
+  transition: all 0.2s ease !important;
+}
+
+.floating-end-call-btn:hover {
+  background: rgba(220, 38, 38, 0.9) !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 12px 40px rgba(239, 68, 68, 0.6) !important;
+}
+
+.floating-end-call-btn:active {
+  transform: scale(0.95) !important;
+}
+
+/* Transparent button states */
+.floating-btn-active {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.floating-btn-inactive {
+  background: rgba(239, 68, 68, 0.8) !important;
+}
+
+.floating-btn-muted {
+  background: rgba(239, 68, 68, 0.8) !important;
+}
+
+.floating-btn-unmuted {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.floating-btn-video-off {
+  background: rgba(239, 68, 68, 0.8) !important;
+}
+
+.floating-btn-video-on {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Status bar always visible */
+.call-status-bar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  z-index: 1000 !important;
+  padding: 12px 16px !important;
+}
+
+/* Local video positioning */
+.local-video-container {
+  position: fixed !important;
+  top: 80px !important;
+  right: 16px !important;
+  z-index: 999 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .call-control-btn {
+    min-width: 50px !important;
+    min-height: 50px !important;
+  }
+  
+  .end-call-btn {
+    min-width: 70px !important;
+    min-height: 70px !important;
+  }
+  
+  .call-controls {
+    padding: 16px !important;
+  }
+  
+  .call-status-bar {
+    padding: 8px 12px !important;
+  }
+  
+  .local-video-container {
+    top: 60px !important;
+    right: 12px !important;
+  }
+}
+
+/* Force visibility for all call elements */
+.call-modal * {
+  pointer-events: auto !important;
+}
+
+.call-modal button {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Ensure buttons are always clickable */
+.call-controls button {
+  position: relative !important;
+  z-index: 1001 !important;
+}
+
+/* Animation for button press feedback */
+.call-control-btn:active {
+  transform: scale(0.95) !important;
+}
+
+.end-call-btn:active {
+  transform: scale(0.95) !important;
+}
+
+/* Ensure text is always visible */
+.call-modal .text-base-content {
+  color: white !important;
+}
+
+.call-modal .text-base-content\/60 {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.call-modal .text-base-content\/70 {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Safe area padding for mobile devices */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 20px) !important;
+}
+
+/* Ensure video elements don't interfere with controls */
+video {
+  pointer-events: none !important;
+}
+
+/* Button size classes */
+.btn-xl {
+  width: 80px !important;
+  height: 80px !important;
+  min-height: 80px !important;
+}
+
+@media (max-width: 640px) {
+  .btn-xl {
+    width: 70px !important;
+    height: 70px !important;
+    min-height: 70px !important;
+  }
+}

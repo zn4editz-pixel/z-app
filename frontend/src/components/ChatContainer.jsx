@@ -11,6 +11,9 @@ import CallLogMessage from "./CallLogMessage";
 import ChatMessage from "./ChatMessage";
 import { formatMessageTime } from "../lib/utils";
 
+// ✅ CRITICAL: Import animations for floating reactions
+import "../styles/animations.css";
+
 const ChatContainer = ({ onStartCall }) => {
   const {
     messages = [],
@@ -18,6 +21,7 @@ const ChatContainer = ({ onStartCall }) => {
     isMessagesLoading,
     selectedUser,
     subscribeToMessages,
+    subscribeToReactions,
   } = useChatStore();
 
   const { authUser, socket } = useAuthStore();
@@ -44,52 +48,120 @@ const ChatContainer = ({ onStartCall }) => {
   // ✅ NEW: Floating reactions system
   const [floatingReactions, setFloatingReactions] = useState([]);
   
+  // ✅ SIMPLE: Add window function for manual testing
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.testChatContainerFloating = (emoji = '🧪') => {
+        console.log('🧪 Manual ChatContainer floating test triggered');
+        triggerFloatingReaction(emoji, null);
+      };
+    }
+  }, []);
+  
   const handleReply = (message) => {
     setReplyingTo(message);
   };
 
-  // ✅ NEW: Floating reaction function
+  // ✅ SIMPLE & GUARANTEED: Working floating reaction function
   const triggerFloatingReaction = (emoji, messageElement) => {
-    if (!messageElement) return;
+    console.log('🎉 ChatContainer: Creating floating reaction', emoji);
     
-    const rect = messageElement.getBoundingClientRect();
-    const containerRect = scrollContainerRef.current?.getBoundingClientRect();
-    
-    if (!containerRect) return;
-    
-    // Calculate position relative to chat container
-    const relativeX = ((rect.left + rect.width / 2 - containerRect.left) / containerRect.width) * 100;
-    const relativeY = ((containerRect.bottom - rect.top) / containerRect.height) * 100;
-    
-    const reaction = {
-      id: Date.now() + Math.random(),
-      emoji,
-      x: Math.max(10, Math.min(90, relativeX + (Math.random() - 0.5) * 20)), // Add some randomness
-      y: Math.max(10, Math.min(90, relativeY + (Math.random() - 0.5) * 10)),
-      delay: Math.random() * 200,
-      duration: 2500 + Math.random() * 1000
-    };
-    
-    setFloatingReactions(prev => [...prev, reaction]);
-    
-    // Remove reaction after animation
-    setTimeout(() => {
-      setFloatingReactions(prev => prev.filter(r => r.id !== reaction.id));
-    }, reaction.duration + reaction.delay);
+    try {
+      let x = 50; // Default center
+      let y = 50; // Default center
+      
+      // Try to get position from message element
+      if (messageElement && messageElement.getBoundingClientRect) {
+        const rect = messageElement.getBoundingClientRect();
+        const containerRect = scrollContainerRef.current?.getBoundingClientRect();
+        
+        if (rect.width > 0 && rect.height > 0 && containerRect) {
+          // Calculate relative position within the chat container
+          x = ((rect.left + rect.width / 2 - containerRect.left) / containerRect.width) * 100;
+          y = ((rect.top + rect.height / 2 - containerRect.top) / containerRect.height) * 100;
+          
+          // Keep within bounds
+          x = Math.max(10, Math.min(90, x));
+          y = Math.max(10, Math.min(90, y));
+        }
+      }
+      
+      // Create floating reaction
+      const reaction = {
+        id: Date.now() + Math.random(),
+        emoji,
+        x,
+        y,
+        delay: 0,
+        duration: 3000
+      };
+      
+      console.log('✅ Creating floating reaction at:', x, y);
+      
+      // Add to state
+      setFloatingReactions(prev => [...prev, reaction]);
+      
+      // Remove after animation
+      setTimeout(() => {
+        setFloatingReactions(prev => prev.filter(r => r.id !== reaction.id));
+      }, reaction.duration + 500);
+      
+      // Haptic feedback
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+      
+      console.log('✅ Floating reaction created successfully');
+      
+    } catch (error) {
+      console.error('❌ Error creating floating reaction:', error);
+      // Still try to create a basic reaction at center
+      const fallbackReaction = {
+        id: Date.now() + Math.random(),
+        emoji,
+        x: 50,
+        y: 50,
+        delay: 0,
+        duration: 3000
+      };
+      
+      setFloatingReactions(prev => [...prev, fallbackReaction]);
+      setTimeout(() => {
+        setFloatingReactions(prev => prev.filter(r => r.id !== fallbackReaction.id));
+      }, 3500);
+    }
   };
+
+
 
   useEffect(() => {
     if (!selectedUser?.id) return;
     
     if (import.meta.env.DEV) console.log(`📱 ChatContainer: Loading chat for ${selectedUser.nickname || selectedUser.username}`);
     
+    // ✅ ENHANCED: Reset state for new chat
     isInitialLoad.current = true;
     previousMessagesLength.current = 0;
+    setShowNewMessageButton(false);
+    setNewMessageCount(0);
     
     // ✅ INSTANT: Load messages immediately without delay
     getMessages?.(selectedUser.id);
-    const unsub = subscribeToMessages?.(selectedUser.id);
-    return () => typeof unsub === "function" && unsub();
+    
+    // ✅ ENHANCED: Force scroll to bottom after a brief delay to ensure messages are rendered
+    setTimeout(() => {
+      if (scrollContainerRef.current && isInitialLoad.current) {
+        scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        if (import.meta.env.DEV) console.log('🔄 Force scroll to bottom after chat switch');
+      }
+    }, 100);
+    
+    // ✅ FIXED: Subscribe to socket events without parameters - but only if not already subscribed
+    // Note: Subscriptions are now handled in HomePage to avoid conflicts
+    
+    return () => {
+      // Cleanup is handled by the store
+    };
   }, [selectedUser?.id, getMessages, subscribeToMessages]);
 
   useEffect(() => {
@@ -121,10 +193,29 @@ const ChatContainer = ({ onStartCall }) => {
           setNewMessageCount(0);
         }
       } else if (isInitialLoad.current) {
+        // ✅ ENHANCED: Multiple attempts to ensure scroll to bottom works
+        const scrollToBottomInstant = () => {
+          if (scrollContainerRef.current) {
+            const container = scrollContainerRef.current;
+            container.scrollTop = container.scrollHeight;
+            
+            // ✅ DOUBLE CHECK: Ensure we actually scrolled to bottom
+            const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 10;
+            if (!isAtBottom) {
+              // Try again with requestAnimationFrame
+              requestAnimationFrame(() => {
+                container.scrollTop = container.scrollHeight;
+              });
+            }
+          }
+        };
+        
         // ✅ INSTANT: Initial load scroll - no animation, no delay
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-        }
+        scrollToBottomInstant();
+        
+        // ✅ BACKUP: Try again after a brief delay to ensure DOM is updated
+        setTimeout(scrollToBottomInstant, 50);
+        
         if (import.meta.env.DEV) console.log(`📜 Initial load: Jumped to bottom (${messages.length} messages)`);
         isInitialLoad.current = false;
       }
@@ -132,14 +223,45 @@ const ChatContainer = ({ onStartCall }) => {
       previousMessagesLength.current = messages.length;
     }
   }, [messages.length, isTyping, authUser?.id]);
-  
-  // ✅ NEW: Handle scroll to bottom button click
-  const scrollToBottom = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({
-        top: scrollContainerRef.current.scrollHeight,
-        behavior: 'smooth'
+
+  // ✅ ENHANCED: Additional scroll effect for better reliability
+  useEffect(() => {
+    if (messages.length > 0 && isInitialLoad.current) {
+      // ✅ MULTIPLE ATTEMPTS: Ensure scroll happens after DOM updates
+      const attempts = [0, 50, 100, 200];
+      
+      attempts.forEach(delay => {
+        setTimeout(() => {
+          if (scrollContainerRef.current && isInitialLoad.current) {
+            scrollToBottom(false); // Instant scroll
+          }
+        }, delay);
       });
+    }
+  }, [messages]);
+  
+  // ✅ ENHANCED: Reliable scroll to bottom function
+  const scrollToBottom = (smooth = true) => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      
+      if (smooth) {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: 'smooth'
+        });
+      } else {
+        // Instant scroll
+        container.scrollTop = container.scrollHeight;
+        
+        // ✅ ENSURE: Double-check we reached the bottom
+        requestAnimationFrame(() => {
+          if (container.scrollTop < container.scrollHeight - container.clientHeight - 10) {
+            container.scrollTop = container.scrollHeight;
+          }
+        });
+      }
+      
       setShowNewMessageButton(false);
       setNewMessageCount(0);
     }
@@ -322,18 +444,33 @@ const ChatContainer = ({ onStartCall }) => {
           
           <div ref={bottomRef} />
           
-          {/* Floating Reactions Container */}
-          <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
+          
+          {/* ✅ SIMPLE FLOATING REACTIONS - GUARANTEED TO WORK */}
+          <div 
+            className="floating-reactions-overlay"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+              overflow: 'hidden',
+              zIndex: 99999
+            }}
+          >
             {floatingReactions.map((reaction) => (
               <div
                 key={reaction.id}
-                className="absolute animate-float-reaction text-4xl"
+                className="floating-reaction-simple"
                 style={{
+                  position: 'absolute',
                   left: `${reaction.x}%`,
-                  bottom: `${reaction.y}%`,
-                  textShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                  animationDelay: `${reaction.delay}ms`,
-                  animationDuration: `${reaction.duration}ms`
+                  top: `${reaction.y}%`,
+                  fontSize: '2.5rem',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 99999,
+                  pointerEvents: 'none',
+                  fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif',
+                  animation: 'simpleFloatUp 3s ease-out forwards',
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
                 }}
               >
                 {reaction.emoji}
@@ -390,57 +527,7 @@ const ChatContainer = ({ onStartCall }) => {
         <MessageInput replyingTo={replyingTo} onCancelReply={() => setReplyingTo(null)} />
       </div>
 
-      <style>{`
-        .bubble-left::after {
-          content: "";
-          position: absolute;
-          left: -6px;
-          bottom: 4px;
-          border-top: 6px solid transparent;
-          border-right: 6px solid var(--b2);
-          border-bottom: 6px solid transparent;
-        }
-        .bubble-right::after {
-          content: "";
-          position: absolute;
-          right: -6px;
-          bottom: 4px;
-          border-top: 6px solid transparent;
-          border-left: 6px solid var(--p);
-          border-bottom: 6px solid transparent;
-        }
-        
-        @keyframes float-reaction {
-          0% {
-            transform: translateY(0) scale(0.8) rotate(0deg);
-            opacity: 0;
-          }
-          15% {
-            transform: translateY(-20px) scale(1.2) rotate(-5deg);
-            opacity: 1;
-          }
-          30% {
-            transform: translateY(-60px) scale(1) rotate(5deg);
-            opacity: 0.9;
-          }
-          60% {
-            transform: translateY(-120px) scale(1.1) rotate(-3deg);
-            opacity: 0.7;
-          }
-          85% {
-            transform: translateY(-180px) scale(0.9) rotate(8deg);
-            opacity: 0.4;
-          }
-          100% {
-            transform: translateY(-220px) scale(0.6) rotate(15deg);
-            opacity: 0;
-          }
-        }
-        
-        .animate-float-reaction {
-          animation: float-reaction 2.5s ease-out forwards;
-        }
-      `}</style>
+
     </>
   );
 };

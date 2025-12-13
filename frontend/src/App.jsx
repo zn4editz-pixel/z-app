@@ -2,11 +2,16 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-
 import { useEffect, useCallback, lazy, Suspense } from "react";
 import { Toaster, toast } from "react-hot-toast";
 
-// Lazy load ALL pages for faster initial load
-const HomePage = lazy(() => import("./pages/HomePage"));
-const SignUpPage = lazy(() => import("./pages/SignUpPage"));
-const LoginPage = lazy(() => import("./pages/LoginPage"));
-const SetupProfilePage = lazy(() => import("./pages/SetupProfilePage"));
+// ✅ CRITICAL IMPORTS: Import essential components directly to prevent loading errors
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import SignUpPage from "./pages/SignUpPage";
+import SetupProfilePage from "./pages/SetupProfilePage";
+import Navbar from "./components/Navbar";
+import PermissionHandler from "./components/PermissionHandler";
+import ErrorBoundary from "./components/ErrorBoundary";
+
+// Lazy load non-critical pages for performance
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage"));
 const MyProfilePage = lazy(() => import("./pages/ProfilePage"));
@@ -16,17 +21,12 @@ const StrangerChatSettings = lazy(() => import("./pages/StrangerChatSettings"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const DiscoverPage = lazy(() => import("./pages/DiscoverPage"));
 const SuspendedPage = lazy(() => import("./pages/SuspendedPage"));
-const BlockedPage = lazy(() => import("./pages/BlockedPage")); // ✅ FIXED: Import BlockedPage
+const BlockedPage = lazy(() => import("./pages/BlockedPage"));
 const GoodbyePage = lazy(() => import("./pages/GoodbyePage"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const DebugPage = lazy(() => import("./pages/DebugPage"));
 const MessageDiagnosticPage = lazy(() => import("./pages/MessageDiagnosticPage"));
-
-// Lazy load components
-const Navbar = lazy(() => import("./components/Navbar"));
-const PermissionHandler = lazy(() => import("./components/PermissionHandler"));
-const ErrorBoundary = lazy(() => import("./components/ErrorBoundary")); // ✅ FIXED: Import ErrorBoundary
 
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
@@ -347,12 +347,10 @@ const App = () => {
 
 	return (
 		<div data-theme={theme} className={`min-h-screen bg-base-100 ${shouldShowNavbar ? "pt-14 md:pt-16" : ""}`}>
-			<Suspense fallback={<LoadingScreen />}>
-				<ErrorBoundary>
-					{authUser && hasCompletedProfile && <PermissionHandler />}
-					{shouldShowNavbar && <Navbar />}
-				</ErrorBoundary>
-			</Suspense>
+			<ErrorBoundary>
+				{authUser && hasCompletedProfile && <PermissionHandler />}
+				{shouldShowNavbar && <Navbar />}
+			</ErrorBoundary>
 
 			<Suspense fallback={<LoadingScreen />}>
 				<ErrorBoundary>

@@ -23,35 +23,157 @@ const HomePage = () => {
   });
   
   const [incomingCall, setIncomingCall] = useState(null);
+  const [isRestoringChat, setIsRestoringChat] = useState(true);
 
-  // Restore selected user on page load/refresh
+  // Enhanced chat restoration with better timing and error handling
   useEffect(() => {
     const restoreChat = async () => {
-      if (authUser && friends.length > 0) {
-        console.log('🔄 Attempting to restore selected user from localStorage/URL');
-        const restored = await restoreSelectedUser();
-        if (restored) {
-          console.log('✅ Successfully restored chat state');
+      console.log('🔄 Starting enhanced chat restoration...');
+      console.log('📊 Current state:', { 
+        authUser: !!authUser, 
+        friendsCount: friends.length,
+        selectedUser: !!selectedUser 
+      });
+
+      // Wait for auth user
+      if (!authUser) {
+        console.log('⏳ Waiting for auth user...');
+        setIsRestoringChat(false);
+        return;
+      }
+
+      // If we already have a selected user, don't restore
+      if (selectedUser) {
+        console.log('✅ Chat already active, skipping restoration');
+        setIsRestoringChat(false);
+        return;
+      }
+
+      console.log('👥 Ensuring friends are loaded...');
+
+      // Force fetch friends if not loaded
+      if (friends.length === 0) {
+        try {
+          console.log('📥 Loading friends data for restoration...');
+          await fetchFriendData();
+          console.log('✅ Friends loaded, proceeding with restoration');
+        } catch (error) {
+          console.error('❌ Failed to load friends:', error);
+          setIsRestoringChat(false);
+          return;
+        }
+      }
+
+      // Now attempt restoration with loaded friends
+      console.log('🔄 Attempting restoration with loaded data...');
+      const restored = await restoreSelectedUser();
+
+      if (restored) {
+        console.log('✅ Successfully restored chat state');
+      } else {
+        console.log('ℹ️ No previous chat to restore');
+      }
+      
+      setIsRestoringChat(false);
+    };
+
+    // Add longer delay to ensure all stores are initialized
+    const timeoutId = setTimeout(restoreChat, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [authUser, selectedUser]); // Simplified dependencies
+
+  // Separate effect for friends loading
+  useEffect(() => {
+    if (authUser && friends.length === 0) {
+      console.log('👥 Loading friends data...');
+      fetchFriendData();
+    }
+  }, [authUser, fetchFriendData]);
+
+  // Additional effect to handle URL-based chat restoration
+  useEffect(() => {
+    const handleUrlChatParam = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const chatUserId = urlParams.get('chat');
+      
+      if (chatUserId && authUser && friends.length > 0 && !selectedUser) {
+        console.log('🔗 Found chat parameter in URL:', chatUserId);
+        const targetUser = friends.find(friend => friend.id === chatUserId);
+        
+        if (targetUser) {
+          console.log('✅ Restoring chat from URL parameter');
+          const { setSelectedUser } = useChatStore.getState();
+          setSelectedUser(targetUser);
         } else {
-          console.log('ℹ️ No previous chat to restore');
+          console.log('⚠️ User from URL not found in friends list');
         }
       }
     };
 
-    // Only attempt restore when we have both auth user and friends data
-    if (authUser && friends.length > 0) {
-      restoreChat();
-    } else if (authUser && friends.length === 0) {
-      // If we have auth user but no friends yet, fetch friends first
-      console.log('📥 Fetching friends data before attempting restore');
-      fetchFriendData().then(() => {
-        // Friends will be available on next render, useEffect will run again
-      });
-    }
-  }, [authUser, friends.length, restoreSelectedUser, fetchFriendData]);
+    handleUrlChatParam();
+  }, [authUser, friends, selectedUser]);
+
+  // Handle browser back/forward navigation and window focus
+  useEffect(() => {
+    const handlePopState = () => {
+      console.log('🔄 Browser navigation detected, attempting chat restoration');
+      if (authUser && friends.length > 0) {
+        setTimeout(() => {
+          restoreSelectedUser();
+        }, 100);
+      }
+    };
+
+    const handleWindowFocus = () => {
+      console.log('👁️ Window focused, checking chat state');
+      if (authUser && friends.length > 0 && !selectedUser) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const chatUserId = urlParams.get('chat');
+        if (chatUserId) {
+          console.log('🔄 Restoring chat on window focus');
+          restoreSelectedUser();
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [authUser, friends.length, selectedUser, restoreSelectedUser]);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !socket.connected) return;
+
+    // ✅ CRITICAL: Wait for socket to be fully connected before subscribing
+    const initializeSocketListeners = () => {
+      const { subscribeToMessages, subscribeToReactions } = useChatStore.getState();
+      console.log('🔌 HomePage: Initializing socket listeners for realtime updates');
+      console.log('🔌 Socket connected status:', socket.connected);
+      subscribeToMessages();
+      subscribeToReactions();
+    };
+
+    if (socket.connected) {
+      // Socket is already connected, initialize immediately
+      initializeSocketListeners();
+    } else {
+      // Wait for socket to connect
+      const handleConnect = () => {
+        console.log('🔌 Socket connected, initializing listeners');
+        initializeSocketListeners();
+      };
+      
+      socket.on('connect', handleConnect);
+      
+      return () => {
+        socket.off('connect', handleConnect);
+      };
+    }
 
     const handleIncomingCall = ({ callerInfo, callType, callerId }) => {
       console.log("📞 Incoming call from:", callerInfo?.nickname || callerId, "Type:", callType);
@@ -99,6 +221,30 @@ const HomePage = () => {
     }
     
     console.log(`📞 Starting ${callType} call with:`, selectedUser.nickname || selectedUser.username);
+    
+    // ✅ ENHANCED: Add haptic feedback and notification
+    if (navigator.vibrate) {
+      navigator.vibrate([100, 50, 100]); // Call vibration pattern
+    }
+    
+    // Show calling notification
+    toast.success(`Calling ${selectedUser.nickname || selectedUser.username}...`, {
+      icon: callType === 'video' ? '📹' : '📞',
+      duration: 3000
+    });
+    
+    // Emit call request to backend
+    if (socket) {
+      socket.emit("private:start-call", {
+        receiverId: selectedUser.id,
+        callType,
+        callerInfo: {
+          id: authUser.id,
+          nickname: authUser.nickname || authUser.username,
+          profilePic: authUser.profilePic
+        }
+      });
+    }
     
     setCallState({
       isCallActive: true,
@@ -166,7 +312,18 @@ const HomePage = () => {
             <Sidebar />
 
             {/* Chat area */}
-            {selectedUser ? <ChatContainer onStartCall={handleStartCall} /> : <NoChatSelected />}
+            {selectedUser ? (
+              <ChatContainer onStartCall={handleStartCall} />
+            ) : isRestoringChat ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="loading loading-spinner loading-lg text-primary mb-4"></div>
+                  <p className="text-base-content/70">Restoring your chat...</p>
+                </div>
+              </div>
+            ) : (
+              <NoChatSelected />
+            )}
           </div>
         </div>
         

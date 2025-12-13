@@ -1,32 +1,30 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
-import { axiosInstance } from "../lib/axios"; // Keep axiosInstance for getMessages/sendMessage
-import { useAuthStore } from "./useAuthStore"; // Auth store needed for socket & user info
+import { axiosInstance } from "../lib/axios";
+import { useAuthStore } from "./useAuthStore";
 import { cacheMessagesDB, getCachedMessagesDB } from "../utils/cache";
-import { useFriendStore } from "./useFriendStore"; // Import friend store for real-time updates
+import { useFriendStore } from "./useFriendStore";
 
 export const useChatStore = create((set, get) => ({
     // --- Existing Chat State ---
     messages: [],
-    selectedUser: null, // User object for the currently selected chat partner
+    selectedUser: null,
     isMessagesLoading: false,
     unreadCounts: {},
-    socketConnected: false, // Track socket connection status
+    socketConnected: false,
 
-    // --- NEW: Call State ---
-    callState: "idle", // 'idle' | 'outgoing' | 'incoming' | 'connecting' | 'connected'
-    callPartner: null, // User object of the person in the call (callerInfo or acceptorInfo)
-    callType: null, // 'audio' | 'video'
-    incomingCallData: null, // Stores { callerId, callerInfo, callType } for incoming calls
+    // --- Call State ---
+    callState: "idle",
+    callPartner: null,
+    callType: null,
+    incomingCallData: null,
     isMuted: false,
     isCameraOff: false,
-    // --- End Call State ---
 
-    // --- Existing Chat Actions ---
+    // --- Chat Actions ---
     getMessages: async (userId) => {
         const { selectedUser } = get();
         
-        // CRITICAL FIX: Verify we're still on the same user
         const selectedUserId = selectedUser?.id?.toString();
         const targetUserId = userId?.toString();
         
@@ -35,14 +33,12 @@ export const useChatStore = create((set, get) => ({
             return;
         }
         
-        // ✅ INSTANT: Try to load from cache first for instant display
         const chatId = `${userId}`;
         const cachedMessages = await getCachedMessagesDB(chatId);
         
         if (cachedMessages && cachedMessages.length > 0) {
             console.log(`⚡ INSTANT: Loaded ${cachedMessages.length} messages from cache`);
             
-            // Ensure cached messages have proper reactions arrays
             const normalizedCachedMessages = cachedMessages.map(msg => ({
                 ...msg,
                 reactions: Array.isArray(msg.reactions) ? msg.reactions : []
@@ -50,27 +46,23 @@ export const useChatStore = create((set, get) => ({
             
             set({ messages: normalizedCachedMessages, isMessagesLoading: false });
             
-            // Mark as read immediately
             get().resetUnread(userId);
             get().markMessagesAsRead(userId);
             
-            // Fetch fresh data in background (stale-while-revalidate)
             axiosInstance.get(`/messages/${userId}`)
                 .then(res => {
                     const currentUser = get().selectedUser;
                     if (currentUser?.id?.toString() === targetUserId) {
                         console.log(`🔄 Background: Updated with ${res.data.length} fresh messages`);
                         set({ messages: res.data });
-                        // Update cache with fresh data
                         cacheMessagesDB(chatId, res.data);
                     }
                 })
                 .catch(err => console.error('Background fetch failed:', err));
             
-            return; // Exit early - cache hit!
+            return;
         }
         
-        // No cache - show loading and fetch
         set({ messages: [], isMessagesLoading: true });
         
         try {
@@ -78,7 +70,6 @@ export const useChatStore = create((set, get) => ({
             
             const res = await axiosInstance.get(`/messages/${userId}`);
             
-            // CRITICAL: Double-check user hasn't changed during fetch
             const currentUser = get().selectedUser;
             const currentUserId = currentUser?.id?.toString();
             
@@ -89,7 +80,6 @@ export const useChatStore = create((set, get) => ({
             
             console.log(`✅ Loaded ${res.data.length} messages`);
             
-            // Ensure all messages have proper reactions arrays
             const normalizedMessages = res.data.map(msg => ({
                 ...msg,
                 reactions: Array.isArray(msg.reactions) ? msg.reactions : []
@@ -97,10 +87,8 @@ export const useChatStore = create((set, get) => ({
             
             set({ messages: normalizedMessages, isMessagesLoading: false });
             
-            // Cache the messages for next time
             cacheMessagesDB(chatId, res.data);
             
-            // Mark as read
             get().resetUnread(userId);
             get().markMessagesAsRead(userId);
         } catch (error) {
@@ -116,13 +104,11 @@ export const useChatStore = create((set, get) => ({
         
         if (!selectedUser) return;
         
-        // Check if online
         if (!navigator.onLine) {
             toast.error("You are offline");
             return;
         }
         
-        // Create optimistic message (shows INSTANTLY)
         const tempId = `temp-${Date.now()}-${Math.random()}`;
         const optimisticMessage = {
             id: tempId,
@@ -139,62 +125,63 @@ export const useChatStore = create((set, get) => ({
             tempId: tempId
         };
         
-        // ✅ INSTANT: Add optimistic message IMMEDIATELY (no waiting)
         const updatedMessages = [...messages, optimisticMessage];
         set({ messages: updatedMessages });
         
-        // ✅ INSTANT: Update cache immediately
         const chatId = `${selectedUser.id}`;
         cacheMessagesDB(chatId, updatedMessages);
         
-        // ✅ Update friend list with this message (for sidebar sorting)
         useFriendStore.getState().updateFriendLastMessage(selectedUser.id, optimisticMessage);
         
-        // ✅ INSTANT: Send in background (fire and forget - NO AWAIT)
-        // 🔧 TEMPORARY FIX: Force API usage for reliable message sending
-        console.log('📤 Sending via API (FORCED - ensuring reliability)');
+        if (socket && socket.connected) {
+            console.log('📤 Sending via SOCKET for realtime delivery');
+            socket.emit("sendMessage", {
+                receiverId: selectedUser.id,
+                text: messageData.text || null,
+                image: messageData.image || null,
+                voice: messageData.voice || null,
+                voiceDuration: messageData.voiceDuration || null,
+                replyTo: messageData.replyTo || null,
+                tempId: tempId
+            });
+        }
         
-        // Always use API for now to ensure messages work
-        {
-            axiosInstance.post(`/messages/send/${selectedUser.id}`, messageData)
-                .then(res => {
-                    console.log('✅ Message sent successfully via API:', res.data);
-                    const currentUser = get().selectedUser;
-                    if (currentUser?.id === selectedUser.id && res.data?.id) {
-                        // Ensure the response message has proper reactions array
-                        const normalizedMessage = {
-                            ...res.data,
-                            reactions: Array.isArray(res.data.reactions) ? res.data.reactions : []
-                        };
-                        
-                        set(state => ({
-                            messages: state.messages.map(m => 
-                                m.tempId === tempId ? normalizedMessage : m
-                            )
-                        }));
-                    }
-                })
-                .catch(error => {
-                    console.error('❌ Send failed:', error);
-                    // Mark message as failed
+        axiosInstance.post(`/messages/send/${selectedUser.id}`, messageData)
+            .then(res => {
+                console.log('✅ Message sent successfully via API:', res.data);
+                const currentUser = get().selectedUser;
+                if (currentUser?.id === selectedUser.id && res.data?.id) {
+                    const normalizedMessage = {
+                        ...res.data,
+                        reactions: Array.isArray(res.data.reactions) ? res.data.reactions : []
+                    };
+                    
                     set(state => ({
                         messages: state.messages.map(m => 
-                            m.tempId === tempId ? { ...m, status: 'failed' } : m
+                            m.tempId === tempId ? normalizedMessage : m
                         )
                     }));
-                    toast.error("Failed to send message");
-                });
-        }
+                }
+            })
+            .catch(error => {
+                console.error('❌ Send failed:', error);
+                set(state => ({
+                    messages: state.messages.map(m => 
+                        m.tempId === tempId ? { ...m, status: 'failed' } : m
+                    )
+                }));
+                toast.error("Failed to send message");
+            });
     },
 
     subscribeToMessages: () => {
-        const { socket } = useAuthStore.getState(); // Get socket directly
-        if (!socket) {
+        const { socket } = useAuthStore.getState();
+        if (!socket || !socket.connected) {
+            console.warn('⚠️ Socket not available or not connected, skipping subscription');
             set({ socketConnected: false });
             return;
         }
         
-        // ✅ CRITICAL FIX: Remove ALL existing listeners FIRST to prevent duplicates
         socket.removeAllListeners("newMessage");
         socket.removeAllListeners("messageDelivered");
         socket.removeAllListeners("messagesDelivered");
@@ -204,10 +191,8 @@ export const useChatStore = create((set, get) => ({
         
         console.log('🔄 Chat Store: Cleaned up old listeners, attaching fresh ones');
         
-        // Update connection status
         set({ socketConnected: socket.connected });
         
-        // Monitor connection status changes
         socket.on('connect', () => {
             console.log('📡 Chat Store: Socket connected');
             set({ socketConnected: true });
@@ -218,7 +203,6 @@ export const useChatStore = create((set, get) => ({
             set({ socketConnected: false });
         });
 
-        // Define handler separately
         const messageHandler = (newMessage) => {
             const { selectedUser, messages } = get();
             const { authUser } = useAuthStore.getState();
@@ -228,13 +212,13 @@ export const useChatStore = create((set, get) => ({
                 return;
             }
 
-            console.log(`📨 New message received:`, newMessage.id);
-
-            // Convert to strings for comparison
             const selectedUserId = selectedUser?.id?.toString();
             const authUserId = authUser?.id?.toString();
             const msgSenderId = newMessage.senderId?.id?.toString() || newMessage.senderId?.toString();
             const msgReceiverId = newMessage.receiverId?.id?.toString() || newMessage.receiverId?.toString();
+
+            console.log(`📨 REALTIME: New message received from ${msgSenderId} to ${msgReceiverId}:`, newMessage.text?.substring(0, 50));
+            console.log(`📨 Current chat: ${selectedUserId}, Auth user: ${authUserId}`);
             
             const isForCurrentChat = selectedUser && (
                 (msgSenderId === selectedUserId && msgReceiverId === authUserId) ||
@@ -242,63 +226,51 @@ export const useChatStore = create((set, get) => ({
             );
 
             if (isForCurrentChat) {
-                // ✅ CRITICAL: Check for duplicates FIRST (before any state updates)
-                let currentMessages = get().messages; // Get fresh messages state
+                let currentMessages = get().messages;
                 const isDuplicate = currentMessages.some(m => m.id === newMessage.id);
                 
                 if (isDuplicate) {
                     console.log(`⚠️ Duplicate message detected, skipping: ${newMessage.id}`);
-                    return; // Exit immediately - don't process duplicates
+                    return;
                 }
                 
-                // ✅ INSTANT: Check if this is replacing an optimistic message (my own message)
                 if (msgSenderId === authUserId) {
-                    // Find matching optimistic message by tempId or recent sending status
-                    currentMessages = get().messages; // Refresh messages state
+                    currentMessages = get().messages;
                     const optimisticIndex = currentMessages.findIndex(m => 
                         (m.tempId && m.status === 'sending') || 
                         (m.status === 'sending' && m.senderId === authUserId && 
-                         Math.abs(new Date(m.createdAt) - new Date(newMessage.createdAt)) < 5000) // Within 5 seconds
+                         Math.abs(new Date(m.createdAt) - new Date(newMessage.createdAt)) < 5000)
                     );
                     
                     if (optimisticIndex !== -1) {
-                        // Replace optimistic message with real one INSTANTLY
                         console.log(`✅ Replacing optimistic message with real one`);
                         const updatedMessages = currentMessages.map((m, idx) => 
                             idx === optimisticIndex ? { ...newMessage, status: 'sent' } : m
                         );
                         set({ messages: updatedMessages });
                         
-                        // ✅ Update cache with replaced message
                         const chatId = `${selectedUserId}`;
                         cacheMessagesDB(chatId, updatedMessages);
-                        return; // Exit early - message replaced
+                        return;
                     }
                 }
                 
-                // Add new message from other person
                 console.log(`✅ Adding new message to current chat`);
-                currentMessages = get().messages; // Refresh messages state
+                currentMessages = get().messages;
                 const updatedMessages = [...currentMessages, newMessage];
                 set({ messages: updatedMessages });
                 
-                // ✅ Update cache with new message
                 const chatId = `${selectedUserId}`;
                 cacheMessagesDB(chatId, updatedMessages);
                 
-                // ✅ Update friend list with this received message
                 useFriendStore.getState().updateFriendLastMessage(msgSenderId, newMessage);
                 
-                // Mark as read if I'm the receiver
                 if (msgReceiverId === authUserId) {
                     get().markMessagesAsRead(selectedUser.id);
                 }
             } else if (msgSenderId !== authUserId) {
                 console.log(`📬 Message for different chat, incrementing unread`);
-                // Increment unread count for other chats
                 get().incrementUnread(msgSenderId);
-                
-                // ✅ Update friend list with this received message (even if not in current chat)
                 useFriendStore.getState().updateFriendLastMessage(msgSenderId, newMessage);
             }
         };
@@ -324,8 +296,6 @@ export const useChatStore = create((set, get) => ({
             console.log(`📘 Received messagesRead event. ReadBy: ${readBy}`);
             console.log(`📘 Current messages count: ${messages.length}`);
             
-            // Update messages where I am the sender and the other person (readBy) is the receiver
-            // Handle both string and ObjectId comparison
             const updatedMessages = messages.map(msg => {
                 const receiverIdStr = typeof msg.receiverId === 'object' ? msg.receiverId.id || msg.receiverId.toString() : msg.receiverId;
                 const readByStr = typeof readBy === 'object' ? readBy.id || readBy.toString() : readBy;
@@ -344,7 +314,6 @@ export const useChatStore = create((set, get) => ({
             set({ messages: updatedMessages });
         };
 
-        // ✅ Attach fresh listeners (already cleaned up above)
         socket.on("newMessage", messageHandler);
         socket.on("messageDelivered", messageDeliveredHandler);
         socket.on("messagesDelivered", messagesDeliveredHandler);
@@ -365,7 +334,6 @@ export const useChatStore = create((set, get) => ({
         const { socket } = useAuthStore.getState();
         if (!socket) return;
         
-        // ✅ Remove ALL message-related listeners
         socket.removeAllListeners("newMessage");
         socket.removeAllListeners("messageDelivered");
         socket.removeAllListeners("messagesDelivered");
@@ -379,11 +347,9 @@ export const useChatStore = create((set, get) => ({
 
     setSelectedUser: (user) => {
         console.log(`👤 Selecting user: ${user?.nickname || user?.username || 'none'}`);
-        // CRITICAL: Clear messages IMMEDIATELY to prevent flash of previous chat
         set({ selectedUser: user, messages: [], isMessagesLoading: false });
         
         if (user) {
-            // Save selected user to localStorage for page refresh persistence
             localStorage.setItem('selectedChatUser', JSON.stringify({
                 id: user.id,
                 username: user.username,
@@ -393,18 +359,15 @@ export const useChatStore = create((set, get) => ({
                 isOnline: user.isOnline
             }));
             
-            // Update URL to reflect current chat (without page reload)
             const currentUrl = new URL(window.location);
             currentUrl.searchParams.set('chat', user.id);
             window.history.replaceState({}, '', currentUrl);
             
-            // Small delay to ensure state is updated
             const userId = user.id;
             setTimeout(() => {
                 get().getMessages(userId);
             }, 0);
         } else {
-            // Clear localStorage and URL when no user selected
             localStorage.removeItem('selectedChatUser');
             const currentUrl = new URL(window.location);
             currentUrl.searchParams.delete('chat');
@@ -412,90 +375,246 @@ export const useChatStore = create((set, get) => ({
         }
     },
 
-    // NEW: Restore selected user from localStorage or URL
     restoreSelectedUser: async () => {
         try {
-            // Check URL first for chat parameter
+            console.log('🔄 Starting enhanced chat restoration...');
+            
+            // Check URL parameter first (highest priority)
             const urlParams = new URLSearchParams(window.location.search);
             const chatUserId = urlParams.get('chat');
             
-            // Check localStorage for saved user
+            // Check localStorage as fallback
             const savedUser = localStorage.getItem('selectedChatUser');
             
-            if (chatUserId || savedUser) {
-                const { friends } = useFriendStore.getState();
-                let targetUserId = chatUserId;
-                let targetUser = null;
-                
-                // If we have URL parameter, use that
-                if (chatUserId) {
-                    targetUser = friends.find(friend => friend.id === chatUserId);
+            console.log('📊 Restoration data:', { 
+                urlChatId: chatUserId, 
+                hasSavedUser: !!savedUser 
+            });
+            
+            if (!chatUserId && !savedUser) {
+                console.log('ℹ️ No restoration data found');
+                return false;
+            }
+            
+            // Get friends with retry mechanism
+            let friends = useFriendStore.getState().friends;
+            console.log('👥 Available friends:', friends.length);
+            
+            // If no friends, try to fetch them
+            if (friends.length === 0) {
+                console.log('📥 No friends loaded, attempting to fetch...');
+                try {
+                    await useFriendStore.getState().fetchFriendData();
+                    friends = useFriendStore.getState().friends;
+                    console.log('✅ Friends fetched, now have:', friends.length);
+                } catch (error) {
+                    console.error('❌ Failed to fetch friends for restoration:', error);
+                    return false;
                 }
-                
-                // If no URL param or user not found, try localStorage
-                if (!targetUser && savedUser) {
-                    try {
-                        const parsedUser = JSON.parse(savedUser);
-                        targetUserId = parsedUser.id;
-                        targetUser = friends.find(friend => friend.id === parsedUser.id) || parsedUser;
-                    } catch (e) {
-                        console.error('Failed to parse saved user:', e);
+            }
+            
+            let targetUserId = chatUserId;
+            let targetUser = null;
+            
+            // Try URL parameter first
+            if (chatUserId) {
+                console.log('🔗 Looking for user from URL:', chatUserId);
+                targetUser = friends.find(friend => friend.id === chatUserId);
+                if (targetUser) {
+                    console.log('✅ Found user from URL parameter');
+                } else {
+                    console.log('⚠️ User from URL not found in friends list');
+                }
+            }
+            
+            // Fallback to localStorage
+            if (!targetUser && savedUser) {
+                try {
+                    console.log('💾 Trying localStorage fallback');
+                    const parsedUser = JSON.parse(savedUser);
+                    targetUserId = parsedUser.id;
+                    
+                    // Try to find in friends list first
+                    targetUser = friends.find(friend => friend.id === parsedUser.id);
+                    
+                    if (targetUser) {
+                        console.log('✅ Found user from localStorage in friends list');
+                    } else if (friends.length > 0) {
+                        // If we have friends but saved user not found, clear stale data
+                        console.log('🧹 Saved user not in friends list, clearing stale data');
                         localStorage.removeItem('selectedChatUser');
+                        return false;
+                    } else {
+                        // Use saved user data as fallback (might be outdated but better than nothing)
+                        console.log('⚠️ Using saved user data as fallback');
+                        targetUser = parsedUser;
                     }
+                } catch (e) {
+                    console.error('❌ Failed to parse saved user:', e);
+                    localStorage.removeItem('selectedChatUser');
+                    return false;
+                }
+            }
+            
+            if (targetUser && targetUserId) {
+                console.log(`🔄 Restoring chat with: ${targetUser.nickname || targetUser.username} (ID: ${targetUserId})`);
+                
+                // Update URL if it doesn't match
+                if (!chatUserId || chatUserId !== targetUserId) {
+                    const currentUrl = new URL(window.location);
+                    currentUrl.searchParams.set('chat', targetUserId);
+                    window.history.replaceState({}, '', currentUrl);
+                    console.log('🔗 Updated URL with chat parameter');
                 }
                 
-                // If we found a user, restore the chat
-                if (targetUser && targetUserId) {
-                    console.log(`🔄 Restoring chat with: ${targetUser.nickname || targetUser.username}`);
-                    get().setSelectedUser(targetUser);
-                    return true;
+                get().setSelectedUser(targetUser);
+                return true;
+            } else {
+                console.log('❌ No valid user found for restoration');
+                // Clean up URL if no valid restoration
+                if (chatUserId) {
+                    const currentUrl = new URL(window.location);
+                    currentUrl.searchParams.delete('chat');
+                    window.history.replaceState({}, '', currentUrl);
+                    console.log('🧹 Cleaned up invalid chat parameter from URL');
                 }
             }
         } catch (error) {
-            console.error('Failed to restore selected user:', error);
+            console.error('❌ Failed to restore selected user:', error);
         }
         return false;
     },
 
-    incrementUnread: (userId) => set((state) => ({ unreadCounts: {...state.unreadCounts, [userId]: (state.unreadCounts[userId] || 0) + 1} })),
-    resetUnread: (userId) => set((state) => { const updated = {...state.unreadCounts}; delete updated[userId]; return { unreadCounts: updated }; }),
+    incrementUnread: (userId) => set((state) => ({ 
+        unreadCounts: {...state.unreadCounts, [userId]: (state.unreadCounts[userId] || 0) + 1} 
+    })),
+    
+    resetUnread: (userId) => set((state) => { 
+        const updated = {...state.unreadCounts}; 
+        delete updated[userId]; 
+        return { unreadCounts: updated }; 
+    }),
 
     // --- Message Reactions ---
     addReaction: async (messageId, emoji) => {
         try {
-            const res = await axiosInstance.post(`/messages/reaction/${messageId}`, { emoji });
-            const { messages, selectedUser } = get();
-            const updatedMessages = messages.map(msg => 
-                msg.id === messageId ? { ...msg, reactions: res.data.reactions } : msg
-            );
-            set({ messages: updatedMessages });
+            const { socket } = useAuthStore.getState();
             
-            // Update cache
-            if (selectedUser) {
-                const chatId = `${selectedUser.id}`;
-                cacheMessagesDB(chatId, updatedMessages);
+            const { messages, selectedUser } = get();
+            const { authUser } = useAuthStore.getState();
+            
+            const optimisticMessages = messages.map(msg => {
+                if (msg.id === messageId) {
+                    const currentReactions = Array.isArray(msg.reactions) ? msg.reactions : [];
+                    const filteredReactions = currentReactions.filter(r => {
+                        const reactionUserId = r.userId?.id || r.userId;
+                        return reactionUserId !== authUser.id;
+                    });
+                    const newReaction = {
+                        userId: authUser.id,
+                        emoji: emoji,
+                        createdAt: new Date().toISOString()
+                    };
+                    return { ...msg, reactions: [...filteredReactions, newReaction] };
+                }
+                return msg;
+            });
+            
+            set({ messages: optimisticMessages });
+            
+            if (socket && selectedUser) {
+                socket.emit("messageReaction", {
+                    messageId,
+                    emoji,
+                    receiverId: selectedUser.id
+                });
+                console.log('📤 Emitted reaction via socket for realtime delivery');
             }
+            
+            axiosInstance.post(`/messages/reaction/${messageId}`, { emoji })
+                .then(res => {
+                    console.log('✅ Reaction persisted to database');
+                    const currentMessages = get().messages;
+                    const serverUpdatedMessages = currentMessages.map(msg => 
+                        msg.id === messageId ? { ...msg, reactions: res.data.reactions } : msg
+                    );
+                    set({ messages: serverUpdatedMessages });
+                    
+                    if (selectedUser) {
+                        const chatId = `${selectedUser.id}`;
+                        cacheMessagesDB(chatId, serverUpdatedMessages);
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Failed to persist reaction:', error);
+                    const revertedMessages = messages.map(msg => 
+                        msg.id === messageId ? { ...msg, reactions: msg.reactions } : msg
+                    );
+                    set({ messages: revertedMessages });
+                    toast.error("Failed to add reaction");
+                });
+                
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to add reaction");
+            console.error('❌ Add reaction error:', error);
+            toast.error("Failed to add reaction");
         }
     },
 
     removeReaction: async (messageId) => {
         try {
-            const res = await axiosInstance.delete(`/messages/reaction/${messageId}`);
-            const { messages, selectedUser } = get();
-            const updatedMessages = messages.map(msg => 
-                msg.id === messageId ? { ...msg, reactions: res.data.reactions } : msg
-            );
-            set({ messages: updatedMessages });
+            const { socket } = useAuthStore.getState();
             
-            // Update cache
-            if (selectedUser) {
-                const chatId = `${selectedUser.id}`;
-                cacheMessagesDB(chatId, updatedMessages);
+            const { messages, selectedUser } = get();
+            const { authUser } = useAuthStore.getState();
+            
+            const optimisticMessages = messages.map(msg => {
+                if (msg.id === messageId) {
+                    const currentReactions = Array.isArray(msg.reactions) ? msg.reactions : [];
+                    const filteredReactions = currentReactions.filter(r => {
+                        const reactionUserId = r.userId?.id || r.userId;
+                        return reactionUserId !== authUser.id;
+                    });
+                    return { ...msg, reactions: filteredReactions };
+                }
+                return msg;
+            });
+            
+            set({ messages: optimisticMessages });
+            
+            if (socket && selectedUser) {
+                socket.emit("messageReactionRemove", {
+                    messageId,
+                    receiverId: selectedUser.id
+                });
+                console.log('📤 Emitted reaction removal via socket for realtime delivery');
             }
+            
+            axiosInstance.delete(`/messages/reaction/${messageId}`)
+                .then(res => {
+                    console.log('✅ Reaction removal persisted to database');
+                    const currentMessages = get().messages;
+                    const serverUpdatedMessages = currentMessages.map(msg => 
+                        msg.id === messageId ? { ...msg, reactions: res.data.reactions } : msg
+                    );
+                    set({ messages: serverUpdatedMessages });
+                    
+                    if (selectedUser) {
+                        const chatId = `${selectedUser.id}`;
+                        cacheMessagesDB(chatId, serverUpdatedMessages);
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Failed to persist reaction removal:', error);
+                    const revertedMessages = messages.map(msg => 
+                        msg.id === messageId ? { ...msg, reactions: msg.reactions } : msg
+                    );
+                    set({ messages: revertedMessages });
+                    toast.error("Failed to remove reaction");
+                });
+                
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to remove reaction");
+            console.error('❌ Remove reaction error:', error);
+            toast.error("Failed to remove reaction");
         }
     },
 
@@ -508,7 +627,6 @@ export const useChatStore = create((set, get) => ({
             );
             set({ messages: updatedMessages });
             
-            // Update cache
             if (selectedUser) {
                 const chatId = `${selectedUser.id}`;
                 cacheMessagesDB(chatId, updatedMessages);
@@ -522,22 +640,24 @@ export const useChatStore = create((set, get) => ({
 
     subscribeToReactions: () => {
         const { socket } = useAuthStore.getState();
-        if (!socket) return;
+        if (!socket || !socket.connected) {
+            console.warn('⚠️ Socket not available or not connected, skipping reaction subscription');
+            return;
+        }
 
-        // ✅ CRITICAL FIX: Remove ALL existing listeners FIRST
         socket.removeAllListeners("messageReaction");
         socket.removeAllListeners("messageDeleted");
         
         console.log('🔄 Chat Store: Cleaned up old reaction listeners');
 
         const reactionHandler = ({ messageId, reactions }) => {
+            console.log(`😊 REALTIME: Reaction update received for message ${messageId}:`, reactions?.length || 0, 'reactions');
             const { messages, selectedUser } = get();
             const updatedMessages = messages.map(msg => 
                 msg.id === messageId ? { ...msg, reactions } : msg
             );
             set({ messages: updatedMessages });
             
-            // Update cache
             if (selectedUser) {
                 const chatId = `${selectedUser.id}`;
                 cacheMessagesDB(chatId, updatedMessages);
@@ -551,7 +671,6 @@ export const useChatStore = create((set, get) => ({
             );
             set({ messages: updatedMessages });
             
-            // Update cache
             if (selectedUser) {
                 const chatId = `${selectedUser.id}`;
                 cacheMessagesDB(chatId, updatedMessages);
@@ -564,8 +683,7 @@ export const useChatStore = create((set, get) => ({
         console.log('✅ Chat Store: Fresh reaction listeners attached');
     },
 
-
-    // --- NEW: Call Actions ---
+    // --- Call Actions ---
     resetCallState: () => {
         set({
             callState: "idle",
@@ -580,8 +698,6 @@ export const useChatStore = create((set, get) => ({
     initiateCall: (partner, type) => {
         const { callState } = get();
         if (callState !== "idle") {
-            // Allow initiating if connecting fails? Maybe reset first.
-            // For now, prevent multiple outgoing calls.
             return toast.error("Already busy in another call attempt.");
         }
         const { authUser, socket } = useAuthStore.getState();
@@ -615,11 +731,11 @@ export const useChatStore = create((set, get) => ({
         }
 
         set({
-            callState: "connecting", // Move to connecting
-            callPartner: incomingCallData.callerInfo, // Caller is the partner
+            callState: "connecting",
+            callPartner: incomingCallData.callerInfo,
             callType: incomingCallData.callType,
             isCameraOff: incomingCallData.callType === 'audio',
-            incomingCallData: null, // Clear incoming data
+            incomingCallData: null,
         });
 
         socket.emit("private:call-accepted", {
@@ -630,7 +746,6 @@ export const useChatStore = create((set, get) => ({
                 profilePic: authUser.profilePic,
             },
         });
-        // WebRTC negotiation will now start, usually triggered by the CallModal component
     },
 
     rejectCall: (reason = 'declined') => {
@@ -646,9 +761,9 @@ export const useChatStore = create((set, get) => ({
             });
         } else if (callState === "outgoing" && callPartner) {
             console.log(`Cancelling outgoing call to ${callPartner.nickname || callPartner.username}`);
-            socket.emit("private:end-call", { targetUserId: callPartner.id }); // Use end-call to notify
+            socket.emit("private:end-call", { targetUserId: callPartner.id });
         }
-        get().resetCallState(); // Reset state immediately
+        get().resetCallState();
     },
 
     endCall: () => {
@@ -660,29 +775,27 @@ export const useChatStore = create((set, get) => ({
         if (callPartner && (callState === 'connected' || callState === 'connecting' || callState === 'outgoing')) {
             socket.emit("private:end-call", { targetUserId: callPartner.id });
         }
-        get().resetCallState(); // Reset state immediately
-        // WebRTC cleanup should be triggered in the CallModal component
+        get().resetCallState();
     },
 
     handleIncomingCall: (data) => {
-        const { callState } = get(); // Check current call state
-        const { socket } = useAuthStore.getState(); // Need socket to reject if busy
+        const { callState } = get();
+        const { socket } = useAuthStore.getState();
 
         if (callState !== "idle") {
             console.log(`Received incoming call from ${data.callerInfo?.nickname} but already busy (state: ${callState}). Rejecting.`);
             if(socket) {
                 socket.emit("private:call-rejected", { callerId: data.callerId, reason: 'busy' });
             }
-            return; // Ignore the incoming call further
+            return;
         }
         console.log(`Incoming ${data.callType} call from ${data.callerInfo?.nickname}`);
         set({
             callState: "incoming",
             incomingCallData: data,
-            callPartner: data.callerInfo, // Set partner info for UI
+            callPartner: data.callerInfo,
             callType: data.callType,
         });
-        // Component listening to callState will show UI
     },
 
     handleCallAccepted: (data) => {
@@ -692,14 +805,11 @@ export const useChatStore = create((set, get) => ({
              return;
         }
         console.log(`Call accepted by ${data.acceptorInfo?.nickname}`);
-        // Update partner info with acceptor details if needed, though usually caller initiated with partner info
-        // set({ callPartner: data.acceptorInfo });
-        set({ callState: "connecting" }); // Move to connecting, WebRTC starts
+        set({ callState: "connecting" });
     },
 
     handleCallRejected: (data) => {
         const { callState, callPartner } = get();
-        // Only act if we were the caller waiting for acceptance
         if (callState === "outgoing" && callPartner?.id === data.rejectorId) {
             console.log(`Call rejected by ${callPartner.nickname}. Reason: ${data.reason}`);
             toast.error(`Call ${data.reason || 'declined'} by user.`);
@@ -713,44 +823,21 @@ export const useChatStore = create((set, get) => ({
         const { callState, callPartner } = get();
         if (callState !== 'idle') {
             console.log(`Call ended by ${data?.userId === callPartner?.id ? callPartner.nickname : 'partner'}`);
-            // NO TOAST - just reset state
             get().resetCallState();
         }
     },
 
-    toggleMute: () => { set((state) => ({ isMuted: !state.isMuted })); },
-    toggleCamera: () => { set((state) => ({ isCameraOff: !state.isCameraOff })); },
+    toggleMute: () => { 
+        set((state) => ({ isMuted: !state.isMuted })); 
+    },
+    
+    toggleCamera: () => { 
+        set((state) => ({ isCameraOff: !state.isCameraOff })); 
+    },
 
-    // --- DISABLED: Call events are now handled in HomePage to avoid conflicts ---
     subscribeToCallEvents: () => {
-        // Call events are handled directly in HomePage.jsx
-        // This prevents duplicate listeners and conflicts
         console.log("Call events handled in HomePage (useChatStore subscription disabled)");
         return;
-        
-        /* COMMENTED OUT TO PREVENT CONFLICTS
-        const { socket } = useAuthStore.getState();
-        if (!socket) return;
-        console.log("Subscribing to private call events");
-
-        // Define handlers referencing `get()` to access current store state/actions
-        const onIncomingCall = (data) => get().handleIncomingCall(data);
-        const onCallAccepted = (data) => get().handleCallAccepted(data);
-        const onCallRejected = (data) => get().handleCallRejected(data);
-        const onCallEnded = (data) => get().handleCallEnded(data);
-
-        // Remove previous listeners first to avoid duplicates
-        socket.off("private:incoming-call", onIncomingCall);
-        socket.off("private:call-accepted", onCallAccepted);
-        socket.off("private:call-rejected", onCallRejected);
-        socket.off("private:call-ended", onCallEnded);
-
-        // Add new listeners
-        socket.on("private:incoming-call", onIncomingCall);
-        socket.on("private:call-accepted", onCallAccepted);
-        socket.on("private:call-rejected", onCallRejected);
-        socket.on("private:call-ended", onCallEnded);
-        */
     },
 
     unsubscribeFromCallEvents: () => {
@@ -758,7 +845,6 @@ export const useChatStore = create((set, get) => ({
         if (!socket) return;
         console.log("Unsubscribing from private call events");
 
-        // Remove all listeners for these events
         socket.off("private:incoming-call");
         socket.off("private:call-accepted");
         socket.off("private:call-rejected");
@@ -766,26 +852,3 @@ export const useChatStore = create((set, get) => ({
     },
 
 }));
-
-// Auto-Subscription logic
-// Using a flag to prevent multiple subscriptions if state updates rapidly
-let subscribed = false;
-useAuthStore.subscribe((state, prevState) => {
-    const chatStore = useChatStore.getState();
-    // Subscribe when socket becomes available and wasn't before
-    if (state.socket && !prevState.socket && !subscribed) {
-        console.log("AuthStore subscription: Socket connected, subscribing call events.");
-        chatStore.subscribeToCallEvents();
-        chatStore.subscribeToMessages(); // Also subscribe to messages here
-        chatStore.subscribeToReactions(); // Subscribe to reactions
-        subscribed = true;
-    }
-    // Unsubscribe when socket becomes unavailable and was available before
-    else if (!state.socket && prevState.socket && subscribed) {
-        console.log("AuthStore subscription: Socket disconnected, unsubscribing call events.");
-        chatStore.unsubscribeFromCallEvents();
-        chatStore.unsubscribeFromMessages(); // Also unsubscribe from messages
-        chatStore.resetCallState(); // Reset call state on logout/disconnect
-        subscribed = false;
-    }
-});

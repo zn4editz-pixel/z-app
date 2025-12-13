@@ -345,12 +345,14 @@ io.on("connection", (socket) => {
 			const receiverSocketId = getReceiverSocketId(receiverId);
 			if (receiverSocketId) {
 				io.to(receiverSocketId).emit("newMessage", newMessage);
-				console.log(`⚡ INSTANT: Sent to receiver ${receiverId}`);
+				console.log(`⚡ INSTANT: Sent to receiver ${receiverId} (socket: ${receiverSocketId})`);
+			} else {
+				console.log(`⚠️ Receiver ${receiverId} not online - message will be delivered when they connect`);
 			}
 			
 			// ⚡ INSTANT: Send back to sender (replace optimistic message)
 			socket.emit("newMessage", newMessage);
-			console.log(`⚡ INSTANT: Confirmed to sender ${socket.userId}`);
+			console.log(`⚡ INSTANT: Confirmed to sender ${senderId}`);
 			
 			// ⚡ OPTIMIZATION: Clear cache in background (non-blocking)
 			setImmediate(() => {
@@ -414,6 +416,145 @@ io.on("connection", (socket) => {
 			}
 		} catch (error) {
 			console.error('❌ messagesRead error:', error);
+		}
+	});
+
+	// ✅ REALTIME REACTIONS: Handle instant reaction updates via socket
+	socket.on("messageReaction", async ({ messageId, emoji, receiverId }) => {
+		try {
+			const senderId = socket.userId;
+			if (!senderId || !receiverId || !messageId || !emoji) {
+				console.error('❌ Invalid reaction data:', { senderId, receiverId, messageId, emoji });
+				return;
+			}
+
+			console.log(`😊 REALTIME: ${senderId} reacted ${emoji} to message ${messageId}`);
+
+			// Get the message to verify ownership
+			const message = await prisma.message.findUnique({
+				where: { id: messageId }
+			});
+
+			if (!message) {
+				console.error('❌ Message not found for reaction:', messageId);
+				return;
+			}
+
+			// Verify user is part of this conversation
+			if (message.senderId !== senderId && message.receiverId !== senderId) {
+				console.error('❌ User not authorized to react to this message');
+				return;
+			}
+
+			// Get current reactions and update
+			let reactions = [];
+			try {
+				reactions = message.reactions ? JSON.parse(message.reactions) : [];
+			} catch (error) {
+				reactions = [];
+			}
+
+			// Remove existing reaction from this user
+			reactions = reactions.filter(r => r.userId !== senderId);
+			
+			// Add new reaction
+			reactions.push({
+				userId: senderId,
+				emoji: emoji,
+				createdAt: new Date().toISOString()
+			});
+
+			// Update in database
+			await prisma.message.update({
+				where: { id: messageId },
+				data: { reactions: JSON.stringify(reactions) }
+			});
+
+			// ✅ INSTANT: Notify receiver immediately via socket
+			const receiverSocketId = getReceiverSocketId(receiverId);
+			if (receiverSocketId) {
+				io.to(receiverSocketId).emit("messageReaction", {
+					messageId,
+					reactions
+				});
+				console.log(`⚡ INSTANT: Reaction sent to receiver ${receiverId}`);
+			}
+
+			// ✅ INSTANT: Confirm to sender
+			socket.emit("messageReaction", {
+				messageId,
+				reactions
+			});
+			console.log(`⚡ INSTANT: Reaction confirmed to sender ${senderId}`);
+
+		} catch (error) {
+			console.error('❌ Socket messageReaction error:', error);
+		}
+	});
+
+	// ✅ REALTIME REACTION REMOVAL: Handle instant reaction removal via socket
+	socket.on("messageReactionRemove", async ({ messageId, receiverId }) => {
+		try {
+			const senderId = socket.userId;
+			if (!senderId || !receiverId || !messageId) {
+				console.error('❌ Invalid reaction removal data:', { senderId, receiverId, messageId });
+				return;
+			}
+
+			console.log(`🗑️ REALTIME: ${senderId} removed reaction from message ${messageId}`);
+
+			// Get the message to verify ownership
+			const message = await prisma.message.findUnique({
+				where: { id: messageId }
+			});
+
+			if (!message) {
+				console.error('❌ Message not found for reaction removal:', messageId);
+				return;
+			}
+
+			// Verify user is part of this conversation
+			if (message.senderId !== senderId && message.receiverId !== senderId) {
+				console.error('❌ User not authorized to remove reaction from this message');
+				return;
+			}
+
+			// Get current reactions and remove user's reaction
+			let reactions = [];
+			try {
+				reactions = message.reactions ? JSON.parse(message.reactions) : [];
+			} catch (error) {
+				reactions = [];
+			}
+
+			// Remove reaction from this user
+			reactions = reactions.filter(r => r.userId !== senderId);
+
+			// Update in database
+			await prisma.message.update({
+				where: { id: messageId },
+				data: { reactions: JSON.stringify(reactions) }
+			});
+
+			// ✅ INSTANT: Notify receiver immediately via socket
+			const receiverSocketId = getReceiverSocketId(receiverId);
+			if (receiverSocketId) {
+				io.to(receiverSocketId).emit("messageReaction", {
+					messageId,
+					reactions
+				});
+				console.log(`⚡ INSTANT: Reaction removal sent to receiver ${receiverId}`);
+			}
+
+			// ✅ INSTANT: Confirm to sender
+			socket.emit("messageReaction", {
+				messageId,
+				reactions
+			});
+			console.log(`⚡ INSTANT: Reaction removal confirmed to sender ${senderId}`);
+
+		} catch (error) {
+			console.error('❌ Socket messageReactionRemove error:', error);
 		}
 	});
 

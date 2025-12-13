@@ -352,6 +352,129 @@ export function initializeSocketHandlers(io) {
 			}
 		});
 
+		// === PRIVATE CALL EVENTS ===
+		socket.on("private:start-call", (data) => {
+			const { receiverId, callType, callerInfo } = data;
+			const receiverSocketId = getReceiverSocketId(receiverId);
+			
+			if (receiverSocketId) {
+				console.log(`📞 Private call from ${socket.userId} to ${receiverId} (${callType})`);
+				io.to(receiverSocketId).emit("private:incoming-call", {
+					callerId: socket.userId,
+					callerInfo,
+					callType
+				});
+			} else {
+				console.log(`❌ User ${receiverId} not online for call`);
+				socket.emit("private:call-failed", { reason: "User not online" });
+			}
+		});
+
+		socket.on("private:initiate-call", (data) => {
+			const { receiverId, callerInfo, callType } = data;
+			const receiverSocketId = getReceiverSocketId(receiverId);
+			
+			if (receiverSocketId) {
+				console.log(`📞 Initiating private call from ${socket.userId} to ${receiverId}`);
+				io.to(receiverSocketId).emit("private:incoming-call", {
+					callerId: socket.userId,
+					callerInfo,
+					callType
+				});
+			}
+		});
+
+		socket.on("private:accept-call", (data) => {
+			const { callerId } = data;
+			const callerSocketId = getReceiverSocketId(callerId);
+			
+			if (callerSocketId) {
+				console.log(`✅ Call accepted by ${socket.userId} from ${callerId}`);
+				io.to(callerSocketId).emit("private:call-accepted", {
+					acceptorId: socket.userId,
+					acceptorInfo: data.acceptorInfo
+				});
+			}
+		});
+
+		socket.on("private:call-accepted", (data) => {
+			const { callerId } = data;
+			const callerSocketId = getReceiverSocketId(callerId);
+			
+			if (callerSocketId) {
+				console.log(`✅ Call accepted by ${socket.userId} from ${callerId}`);
+				io.to(callerSocketId).emit("private:call-accepted", {
+					acceptorId: socket.userId,
+					acceptorInfo: data.acceptorInfo
+				});
+			}
+		});
+
+		socket.on("private:reject-call", (data) => {
+			const { callerId, reason } = data;
+			const callerSocketId = getReceiverSocketId(callerId);
+			
+			if (callerSocketId) {
+				console.log(`🚫 Call rejected by ${socket.userId} from ${callerId}, reason: ${reason || 'declined'}`);
+				io.to(callerSocketId).emit("private:call-rejected", {
+					rejectorId: socket.userId,
+					reason: reason || 'declined'
+				});
+			}
+		});
+
+		socket.on("private:end-call", (data) => {
+			const { targetUserId } = data;
+			const targetSocketId = getReceiverSocketId(targetUserId);
+			
+			if (targetSocketId) {
+				console.log(`🔚 Call ended by ${socket.userId} to ${targetUserId}`);
+				io.to(targetSocketId).emit("private:call-ended", {
+					enderId: socket.userId
+				});
+			}
+		});
+
+		// WebRTC signaling for private calls
+		socket.on("private:offer", (data) => {
+			const { receiverId, sdp } = data;
+			const receiverSocketId = getReceiverSocketId(receiverId);
+			
+			if (receiverSocketId) {
+				console.log(`📤 WebRTC offer from ${socket.userId} to ${receiverId}`);
+				io.to(receiverSocketId).emit("private:offer", {
+					callerId: socket.userId,
+					sdp
+				});
+			}
+		});
+
+		socket.on("private:answer", (data) => {
+			const { callerId, sdp } = data;
+			const callerSocketId = getReceiverSocketId(callerId);
+			
+			if (callerSocketId) {
+				console.log(`📤 WebRTC answer from ${socket.userId} to ${callerId}`);
+				io.to(callerSocketId).emit("private:answer", {
+					answererId: socket.userId,
+					sdp
+				});
+			}
+		});
+
+		socket.on("private:ice-candidate", (data) => {
+			const { targetUserId, candidate } = data;
+			const targetSocketId = getReceiverSocketId(targetUserId);
+			
+			if (targetSocketId) {
+				console.log(`🧊 ICE candidate from ${socket.userId} to ${targetUserId}`);
+				io.to(targetSocketId).emit("private:ice-candidate", {
+					senderId: socket.userId,
+					candidate
+				});
+			}
+		});
+
 		// Handle disconnect
 		socket.on("disconnect", (reason) => {
 			console.log(`🔌 Socket disconnected: ${socket.id}, reason: ${reason}`);

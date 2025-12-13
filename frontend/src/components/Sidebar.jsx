@@ -3,10 +3,12 @@ import { Link } from "react-router-dom";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useFriendStore } from "../store/useFriendStore";
+import { useThemeStore } from "../store/useThemeStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
 import { Search, X, Video, Check } from "lucide-react";
 import VerifiedBadge from "./VerifiedBadge";
 import { useNotificationStore } from "../store/useNotificationStore";
+import { getMessageStatusInfo, getThemeColors } from "../utils/messageStatus";
 
 const Sidebar = () => {
   const {
@@ -18,12 +20,13 @@ const Sidebar = () => {
   const { onlineUsers = [], authUser } = useAuthStore();
   const { friends, isLoading: isFriendsLoading, pendingReceived } = useFriendStore();
   const { notifications } = useNotificationStore();
+  const { theme } = useThemeStore();
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
 
-  // Instagram-style message preview generator
+  // ✅ FIXED: Enhanced message preview with proper status sync
   const getMessagePreview = (user, unreadCount) => {
     const lastMsg = user.lastMessage;
     
@@ -33,6 +36,7 @@ const Sidebar = () => {
     }
 
     const isFromMe = lastMsg.senderId === authUser?.id;
+    const isReceiverOnline = onlineUsers.includes(user.id);
     
     // Handle reactions
     if (lastMsg.reactions && Array.isArray(lastMsg.reactions) && lastMsg.reactions.length > 0) {
@@ -64,7 +68,7 @@ const Sidebar = () => {
       return { text: lastMsg.text || "New message", icon: null, bold: true, muted: false };
     }
 
-    // Read messages (no unread)
+    // Read messages (no unread) - Show proper status for my messages
     if (lastMsg.image) {
       return { text: isFromMe ? "You sent a photo" : "Sent a photo", icon: "📷", bold: false, muted: false };
     }
@@ -72,9 +76,59 @@ const Sidebar = () => {
       return { text: isFromMe ? "You sent a voice message" : "Sent a voice message", icon: "🎤", bold: false, muted: false };
     }
     
-    // Regular text message
+    // ✅ FIXED: Regular text message with proper status sync
     const prefix = isFromMe ? "You: " : "";
-    return { text: prefix + (lastMsg.text || ""), icon: isFromMe ? <Check className="w-3 h-3 text-primary flex-shrink-0" /> : null, bold: false, muted: false };
+    let statusIcon = null;
+    
+    if (isFromMe) {
+      // Get theme colors and status info for proper sync
+      const themeColors = getThemeColors(theme);
+      const statusInfo = getMessageStatusInfo(lastMsg, true, isReceiverOnline, themeColors);
+      
+      if (statusInfo.show) {
+        if (statusInfo.type === 'double-tick') {
+          // Double tick for delivered/read
+          statusIcon = (
+            <svg 
+              className="w-3 h-3 flex-shrink-0" 
+              fill="currentColor" 
+              viewBox="0 0 16 16"
+              style={{ color: statusInfo.color }}
+            >
+              <path d="M12.354 4.354a.5.5 0 0 0-.708-.708L5 10.293 1.854 7.146a.5.5 0 1 0-.708.708l3.5 3.5a.5.5 0 0 0 .708 0l7-7zm-4.208 7-.896-.897.707-.707.543.543 6.646-6.647a.5.5 0 0 1 .708.708l-7 7a.5.5 0 0 1-.708 0z"/>
+              <path d="m5.354 7.146.896.897-.707.707-.897-.896a.5.5 0 1 1 .708-.708z"/>
+            </svg>
+          );
+        } else if (statusInfo.type === 'single-tick') {
+          // Single tick for sent
+          statusIcon = (
+            <svg 
+              className="w-3 h-3 flex-shrink-0" 
+              fill="currentColor" 
+              viewBox="0 0 16 16"
+              style={{ color: statusInfo.color }}
+            >
+              <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+            </svg>
+          );
+        } else if (statusInfo.type === 'clock') {
+          // Clock for sending/failed
+          statusIcon = (
+            <svg 
+              className="w-3 h-3 flex-shrink-0" 
+              fill="currentColor" 
+              viewBox="0 0 16 16"
+              style={{ color: statusInfo.color }}
+            >
+              <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+              <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+            </svg>
+          );
+        }
+      }
+    }
+    
+    return { text: prefix + (lastMsg.text || ""), icon: statusIcon, bold: false, muted: false };
   };
 
   // Calculate if there are any Social Hub updates

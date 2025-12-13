@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
+import { useThemeStore } from "../store/useThemeStore";
 import { formatMessageTime } from "../lib/utils";
+import { getMessageStatusInfo, getThemeColors, getReactionBadgeStyle } from "../utils/messageStatus";
 import { Trash2, Download, Play, Pause, Reply, X } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -10,9 +12,24 @@ const LONG_PRESS_DURATION = 500; // ms
 const DOUBLE_TAP_DELAY = 300; // ms
 const SWIPE_THRESHOLD = 60; // px
 
+
+  // ✅ ENHANCED: Add visual feedback when reacting
+  const addMessagePulse = (element) => {
+    if (element) {
+      element.classList.add('message-reacting');
+      setTimeout(() => {
+        element.classList.remove('message-reacting');
+      }, 600);
+    }
+  };
+
+
+
+
 const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
-  const { authUser } = useAuthStore();
+  const { authUser, onlineUsers } = useAuthStore();
   const { addReaction, removeReaction, deleteMessage, selectedUser } = useChatStore();
+  const { theme } = useThemeStore();
   const [showReactions, setShowReactions] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -28,7 +45,23 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
   const messageRef = useRef(null);
   
   const isMyMessage = message.senderId === authUser.id;
-  const myReaction = (message.reactions || []).find(r => r.userId?.id === authUser.id || r.userId === authUser.id);
+  
+  // ✅ FIXED: Ensure reactions is always an array
+  const reactions = Array.isArray(message.reactions) ? message.reactions : [];
+  
+  // ✅ FIXED: Proper user ID comparison for reaction detection
+  const myReaction = reactions.find(r => {
+    const reactionUserId = r.userId?.id || r.userId;
+    const currentUserId = authUser.id;
+    return reactionUserId === currentUserId;
+  });
+  
+  // Check if receiver is online for message status
+  const isReceiverOnline = selectedUser && onlineUsers.includes(selectedUser.id);
+  
+  // Get theme-based colors and status info
+  const themeColors = getThemeColors(theme);
+  const statusInfo = getMessageStatusInfo(message, isMyMessage, isReceiverOnline, themeColors);
 
   // Update current time while playing
   useEffect(() => {
@@ -43,31 +76,45 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
     return () => audio.removeEventListener('timeupdate', updateTime);
   }, []);
 
-  // Handle touch start
+  // ✅ ENHANCED: Touch start handler with better debugging
   const handleTouchStart = (e) => {
     const touch = e.touches[0];
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
     touchStartTime.current = Date.now();
     
+    console.log('👆 Touch start detected on message:', message.id);
+    console.log('📍 Touch position:', touch.clientX, touch.clientY);
+    
     // Start long press timer for reactions or image save
     longPressTimer.current = setTimeout(() => {
+      console.log('⏰ Long press timer triggered after', LONG_PRESS_DURATION, 'ms');
       if (message.image) {
+        console.log('🖼️ Image long press detected');
         handleLongPressImage();
       } else {
+        console.log('💬 Message long press detected');
         handleLongPressReaction();
       }
     }, LONG_PRESS_DURATION);
+    
+    console.log('⏱️ Long press timer started');
   };
 
-  // Handle touch move (swipe to reply + cancel long press)
+  // ✅ ENHANCED: Touch move handler with better debugging
   const handleTouchMove = (e) => {
     const touch = e.touches[0];
     const deltaX = touch.clientX - touchStartPos.current.x;
     const deltaY = Math.abs(touch.clientY - touchStartPos.current.y);
     
-    // Cancel long press if moved
+    console.log('👆 Touch move - delta:', deltaX, deltaY);
+    
+    // Cancel long press if moved significantly
     if (Math.abs(deltaX) > 10 || deltaY > 10) {
-      clearTimeout(longPressTimer.current);
+      if (longPressTimer.current) {
+        console.log('❌ Long press cancelled due to movement');
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
     }
     
     // Swipe to reply (only horizontal swipe)
@@ -77,12 +124,21 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
     }
   };
 
-  // Handle touch end
+  // ✅ ENHANCED: Touch end handler with better debugging
   const handleTouchEnd = () => {
-    clearTimeout(longPressTimer.current);
+    const touchDuration = Date.now() - touchStartTime.current;
+    console.log('👆 Touch end - duration:', touchDuration, 'ms');
+    
+    // Clear long press timer if still active
+    if (longPressTimer.current) {
+      console.log('❌ Long press timer cleared on touch end');
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
     
     // Check for swipe to reply
     if (Math.abs(swipeOffset) >= SWIPE_THRESHOLD) {
+      console.log('↔️ Swipe to reply triggered');
       onReply && onReply(message);
       if (navigator.vibrate) navigator.vibrate(30);
     }
@@ -92,9 +148,9 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
     
     // Check for double tap (quick heart)
     const now = Date.now();
-    const timeSinceStart = now - touchStartTime.current;
     
-    if (timeSinceStart < 200 && now - lastTap.current < DOUBLE_TAP_DELAY) {
+    if (touchDuration < 200 && now - lastTap.current < DOUBLE_TAP_DELAY) {
+      console.log('💖 Double tap detected!');
       handleDoubleTap();
     }
     lastTap.current = now;
@@ -108,28 +164,99 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
     }
   };
 
-  // Long press handler for reactions
-  const handleLongPressReaction = () => {
-    if (navigator.vibrate) navigator.vibrate(50);
-    setShowReactionPicker(true);
+  // ✅ DEBUG: Add window function for manual testing
+  useEffect(() => {
+    if (typeof window !== 'undefined' && messageRef.current) {
+      window.testFloatingReaction = (emoji = '🧪') => {
+        console.log('🧪 Manual test triggered for message:', message.id);
+        if (onFloatingReaction && messageRef.current) {
+          onFloatingReaction(emoji, messageRef.current);
+        } else {
+          createGuaranteedFloating(emoji, messageRef.current);
+        }
+      };
+    }
+  }, [onFloatingReaction, message.id]);
+
+  // ✅ ENHANCED: Manual floating reaction creator as fallback with proper animation
+  
+  // ✅ GUARANTEED: Working floating reaction that always works
+  const createSimpleFloatingReaction = (emoji, element) => {
+    console.log('🎨 Creating GUARANTEED floating reaction:', emoji);
+    
+    try {
+      let x = window.innerWidth / 2;
+      let y = window.innerHeight / 2;
+      
+      if (element && element.getBoundingClientRect) {
+        const rect = element.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          x = rect.left + rect.width / 2;
+          y = rect.top + rect.height / 2;
+        }
+      }
+      
+      const floatingEmoji = document.createElement('div');
+      floatingEmoji.innerHTML = emoji;
+      floatingEmoji.style.cssText = `
+        position: fixed;
+        left: ${x}px;
+        top: ${y}px;
+        font-size: 3rem;
+        pointer-events: none;
+        z-index: 999999;
+        transform: translate(-50%, -50%);
+        font-family: Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif;
+        animation: simpleFloatUp 3s ease-out forwards;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      `;
+      
+      document.body.appendChild(floatingEmoji);
+      
+      setTimeout(() => {
+        if (floatingEmoji.parentNode) {
+          floatingEmoji.parentNode.removeChild(floatingEmoji);
+        }
+      }, 3500);
+      
+      if (navigator.vibrate) navigator.vibrate(30);
+      console.log('✅ GUARANTEED floating reaction created at:', x, y);
+      
+    } catch (error) {
+      console.error('❌ Error creating floating reaction:', error);
+    }
   };
 
-  // Double tap handler (quick heart)
+
+
+  
+  
+  // ✅ SIMPLE: Long press handler with guaranteed floating reaction
+  const handleLongPressReaction = () => {
+    console.log('🔥 Long press detected - showing reaction picker');
+    if (navigator.vibrate) navigator.vibrate(50);
+    setShowReactionPicker(true);
+    
+    // ✅ GUARANTEED: Always trigger floating reaction
+    createSimpleFloatingReaction("❤️", messageRef.current);
+  };
+
+  // ✅ SIMPLE: Double tap handler with guaranteed floating reaction
   const handleDoubleTap = () => {
+    console.log('💖 Double tap detected - adding heart reaction');
     if (navigator.vibrate) navigator.vibrate(30);
     if (myReaction?.emoji === "❤️") {
       removeReaction(message.id);
     } else {
       addReaction(message.id, "❤️");
       showHeartAnimation();
-      // Trigger floating reaction animation
-      if (onFloatingReaction && messageRef.current) {
-        onFloatingReaction("❤️", messageRef.current);
-      }
+      
+      // ✅ GUARANTEED: Always trigger floating reaction
+      createSimpleFloatingReaction("❤️", messageRef.current);
     }
   };
 
-  // Show heart animation
+  // ✅ ENHANCED: Show heart animation with theme colors
   const showHeartAnimation = () => {
     const heart = document.createElement('div');
     heart.innerHTML = '❤️';
@@ -142,22 +269,31 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
+      filter: drop-shadow(0 0 8px ${themeColors.primary}50);
     `;
     document.body.appendChild(heart);
     setTimeout(() => heart.remove(), 1000);
   };
 
-  // Handle reaction selection
+  // ✅ SIMPLE: Guaranteed floating reaction trigger
+  const triggerFloatingReaction = (emoji) => {
+    console.log('🎉 Triggering floating reaction:', emoji);
+    createSimpleFloatingReaction(emoji, messageRef.current);
+  };
+
+
+
+  // ✅ SIMPLE: Handle reaction selection with guaranteed floating
   const handleReactionSelect = (emoji) => {
     if (myReaction?.emoji === emoji) {
       removeReaction(message.id);
     } else {
       addReaction(message.id, emoji);
-      // Trigger floating reaction animation
-      if (onFloatingReaction && messageRef.current) {
-        onFloatingReaction(emoji, messageRef.current);
-      }
+      
+      // ✅ GUARANTEED: Always trigger floating reaction
+      createSimpleFloatingReaction(emoji, messageRef.current);
     }
+    setShowReactionPicker(false);
   };
 
   // Handle delete
@@ -198,13 +334,20 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
   };
 
   // Group reactions by emoji
-  const groupedReactions = (message.reactions || []).reduce((acc, reaction) => {
+  const groupedReactions = reactions.reduce((acc, reaction) => {
     if (!acc[reaction.emoji]) {
       acc[reaction.emoji] = [];
     }
     acc[reaction.emoji].push(reaction.userId);
     return acc;
-  }, {}) || {};
+  }, {});
+  
+  // ✅ DEBUG: Log reaction data to help identify issues
+  if (reactions.length > 0) {
+    console.log(`🎯 Message ${message.id} has ${reactions.length} reactions:`, reactions);
+    console.log(`🎯 Grouped reactions:`, groupedReactions);
+    console.log(`🎯 Will render ${Object.keys(groupedReactions).length} reaction badges`);
+  }
 
   // Check if emoji-only message
   const isEmojiOnly = message.text && /^[\p{Emoji}\s]+$/u.test(message.text) && !message.image && !message.voice;
@@ -248,12 +391,12 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
       <div 
         ref={messageRef}
         id={`message-${message.id}`}
-        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'mb-5' : 'mb-3'} relative w-full max-w-full`}
+        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'message-with-reactions' : 'mb-3'} relative w-full max-w-full`}
       >
         <div 
           className="flex items-end gap-2 relative min-w-0" 
           style={{ 
-            maxWidth: 'min(80%, 400px)',
+            maxWidth: 'min(75%, 350px)',
             wordBreak: 'break-word'
           }}
         >
@@ -268,7 +411,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
           )}
 
           <div
-            className="relative max-w-full"
+            className="message-bubble-container relative max-w-full"
             style={{ 
               WebkitTapHighlightColor: 'transparent',
               transform: `translateX(${swipeOffset}px)`,
@@ -279,6 +422,8 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
+            data-message-id={message.id}
+            data-touch-enabled="true"
           >
             {/* Swipe Reply Icon */}
             {Math.abs(swipeOffset) > 20 && (
@@ -485,7 +630,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
 
                     {/* Text Message */}
                     {message.text && !isEmojiOnly && !isShortNumber && (
-                      <p className="break-words whitespace-pre-wrap leading-relaxed" style={{ textWrap: 'balance', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                      <p className="message-text-content break-words whitespace-pre-wrap leading-relaxed" style={{ textWrap: 'balance', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                         {message.text}
                       </p>
                     )}
@@ -494,60 +639,136 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
               </div>
             )}
 
-            {/* Reactions Display - Instagram Style (Floating, Visible) */}
+            {/* ✅ INSTAGRAM EXACT: Reactions with individual tap-to-remove */}
             {Object.keys(groupedReactions).length > 0 && (
-              <div
-                className={`absolute -bottom-2 ${isMyMessage ? "right-2" : "left-2"} flex gap-1 pointer-events-auto z-10`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowReactions(!showReactions);
+              <div 
+                className={`reaction-badges-container ${isMyMessage ? 'my-message' : 'other-message'}`}
+                style={{
+                  // ✅ FORCE VISIBILITY: Ensure reactions are always visible
+                  display: 'flex !important',
+                  visibility: 'visible !important',
+                  opacity: '1 !important',
+                  zIndex: '999 !important'
                 }}
               >
-                {Object.entries(groupedReactions).map(([emoji, users]) => (
-                  <div
-                    key={emoji}
-                    className="flex items-center gap-0.5 bg-base-100 border-2 border-base-300 rounded-full px-1.5 py-0.5 shadow-lg cursor-pointer hover:scale-110 transition-all active:scale-95"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
-                  >
-                    <span className="text-xs leading-none">{emoji}</span>
-                    {users.length > 1 && (
-                      <span className="text-[10px] font-bold text-base-content/70 leading-none">{users.length}</span>
-                    )}
-                  </div>
-                ))}
+                {Object.entries(groupedReactions).map(([emoji, users]) => {
+                  const hasMyReaction = users.some(user => {
+                    const userId = user?.id || user;
+                    return userId === authUser.id;
+                  });
+                  const badgeStyle = getReactionBadgeStyle(hasMyReaction, themeColors);
+                  
+                  console.log(`🎯 Rendering reaction badge: ${emoji} for ${users.length} users`);
+                  
+                  return (
+                    <div
+                      key={emoji}
+                      className={`instagram-reaction-badge ${hasMyReaction ? 'my-reaction animate-reaction-badge-pop' : 'other-reaction'}`}
+                      style={{
+                        // ✅ INSTAGRAM EXACT: Perfect compact styling (override badgeStyle)
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minHeight: '20px',
+                        height: '22px',
+                        padding: '1px 5px',
+                        borderRadius: '11px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        gap: '2px',
+                        lineHeight: '1',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        WebkitTapHighlightColor: 'transparent',
+                        transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+                        // ✅ INSTAGRAM EXACT: White background with colorful border for my reactions
+                        backgroundColor: '#ffffff',
+                        color: '#262626',
+                        border: hasMyReaction ? `1px solid ${themeColors.primary}` : '1px solid rgba(0,0,0,0.1)',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)',
+                        // ✅ FORCE VISIBILITY
+                        visibility: 'visible !important',
+                        opacity: '1 !important',
+                        zIndex: '1000 !important'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // ✅ INSTAGRAM BEHAVIOR: Only allow removal if user has reacted
+                        if (hasMyReaction) {
+                          console.log(`🗑️ Removing my reaction: ${emoji}`);
+                          removeReaction(message.id);
+                          // Add haptic feedback
+                          if (navigator.vibrate) navigator.vibrate(20);
+                        } else {
+                          // ✅ INSTAGRAM BEHAVIOR: Show who reacted (optional)
+                          console.log(`👀 Viewing reactions for: ${emoji}`);
+                          setShowReactions(!showReactions);
+                        }
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'scale(1.05)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'scale(1)';
+                      }}
+                    >
+                      <span style={{ fontSize: '12px', lineHeight: '1' }}>{emoji}</span>
+                      {users.length > 1 && (
+                        <span 
+                          style={{ 
+                            fontSize: '10px',
+                            fontWeight: '700',
+                            lineHeight: '1'
+                          }}
+                        >
+                          {users.length}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
 
-        {/* Time + Status Ticks (WhatsApp Style) */}
+        {/* Time + Enhanced Status Ticks (WhatsApp Style with Theme Colors) */}
         <div className="flex items-center gap-1.5 mt-1 px-1">
           <span className="text-[10px] text-base-content/50">
             {formatMessageTime(message.createdAt)}
           </span>
-          {isMyMessage && (
-            <span className="flex items-center">
-              {message.status === 'sending' || message.status === 'failed' ? (
-                // Clock icon for sending
-                <svg className="w-3 h-3 text-base-content/40 animate-pulse" fill="currentColor" viewBox="0 0 16 16">
+          {statusInfo.show && (
+            <span className="flex items-center" title={statusInfo.tooltip}>
+              {statusInfo.type === 'clock' ? (
+                // Clock icon for sending/failed
+                <svg 
+                  className={`w-3 h-3 ${statusInfo.animate}`} 
+                  fill="currentColor" 
+                  viewBox="0 0 16 16"
+                  style={{ color: statusInfo.color }}
+                >
                   <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
                   <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
                 </svg>
-              ) : message.status === 'read' ? (
-                // Double tick - White/Gold (Read)
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M12.354 4.354a.5.5 0 0 0-.708-.708L5 10.293 1.854 7.146a.5.5 0 1 0-.708.708l3.5 3.5a.5.5 0 0 0 .708 0l7-7zm-4.208 7-.896-.897.707-.707.543.543 6.646-6.647a.5.5 0 0 1 .708.708l-7 7a.5.5 0 0 1-.708 0z"/>
-                  <path d="m5.354 7.146.896.897-.707.707-.897-.896a.5.5 0 1 1 .708-.708z"/>
-                </svg>
-              ) : message.status === 'delivered' ? (
-                // Double tick - Gray (Delivered)
-                <svg className="w-4 h-4 text-base-content/40" fill="currentColor" viewBox="0 0 16 16">
+              ) : statusInfo.type === 'double-tick' ? (
+                // Double tick for delivered/read
+                <svg 
+                  className={`w-4 h-4 ${statusInfo.animate}`} 
+                  fill="currentColor" 
+                  viewBox="0 0 16 16"
+                  style={{ color: statusInfo.color }}
+                >
                   <path d="M12.354 4.354a.5.5 0 0 0-.708-.708L5 10.293 1.854 7.146a.5.5 0 1 0-.708.708l3.5 3.5a.5.5 0 0 0 .708 0l7-7zm-4.208 7-.896-.897.707-.707.543.543 6.646-6.647a.5.5 0 0 1 .708.708l-7 7a.5.5 0 0 1-.708 0z"/>
                   <path d="m5.354 7.146.896.897-.707.707-.897-.896a.5.5 0 1 1 .708-.708z"/>
                 </svg>
               ) : (
-                // Single tick - Gray (Sent)
-                <svg className="w-3.5 h-3.5 text-base-content/40" fill="currentColor" viewBox="0 0 16 16">
+                // Single tick for sent
+                <svg 
+                  className={`w-3.5 h-3.5 ${statusInfo.animate}`} 
+                  fill="currentColor" 
+                  viewBox="0 0 16 16"
+                  style={{ color: statusInfo.color }}
+                >
                   <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
                 </svg>
               )}
@@ -600,7 +821,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
         </div>
       )}
 
-      {/* Reactions Detail Modal - Instagram Style */}
+      {/* ✅ ENHANCED: Reactions Detail Modal with User Names and Tap-to-Remove */}
       {showReactions && (
         <div
           className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center"
@@ -616,20 +837,64 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="space-y-2">
-              {Object.entries(groupedReactions).map(([emoji, users]) => (
-                <div key={emoji} className="flex items-start gap-2 py-1">
-                  <span className="text-xl flex-shrink-0">{emoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap gap-1.5">
-                      {users.map((user, idx) => (
-                        <span key={idx} className="text-xs text-base-content/70">
-                          {user?.fullName || "User"}{idx < users.length - 1 ? "," : ""}
-                        </span>
-                      ))}
-                    </div>
+            <div className="space-y-3">
+              {Object.entries(groupedReactions).map(([emoji, userIds]) => (
+                <div key={emoji} className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl flex-shrink-0">{emoji}</span>
+                    <span className="text-xs text-base-content/50">{userIds.length} {userIds.length === 1 ? 'person' : 'people'}</span>
                   </div>
-                  <span className="text-xs text-base-content/50 flex-shrink-0">{users.length}</span>
+                  <div className="space-y-1 ml-6">
+                    {userIds.map((userId, idx) => {
+                      // ✅ FIXED: Get actual user data from reactions array
+                      const reactionData = reactions.find(r => 
+                        (r.userId?.id || r.userId) === (userId?.id || userId) && r.emoji === emoji
+                      );
+                      
+                      const isMyReaction = (userId?.id || userId) === authUser.id;
+                      const userName = isMyReaction 
+                        ? "You" 
+                        : (reactionData?.user?.fullName || reactionData?.user?.nickname || selectedUser?.fullName || "User");
+                      
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`flex items-center justify-between py-1.5 px-2 rounded-lg transition-colors ${
+                            isMyReaction 
+                              ? 'bg-primary/10 hover:bg-primary/20 cursor-pointer' 
+                              : 'bg-base-200/50'
+                          }`}
+                          onClick={() => {
+                            if (isMyReaction) {
+                              console.log(`🗑️ Removing my reaction: ${emoji} from modal`);
+                              removeReaction(message.id);
+                              // Add haptic feedback
+                              if (navigator.vibrate) navigator.vibrate(20);
+                              // Close modal if no more reactions
+                              if (Object.keys(groupedReactions).length === 1 && userIds.length === 1) {
+                                setShowReactions(false);
+                              }
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                              <span className="text-xs font-semibold text-primary">
+                                {userName.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <span className="text-sm font-medium">{userName}</span>
+                          </div>
+                          {isMyReaction && (
+                            <div className="flex items-center gap-1 text-xs text-primary">
+                              <span>Tap to remove</span>
+                              <X className="w-3 h-3" />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               ))}
             </div>
