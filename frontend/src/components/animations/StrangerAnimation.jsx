@@ -1,4 +1,3 @@
-```
 import { useEffect, useState, useMemo } from "react";
 import { Video, Mic, PhoneOff, MapPin, Send, MessageCircle, Phone, UserPlus, Gamepad2, Heart, Music, Camera } from "lucide-react";
 import { CHARACTERS } from "../../constants/characters";
@@ -7,10 +6,11 @@ const StrangerAnimation = () => {
     const [step, setStep] = useState(0);
     const [scanIndex, setScanIndex] = useState(0);
     const [matchIndex, setMatchIndex] = useState(1);
-    
+
     // Conversation State
     const [conversation, setConversation] = useState([]);
     const [chatTopic, setChatTopic] = useState("social");
+    const [currentTime, setCurrentTime] = useState("");
 
     // Dynamic Conversation Database
     const CONVERSATIONS = {
@@ -46,221 +46,209 @@ const StrangerAnimation = () => {
         const hour = Math.floor(Math.random() * 12) + 1;
         const min = Math.floor(Math.random() * 60).toString().padStart(2, '0');
         const ampm = Math.random() > 0.5 ? "PM" : "AM";
-        const minStr = min < 10 ? "0" + min : min;
-        return `${ hour }:${ minStr } ${ ampm } `;
+        return `${hour}:${min} ${ampm}`;
     };
 
-    const addMinutes = (timeStr, minsToAdd) => {
-        // Simple parser/adder for demo purposes
-        // Assuming format "HH:MM AM/PM"
-        return timeStr; // Just return same or random for visual effect
-    };
-
+    // Initialize time on mount only
     useEffect(() => {
-        // Randomize times on mount
-        const t1 = generateRandomTime();
-        setChatTime1(t1);
-        setChatTime2(t1); // Reply is usually fast
-        setChatTime3(t1);
+        setCurrentTime(getRandomTime());
     }, []);
 
     useEffect(() => {
-        // Main Stage Timer
         const loop = setInterval(() => {
             setStep((prev) => {
                 const next = (prev + 1) % 3;
                 if (next === 0) {
-                    // Start new scan cycle
+                    // RESET: Start New Match
                     const newMatch = Math.floor(Math.random() * CHARACTERS.length);
                     setMatchIndex(newMatch);
+                    setCurrentTime(getRandomTime());
 
-                    // New random times for next chat
-                    const t = generateRandomTime();
-                    setChatTime1(t);
-                    setChatTime2(t);
-                    setChatTime3(t);
+                    // Pick Random Topic
+                    const topics = Object.keys(CONVERSATIONS);
+                    const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+                    setChatTopic(randomTopic);
+                    setConversation([]); // Clear chat
                 }
                 return next;
             });
-        }, 5000);
+        }, 6000); // Longer cycle for better readability
 
         return () => clearInterval(loop);
     }, []);
 
-    // Decelerating Scanner Effect
+    // Scanning Effect
     useEffect(() => {
         if (step !== 0) return;
-
-        let intervalId;
-        let speed = 50; // Start fast
-        const maxSpeed = 400; // End slow
-
-        const scan = () => {
-            setScanIndex((prev) => (prev + 1) % CHARACTERS.length);
-            speed += 20; // Decelerate
-            if (speed < maxSpeed) {
-                intervalId = setTimeout(scan, speed);
-            }
+        let speed = 50;
+        const scanner = () => {
+            setScanIndex(prev => (prev + 1) % CHARACTERS.length);
+            speed += 15;
+            if (speed < 300) setTimeout(scanner, speed);
         };
+        scanner();
+    }, [step]);
 
-        scan();
-        return () => clearTimeout(intervalId);
-    }, [step]); // Re-run when step goes back to 0
+    // Chat Message Sequencer
+    useEffect(() => {
+        if (step !== 2) return;
+
+        const sequence = CONVERSATIONS[chatTopic];
+        let timeouts = [];
+        let accumulatedDelay = 0;
+
+        sequence.forEach((msgObj) => {
+            accumulatedDelay += msgObj.delay;
+            const timeout = setTimeout(() => {
+                setConversation(prev => [...prev, { ...msgObj, time: getRandomTime() }]);
+            }, accumulatedDelay);
+            timeouts.push(timeout);
+        });
+
+        return () => timeouts.forEach(clearTimeout);
+    }, [step, chatTopic]);
 
     return (
         <div className="hidden lg:flex flex-col items-center justify-center bg-base-200 w-full h-full relative overflow-hidden font-sans p-8">
-            {/* 🔮 Background: "LIQUID AURORA" - Refined */}
+
+            {/* 🌌 ATMOSPHERIC BACKGROUND */}
             <div className="absolute inset-0 bg-base-200 overflow-hidden" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-base-200 to-base-200 opacity-80" />
 
-            {/* Subtle animated grid for "Tech/Connection" feel */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:40px_40px] opacity-30" />
+            {/* 📱 DEVICE FRAME */}
+            <div className="relative w-[340px] h-[640px] bg-black rounded-[3rem] shadow-2xl border-4 border-base-content/5 ring-8 ring-black overflow-hidden transform transition-all hover:scale-[1.01] duration-500">
 
-            <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent animate-spin-slow duration-[60s] opacity-50" />
-            <div className="absolute top-[-50%] right-[-50%] w-[200%] h-[200%] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-secondary/10 via-transparent to-transparent animate-spin-slow duration-[45s] direction-reverse opacity-50" />
-
-            {/* Floating Particles */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[20%] left-[15%] text-accent/20 animate-bounce duration-[3s]"><MessageCircle className="w-8 h-8" /></div>
-                <div className="absolute bottom-[30%] right-[10%] text-primary/20 animate-bounce duration-[4s] delay-1000"><Video className="w-6 h-6" /></div>
-                <div className="absolute top-[40%] right-[25%] text-secondary/20 animate-bounce duration-[5s] delay-500"><Globe className="w-10 h-10" /></div>
-                <div className="absolute bottom-[15%] left-[20%] text-warning/20 animate-bounce duration-[6s] delay-200"><Phone className="w-7 h-7" /></div>
-            </div>
-
-            {/* 📱 Main Container */}
-            <div className="relative w-full max-w-[600px] h-full flex flex-col items-center justify-center gap-8 py-12">
-
-                {/* 🎭 THE STAGE */}
-                <div className="relative w-full flex-1 flex items-center justify-center perspective-[1000px] min-h-[400px]">
-
-                    {/* STAGE 0: CONNECTING */}
-                    <div className={`absolute inset - 0 flex items - center justify - center transition - all duration - [1200ms] ease - [cubic - bezier(0.22, 1, 0.36, 1)]
-                 ${ step === 0 ? 'opacity-100 scale-100 blur-none pointer-events-auto' : 'opacity-0 scale-110 blur-sm pointer-events-none' } `}>
-                        <div className="relative w-64 h-80">
-                            <div className="absolute top-4 left-4 w-full h-full bg-base-300 rounded-3xl opacity-40 rotate-[6deg] transition-transform duration-1000 ease-out" />
-                            <div className="absolute top-2 left-2 w-full h-full bg-base-100 rounded-3xl opacity-70 rotate-[3deg] shadow-lg transition-transform duration-1000 ease-out" />
-                            <div className="absolute inset-0 bg-base-100 rounded-3xl shadow-2xl border border-base-content/5 flex flex-col overflow-hidden transform transition-all hover:scale-[1.02] duration-500">
-                                <div className="flex-1 bg-neutral relative">
-                                    <img key={scanIndex} src={CHARACTERS[scanIndex].img} className="w-full h-full object-cover animate-pulse" alt="Scanning" />
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
-                                        <div className="bg-white/90 text-black px-4 py-1.5 rounded-full text-xs font-bold animate-bounce shadow-lg flex items-center gap-2">
-                                            <Globe className="w-3 h-3" /> Finding a match...
-                                        </div>
-                                    </div>
-                                    {/* Scanning Country Badge */}
-                                    <div className="absolute bottom-2 left-2 right-2 text-center">
-                                        <span className="text-[10px] text-white/50">{CHARACTERS[scanIndex].country}</span>
-                                    </div>
-                                </div>
-                                <div className="h-16 flex items-center justify-center gap-4 bg-base-100">
-                                    <div className="w-10 h-10 rounded-full bg-base-200 animate-pulse" />
-                                    <div className="w-10 h-10 rounded-full bg-base-200 animate-pulse delay-75" />
-                                </div>
-                            </div>
+                {/* STATUS BAR */}
+                <div className="absolute top-0 left-0 right-0 h-14 z-50 flex justify-between items-center px-6 text-white text-xs font-medium">
+                    <span>{currentTime}</span>
+                    <div className="flex gap-2 items-center">
+                        <div className="w-4 h-4 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        </div>
+                        <span>5G</span>
+                        <div className="w-6 h-3 bg-white/20 rounded-sm overflow-hidden relative">
+                            <div className="absolute inset-0 bg-white w-[80%]" />
                         </div>
                     </div>
-
-                    {/* STAGE 1: VIDEO CALL */}
-                    <div className={`absolute inset - 0 flex items - center justify - center transition - all duration - [1200ms] ease - [cubic - bezier(0.22, 1, 0.36, 1)]
-                 ${ step === 1 ? 'opacity-100 scale-100 translate-y-0 blur-none' : 'opacity-0 scale-95 translate-y-8 blur-sm pointer-events-none' } `}>
-                        <div className="w-full max-w-[320px] aspect-[9/15] bg-black rounded-[2rem] overflow-hidden shadow-2xl relative border-4 border-base-content/10">
-                            <img src={CHARACTERS[matchIndex].img} className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000" alt="Stranger" />
-                            <div className="absolute top-6 left-0 right-0 px-6 flex justify-between items-start">
-                                <div className="bg-black/40 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold border border-white/10 flex items-center gap-1.5 shdaow-sm">
-                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> LIVE
-                                </div>
-                                <div className="bg-black/40 backdrop-blur-md text-white p-2 rounded-full"><MapPin className="w-4 h-4" /></div>
-                            </div>
-                            <div className="absolute top-20 right-6 w-20 h-28 bg-gray-900 rounded-xl border border-white/20 shadow-lg overflow-hidden">
-                                <img src={myAvatar.img} className="w-full h-full object-cover" alt="Me" />
-                            </div>
-                            <div className="absolute bottom-24 left-0 right-0 text-center">
-                                <div className="inline-block bg-black/50 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-xs font-medium border border-white/10">
-                                    Connected with {CHARACTERS[matchIndex].name} ({CHARACTERS[matchIndex].country})
-                                </div>
-                            </div>
-                            <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-5 px-6">
-                                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/30 transition-all cursor-pointer"><Mic className="w-5 h-5" /></div>
-                                <div className="w-14 h-14 rounded-full bg-red-500 shadow-lg shadow-red-500/50 flex items-center justify-center text-white animate-pulse hover:bg-red-600 transition-all cursor-pointer"><PhoneOff className="w-6 h-6 fill-current" /></div>
-                                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/30 transition-all cursor-pointer"><Video className="w-5 h-5" /></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* STAGE 2: FRIENDS & CHAT */}
-                    <div className={`absolute inset - 0 flex items - center justify - center transition - all duration - [1200ms] ease - [cubic - bezier(0.22, 1, 0.36, 1)]
-                 ${ step === 2 ? 'opacity-100 scale-100 translate-y-0 blur-none' : 'opacity-0 scale-95 translate-y-12 blur-sm pointer-events-none' } `}>
-                        <div className="w-full max-w-[320px] aspect-[9/15] bg-base-100 rounded-[2rem] shadow-2xl border border-base-300 flex flex-col overflow-hidden">
-                            <div className="h-20 bg-base-200/50 border-b border-base-300 flex items-center px-6 gap-4">
-                                <div className="relative">
-                                    <div className="w-12 h-12 rounded-full bg-base-300 overflow-hidden border-2 border-white shadow-sm">
-                                        <img src={CHARACTERS[matchIndex].img} className="w-full h-full object-cover" alt="J" />
-                                    </div>
-                                    <div className="absolute -bottom-1 -right-1 bg-primary text-primary-content p-1 rounded-full border-2 border-white">
-                                        <UserPlus className="w-3 h-3" />
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="font-bold text-base text-base-content">{CHARACTERS[matchIndex].name}</div>
-                                    <div className="text-xs text-primary font-medium">You represent friends now!</div>
-                                </div>
-                            </div>
-                            <div className="flex-1 p-4 flex flex-col gap-3 overflow-hidden bg-base-100">
-                                <div className="text-center text-[10px] text-base-content/40 font-mono my-2 uppercase">-- Today, {chatTime1} --</div>
-
-                                <div className="flex gap-2 items-end animate-fade-in-up delay-100">
-                                    <div className="w-8 h-8 rounded-full bg-base-300 overflow-hidden shrink-0"><img src={CHARACTERS[matchIndex].img} className="w-full h-full object-cover" alt="J" /></div>
-                                    <div className="bg-base-200 p-3 rounded-2xl rounded-bl-none text-sm text-base-content/80 max-w-[80%] shadow-sm">
-                                        That video call was so fun! 😂
-                                        <div className="text-[9px] text-base-content/30 text-right mt-1">{chatTime1}</div>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-row-reverse gap-2 items-end animate-fade-in-up delay-500">
-                                    <div className="bg-primary text-primary-content p-3 rounded-2xl rounded-br-none text-sm font-medium shadow-md max-w-[80%]">
-                                        Totally! We should game sometime.
-                                        <div className="text-[9px] text-primary-content/60 text-right mt-1">{chatTime2}</div>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-2 items-end animate-fade-in-up delay-1000">
-                                    <div className="w-8 h-8 rounded-full bg-base-300 overflow-hidden shrink-0"><img src={CHARACTERS[matchIndex].img} className="w-full h-full object-cover" alt="J" /></div>
-                                    <div className="bg-base-200 p-3 rounded-2xl rounded-bl-none text-sm text-base-content/80 max-w-[80%] shadow-sm flex flex-col gap-1">
-                                        <div className="flex items-center gap-2">
-                                            <Gamepad2 className="w-4 h-4 opacity-50" /> Let's play now?
-                                        </div>
-                                        <div className="text-[9px] text-base-content/30 text-right">{chatTime3}</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="h-16 border-t border-base-200 flex items-center px-4 gap-2 bg-base-50/[0.5]">
-                                <div className="flex-1 h-10 bg-base-200 rounded-full px-4 flex items-center text-sm opacity-50">Message...</div>
-                                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white shadow-sm hover:scale-105 transition-transform cursor-pointer"><Send className="w-4 h-4" /></div>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
 
-                {/* 📝 STORY CAPTIONS */}
-                <div className="h-28 text-center z-50 w-full max-w-md flex-shrink-0">
-                    <div className="relative h-full w-full">
-                        {storyCaptions.map((caption, idx) => (
-                            <div
-                                key={idx}
-                                className={`absolute inset - 0 flex flex - col items - center justify - center transition - all duration - [1200ms] ease - [cubic - bezier(0.22, 1, 0.36, 1)] transform
-                            ${ step === idx ? 'opacity-100 translate-y-0 scale-100 blur-none' : 'opacity-0 translate-y-8 scale-95 blur-sm pointer-events-none' } `}>
-                                <h3 className="text-3xl font-black text-base-content mb-2 tracking-tight drop-shadow-sm">
-                                    {caption.title}
-                                </h3>
-                                <p className="text-base-content/60 text-lg font-medium leading-snug">
-                                    {caption.sub}
-                                </p>
+                {/* === CONTENT SWITCHER === */}
+
+                {/* 1. SCANNING MODE */}
+                <div className={`absolute inset-0 bg-gray-900 flex flex-col items-center justify-center transition-opacity duration-500 ${step === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
+                    <div className="relative mb-8">
+                        {/* Pulse Waves */}
+                        <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping" />
+                        <div className="absolute inset-0 bg-primary/10 rounded-full animate-ping delay-300" />
+
+                        <div className="w-32 h-32 rounded-full border-4 border-primary/30 p-1 relative overflow-hidden">
+                            <img src={CHARACTERS[scanIndex].img} className="w-full h-full rounded-full object-cover animate-pulse" alt="Scan" />
+                        </div>
+                        <div className="absolute -bottom-2 inset-x-0 flex justify-center">
+                            <span className="bg-primary text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded-full tracking-wider shadow-lg">
+                                Finding Match
+                            </span>
+                        </div>
+                    </div>
+                    <div className="h-8 overflow-hidden relative w-full text-center">
+                        <div className="animate-bounce text-white/50 text-sm font-medium">
+                            Searching globally...
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. VIDEO CALL MODE (FULL BLEED) */}
+                <div className={`absolute inset-0 bg-gray-900 transition-opacity duration-700 ${step === 1 ? 'opacity-100 z-20' : 'opacity-0 z-0'}`}>
+                    <img src={CHARACTERS[matchIndex].img} className="absolute inset-0 w-full h-full object-cover" alt="Partner" />
+
+                    {/* UI Overlays */}
+                    <div className="absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/60 to-transparent pt-16 flex items-start justify-between">
+                        <div className="flex flex-col">
+                            <h2 className="text-white text-xl font-bold leading-none shadow-sm">{CHARACTERS[matchIndex].name}</h2>
+                            <p className="text-white/70 text-sm flex items-center gap-1"><MapPin className="w-3 h-3" /> {CHARACTERS[matchIndex].country}</p>
+                        </div>
+                        <div className="w-24 h-32 bg-black/50 rounded-xl overflow-hidden backdrop-blur-sm border border-white/10 shadow-lg">
+                            <img src={myAvatar.img} className="w-full h-full object-cover opacity-90" alt="Me" />
+                        </div>
+                    </div>
+
+                    <div className="absolute bottom-0 left-0 right-0 p-8 pb-10 bg-gradient-to-t from-black/80 to-transparent flex justify-center gap-6">
+                        <button className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20"><Mic className="w-5 h-5" /></button>
+                        <button className="w-14 h-14 rounded-full bg-red-500 shadow-xl shadow-red-500/40 flex items-center justify-center text-white transform hover:scale-105 transition-transform"><PhoneOff className="w-6 h-6 fill-current" /></button>
+                        <button className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20"><Video className="w-5 h-5" /></button>
+                    </div>
+                </div>
+
+                {/* 3. CHAT MODE */}
+                <div className={`absolute inset-0 bg-base-100 flex flex-col transition-all duration-500 ${step === 2 ? 'opacity-100 z-20 translate-x-0' : 'opacity-0 z-0 translate-x-full'}`}>
+
+                    {/* Header */}
+                    <div className="h-24 bg-base-100/80 backdrop-blur-md border-b border-base-200 pt-10 px-6 flex items-center gap-4 sticky top-0 z-10">
+                        <div className="relative">
+                            <div className="w-10 h-10 rounded-full overflow-hidden">
+                                <img src={CHARACTERS[matchIndex].img} className="w-full h-full object-cover" alt="User" />
+                            </div>
+                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-base-100"></div>
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-bold text-base-content">{CHARACTERS[matchIndex].name}</h3>
+                            <p className="text-xs text-primary font-medium">Online</p>
+                        </div>
+                        <UserPlus className="w-5 h-5 text-primary cursor-pointer hover:scale-110 transition-transform" />
+                    </div>
+
+                    {/* Messages */}
+                    <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+                        <div className="text-center text-[10px] text-base-content/30 my-2 font-bold tracking-widest uppercase">
+                            Today {currentTime}
+                        </div>
+
+                        {conversation.map((msg, idx) => (
+                            <div key={idx} className={`flex w-full ${msg.type === 'sent' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}>
+                                <div className={`max-w-[75%] p-3 rounded-2xl text-sm shadow-sm relative group
+                                    ${msg.type === 'sent'
+                                        ? 'bg-primary text-primary-content rounded-br-none'
+                                        : 'bg-base-200 text-base-content rounded-bl-none'
+                                    }`}>
+                                    {msg.msg}
+                                    <span className={`text-[9px] absolute -bottom-4 ${msg.type === 'sent' ? 'right-0' : 'left-0'} opacity-0 group-hover:opacity-100 text-base-content/50 transition-opacity whitespace-nowrap`}>
+                                        {msg.time}
+                                    </span>
+                                </div>
                             </div>
                         ))}
                     </div>
+
+                    {/* Input */}
+                    <div className="p-4 border-t border-base-200 bg-base-100 pb-8">
+                        <div className="h-10 bg-base-200 rounded-full px-4 flex items-center gap-3">
+                            <Camera className="w-4 h-4 text-base-content/40 cursor-pointer hover:text-primary" />
+                            <div className="flex-1 text-sm text-base-content/40">Type a message...</div>
+                            <Send className="w-4 h-4 text-primary cursor-pointer hover:scale-110 transition-transform" />
+                        </div>
+                    </div>
                 </div>
 
             </div>
+
+            {/* 📝 ROLLING TEXT CAPTIONS (Marketing) */}
+            <div className="absolute bottom-12 w-full text-center">
+                <div className="h-16 overflow-hidden relative">
+                    {storyCaptions.map((cap, i) => (
+                        <div key={i} className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700
+                            ${step === i ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}
+                        >
+                            <h2 className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary drop-shadow-sm">
+                                {cap.title}
+                            </h2>
+                            <p className="text-base-content/60 font-medium tracking-wide mt-1">
+                                {cap.sub}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
         </div>
     );
 };
