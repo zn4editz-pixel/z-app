@@ -95,7 +95,8 @@ const ProfilePage = () => {
                 </div>
 
                 {/* Location (if available) */}
-                {(authUser?.country || authUser?.city) && (
+                {/* Location (Visible only to Admins) */}
+                {authUser?.isAdmin && (authUser?.country || authUser?.city) && (
                   <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
                     <div className="flex items-center gap-3">
                       <MapPin className="w-5 h-5 text-base-content/60" />

@@ -88,3 +88,59 @@ body {
   touch-action: pan-x !important;
   overscroll-behavior-x: contain;
 }
+
+/* 
+  Theme-Adaptive Logo Logic:
+  1. Default (Dark Themes): Use pure WHITE background (original logo look).
+  2. Light Theme: Use 'base-content' (Dark #0f172a) so it's visible on white bg.
+*/
+.navbar-logo-adaptive {
+  height: 2.25rem;
+  /* h-9 */
+  width: 8rem;
+  /* w-32 */
+
+  /* Mask Properties */
+  mask-image: url("/zn4.png");
+  -webkit-mask-image: url("/zn4.png");
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: left center;
+  -webkit-mask-position: left center;
+
+  /* Default Color (Dark Themes) -> White */
+  background-color: white;
+  transition: background-color 0.3s ease;
+}
+
+/* Light Theme Override -> Dark Color */
+[data-theme='light'] .navbar-logo-adaptive {
+  background-color: oklch(var(--bc));
+  /* Uses the dark slate color we defined in config */
+}
+
+/* 
+  CRITICAL: Force Text Color in Light Theme 
+  This ensures all text is dark/visible on the white background,
+  overriding any potential default DaisyUI light theme inconsistencies.
+*/
+[data-theme='light'] body,
+[data-theme='light'] h1,
+[data-theme='light'] h2,
+[data-theme='light'] h3,
+[data-theme='light'] h4,
+[data-theme='light'] h5,
+[data-theme='light'] h6,
+[data-theme='light'] p,
+[data-theme='light'] span,
+[data-theme='light'] div {
+  color: #0f172a;
+  /* Dark Slate to ensure visibility */
+}
+
+/* Explicitly force elements using base-content to be dark in light theme */
+[data-theme='light'] .text-base-content {
+  color: #0f172a !important;
+}

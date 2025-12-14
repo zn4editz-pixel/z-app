@@ -1,6 +1,7 @@
 import os from "os";
 import prisma from "../lib/prisma.js";
 import { redisClient } from "../lib/redis.js";
+import { monitorStats } from "../middleware/activityMonitor.js";
 
 // Store metrics history in memory (in production, use Redis)
 const metricsHistory = [];
@@ -17,7 +18,7 @@ const THRESHOLDS = {
 export const getServerMetrics = async (req, res) => {
 	try {
 		const startTime = Date.now();
-		
+
 		// Collect all metrics in parallel
 		const [
 			backendMetrics,
@@ -60,24 +61,23 @@ export const getServerMetrics = async (req, res) => {
 // Backend Performance Metrics
 const getBackendMetrics = async () => {
 	const start = Date.now();
-	
+
 	try {
 		// Test database connection
 		await prisma.$queryRaw`SELECT 1`;
-		const responseTime = Date.now() - start;
-		
-		// Get request stats from memory (you can enhance this with actual tracking)
-		const status = responseTime < THRESHOLDS.backend.warning ? 'healthy' : 
-		              responseTime < THRESHOLDS.backend.critical ? 'warning' : 'critical';
-		
+		const dbCheckTime = Date.now() - start;
+
+		const status = monitorStats.averageResponseTime < THRESHOLDS.backend.warning ? 'healthy' :
+			monitorStats.averageResponseTime < THRESHOLDS.backend.critical ? 'warning' : 'critical';
+
 		return {
-			responseTime,
+			responseTime: Math.round(monitorStats.averageResponseTime || dbCheckTime), // Use actual avg response time
 			status,
 			uptime: process.uptime(),
 			memoryUsage: process.memoryUsage().heapUsed / 1024 / 1024, // MB
-			activeConnections: getActiveConnections(),
-			requestsPerMinute: getRequestsPerMinute(),
-			errorRate: getErrorRate(),
+			activeConnections: monitorStats.activeConnections,
+			requestsPerMinute: monitorStats.requestsPerMinute,
+			errorRate: getErrorRate(), // Keeping this simulated for now or implement error tracking later
 			trend: calculateTrend('backend.responseTime')
 		};
 	} catch (err) {
@@ -92,21 +92,21 @@ const getBackendMetrics = async () => {
 // Database Performance Metrics
 const getDatabaseMetrics = async () => {
 	const start = Date.now();
-	
+
 	try {
 		// Test query performance
 		await prisma.user.count();
 		const queryTime = Date.now() - start;
-		
+
 		// Get connection pool stats
 		const [userCount, messageCount] = await Promise.all([
 			prisma.user.count(),
 			prisma.message.count()
 		]);
-		
-		const status = queryTime < THRESHOLDS.database.warning ? 'healthy' : 
-		              queryTime < THRESHOLDS.database.critical ? 'warning' : 'critical';
-		
+
+		const status = queryTime < THRESHOLDS.database.warning ? 'healthy' :
+			queryTime < THRESHOLDS.database.critical ? 'warning' : 'critical';
+
 		return {
 			queryTime,
 			status,
@@ -130,16 +130,16 @@ const getDatabaseMetrics = async () => {
 const getSocketMetrics = async () => {
 	try {
 		const { io, userSocketMap } = await import("../lib/socket.js");
-		
+
 		const connectedUsers = Object.keys(userSocketMap || {}).length;
 		const totalSockets = io?.sockets?.sockets?.size || 0;
-		
+
 		// Estimate latency (you can enhance with actual ping/pong)
 		const latency = 10 + Math.random() * 20; // Simulated for now
-		
-		const status = latency < THRESHOLDS.socket.warning ? 'healthy' : 
-		              latency < THRESHOLDS.socket.critical ? 'warning' : 'critical';
-		
+
+		const status = latency < THRESHOLDS.socket.warning ? 'healthy' :
+			latency < THRESHOLDS.socket.critical ? 'warning' : 'critical';
+
 		return {
 			latency: Math.round(latency),
 			status,
@@ -176,7 +176,7 @@ const getSystemMetrics = () => {
 	const totalMem = os.totalmem();
 	const freeMem = os.freemem();
 	const usedMem = totalMem - freeMem;
-	
+
 	// Calculate CPU usage
 	let totalIdle = 0;
 	let totalTick = 0;
@@ -187,7 +187,7 @@ const getSystemMetrics = () => {
 		totalIdle += cpu.times.idle;
 	});
 	const cpuUsage = 100 - ~~(100 * totalIdle / totalTick);
-	
+
 	return {
 		cpu: cpuUsage,
 		memory: Math.round((usedMem / totalMem) * 100),
@@ -201,7 +201,7 @@ const getSystemMetrics = () => {
 // Bug Detection System
 const detectBugs = async () => {
 	const bugs = [];
-	
+
 	try {
 		// Check for suspended users with expired suspensions
 		const expiredSuspensions = await prisma.user.count({
@@ -212,7 +212,7 @@ const detectBugs = async () => {
 				}
 			}
 		});
-		
+
 		if (expiredSuspensions > 0) {
 			bugs.push({
 				severity: 'medium',
@@ -222,11 +222,11 @@ const detectBugs = async () => {
 				timestamp: new Date().toISOString()
 			});
 		}
-		
+
 		// Check for orphaned messages (messages where sender or receiver user doesn't exist)
 		// This is a more complex check, so we'll skip it for now to avoid performance issues
 		// You can implement this with a raw SQL query if needed
-		
+
 		// Check memory usage
 		const memUsage = process.memoryUsage().heapUsed / 1024 / 1024;
 		if (memUsage > 500) {
@@ -238,7 +238,7 @@ const detectBugs = async () => {
 				timestamp: new Date().toISOString()
 			});
 		}
-		
+
 		// Check for pending reports older than 7 days
 		const oldReports = await prisma.report.count({
 			where: {
@@ -248,7 +248,7 @@ const detectBugs = async () => {
 				}
 			}
 		});
-		
+
 		if (oldReports > 0) {
 			bugs.push({
 				severity: 'medium',
@@ -258,7 +258,7 @@ const detectBugs = async () => {
 				timestamp: new Date().toISOString()
 			});
 		}
-		
+
 		// Check Redis connection
 		if (redisClient) {
 			try {
@@ -273,11 +273,11 @@ const detectBugs = async () => {
 				});
 			}
 		}
-		
+
 	} catch (err) {
 		console.error("Error in bug detection:", err);
 	}
-	
+
 	return bugs;
 };
 
@@ -309,15 +309,15 @@ const getCacheHitRate = async () => {
 
 const calculateTrend = (metricPath) => {
 	if (metricsHistory.length < 2) return 0;
-	
+
 	const recent = metricsHistory.slice(-10);
 	const values = recent.map(m => getNestedValue(m, metricPath)).filter(v => v != null);
-	
+
 	if (values.length < 2) return 0;
-	
+
 	const avg1 = values.slice(0, Math.floor(values.length / 2)).reduce((a, b) => a + b, 0) / Math.floor(values.length / 2);
 	const avg2 = values.slice(Math.floor(values.length / 2)).reduce((a, b) => a + b, 0) / (values.length - Math.floor(values.length / 2));
-	
+
 	return avg2 - avg1;
 };
 

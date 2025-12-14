@@ -4,7 +4,7 @@ import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "../store/useAuthStore";
 import {
 	Users, AlertTriangle, Shield, TrendingUp,
-	BadgeCheck, FileText, Activity, Brain
+	BadgeCheck, FileText, Activity, Brain, Monitor
 } from "lucide-react";
 import "../styles/admin-dashboard-imports.css";
 import GoldenParticles from "../components/admin/GoldenParticles";
@@ -18,6 +18,7 @@ import VerificationRequests from "../components/admin/VerificationRequests";
 import NotificationsPanel from "../components/admin/NotificationsPanel";
 import ServerIntelligenceCenter from "../components/admin/ServerIntelligenceCenter";
 import AIAnalysisAgent from "../components/admin/AIAnalysisAgent";
+import AppearancePanel from "../components/admin/AppearancePanel";
 
 const AdminDashboard = () => {
 	const { socket } = useAuthStore();
@@ -43,6 +44,7 @@ const AdminDashboard = () => {
 	// Tab Configuration
 	const tabs = [
 		{ id: "dashboard", label: "Dashboard", icon: TrendingUp },
+		{ id: "appearance", label: "Appearance", icon: Monitor }, // New Tab
 		{ id: "server-intelligence", label: "Server Intelligence", icon: Activity },
 		{ id: "ai-analysis", label: "AI Analysis", icon: Brain },
 		{ id: "users", label: "Users", icon: Users },
@@ -466,6 +468,8 @@ const AdminDashboard = () => {
 				return <DashboardOverview stats={stats} loadingStats={loadingStats} users={users} />;
 			case "server-intelligence":
 				return <ServerIntelligenceCenter />;
+			case "appearance":
+				return <AppearancePanel />;
 			case "ai-analysis":
 				return <AIAnalysisAgent />;
 			case "users":
@@ -577,8 +581,8 @@ const AdminDashboard = () => {
 									key={tab.id}
 									onClick={() => setActiveTab(tab.id)}
 									className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium ${activeTab === tab.id
-											? "bg-gradient-to-r from-warning/20 via-base-content/10 to-warning/20 text-base-content shadow-lg scale-105 border border-warning/30"
-											: "hover:bg-base-200 text-base-content/70 hover:text-base-content hover:scale-102"
+										? "bg-gradient-to-r from-warning/20 via-base-content/10 to-warning/20 text-base-content shadow-lg scale-105 border border-warning/30"
+										: "hover:bg-base-200 text-base-content/70 hover:text-base-content hover:scale-102"
 										}`}
 								>
 									<Icon className="w-4 h-4 sm:w-5 sm:h-5" />

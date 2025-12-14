@@ -9,15 +9,27 @@ export default {
   plugins: [daisyui],
   daisyui: {
     themes: [
-      "light",
+      {
+        light: {
+          ...require("daisyui/src/theming/themes")["light"],
+          "base-100": "#ffffff", // Pure white background
+          "base-200": "#f8fafc", // Very light grey for secondary backgrounds
+          "base-300": "#f1f5f9", // Light grey for borders
+          "base-content": "#0f172a", // Darker slate-900 text for high contrast
+          "primary": "#0f172a", // Also using dark color for primary if requested
+          "neutral": "#0f172a", // Dark neutral background
+          "neutral-content": "#ffffff", // White text on neutral
+          "info": "#0ea5e9",
+          "info-content": "#0f172a",
+          "success-content": "#0f172a",
+          "warning-content": "#0f172a",
+          "error-content": "#0f172a",
+        },
+      },
       "dark",
-      "cupcake",
       "bumblebee",
-      "emerald",
-      "corporate",
       "synthwave",
       "retro",
-      "cyberpunk",
       "valentine",
       "halloween",
       "garden",
@@ -31,15 +43,12 @@ export default {
       "luxury",
       "dracula",
       "cmyk",
-      "autumn",
       "business",
       "acid",
       "lemonade",
       "night",
       "coffee",
-      "winter",
       "dim",
-      "nord",
       "sunset",
     ],
   },

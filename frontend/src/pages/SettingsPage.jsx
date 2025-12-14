@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
 import { useAuthStore } from "../store/useAuthStore";
+import { useSettingsStore } from "../store/useSettingsStore"; // ✅ Import Settings Store
 import { Send, Lock, LogOut, Video, Mic, Shield, Check, X, User, Edit2, Save, Camera, Loader2 } from "lucide-react";
 import ImageCropper from "../components/ImageCropper";
 import toast from "react-hot-toast";
@@ -11,13 +12,16 @@ import { axiosInstance } from "../lib/axios";
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
   const { logout, authUser, updateProfile } = useAuthStore();
+  const { settings, fetchSettings } = useSettingsStore(); // ✅ Get settings
+
   const [cameraStatus, setCameraStatus] = useState('not-tested');
   const [micStatus, setMicStatus] = useState('not-tested');
 
   // Image cropper state
   const [showCropper, setShowCropper] = useState(false);
   const [tempImage, setTempImage] = useState(null);
-  const [selectedImg, setSelectedImg] = useState(null);
+  const [selectedImg, setSelectedImg] = useState(null); // For display
+  const [newProfilePic, setNewProfilePic] = useState(null); // For upload
 
   // Profile editing states
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -39,6 +43,24 @@ const SettingsPage = () => {
       });
     }
   }, [authUser]);
+
+  // ✅ Fetch global settings on mount
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  // ✅ Filter themes based on global settings
+  const getAllowedThemes = () => {
+    if (!settings?.allowedThemes || settings.allowedThemes === "all") return THEMES;
+    const allowedList = settings.allowedThemes.split(",");
+    // Ensure currently selected theme is always visible even if disabled later
+    if (!allowedList.includes(theme)) {
+      return [theme, ...allowedList.filter(t => THEMES.includes(t))];
+    }
+    return THEMES.filter(t => allowedList.includes(t));
+  };
+
+  const displayedThemes = getAllowedThemes();
 
   const checkUsername = async (username) => {
     if (username === authUser?.username) {
@@ -75,30 +97,13 @@ const SettingsPage = () => {
     };
   };
 
-  const handleCropComplete = async (croppedImage) => {
+  const handleCropComplete = (croppedImage) => {
+    // Just update the preview and store for later save
     setSelectedImg(croppedImage);
+    setNewProfilePic(croppedImage);
     setShowCropper(false);
     setTempImage(null);
-
-    // Auto-save the image or wait for "Save Changes"? 
-    // ProfilePage did it immediately. Let's do it immediately for better UX
-    try {
-      setSavingProfile(true);
-      const updatedUser = await updateProfile({ profilePic: croppedImage });
-      setSelectedImg(updatedUser.profilePic);
-      toast.success("Profile picture updated!");
-
-      // Reload page to clear cached images everywhere
-      setTimeout(() => {
-        window.location.reload();
-      }, 800);
-    } catch (error) {
-      console.error('Error updating profile pic:', error);
-      toast.error("Failed to update profile picture");
-      setSelectedImg(authUser?.profilePic);
-    } finally {
-      setSavingProfile(false);
-    }
+    toast.success("Image cropped! Click 'Save Changes' to update.");
   };
 
   const handleCropCancel = () => {
@@ -125,9 +130,17 @@ const SettingsPage = () => {
 
     setSavingProfile(true);
     try {
-      await updateProfile(profileData);
+      // Create update object
+      const updateData = {
+        ...profileData,
+        ...(newProfilePic && { profilePic: newProfilePic }) // Only include if changed
+      };
+
+      await updateProfile(updateData);
       setIsEditingProfile(false);
+      setNewProfilePic(null); // Clear pending change
       toast.success('Profile updated successfully!');
+
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error(error.response?.data?.error || 'Failed to update profile');
@@ -368,6 +381,8 @@ const SettingsPage = () => {
                         bio: authUser?.bio || '',
                         fullName: authUser?.fullName || ''
                       });
+                      setSelectedImg(authUser?.profilePic); // Reset image preview
+                      setNewProfilePic(null);
                       setUsernameAvailable(null);
                     }}
                     disabled={savingProfile}
@@ -393,7 +408,7 @@ const SettingsPage = () => {
             </div>
 
             <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-3 md:gap-4 max-h-[400px] sm:max-h-[420px] md:max-h-[450px] overflow-y-auto custom-scrollbar pr-2">
-              {THEMES.map((t) => (
+              {displayedThemes.map((t) => (
                 <button
                   key={t}
                   className={`

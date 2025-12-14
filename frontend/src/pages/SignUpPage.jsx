@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import {
 	Eye,
@@ -12,7 +12,10 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthImagePattern from "../components/AuthImagePattern";
+import { useSettingsStore } from "../store/useSettingsStore";
 import toast from "react-hot-toast";
+import SnowEffect from "../components/effects/SnowEffect";
+import ChatBackground from "../components/effects/ChatBackground";
 import "../styles/login-interaction-fix.css"; // ✅ Added CSS Fix
 
 const SignUpPage = () => {
@@ -26,6 +29,11 @@ const SignUpPage = () => {
 	});
 
 	const { signup, isSigningUp } = useAuthStore();
+	const { settings, fetchSettings } = useSettingsStore();
+
+	useEffect(() => {
+		fetchSettings();
+	}, [fetchSettings]);
 
 	const validateForm = () => {
 		if (!formData.fullName.trim()) return toast.error("Full name is required");
@@ -62,6 +70,10 @@ const SignUpPage = () => {
 		<div className="min-h-screen grid lg:grid-cols-2">
 			{/* Left Side */}
 			<div className="flex flex-col justify-center items-center p-6 sm:p-12 login-form-container relative overflow-hidden">
+				{/* ❄️ Seasonal Snow Effect */}
+				{settings?.isSeasonalMode && <SnowEffect />}
+				{/* 💬 Chat Background Animation */}
+				<ChatBackground />
 
 				{/* 🌟 Lightweight Background Animation */}
 				<div className="absolute inset-0 bg-base-100/50 -z-10" />
@@ -227,6 +239,7 @@ const SignUpPage = () => {
 				variant="signup"
 				title="Join our community"
 				subtitle="Connect with friends, share moments, and stay in touch with your loved ones."
+				animationType={settings?.signupAnimation}
 			/>
 		</div>
 	);

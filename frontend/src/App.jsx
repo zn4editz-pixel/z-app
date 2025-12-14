@@ -33,47 +33,27 @@ import { useThemeStore } from "./store/useThemeStore";
 import { initSmoothScroll, destroySmoothScroll } from "./utils/smoothScroll";
 import { useFriendStore } from "./store/useFriendStore"; // ✅ 1. Import Friend Store
 import { useChatStore } from "./store/useChatStore"; // 🔥 Import Chat Store for global message handling
-import { useNotificationStore } from "./store/useNotificationStore";
-import { useProductionOptimizations } from "./utils/performanceOptimizer.production";
-
-// Toast UI (no changes)
-const showMessageToast = ({ senderName, senderAvatar, messageText, theme }) => {
-	toast.custom(
-		(t) => (
-			<div
-				className={`flex items-center gap-3 p-3 rounded-xl shadow-lg transition-all duration-300
-         ${theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-gray-900"}
-         ${t.visible ? "opacity-100" : "opacity-0"}
-        `}
-			>
-				<img
-					src={senderAvatar}
-					alt={senderName}
-					className="w-10 h-10 rounded-full object-cover border border-gray-300"
-				/>
-				<div className="flex flex-col max-w-[200px]">
-					<span className="font-semibold truncate">{senderName}</span>
-					<span className="text-sm opacity-80 truncate">{messageText}</span>
-				</div>
-			</div>
-		),
-		{
-			id: `msg-${Date.now()}`,
-			duration: 4000,
-		}
-	);
-};
+import { useSettingsStore } from "./store/useSettingsStore"; // ✅ Import Settings Store
+import { useProductionOptimizations } from "./utils/performanceOptimizer.production"; // ✅ Restore missing import
 
 const App = () => {
 	const { authUser, checkAuth, isCheckingAuth, socket, setAuthUser } = useAuthStore();
 	const { theme } = useThemeStore();
+	const { settings, fetchSettings } = useSettingsStore(); // ✅ Get settings
 	// ✅ 2. Get the action to update the pending received requests
 	const addPendingReceived = useFriendStore((state) => state.addPendingReceived);
 	const fetchFriendData = useFriendStore((state) => state.fetchFriendData);
 	const navigate = useNavigate();
-	// 🔄 REFRESH REDIRECT: Redirect to home on page refresh
-	// 🔄 REFRESH REDIRECT: Logic removed to allow staying on current page
-	// useEffect(() => { ... }, []);
+
+	// ✅ Fetch global settings on mount
+	useEffect(() => {
+		fetchSettings();
+	}, [fetchSettings]);
+
+	// ✅ Determine effective theme (Seasonal override)
+	const effectiveTheme = settings?.isSeasonalMode && settings?.seasonalTheme
+		? settings.seasonalTheme
+		: theme;
 
 
 	const forceLogout = useCallback(
@@ -172,7 +152,7 @@ const App = () => {
 					senderName: sender?.name || "Unknown",
 					senderAvatar: sender?.profilePic || "/default-avatar.png",
 					messageText: text || "",
-					theme,
+					theme: effectiveTheme, // ✅ Update to use effectiveTheme
 				});
 
 				// ✅ FIX: Add to notification store for persistence
@@ -345,7 +325,7 @@ const App = () => {
 			socket.off("admin-broadcast");
 		};
 		// ✅ FIXED: Only depend on socket and authUser.id to prevent duplicate listeners
-	}, [socket, authUser?.id, navigate, forceLogout, theme, addPendingReceived, setAuthUser]);
+	}, [socket, authUser?.id, navigate, forceLogout, effectiveTheme, addPendingReceived, setAuthUser]); // ✅ Depend on effectiveTheme
 
 	const hasCompletedProfile = authUser?.hasCompletedProfile;
 
@@ -381,7 +361,7 @@ const App = () => {
 	const shouldShowNavbar = hasCompletedProfile && !hideNavbarPaths.includes(window.location.pathname);
 
 	return (
-		<div data-theme={theme} className={`min-h-screen bg-base-100 ${shouldShowNavbar ? "pt-14 md:pt-16" : ""}`}>
+		<div data-theme={effectiveTheme} className={`min-h-screen bg-base-100 ${shouldShowNavbar ? "pt-14 md:pt-16" : ""}`}>
 			<ErrorBoundary>
 				{authUser && hasCompletedProfile && <PermissionHandler />}
 				{shouldShowNavbar && <Navbar />}

@@ -30,11 +30,12 @@ const Navbar = () => {
 			<div className="px-3 sm:px-4 lg:px-6 h-14 sm:h-16">
 				<div className="flex items-center justify-between h-full max-w-7xl mx-auto">
 					{/* Logo */}
+					{/* Logo */}
+					{/* Logo */}
 					<Link to="/" className="flex items-center active:opacity-70 transition" aria-label="Go to home page">
-						<img
-							src="/zn4.png"
-							alt="Z-APP"
-							className="h-8 sm:h-9 w-auto"
+						<div
+							className="navbar-logo-adaptive"
+							aria-label="Z-APP"
 						/>
 					</Link>
 

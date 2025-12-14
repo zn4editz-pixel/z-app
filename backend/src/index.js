@@ -114,6 +114,7 @@ import userRoutes from './routes/user.route.js';
 import messageRoutes from './routes/message.route.js';
 import adminRoutes from './routes/admin.route.js';
 import friendRoutes from './routes/friend.route.js';
+import settingsRoutes from './routes/settings.route.js';
 
 // Use simple health routes for development to avoid Redis dependencies
 let healthRoutes;
@@ -135,6 +136,8 @@ const PORT = process.env.PORT || 5001;
 
 const app = express();
 
+import { activityMonitor } from './middleware/activityMonitor.js';
+
 // Railway Free Tier - Single Process (no clustering to save memory)
 console.log(`🚀 Starting Railway Free Tier Backend on port ${PORT}`);
 startServer();
@@ -144,6 +147,9 @@ async function startServer() {
 
   // Trust proxy for load balancer
   app.set('trust proxy', 1);
+
+  // Activity Monitor (First middleware to capture all traffic)
+  app.use(activityMonitor);
 
   // Security middleware
   app.use(helmet({
@@ -209,6 +215,7 @@ async function startServer() {
   app.use('/api/messages', messageRoutes);
   app.use('/api/friends', friendRoutes);
   app.use('/api/admin', adminRoutes);
+  app.use('/api/settings', settingsRoutes);
 
   // Socket.IO setup with stranger chat functionality
   const io = new Server(server, {

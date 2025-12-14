@@ -185,3 +185,23 @@ model AdminNotification {
   isRead    Boolean  @default(false)
   link      String?
 }
+
+// ─── System Settings Model ─────────────────────────────────────────────
+model SystemSettings {
+  id        String   @id @default("default_settings") // Singleton ID
+  
+  // Animation Settings
+  loginAnimation  String @default("orbit")
+  signupAnimation String @default("stranger")
+  
+  // Theme Settings
+  seasonalTheme   String? // e.g., "christmas", "halloween", or null
+  isSeasonalMode  Boolean @default(false)
+  allowedThemes   String  @default("all") // "all" or comma-separated list like "light,dark,bumblebee"
+  
+  // Feature Flags can be added here
+  maintenanceMode Boolean @default(false)
+  
+  updatedAt       DateTime @updatedAt
+  updatedBy       String? // Admin ID who made the last change
+}

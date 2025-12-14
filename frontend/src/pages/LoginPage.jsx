@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
+import { useSettingsStore } from "../store/useSettingsStore";
 import AuthImagePattern from "../components/AuthImagePattern";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast"; // ✅ FIXED: Import toast
@@ -11,6 +12,8 @@ import {
 	MessageSquare,
 	User,
 } from "lucide-react";
+import SnowEffect from "../components/effects/SnowEffect";
+import ChatBackground from "../components/effects/ChatBackground";
 import "../styles/login-interaction-fix.css";
 
 const LoginPage = () => {
@@ -21,6 +24,11 @@ const LoginPage = () => {
 		password: "",
 	});
 	const { login, isLoggingIn } = useAuthStore();
+	const { settings, fetchSettings } = useSettingsStore();
+
+	useEffect(() => {
+		fetchSettings();
+	}, [fetchSettings]);
 
 	// ✅ FIXED: Add form validation
 	const validateForm = () => {
@@ -52,6 +60,11 @@ const LoginPage = () => {
 		<div className="min-h-screen grid lg:grid-cols-2">
 			{/* Left Side - Form */}
 			<div className="flex flex-col justify-center items-center p-6 sm:p-12 login-form-container relative overflow-hidden">
+				{/* ❄️ Seasonal Snow Effect */}
+				{settings?.isSeasonalMode && <SnowEffect />}
+				{/* 💬 Chat Background Animation */}
+				<ChatBackground />
+
 
 				{/* 🌟 Lightweight Background Animation */}
 				<div className="absolute inset-0 bg-base-100/50 -z-10" />
@@ -183,10 +196,11 @@ const LoginPage = () => {
 			{/* Right Side - Image/Pattern */}
 			<AuthImagePattern
 				variant="login"
-				title={"Welcome back!"}
+				title={"Welcome Back!"}
 				subtitle={
 					"Sign in to continue your conversations and catch up with your messages."
 				}
+				animationType={settings?.loginAnimation} // Pass dynamic animation
 			/>
 		</div>
 	);
