@@ -397,10 +397,13 @@ const ChatContainer = ({ onStartCall }) => {
     }
   };
 
+  import SeasonalParticles from "./effects/SeasonalParticles";
+
   if (!selectedUser) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="max-w-md text-center">
+      <div className="flex-1 flex items-center justify-center p-8 relative overflow-hidden">
+        <SeasonalParticles />
+        <div className="max-w-md text-center z-10">
           <h2 className="text-2xl font-bold">Welcome to Z-APP</h2>
           <p className="text-zinc-500 mt-2">
             Select a conversation to start messaging.

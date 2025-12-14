@@ -69,7 +69,7 @@ const SignUpPage = () => {
 	return (
 		<div className="min-h-screen grid lg:grid-cols-2">
 			{/* Left Side */}
-			<div className="flex flex-col justify-center items-center p-6 sm:p-12 login-form-container relative overflow-hidden">
+			<div className="flex flex-col justify-center items-center p-6 sm:p-8 login-form-container relative overflow-hidden">
 				{/* ❄️ Seasonal Snow Effect */}
 				{settings?.isSeasonalMode && <SnowEffect />}
 				{/* 💬 Chat Background Animation */}
@@ -81,9 +81,9 @@ const SignUpPage = () => {
 				<div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-[80px] animate-pulse-slow pointer-events-none -z-10" />
 				<div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-secondary/5 rounded-full blur-[80px] animate-pulse-slow delay-1000 pointer-events-none -z-10" />
 
-				<div className="w-full max-w-md space-y-6 relative z-10">
+				<div className="w-full max-w-md space-y-4 relative z-10">
 					{/* Logo / Heading */}
-					<div className="text-center mb-6">
+					<div className="text-center mb-2">
 						<div className="flex flex-col items-center gap-2 group">
 							<div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
 								{/* ✅ CSS Mask to make PNG take theme color */}
@@ -109,52 +109,55 @@ const SignUpPage = () => {
 					</div>
 
 					{/* Form */}
-					<form onSubmit={handleSubmit} className="space-y-4">
-						{/* Full Name */}
-						<div className="form-control">
-							<label className="label">
-								<span className="label-text font-medium">Full Name</span>
-							</label>
-							<div className="relative">
-								<div className="!absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none !z-[102]">
-									<User className="w-5 h-5 text-base-content/40" />
+					<form onSubmit={handleSubmit} className="space-y-3">
+						{/* Group: Full Name & Username */}
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+							{/* Full Name */}
+							<div className="form-control">
+								<label className="label py-1">
+									<span className="label-text font-medium">Full Name</span>
+								</label>
+								<div className="relative">
+									<div className="!absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none !z-[102]">
+										<User className="w-5 h-5 text-base-content/40" />
+									</div>
+									<input
+										type="text"
+										className="input input-bordered w-full pl-10"
+										placeholder="Full Name"
+										value={formData.fullName}
+										onChange={(e) =>
+											setFormData({ ...formData, fullName: e.target.value })
+										}
+									/>
 								</div>
-								<input
-									type="text"
-									className="input input-bordered w-full pl-10"
-									placeholder="Full Name"
-									value={formData.fullName}
-									onChange={(e) =>
-										setFormData({ ...formData, fullName: e.target.value })
-									}
-								/>
 							</div>
-						</div>
 
-						{/* Username */}
-						<div className="form-control">
-							<label className="label">
-								<span className="label-text font-medium">Username</span>
-							</label>
-							<div className="relative">
-								<div className="!absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none !z-[102]">
-									<AtSign className="w-5 h-5 text-base-content/40" />
+							{/* Username */}
+							<div className="form-control">
+								<label className="label py-1">
+									<span className="label-text font-medium">Username</span>
+								</label>
+								<div className="relative">
+									<div className="!absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none !z-[102]">
+										<AtSign className="w-5 h-5 text-base-content/40" />
+									</div>
+									<input
+										type="text"
+										className="input input-bordered w-full pl-10"
+										placeholder="username"
+										value={formData.username}
+										onChange={(e) =>
+											setFormData({ ...formData, username: e.target.value })
+										}
+									/>
 								</div>
-								<input
-									type="text"
-									className="input input-bordered w-full pl-10"
-									placeholder="your_unique_username"
-									value={formData.username}
-									onChange={(e) =>
-										setFormData({ ...formData, username: e.target.value })
-									}
-								/>
 							</div>
 						</div>
 
 						{/* Email */}
 						<div className="form-control">
-							<label className="label">
+							<label className="label py-1">
 								<span className="label-text font-medium">Email</span>
 							</label>
 							<div className="relative">
@@ -175,7 +178,7 @@ const SignUpPage = () => {
 
 						{/* Password */}
 						<div className="form-control">
-							<label className="label">
+							<label className="label py-1">
 								<span className="label-text font-medium">Password</span>
 							</label>
 							<div className="relative">
@@ -208,7 +211,7 @@ const SignUpPage = () => {
 						{/* Submit */}
 						<button
 							type="submit"
-							className="btn btn-primary w-full shadow-lg"
+							className="btn btn-primary w-full shadow-lg mt-2"
 							disabled={isSigningUp}
 						>
 							{isSigningUp ? (
@@ -234,13 +237,15 @@ const SignUpPage = () => {
 				</div>
 			</div>
 
-			{/* Right Side - Image */}
-			<AuthImagePattern
-				variant="signup"
-				title="Join our community"
-				subtitle="Connect with friends, share moments, and stay in touch with your loved ones."
-				animationType={settings?.signupAnimation}
-			/>
+			{/* Right Side - Image (Hidden on Mobile) */}
+			<div className="hidden lg:block">
+				<AuthImagePattern
+					variant="signup"
+					title="Join our community"
+					subtitle="Connect with friends, share moments, and stay in touch."
+					animationType={settings?.signupAnimation}
+				/>
+			</div>
 		</div>
 	);
 };

@@ -24,7 +24,15 @@ export const getSettings = async (req, res) => {
         res.status(200).json(settings);
     } catch (error) {
         console.error("Error fetching settings:", error.message);
-        res.status(500).json({ error: "Failed to fetch settings" });
+        // FAILSAFE: Return default settings if DB fails, so frontend doesn't break
+        res.status(200).json({
+            id: "default_settings",
+            loginAnimation: "orbit",
+            signupAnimation: "stranger",
+            isSeasonalMode: false,
+            defaultTheme: "dark",
+            allowedThemes: "all"
+        });
     }
 };
 
