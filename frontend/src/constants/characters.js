@@ -33,22 +33,22 @@ export const CHARACTERS = [
 
     { country: "Canada", name: "Noah", img: "/assets/avatars/canada_male.png", bg: "bg-red-200" },
 
-    // Middle East & Africa (Temporary placeholders using specific DiceBear seeds for cultural approximation)
-    { country: "China", name: "Wei", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Wei&backgroundColor=b6e3f4", bg: "bg-red-50" },
-    { country: "China", name: "Li", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Li&backgroundColor=ffdfbf", bg: "bg-yellow-50" },
+    // Middle East & Africa (High-quality 3D Avatars)
+    { country: "China", name: "Wei", img: "/assets/avatars/china_male.png", bg: "bg-red-50" },
+    { country: "China", name: "Li", img: "/assets/avatars/china_female.png", bg: "bg-yellow-50" },
 
-    { country: "Saudi Arabia", name: "Omar", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Omar&backgroundColor=d1d4f9&clothing=graphicShirt", bg: "bg-emerald-50" },
-    { country: "Saudi Arabia", name: "Fatima", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Fatima&backgroundColor=c0aede", bg: "bg-emerald-100" },
+    { country: "Saudi Arabia", name: "Omar", img: "/assets/avatars/saudi_male.png", bg: "bg-emerald-50" },
+    { country: "Saudi Arabia", name: "Fatima", img: "/assets/avatars/saudi_female.png", bg: "bg-emerald-100" },
 
-    { country: "UAE", name: "Hassan", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Hassan&backgroundColor=ffdfbf", bg: "bg-stone-100" },
-    { country: "UAE", name: "Amira", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Amira&backgroundColor=b6e3f4", bg: "bg-stone-50" },
+    { country: "UAE", name: "Hassan", img: "/assets/avatars/uae_male.png", bg: "bg-stone-100" },
+    { country: "UAE", name: "Amira", img: "/assets/avatars/uae_female.png", bg: "bg-stone-50" },
 
-    { country: "Qatar", name: "Ahmed", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmed&backgroundColor=d1d4f9", bg: "bg-purple-50" },
-    { country: "Qatar", name: "Noor", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Noor&backgroundColor=c0aede", bg: "bg-purple-100" },
+    { country: "Qatar", name: "Ahmed", img: "/assets/avatars/qatar_male.png", bg: "bg-purple-50" },
+    { country: "Qatar", name: "Noor", img: "/assets/avatars/qatar_female.png", bg: "bg-purple-100" },
 
-    { country: "Egypt", name: "Youssef", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Youssef&backgroundColor=ffdfbf", bg: "bg-orange-50" },
-    { country: "Egypt", name: "Layla", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Layla&backgroundColor=b6e3f4", bg: "bg-amber-100" },
+    { country: "Egypt", name: "Youssef", img: "/assets/avatars/egypt_male.png", bg: "bg-orange-50" },
+    { country: "Egypt", name: "Layla", img: "/assets/avatars/egypt_female.png", bg: "bg-amber-100" },
 
-    { country: "South Africa", name: "Thabo", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Thabo&backgroundColor=d1d4f9", bg: "bg-yellow-200" },
-    { country: "South Africa", name: "Zola", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zola&backgroundColor=c0aede", bg: "bg-green-200" },
+    { country: "South Africa", name: "Thabo", img: "/assets/avatars/safrica_male.png", bg: "bg-yellow-200" },
+    { country: "South Africa", name: "Zola", img: "/assets/avatars/safrica_female.png", bg: "bg-green-200" },
 ];

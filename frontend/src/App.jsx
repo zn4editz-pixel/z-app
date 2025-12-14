@@ -51,11 +51,17 @@ const App = () => {
 	}, [fetchSettings]);
 
 	// ✅ Determine effective theme (Seasonal > Local > Global Default)
+	// ✅ Determine effective theme (Seasonal > Local > Global Default)
 	const effectiveTheme = settings?.isSeasonalMode && settings?.seasonalTheme
 		? settings.seasonalTheme
 		: theme !== "dark" && theme !== "light" && localStorage.getItem("chat-theme") // Use specific user choice if it exists
 			? theme
 			: settings?.defaultTheme || theme; // Fallback to global default or store default
+
+	// ✅ Sync theme to HTML tag (Critical for background color on mobile overscroll)
+	useEffect(() => {
+		document.documentElement.setAttribute("data-theme", effectiveTheme);
+	}, [effectiveTheme]);
 
 
 	const forceLogout = useCallback(

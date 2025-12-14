@@ -6,7 +6,6 @@ import {
 	Loader2,
 	Lock,
 	Mail,
-	MessageSquare,
 	User,
 	AtSign,
 } from "lucide-react";
@@ -34,6 +33,21 @@ const SignUpPage = () => {
 	useEffect(() => {
 		fetchSettings();
 	}, [fetchSettings]);
+
+	// 🔒 Disable scrolling strictly on this page
+	useEffect(() => {
+		// Prevent scrolling on mount
+		document.body.style.overflow = "hidden";
+		document.documentElement.style.overflow = "hidden";
+		document.body.style.touchAction = "none"; // Disable touch scrolling
+
+		return () => {
+			// Re-enable on unmount
+			document.body.style.overflow = "auto";
+			document.documentElement.style.overflow = "auto";
+			document.body.style.touchAction = "auto";
+		};
+	}, []);
 
 	const validateForm = () => {
 		if (!formData.fullName.trim()) return toast.error("Full name is required");
@@ -67,23 +81,39 @@ const SignUpPage = () => {
 	};
 
 	return (
-		<div className="min-h-screen bg-base-200 grid lg:grid-cols-2">
+		<div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-base-200 grid lg:grid-cols-2 touch-none overscroll-none">
 			{/* Left Side */}
-			<div className="flex flex-col justify-center items-center p-6 sm:p-8 login-form-container relative overflow-hidden">
+			<div className="flex flex-col justify-center items-center p-6 sm:p-8 login-form-container relative overflow-hidden glass-panel shine-effect rounded-2xl m-4 h-full">
+
+				{/* 💫 Text-Colored Particles Background */}
+				<div className="absolute inset-0 overflow-hidden -z-20 pointer-events-none">
+					{[...Array(30)].map((_, i) => (
+						<div
+							key={i}
+							className={`absolute rounded-full animate-float ${Math.random() > 0.5 ? "bg-base-content/20" : "bg-primary/20"
+								}`}
+							style={{
+								top: `${Math.random() * 100}%`,
+								left: `${Math.random() * 100}%`,
+								width: `${Math.random() * 4 + 2}px`,
+								height: `${Math.random() * 4 + 2}px`,
+								animationDuration: `${Math.random() * 10 + 10}s`,
+								animationDelay: `${Math.random() * 5}s`,
+							}}
+						/>
+					))}
+				</div>
+
 				{/* ❄️ Seasonal Snow Effect */}
 				{settings?.isSeasonalMode && <SnowEffect />}
+
 				{/* 💬 Chat Background Animation */}
 				<ChatBackground />
 
-				{/* 🌟 Lightweight Background Animation */}
-				<div className="absolute inset-0 bg-base-100/50 -z-10" />
-				<div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] opacity-40 animate-pan-slow pointer-events-none -z-10" />
-				<div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-[80px] animate-pulse-slow pointer-events-none -z-10" />
-				<div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-secondary/5 rounded-full blur-[80px] animate-pulse-slow delay-1000 pointer-events-none -z-10" />
-
-				<div className="w-full max-w-md space-y-4 relative z-10">
+				{/* 🌟 Content Container (No Glassmorphism, just Scale Logic) */}
+				<div className="w-full max-w-md space-y-6 relative z-10 transform scale-90 sm:scale-100 origin-center">
 					{/* Logo / Heading */}
-					<div className="text-center mb-2">
+					<div className="text-center mb-6">
 						<div className="flex flex-col items-center gap-2 group">
 							<div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
 								{/* ✅ CSS Mask to make PNG take theme color */}
@@ -109,9 +139,9 @@ const SignUpPage = () => {
 					</div>
 
 					{/* Form */}
-					<form onSubmit={handleSubmit} className="space-y-3">
+					<form onSubmit={handleSubmit} className="space-y-2">
 						{/* Group: Full Name & Username */}
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 							{/* Full Name */}
 							<div className="form-control">
 								<label className="label py-1">
@@ -243,7 +273,7 @@ const SignUpPage = () => {
 					variant="signup"
 					title="Join our community"
 					subtitle="Connect with friends, share moments, and stay in touch."
-					animationType={settings?.signupAnimation}
+					animationType={settings?.signupAnimation} // Pass dynamic animation
 				/>
 			</div>
 		</div>

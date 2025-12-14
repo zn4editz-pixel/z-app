@@ -57,9 +57,9 @@ const LoginPage = () => {
 	};
 
 	return (
-		<div className="min-h-screen bg-base-200 grid lg:grid-cols-2">
+		<div className="min-h-[100dvh] bg-base-200 grid lg:grid-cols-2">
 			{/* Left Side - Form */}
-			<div className="flex flex-col justify-center items-center p-6 sm:p-12 login-form-container relative overflow-hidden">
+			<div className="flex flex-col justify-center items-center p-6 sm:p-12 login-form-container relative overflow-hidden glass-panel shine-effect rounded-2xl m-4">
 				{/* ❄️ Seasonal Snow Effect */}
 				{settings?.isSeasonalMode && <SnowEffect />}
 				{/* 💬 Chat Background Animation */}

@@ -81,30 +81,7 @@ const LiveMatchAnimation = () => {
     return (
         <div className="w-full h-full bg-base-200 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
 
-            <style jsx>{`
-                @keyframes float-particle {
-                    0% { transform: translateY(0) translateX(0); opacity: 0; }
-                    20% { opacity: 0.5; }
-                    100% { transform: translateY(-120vh) translateX(${Math.random() * 50 - 25}px); opacity: 0; }
-                }
-                .animate-float-particle {
-                    animation-name: float-particle;
-                    animation-timing-function: linear;
-                    animation-fill-mode: forwards;
-                    animation-iteration-count: infinite;
-                }
-                .text-rolling-container {
-                     height: 50px; /* Fixed pixel height */
-                     overflow: hidden;
-                     position: relative;
-                     display: inline-block;
-                     /* vertical-align: bottom; Removed to avoid baseline issues */
-                }
-                .text-rolling-wrapper {
-                     display: block;
-                     transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-                }
-            `}</style>
+
 
             {/* Background Texture & Particles */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
@@ -201,9 +178,9 @@ const LiveMatchAnimation = () => {
 
             {/* Rolling Captions - Slot Machine Style */}
             <div className="mt-16 h-16 relative w-full flex justify-center items-center overflow-visible z-20">
-                <div className="text-rolling-container h-[50px]">
+                <div className="text-rolling-container h-[50px] overflow-hidden relative">
                     <div
-                        className="text-rolling-wrapper"
+                        className="text-rolling-wrapper transition-transform duration-500 ease-in-out"
                         style={{ transform: `translateY(-${captionIndex * 50}px)` }} // Exact 50px steps
                     >
                         {CAPTIONS.map((caption, i) => (
