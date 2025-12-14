@@ -141,21 +141,21 @@
         font-size: 14px;
       }
     }
-  </style>
-</head>
 
-<body>
-  <!-- ✅ PERFORMANCE: Apply theme before page loads (inline, minimal) -->
-  <script>
-    // Minimal inline script - apply theme immediately
-    try { const t = localStorage.getItem('chat-theme') || 'dark'; document.documentElement.setAttribute('data-theme', t) } catch (e) { }
-  </script>
+    <script> // Minimal inline script - apply theme immediately to prevent flash
 
-  <!-- App Root -->
-  <div id="root"></div>
+    try {
+      const t=localStorage.getItem('chat-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
 
-  <!-- ✅ PERFORMANCE: Main Script with async loading -->
-  <script type="module" src="/src/main.jsx" defer></script>
-</body>
+      // Fallback for very first load or if script is slow
+      if (t==='light' || t==='cupcake' || t==='bumblebee' || t==='emerald' || t==='corporate' || t==='synthwave') {
+        // It's a light theme, change background to avoid black flash
+        document.documentElement.style.setProperty('background-color', '#f3f4f6');
+        document.body.style.setProperty('background-color', '#f3f4f6');
+      }
+    }
 
-</html>
+    catch (e) {}
+
+    </script></head><body>< !-- App Root --><div id="root"></div>< !-- ✅ PERFORMANCE: Main Script with async loading --><script type="module" src="/src/main.jsx" defer></script></body></html>
