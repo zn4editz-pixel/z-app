@@ -1,14 +1,17 @@
 import OrbitAnimation from "./animations/OrbitAnimation";
 import StrangerAnimation from "./animations/StrangerAnimation";
 import LiveMatchAnimation from "./animations/LiveMatchAnimation";
+import { useImagePreloader } from "../hooks/useImagePreloader";
 
 const AuthImagePattern = ({ title, subtitle, variant = "signup", animationType }) => {
+  // Preload heavy assets
+  useImagePreloader();
+
   // If specific animation type is passed, prioritize it.
   // Otherwise, fallback to defaults: 'orbit' for login, 'stranger' for signup.
 
   const currentAnimation = animationType || (variant === "login" ? "orbit" : "stranger");
 
-  // Render the selected animation
   switch (currentAnimation) {
     case "orbit":
       return <OrbitAnimation title={title} subtitle={subtitle} />;
