@@ -1,4 +1,4 @@
-/* Import Animations */
+/* Theme System - Force Refresh */
 @import './styles/animations.css';
 
 @tailwind base;
@@ -122,25 +122,6 @@ body {
 }
 
 /* 
-  CRITICAL: Force Text Color in Light Theme 
-  This ensures all text is dark/visible on the white background,
-  overriding any potential default DaisyUI light theme inconsistencies.
+  Removed hardcoded text color overrides to fixes consistency issues.
+  Text color should be handled by the DaisyUI theme variables (base-content).
 */
-[data-theme='light'] body,
-[data-theme='light'] h1,
-[data-theme='light'] h2,
-[data-theme='light'] h3,
-[data-theme='light'] h4,
-[data-theme='light'] h5,
-[data-theme='light'] h6,
-[data-theme='light'] p,
-[data-theme='light'] span,
-[data-theme='light'] div {
-  color: #0f172a;
-  /* Dark Slate to ensure visibility */
-}
-
-/* Explicitly force elements using base-content to be dark in light theme */
-[data-theme='light'] .text-base-content {
-  color: #0f172a !important;
-}

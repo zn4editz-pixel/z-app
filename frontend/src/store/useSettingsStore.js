@@ -8,6 +8,7 @@ export const useSettingsStore = create((set, get) => ({
         signupAnimation: "stranger",
         seasonalTheme: null,
         isSeasonalMode: false,
+        defaultTheme: "dark",
     },
     isLoading: false,
 

@@ -50,10 +50,12 @@ const App = () => {
 		fetchSettings();
 	}, [fetchSettings]);
 
-	// ✅ Determine effective theme (Seasonal override)
+	// ✅ Determine effective theme (Seasonal > Local > Global Default)
 	const effectiveTheme = settings?.isSeasonalMode && settings?.seasonalTheme
 		? settings.seasonalTheme
-		: theme;
+		: theme !== "dark" && theme !== "light" && localStorage.getItem("chat-theme") // Use specific user choice if it exists
+			? theme
+			: settings?.defaultTheme || theme; // Fallback to global default or store default
 
 
 	const forceLogout = useCallback(

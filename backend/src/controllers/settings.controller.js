@@ -16,6 +16,7 @@ export const getSettings = async (req, res) => {
                     loginAnimation: "orbit",
                     signupAnimation: "stranger",
                     isSeasonalMode: false,
+                    defaultTheme: "dark", // Default value
                 },
             });
         }
@@ -30,7 +31,7 @@ export const getSettings = async (req, res) => {
 // Update settings (Admin only)
 export const updateSettings = async (req, res) => {
     try {
-        const { loginAnimation, signupAnimation, seasonalTheme, isSeasonalMode } = req.body;
+        const { loginAnimation, signupAnimation, seasonalTheme, isSeasonalMode, defaultTheme, allowedThemes } = req.body;
 
         const settings = await prisma.systemSettings.upsert({
             where: { id: "default_settings" },
@@ -39,6 +40,8 @@ export const updateSettings = async (req, res) => {
                 signupAnimation,
                 seasonalTheme,
                 isSeasonalMode,
+                defaultTheme,
+                allowedThemes,
                 updatedBy: req.user.id,
             },
             create: {
@@ -47,6 +50,8 @@ export const updateSettings = async (req, res) => {
                 signupAnimation,
                 seasonalTheme,
                 isSeasonalMode,
+                defaultTheme,
+                allowedThemes,
                 updatedBy: req.user.id,
             },
         });

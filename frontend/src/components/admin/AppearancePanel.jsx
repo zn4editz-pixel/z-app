@@ -164,6 +164,38 @@ const AppearancePanel = () => {
             <div className="bg-base-100 p-6 rounded-2xl shadow-lg border border-base-300">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
+                        <Monitor className="w-5 h-5 text-blue-500" />
+                        <div>
+                            <h3 className="text-lg font-bold">Global Default Theme</h3>
+                            <p className="text-sm text-base-content/60">This theme will be used for new visitors and incognito windows.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                    <select
+                        className="select select-bordered w-full max-w-xs"
+                        value={localSettings?.defaultTheme || "dark"}
+                        onChange={(e) => handleSelect("defaultTheme", e.target.value)}
+                    >
+                        <option disabled>Select a default theme</option>
+                        {THEMES.map((theme) => (
+                            <option key={theme} value={theme}>
+                                {theme.charAt(0).toUpperCase() + theme.slice(1)}
+                            </option>
+                        ))}
+                    </select>
+
+                    <div className="alert alert-info text-sm">
+                        <Monitor className="w-4 h-4" />
+                        <span>Selected theme will be the fallback for anyone who hasn't chosen a theme yet.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-base-100 p-6 rounded-2xl shadow-lg border border-base-300">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
                         <Sparkles className="w-5 h-5 text-purple-500" />
                         <div>
                             <h3 className="text-lg font-bold">Theme Availability</h3>
