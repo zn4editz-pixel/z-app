@@ -72,39 +72,8 @@ const App = () => {
 	const fetchFriendData = useFriendStore((state) => state.fetchFriendData);
 	const navigate = useNavigate();
 	// 🔄 REFRESH REDIRECT: Redirect to home on page refresh
-	useEffect(() => {
-		const handleBeforeUnload = () => {
-			sessionStorage.setItem('z_refresh_flag', 'true');
-		};
-
-		const handleLoad = () => {
-			if (sessionStorage.getItem('z_refresh_flag') === 'true') {
-				// We don't remove it here immediately because HomePage might need it
-				// But we do want to ensure we redirect if needed
-				console.log('🔄 Session refresh detected in App.jsx');
-
-				// Cleanup the flag slightly later to ensure children read it
-				setTimeout(() => {
-					sessionStorage.removeItem('z_refresh_flag');
-				}, 1000);
-
-				// FORCE REDIRECT if needed
-				const isNotRoot = location.pathname !== '/';
-				const hasQueryParams = location.search && location.search.length > 0;
-
-				if (authUser && (isNotRoot || hasQueryParams) && location.pathname !== '/login' && location.pathname !== '/signup') {
-					navigate('/', { replace: true });
-				}
-			}
-		};
-
-		window.addEventListener('beforeunload', handleBeforeUnload);
-		handleLoad(); // Check on component mount
-
-		return () => {
-			window.removeEventListener('beforeunload', handleBeforeUnload);
-		};
-	}, [authUser, location.pathname, navigate]);
+	// 🔄 REFRESH REDIRECT: Logic removed to allow staying on current page
+	// useEffect(() => { ... }, []);
 
 
 	const forceLogout = useCallback(

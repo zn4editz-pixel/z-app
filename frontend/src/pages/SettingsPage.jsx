@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
 import { useAuthStore } from "../store/useAuthStore";
-import { Send, Lock, LogOut, Video, Mic, Shield, Check, X, User, Edit2, Save } from "lucide-react";
+import { Send, Lock, LogOut, Video, Mic, Shield, Check, X, User, Edit2, Save, Camera, Loader2 } from "lucide-react";
+import ImageCropper from "../components/ImageCropper";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
 
@@ -12,7 +13,12 @@ const SettingsPage = () => {
   const { logout, authUser, updateProfile } = useAuthStore();
   const [cameraStatus, setCameraStatus] = useState('not-tested');
   const [micStatus, setMicStatus] = useState('not-tested');
-  
+
+  // Image cropper state
+  const [showCropper, setShowCropper] = useState(false);
+  const [tempImage, setTempImage] = useState(null);
+  const [selectedImg, setSelectedImg] = useState(null);
+
   // Profile editing states
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -34,13 +40,12 @@ const SettingsPage = () => {
     }
   }, [authUser]);
 
-  // Check username availability
   const checkUsername = async (username) => {
     if (username === authUser?.username) {
       setUsernameAvailable(true);
       return;
     }
-    
+
     if (username.length < 3) {
       setUsernameAvailable(false);
       return;
@@ -55,6 +60,50 @@ const SettingsPage = () => {
     } finally {
       setCheckingUsername(false);
     }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+
+    reader.onload = () => {
+      setTempImage(reader.result);
+      setShowCropper(true);
+    };
+  };
+
+  const handleCropComplete = async (croppedImage) => {
+    setSelectedImg(croppedImage);
+    setShowCropper(false);
+    setTempImage(null);
+
+    // Auto-save the image or wait for "Save Changes"? 
+    // ProfilePage did it immediately. Let's do it immediately for better UX
+    try {
+      setSavingProfile(true);
+      const updatedUser = await updateProfile({ profilePic: croppedImage });
+      setSelectedImg(updatedUser.profilePic);
+      toast.success("Profile picture updated!");
+
+      // Reload page to clear cached images everywhere
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
+    } catch (error) {
+      console.error('Error updating profile pic:', error);
+      toast.error("Failed to update profile picture");
+      setSelectedImg(authUser?.profilePic);
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setTempImage(null);
   };
 
   // Handle profile save
@@ -131,6 +180,14 @@ const SettingsPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
+      {/* Image Cropper Modal */}
+      {showCropper && tempImage && (
+        <ImageCropper
+          image={tempImage}
+          onCrop={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
       <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pt-20 sm:pt-24 md:pt-36 lg:pt-40 pb-20 sm:pb-24 md:pb-16 max-w-5xl">
         {/* Page Header */}
         <div className="mb-4 sm:mb-6 md:mb-8">
@@ -140,7 +197,7 @@ const SettingsPage = () => {
 
         {/* Settings Grid */}
         <div className="space-y-4 sm:space-y-5 md:space-y-6">
-          
+
           {/* Profile Section */}
           <div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-5 md:p-6 border border-base-300">
             <div className="flex items-center justify-between gap-3 mb-4 sm:mb-5">
@@ -168,14 +225,39 @@ const SettingsPage = () => {
             <div className="space-y-4">
               {/* Profile Picture */}
               <div className="flex items-center gap-4">
-                <img
-                  src={authUser?.profilePic || "https://api.dicebear.com/7.x/avataaars/svg?seed=default"}
-                  alt="Profile"
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-base-300"
-                />
+                <div className="relative">
+                  <img
+                    src={selectedImg || authUser?.profilePic || "https://api.dicebear.com/7.x/avataaars/svg?seed=default"}
+                    alt="Profile"
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-base-300"
+                  />
+                  {isEditingProfile && (
+                    <label
+                      htmlFor="avatar-upload-settings"
+                      className={`
+                          absolute bottom-0 right-0 
+                          bg-primary hover:scale-105
+                          p-1.5 rounded-full cursor-pointer 
+                          transition-all duration-200 shadow-lg
+                        `}
+                    >
+                      <Camera className="w-3 h-3 sm:w-4 sm:h-4 text-primary-content" />
+                      <input
+                        type="file"
+                        id="avatar-upload-settings"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={savingProfile}
+                      />
+                    </label>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-base-content/70">Profile Picture</p>
-                  <p className="text-xs text-base-content/50">Update in profile settings</p>
+                  <p className="text-xs text-base-content/50">
+                    {isEditingProfile ? "Click the camera icon to update" : "Visible to everyone"}
+                  </p>
                 </div>
               </div>
 
@@ -297,7 +379,7 @@ const SettingsPage = () => {
               )}
             </div>
           </div>
-          
+
           {/* Theme Section */}
           <div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-5 md:p-6 border border-base-300">
             <div className="flex items-center gap-3 mb-4 sm:mb-5">
@@ -309,7 +391,7 @@ const SettingsPage = () => {
                 <p className="text-xs sm:text-sm text-base-content/60">Choose your style</p>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-3 md:gap-4 max-h-[400px] sm:max-h-[420px] md:max-h-[450px] overflow-y-auto custom-scrollbar pr-2">
               {THEMES.map((t) => (
                 <button
@@ -347,7 +429,7 @@ const SettingsPage = () => {
                 <p className="text-[10px] xs:text-[11px] sm:text-xs text-base-content/60 truncate">See how your theme looks</p>
               </div>
             </div>
-            
+
             {/* Chat Preview Container */}
             <div className="w-full max-w-2xl mx-auto">
               <div className="bg-base-100 rounded-lg sm:rounded-xl shadow-xl border border-base-300 overflow-hidden">
@@ -438,7 +520,7 @@ const SettingsPage = () => {
                 <p className="text-xs sm:text-sm text-base-content/60">Manage app access</p>
               </div>
             </div>
-            
+
             <div className="space-y-3">
               {/* Camera Permission */}
               <div className="flex items-center justify-between gap-3 p-3 sm:p-4 bg-base-200 rounded-lg hover:bg-base-300 transition-colors">
@@ -530,7 +612,7 @@ const SettingsPage = () => {
           </div>
 
           {/* Password Section */}
-          <Link 
+          <Link
             to="/change-password"
             className="block bg-base-100 rounded-xl shadow-lg p-4 sm:p-5 md:p-6 border border-base-300 hover:border-primary hover:shadow-xl transition-all duration-200 group"
           >
@@ -544,10 +626,10 @@ const SettingsPage = () => {
                   <p className="text-xs sm:text-sm text-base-content/60">Update your account password</p>
                 </div>
               </div>
-              <svg 
-                className="w-5 h-5 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0" 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className="w-5 h-5 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -566,11 +648,11 @@ const SettingsPage = () => {
                 <p className="text-xs sm:text-sm text-base-content/60">Sign out of your account</p>
               </div>
             </div>
-            
+
             <p className="text-sm text-base-content/70 mb-4">
               You will be signed out from this device. You can always sign back in with your credentials.
             </p>
-            
+
             <button
               onClick={handleLogout}
               className="btn btn-error btn-md w-full gap-2 shadow-md hover:shadow-lg transition-all"
@@ -579,7 +661,7 @@ const SettingsPage = () => {
               <span>Logout from Account</span>
             </button>
           </div>
-          
+
         </div>
       </div>
     </div>

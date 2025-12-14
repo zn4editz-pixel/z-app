@@ -44,9 +44,8 @@ const Navbar = () => {
 						{authUser && (
 							<Link
 								to="/discover"
-								className={`btn btn-sm btn-circle relative w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch ${
-									isActive('/discover') ? 'btn-active' : 'btn-ghost'
-								}`}
+								className={`btn btn-sm btn-circle relative w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch ${isActive('/discover') ? 'btn-active' : 'btn-ghost'
+									}`}
 								title="Discover & Social Hub"
 								aria-label={`Discover and Social Hub${totalUpdates > 0 ? ` (${totalUpdates} updates)` : ''}`}
 							>
@@ -63,9 +62,8 @@ const Navbar = () => {
 						{isAdmin && (
 							<Link
 								to="/admin"
-								className={`btn btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch ${
-									isActive('/admin') ? 'btn-active' : 'btn-ghost'
-								}`}
+								className={`btn btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch ${isActive('/admin') ? 'btn-active' : 'btn-ghost'
+									}`}
 								title="Admin Dashboard"
 								aria-label="Admin Dashboard"
 							>
@@ -73,31 +71,29 @@ const Navbar = () => {
 							</Link>
 						)}
 
-						{/* Settings */}
-						<Link
-							to="/settings"
-							className={`btn btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch ${
-								isActive('/settings') ? 'btn-active' : 'btn-ghost'
-							}`}
-							title="Settings"
-							aria-label="Settings"
-						>
-							<Settings className="w-[18px] h-[18px] sm:w-5 sm:h-5" />
-						</Link>
-
 						{/* Profile */}
 						{authUser && (
 							<Link
 								to="/profile"
-								className={`btn btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch ${
-									isActive('/profile') ? 'btn-active' : 'btn-ghost'
-								}`}
+								className={`btn btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch ${isActive('/profile') ? 'btn-active' : 'btn-ghost'
+									}`}
 								title="Profile"
 								aria-label="Profile"
 							>
 								<User className="w-[18px] h-[18px] sm:w-5 sm:h-5" />
 							</Link>
 						)}
+
+						{/* Settings */}
+						<Link
+							to="/settings"
+							className={`btn btn-sm btn-circle w-9 h-9 min-h-0 sm:w-11 sm:h-11 btn-touch ${isActive('/settings') ? 'btn-active' : 'btn-ghost'
+								}`}
+							title="Settings"
+							aria-label="Settings"
+						>
+							<Settings className="w-[18px] h-[18px] sm:w-5 sm:h-5" />
+						</Link>
 					</div>
 				</div>
 			</div>
