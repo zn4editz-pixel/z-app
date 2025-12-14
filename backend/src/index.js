@@ -17,7 +17,7 @@ async function initializeDatabase() {
       try {
         const dbModule = await import('./lib/db.production.js');
         prisma = dbModule.prisma;
-        
+
         // Test connection without crashing
         try {
           await prisma.$connect();
@@ -31,11 +31,11 @@ async function initializeDatabase() {
         console.log('⚠️ Production database module failed, using simple fallback...');
       }
     }
-    
+
     // Fallback to simple database
     const dbModule = await import('./lib/db.simple.js');
     prisma = dbModule.prisma;
-    
+
     try {
       await prisma.$connect();
       console.log('✅ Simple database connected');
@@ -45,7 +45,7 @@ async function initializeDatabase() {
       prisma = createMockPrisma();
       console.log('⚠️ Using mock database - limited functionality');
     }
-    
+
   } catch (error) {
     console.log('⚠️ All database options failed, using mock database');
     prisma = createMockPrisma();
@@ -55,8 +55,8 @@ async function initializeDatabase() {
 // Mock Prisma for graceful degradation
 function createMockPrisma() {
   return {
-    $connect: async () => {},
-    $disconnect: async () => {},
+    $connect: async () => { },
+    $disconnect: async () => { },
     user: {
       findUnique: async () => null,
       findMany: async () => [],
@@ -177,15 +177,15 @@ async function startServer() {
 
   // CORS configuration - Fixed for message sending
   app.use(cors({
-    origin: ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
-    credentials: false, // Changed to false to fix CORS issues
+    origin: ["https://z-app-official.vercel.app", "http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", process.env.FRONTEND_URL].filter(Boolean),
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     optionsSuccessStatus: 200
   }));
 
   // Body parsing middleware
-  app.use(express.json({ 
+  app.use(express.json({
     limit: '10mb',
     verify: (req, res, buf) => {
       req.rawBody = buf;
@@ -231,7 +231,7 @@ async function startServer() {
 
   // 404 handler
   app.use('*', (req, res) => {
-    res.status(404).json({ 
+    res.status(404).json({
       error: 'Route not found',
       path: req.originalUrl,
       method: req.method,
@@ -241,19 +241,19 @@ async function startServer() {
   // Graceful shutdown handling
   const gracefulShutdown = async (signal) => {
     console.log(`🔄 Server received ${signal}, shutting down gracefully...`);
-    
+
     server.close(async () => {
       console.log('🔌 HTTP server closed');
-      
+
       try {
         io.close();
         console.log('🔌 Socket.IO server closed');
-        
+
         if (prisma) {
           await prisma.$disconnect();
           console.log('🗄️ Database connection closed');
         }
-        
+
         process.exit(0);
       } catch (error) {
         console.error('❌ Error during shutdown:', error);
