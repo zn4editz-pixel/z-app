@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { User, Zap, Sparkles } from "lucide-react";
+import { User, Zap, Sparkles, Video, Mic, MessageCircle, Heart } from "lucide-react";
+import { CHARACTERS } from "../../constants/characters";
 
 // Rotating Captions
 const CAPTIONS = [
@@ -10,43 +11,55 @@ const CAPTIONS = [
     { text: "Connect Across Borders.", color: "text-info" },
 ];
 
-// Diverse "3D-style" Characters
-// Using local assets for high-quality Pixar-style look
-import { CHARACTERS } from "../../constants/characters";
-
 const LiveMatchAnimation = () => {
-    const [step, setStep] = useState(0); // 0: Floating, 1: Snapping, 2: Merged
+    const [step, setStep] = useState(0); // 0: Floating, 1: Snapping, 2: Video, 3: Chat
     const [captionIndex, setCaptionIndex] = useState(0);
     const [charIndexA, setCharIndexA] = useState(0);
     const [charIndexB, setCharIndexB] = useState(1);
+    const [messages, setMessages] = useState([]);
 
     // Main Animation Cycle
     useEffect(() => {
+        let isMounted = true;
         const cycle = async () => {
-            while (true) {
+            while (isMounted) {
                 // Pick two DIFFERENT random characters for next round
                 const idxA = Math.floor(Math.random() * CHARACTERS.length);
                 let idxB = Math.floor(Math.random() * CHARACTERS.length);
                 while (idxB === idxA) idxB = Math.floor(Math.random() * CHARACTERS.length);
 
+                if (!isMounted) break;
                 setCharIndexA(idxA);
                 setCharIndexB(idxB);
+                setMessages([]); // Clear chat
 
-                // Step 0: Floating independently (2.5s)
+                // Step 0: Floating independently (2s)
                 setStep(0);
-                await new Promise(r => setTimeout(r, 2500));
+                await new Promise(r => setTimeout(r, 2000));
 
                 // Step 1: Snap together (Zap effect) (0.6s)
+                if (!isMounted) break;
                 setStep(1);
                 await new Promise(r => setTimeout(r, 600));
 
-                // Step 2: Merged / Video Call (4s)
+                // Step 2: Video Call / Merged (3s)
+                if (!isMounted) break;
                 setStep(2);
-                await new Promise(r => setTimeout(r, 4000));
+                await new Promise(r => setTimeout(r, 3000));
+
+                // Step 3: Chat Interaction (3.5s)
+                if (!isMounted) break;
+                setStep(3);
+
+                // Add fake messages sequentially
+                setTimeout(() => setMessages(p => [...p, { text: "Wow, cool background! 🏔️", align: "left" }]), 500);
+                setTimeout(() => setMessages(p => [...p, { text: "Thanks! Just visiting.", align: "right" }]), 2000);
+
+                await new Promise(r => setTimeout(r, 3500));
             }
         };
         cycle();
-        return () => { };
+        return () => { isMounted = false; };
     }, []);
 
     // Caption Cycle
@@ -81,8 +94,6 @@ const LiveMatchAnimation = () => {
     return (
         <div className="w-full h-full bg-base-200 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
 
-
-
             {/* Background Texture & Particles */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
@@ -102,20 +113,28 @@ const LiveMatchAnimation = () => {
                         absolute w-32 h-48 bg-base-200 rounded-2xl shadow-2xl border border-white/10 overflow-hidden flex flex-col transition-all duration-700 cubic-bezier(0.34, 1.56, 0.64, 1)
                         ${step === 0 ? "-translate-x-20 -rotate-6 scale-90 opacity-100 shadow-xl" : ""}
                         ${step === 1 ? "translate-x-0 rotate-0 scale-100 z-10 shadow-[0_0_30px_rgba(255,255,255,0.2)]" : ""}
-                        ${step === 2 ? "translate-x-0 w-[50%] h-56 rounded-r-none border-r-0 scale-100 z-10 left-1/2 -ml-[50%]" : ""}
+                        ${step >= 2 ? "translate-x-0 w-[50%] h-56 rounded-r-none border-r-0 scale-100 z-10 left-1/2 -ml-[50%]" : ""}
                     `}
                 >
                     <div className={`flex-1 ${charA.bg} flex items-center justify-center relative backdrop-blur-sm transition-colors duration-500`}>
-                        {/* Character A Avatar - Always visible or revealed? Let's make it visible to show "You" are A */}
                         <div
                             className="absolute inset-0 bg-cover bg-center transition-opacity duration-500 opacity-100"
                             style={{ backgroundImage: `url(${charA.img})` }}
                         />
+                        {/* Fake UI Overlay for Video Call */}
+                        {step >= 2 && (
+                            <div className="absolute top-2 left-2 flex gap-1 animate-fade-in-up">
+                                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                                <span className="text-[8px] text-white font-bold tracking-wider">LIVE</span>
+                            </div>
+                        )}
 
-                        {/* Name/Country Badge (Always visible for A?) */}
-                        <div className="absolute bottom-2 left-2 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded text-[10px] text-white font-medium">
-                            {charA.name} <span className="opacity-70">({charA.country})</span>
-                        </div>
+                        {/* Name Badge */}
+                        {step < 2 && (
+                            <div className="absolute bottom-2 left-2 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded text-[10px] text-white font-medium">
+                                {charA.name}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -125,11 +144,11 @@ const LiveMatchAnimation = () => {
                         absolute w-32 h-48 bg-base-200 rounded-2xl shadow-2xl border border-white/10 overflow-hidden flex flex-col transition-all duration-700 cubic-bezier(0.34, 1.56, 0.64, 1)
                         ${step === 0 ? "translate-x-20 rotate-6 scale-90 opacity-100 shadow-xl" : ""}
                         ${step === 1 ? "translate-x-0 rotate-0 scale-100 z-10 shadow-[0_0_30px_rgba(255,255,255,0.2)]" : ""}
-                        ${step === 2 ? "translate-x-0 w-[50%] h-56 rounded-l-none border-l-2 border-l-white/20 scale-100 z-10 left-1/2" : ""}
+                        ${step >= 2 ? "translate-x-0 w-[50%] h-56 rounded-l-none border-l-2 border-l-white/20 scale-100 z-10 left-1/2" : ""}
                     `}
                 >
                     <div className={`flex-1 ${charB.bg} flex items-center justify-center relative transition-colors duration-500`}>
-                        {step !== 2 && (
+                        {step < 2 && (
                             <>
                                 <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-success animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.6)]" />
                                 <span className="text-5xl font-bold text-base-content/10 select-none">?</span>
@@ -138,14 +157,19 @@ const LiveMatchAnimation = () => {
 
                         {/* Revealed Character B */}
                         <div
-                            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-500 ${step === 2 ? "opacity-100" : "opacity-0"}`}
+                            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-500 ${step >= 2 ? "opacity-100" : "opacity-0"}`}
                             style={{ backgroundImage: `url(${charB.img})` }}
                         />
 
-                        {/* Country Badge (Step 2) */}
-                        {step === 2 && (
-                            <div className="absolute bottom-2 left-2 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded text-[10px] text-white font-medium animate-fade-in-up">
-                                {charB.name}, {charB.country}
+                        {/* Call Controls Overlay (Step 2+) */}
+                        {step >= 2 && (
+                            <div className="absolute bottom-2 right-2 flex gap-1 animate-fade-in-up">
+                                <div className="w-5 h-5 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                                    <Mic className="w-3 h-3 text-white" />
+                                </div>
+                                <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-lg">
+                                    <Video className="w-3 h-3 text-white fill-current" />
+                                </div>
                             </div>
                         )}
                     </div>
@@ -164,7 +188,26 @@ const LiveMatchAnimation = () => {
                     </div>
                 </div>
 
-                {/* Sparkles (Step 2) */}
+                {/* Step 3: Overlay Chat Bubbles */}
+                {step === 3 && (
+                    <div className="absolute inset-0 z-50 flex flex-col justify-center items-center pointer-events-none p-4">
+                        {messages.map((msg, idx) => (
+                            <div
+                                key={idx}
+                                className={`flex w-full mb-2 animate-bounce-in ${msg.align === 'left' ? 'justify-start' : 'justify-end'}`}
+                            >
+                                <div className={`
+                                     max-w-[85%] px-3 py-2 rounded-2xl text-[10px] font-medium shadow-lg backdrop-blur-md
+                                     ${msg.align === 'left' ? 'bg-base-100/90 text-base-content rounded-tl-none' : 'bg-primary/90 text-primary-content rounded-tr-none'}
+                                 `}>
+                                    {msg.text}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Sparkles (Step 2 Entry) */}
                 <div
                     className={`
                          absolute -top-6 -right-6 z-40 transition-all duration-500 delay-300
