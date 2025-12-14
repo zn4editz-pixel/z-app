@@ -1,33 +1,53 @@
-import { useEffect, useState, useRef } from "react";
-import { Video, Mic, PhoneOff, MapPin, Send, Globe, MessageCircle, Phone, UserPlus, Gamepad2 } from "lucide-react";
+```
+import { useEffect, useState, useMemo } from "react";
+import { Video, Mic, PhoneOff, MapPin, Send, MessageCircle, Phone, UserPlus, Gamepad2, Heart, Music, Camera } from "lucide-react";
 import { CHARACTERS } from "../../constants/characters";
 
 const StrangerAnimation = () => {
     const [step, setStep] = useState(0);
     const [scanIndex, setScanIndex] = useState(0);
     const [matchIndex, setMatchIndex] = useState(1);
+    
+    // Conversation State
+    const [conversation, setConversation] = useState([]);
+    const [chatTopic, setChatTopic] = useState("social");
 
-    // Randomize Chat Times
-    const [chatTime1, setChatTime1] = useState("10:00 PM");
-    const [chatTime2, setChatTime2] = useState("10:01 PM");
-    const [chatTime3, setChatTime3] = useState("10:02 PM");
+    // Dynamic Conversation Database
+    const CONVERSATIONS = {
+        social: [
+            { msg: "Hey! Love your vibe. Where u from?", type: "recv", delay: 800 },
+            { msg: "Thanks! I'm from visual land 📍 You?", type: "sent", delay: 1800 },
+            { msg: "No way! I was just there last week! 🌎", type: "recv", delay: 1000 }
+        ],
+        gaming: [
+            { msg: "GG on that last match! 🎮", type: "recv", delay: 600 },
+            { msg: "Haha thanks, you carried though!", type: "sent", delay: 1500 },
+            { msg: "Duo again? I'm free now.", type: "recv", delay: 1200 }
+        ],
+        flirty: [
+            { msg: "Your smile is contagious 😊", type: "recv", delay: 1000 },
+            { msg: "Aww stop it 🙈 (don't stop)", type: "sent", delay: 2000 },
+            { msg: "Coffee sometime? ☕", type: "recv", delay: 1500 }
+        ]
+    };
 
-    // Story-driven captions
+    // Story Captions (Rolling Text Style)
     const storyCaptions = [
-        { title: "Instant Connect", sub: "One click to spark a conversation with a stranger." },
-        { title: "Face-to-Face Magic", sub: "See, hear, and laugh together in 4K resolution." },
-        { title: "From Strangers to Friends", sub: "Keep the vibe going in chat and stay connected." }
+        { title: "INSTANT CONNECT", sub: "One click. Zero waiting." },
+        { title: "FACE-TO-FACE", sub: "4K Video. Real Vibes." },
+        { title: "STRANGERS → FRIENDS", sub: "Make it last." }
     ];
 
-    // Pick a random avatar for "Me" 
-    const myAvatar = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
+    // Persist "Me" Avatar
+    const myAvatar = useMemo(() => CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)], []);
 
-    const generateRandomTime = () => {
+    // Random Time Generator
+    const getRandomTime = () => {
         const hour = Math.floor(Math.random() * 12) + 1;
-        const min = Math.floor(Math.random() * 60);
+        const min = Math.floor(Math.random() * 60).toString().padStart(2, '0');
         const ampm = Math.random() > 0.5 ? "PM" : "AM";
         const minStr = min < 10 ? "0" + min : min;
-        return `${hour}:${minStr} ${ampm}`;
+        return `${ hour }:${ minStr } ${ ampm } `;
     };
 
     const addMinutes = (timeStr, minsToAdd) => {
@@ -113,8 +133,8 @@ const StrangerAnimation = () => {
                 <div className="relative w-full flex-1 flex items-center justify-center perspective-[1000px] min-h-[400px]">
 
                     {/* STAGE 0: CONNECTING */}
-                    <div className={`absolute inset-0 flex items-center justify-center transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)]
-                 ${step === 0 ? 'opacity-100 scale-100 blur-none pointer-events-auto' : 'opacity-0 scale-110 blur-sm pointer-events-none'}`}>
+                    <div className={`absolute inset - 0 flex items - center justify - center transition - all duration - [1200ms] ease - [cubic - bezier(0.22, 1, 0.36, 1)]
+                 ${ step === 0 ? 'opacity-100 scale-100 blur-none pointer-events-auto' : 'opacity-0 scale-110 blur-sm pointer-events-none' } `}>
                         <div className="relative w-64 h-80">
                             <div className="absolute top-4 left-4 w-full h-full bg-base-300 rounded-3xl opacity-40 rotate-[6deg] transition-transform duration-1000 ease-out" />
                             <div className="absolute top-2 left-2 w-full h-full bg-base-100 rounded-3xl opacity-70 rotate-[3deg] shadow-lg transition-transform duration-1000 ease-out" />
@@ -140,8 +160,8 @@ const StrangerAnimation = () => {
                     </div>
 
                     {/* STAGE 1: VIDEO CALL */}
-                    <div className={`absolute inset-0 flex items-center justify-center transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)]
-                 ${step === 1 ? 'opacity-100 scale-100 translate-y-0 blur-none' : 'opacity-0 scale-95 translate-y-8 blur-sm pointer-events-none'}`}>
+                    <div className={`absolute inset - 0 flex items - center justify - center transition - all duration - [1200ms] ease - [cubic - bezier(0.22, 1, 0.36, 1)]
+                 ${ step === 1 ? 'opacity-100 scale-100 translate-y-0 blur-none' : 'opacity-0 scale-95 translate-y-8 blur-sm pointer-events-none' } `}>
                         <div className="w-full max-w-[320px] aspect-[9/15] bg-black rounded-[2rem] overflow-hidden shadow-2xl relative border-4 border-base-content/10">
                             <img src={CHARACTERS[matchIndex].img} className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000" alt="Stranger" />
                             <div className="absolute top-6 left-0 right-0 px-6 flex justify-between items-start">
@@ -167,8 +187,8 @@ const StrangerAnimation = () => {
                     </div>
 
                     {/* STAGE 2: FRIENDS & CHAT */}
-                    <div className={`absolute inset-0 flex items-center justify-center transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)]
-                 ${step === 2 ? 'opacity-100 scale-100 translate-y-0 blur-none' : 'opacity-0 scale-95 translate-y-12 blur-sm pointer-events-none'}`}>
+                    <div className={`absolute inset - 0 flex items - center justify - center transition - all duration - [1200ms] ease - [cubic - bezier(0.22, 1, 0.36, 1)]
+                 ${ step === 2 ? 'opacity-100 scale-100 translate-y-0 blur-none' : 'opacity-0 scale-95 translate-y-12 blur-sm pointer-events-none' } `}>
                         <div className="w-full max-w-[320px] aspect-[9/15] bg-base-100 rounded-[2rem] shadow-2xl border border-base-300 flex flex-col overflow-hidden">
                             <div className="h-20 bg-base-200/50 border-b border-base-300 flex items-center px-6 gap-4">
                                 <div className="relative">
@@ -227,8 +247,8 @@ const StrangerAnimation = () => {
                         {storyCaptions.map((caption, idx) => (
                             <div
                                 key={idx}
-                                className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform
-                            ${step === idx ? 'opacity-100 translate-y-0 scale-100 blur-none' : 'opacity-0 translate-y-8 scale-95 blur-sm pointer-events-none'}`}>
+                                className={`absolute inset - 0 flex flex - col items - center justify - center transition - all duration - [1200ms] ease - [cubic - bezier(0.22, 1, 0.36, 1)] transform
+                            ${ step === idx ? 'opacity-100 translate-y-0 scale-100 blur-none' : 'opacity-0 translate-y-8 scale-95 blur-sm pointer-events-none' } `}>
                                 <h3 className="text-3xl font-black text-base-content mb-2 tracking-tight drop-shadow-sm">
                                     {caption.title}
                                 </h3>

@@ -33,17 +33,17 @@ export const CHARACTERS = [
 
     { country: "Canada", name: "Noah", img: "/assets/avatars/canada_male.png", bg: "bg-red-200" },
 
-    // Middle East & Africa (High-quality 3D Avatars)
-    { country: "China", name: "Wei", img: "/assets/avatars/china_male.png", bg: "bg-red-50" },
-    { country: "China", name: "Li", img: "/assets/avatars/china_female.png", bg: "bg-yellow-50" },
+    // Middle East & Africa (High-quality 3D Avatars with Landmarks)
+    { country: "China", name: "Wei", img: "/assets/avatars/china_male_landmark.png", bg: "bg-red-50" },
+    { country: "China", name: "Li", img: "/assets/avatars/china_female_landmark.png", bg: "bg-yellow-50" },
 
-    { country: "Saudi Arabia", name: "Omar", img: "/assets/avatars/saudi_male.png", bg: "bg-emerald-50" },
-    { country: "Saudi Arabia", name: "Fatima", img: "/assets/avatars/saudi_female.png", bg: "bg-emerald-100" },
+    { country: "Saudi Arabia", name: "Omar", img: "/assets/avatars/saudi_male_landmark.png", bg: "bg-emerald-50" },
+    { country: "Saudi Arabia", name: "Fatima", img: "/assets/avatars/saudi_female_landmark.png", bg: "bg-emerald-100" },
 
-    { country: "UAE", name: "Hassan", img: "/assets/avatars/uae_male.png", bg: "bg-stone-100" },
-    { country: "UAE", name: "Amira", img: "/assets/avatars/uae_female.png", bg: "bg-stone-50" },
+    { country: "UAE", name: "Hassan", img: "/assets/avatars/uae_male_landmark.png", bg: "bg-stone-100" },
+    { country: "UAE", name: "Amira", img: "/assets/avatars/uae_female_landmark.png", bg: "bg-stone-50" },
 
-    { country: "Qatar", name: "Ahmed", img: "/assets/avatars/qatar_male.png", bg: "bg-purple-50" },
+    { country: "Qatar", name: "Ahmed", img: "/assets/avatars/qatar_male_landmark.png", bg: "bg-purple-50" },
     { country: "Qatar", name: "Noor", img: "/assets/avatars/qatar_female.png", bg: "bg-purple-100" },
 
     { country: "Egypt", name: "Youssef", img: "/assets/avatars/egypt_male.png", bg: "bg-orange-50" },
