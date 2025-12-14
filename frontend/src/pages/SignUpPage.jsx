@@ -67,7 +67,7 @@ const SignUpPage = () => {
 	};
 
 	return (
-		<div className="min-h-screen grid lg:grid-cols-2">
+		<div className="min-h-screen bg-base-200 grid lg:grid-cols-2">
 			{/* Left Side */}
 			<div className="flex flex-col justify-center items-center p-6 sm:p-8 login-form-container relative overflow-hidden">
 				{/* ❄️ Seasonal Snow Effect */}

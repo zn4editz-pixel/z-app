@@ -13,6 +13,7 @@ import { formatMessageTime } from "../lib/utils";
 
 // ✅ CRITICAL: Import animations for floating reactions
 import "../styles/animations.css";
+import SeasonalParticles from "./effects/SeasonalParticles";
 
 const ChatContainer = ({ onStartCall }) => {
   const {
@@ -397,7 +398,7 @@ const ChatContainer = ({ onStartCall }) => {
     }
   };
 
-  import SeasonalParticles from "./effects/SeasonalParticles";
+
 
   if (!selectedUser) {
     return (
