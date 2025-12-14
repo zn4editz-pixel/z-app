@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Zap, Sparkles, Video, Mic, MessageCircle, Heart } from "lucide-react";
+import { User, Zap, Sparkles, Video, Mic, MessageCircle, Heart, UserPlus, Lock } from "lucide-react";
 import { CHARACTERS } from "../../constants/characters";
 
 // Rotating Captions
@@ -12,7 +12,8 @@ const CAPTIONS = [
 ];
 
 const LiveMatchAnimation = () => {
-    const [step, setStep] = useState(0); // 0: Floating, 1: Snapping, 2: Video, 3: Chat
+    // 0: Floating, 1: Snapping, 2: Video, 3: Friends, 4: Chat
+    const [step, setStep] = useState(0);
     const [captionIndex, setCaptionIndex] = useState(0);
     const [charIndexA, setCharIndexA] = useState(0);
     const [charIndexB, setCharIndexB] = useState(1);
@@ -47,13 +48,18 @@ const LiveMatchAnimation = () => {
                 setStep(2);
                 await new Promise(r => setTimeout(r, 3000));
 
-                // Step 3: Chat Interaction (3.5s)
+                // Step 3: Friend Connection (2s) -> NEW
                 if (!isMounted) break;
                 setStep(3);
+                await new Promise(r => setTimeout(r, 2000));
+
+                // Step 4: Chat Interaction (3.5s)
+                if (!isMounted) break;
+                setStep(4);
 
                 // Add fake messages sequentially
-                setTimeout(() => setMessages(p => [...p, { text: "Wow, cool background! 🏔️", align: "left" }]), 500);
-                setTimeout(() => setMessages(p => [...p, { text: "Thanks! Just visiting.", align: "right" }]), 2000);
+                setTimeout(() => setMessages(p => [...p, { text: "Hey friend! 👋", align: "left" }]), 500);
+                setTimeout(() => setMessages(p => [...p, { text: "Accepted! Let's chat.", align: "right" }]), 1500);
 
                 await new Promise(r => setTimeout(r, 3500));
             }
@@ -122,7 +128,7 @@ const LiveMatchAnimation = () => {
                             style={{ backgroundImage: `url(${charA.img})` }}
                         />
                         {/* Fake UI Overlay for Video Call */}
-                        {step >= 2 && (
+                        {step === 2 && (
                             <div className="absolute top-2 left-2 flex gap-1 animate-fade-in-up">
                                 <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
                                 <span className="text-[8px] text-white font-bold tracking-wider">LIVE</span>
@@ -161,8 +167,8 @@ const LiveMatchAnimation = () => {
                             style={{ backgroundImage: `url(${charB.img})` }}
                         />
 
-                        {/* Call Controls Overlay (Step 2+) */}
-                        {step >= 2 && (
+                        {/* Call Controls Overlay (Step 2) */}
+                        {step === 2 && (
                             <div className="absolute bottom-2 right-2 flex gap-1 animate-fade-in-up">
                                 <div className="w-5 h-5 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
                                     <Mic className="w-3 h-3 text-white" />
@@ -188,30 +194,58 @@ const LiveMatchAnimation = () => {
                     </div>
                 </div>
 
-                {/* Step 3: Overlay Chat Bubbles */}
-                {step === 3 && (
-                    <div className="absolute inset-0 z-50 flex flex-col justify-center items-center pointer-events-none p-4">
-                        {messages.map((msg, idx) => (
-                            <div
-                                key={idx}
-                                className={`flex w-full mb-2 animate-bounce-in ${msg.align === 'left' ? 'justify-start' : 'justify-end'}`}
-                            >
-                                <div className={`
-                                     max-w-[85%] px-3 py-2 rounded-2xl text-[10px] font-medium shadow-lg backdrop-blur-md
-                                     ${msg.align === 'left' ? 'bg-base-100/90 text-base-content rounded-tl-none' : 'bg-primary/90 text-primary-content rounded-tr-none'}
-                                 `}>
-                                    {msg.text}
-                                </div>
-                            </div>
-                        ))}
+                {/* Step 3: FRIEND SUCCESS */}
+                <div
+                    className={`
+                         absolute z-40 transition-all duration-500 flex flex-col items-center justify-center pointer-events-none
+                         ${step === 3 ? "opacity-100 scale-110" : "opacity-0 scale-50"}
+                    `}
+                >
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-success/20 rounded-full animate-ping"></div>
+                        <div className="w-16 h-16 bg-success rounded-full flex items-center justify-center shadow-xl mb-2">
+                            <UserPlus className="w-8 h-8 text-white" />
+                        </div>
                     </div>
+                    <div className="bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-white text-xs font-bold border border-success/30">
+                        Friend Added!
+                    </div>
+                </div>
+
+                {/* Step 4: CHAT (Private) */}
+                {step === 4 && (
+                    <>
+                        {/* Private Badge */}
+                        <div className="absolute top-[-20px] z-50 animate-fade-in-down">
+                            <div className="flex items-center gap-1 bg-base-100/80 backdrop-blur-md px-3 py-1 rounded-full border border-base-content/10 shadow-sm text-[10px] font-bold">
+                                <Lock className="w-3 h-3 text-primary" />
+                                Private Chat
+                            </div>
+                        </div>
+
+                        <div className="absolute inset-0 z-50 flex flex-col justify-center items-center pointer-events-none p-4 mt-6">
+                            {messages.map((msg, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`flex w-full mb-2 animate-bounce-in ${msg.align === 'left' ? 'justify-start' : 'justify-end'}`}
+                                >
+                                    <div className={`
+                                        max-w-[85%] px-3 py-2 rounded-2xl text-[10px] font-medium shadow-lg backdrop-blur-md
+                                        ${msg.align === 'left' ? 'bg-base-100/90 text-base-content rounded-tl-none' : 'bg-primary/90 text-primary-content rounded-tr-none'}
+                                    `}>
+                                        {msg.text}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </>
                 )}
 
-                {/* Sparkles (Step 2 Entry) */}
+                {/* Sparkles (Step 2/3 Entry) */}
                 <div
                     className={`
                          absolute -top-6 -right-6 z-40 transition-all duration-500 delay-300
-                         ${step === 2 ? "opacity-100 scale-110" : "opacity-0 scale-0"}
+                         ${(step === 2 || step === 3) ? "opacity-100 scale-110" : "opacity-0 scale-0"}
                     `}
                 >
                     <Sparkles className="w-10 h-10 text-yellow-500 fill-yellow-500 animate-bounce drop-shadow-lg" />
