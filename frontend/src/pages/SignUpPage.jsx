@@ -83,7 +83,7 @@ const SignUpPage = () => {
 	return (
 		<div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-base-200 grid lg:grid-cols-2 touch-none overscroll-none">
 			{/* Left Side */}
-			<div className="flex flex-col justify-center items-center p-6 sm:p-8 login-form-container relative overflow-hidden glass-panel shine-effect rounded-2xl m-4 h-full">
+			<div className="flex flex-col justify-center items-center p-6 sm:p-8 login-form-container relative overflow-hidden">
 
 				{/* 💫 Text-Colored Particles Background */}
 				<div className="absolute inset-0 overflow-hidden -z-20 pointer-events-none">

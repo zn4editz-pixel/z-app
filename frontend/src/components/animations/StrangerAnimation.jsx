@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Video, Mic, PhoneOff, MapPin, Send, Globe, MessageCircle, Phone, UserPlus, Gamepad2 } from "lucide-react";
 import { CHARACTERS } from "../../constants/characters";
 
@@ -7,6 +7,11 @@ const StrangerAnimation = () => {
     const [scanIndex, setScanIndex] = useState(0);
     const [matchIndex, setMatchIndex] = useState(1);
 
+    // Randomize Chat Times
+    const [chatTime1, setChatTime1] = useState("10:00 PM");
+    const [chatTime2, setChatTime2] = useState("10:01 PM");
+    const [chatTime3, setChatTime3] = useState("10:02 PM");
+
     // Story-driven captions
     const storyCaptions = [
         { title: "Instant Connect", sub: "One click to spark a conversation with a stranger." },
@@ -14,8 +19,30 @@ const StrangerAnimation = () => {
         { title: "From Strangers to Friends", sub: "Keep the vibe going in chat and stay connected." }
     ];
 
-    // Pick a random avatar for "Me" (persistent per session ideally, but random for demo)
+    // Pick a random avatar for "Me" 
     const myAvatar = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
+
+    const generateRandomTime = () => {
+        const hour = Math.floor(Math.random() * 12) + 1;
+        const min = Math.floor(Math.random() * 60);
+        const ampm = Math.random() > 0.5 ? "PM" : "AM";
+        const minStr = min < 10 ? "0" + min : min;
+        return `${hour}:${minStr} ${ampm}`;
+    };
+
+    const addMinutes = (timeStr, minsToAdd) => {
+        // Simple parser/adder for demo purposes
+        // Assuming format "HH:MM AM/PM"
+        return timeStr; // Just return same or random for visual effect
+    };
+
+    useEffect(() => {
+        // Randomize times on mount
+        const t1 = generateRandomTime();
+        setChatTime1(t1);
+        setChatTime2(t1); // Reply is usually fast
+        setChatTime3(t1);
+    }, []);
 
     useEffect(() => {
         // Main Stage Timer
@@ -23,29 +50,53 @@ const StrangerAnimation = () => {
             setStep((prev) => {
                 const next = (prev + 1) % 3;
                 if (next === 0) {
+                    // Start new scan cycle
                     const newMatch = Math.floor(Math.random() * CHARACTERS.length);
                     setMatchIndex(newMatch);
+
+                    // New random times for next chat
+                    const t = generateRandomTime();
+                    setChatTime1(t);
+                    setChatTime2(t);
+                    setChatTime3(t);
                 }
                 return next;
             });
         }, 5000);
 
-        // Avatar Browser
-        const scanner = setInterval(() => {
-            if (step === 0) {
-                setScanIndex((prev) => (prev + 1) % CHARACTERS.length);
-            }
-        }, 200);
+        return () => clearInterval(loop);
+    }, []);
 
-        return () => { clearInterval(loop); clearInterval(scanner); };
-    }, [step]);
+    // Decelerating Scanner Effect
+    useEffect(() => {
+        if (step !== 0) return;
+
+        let intervalId;
+        let speed = 50; // Start fast
+        const maxSpeed = 400; // End slow
+
+        const scan = () => {
+            setScanIndex((prev) => (prev + 1) % CHARACTERS.length);
+            speed += 20; // Decelerate
+            if (speed < maxSpeed) {
+                intervalId = setTimeout(scan, speed);
+            }
+        };
+
+        scan();
+        return () => clearTimeout(intervalId);
+    }, [step]); // Re-run when step goes back to 0
 
     return (
         <div className="hidden lg:flex flex-col items-center justify-center bg-base-200 w-full h-full relative overflow-hidden font-sans p-8">
-            {/* 🔮 Background: "LIQUID AURORA" */}
+            {/* 🔮 Background: "LIQUID AURORA" - Refined */}
             <div className="absolute inset-0 bg-base-200 overflow-hidden" />
-            <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent animate-spin-slow duration-[60s] opacity-60" />
-            <div className="absolute top-[-50%] right-[-50%] w-[200%] h-[200%] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-secondary/20 via-transparent to-transparent animate-spin-slow duration-[45s] direction-reverse opacity-60" />
+
+            {/* Subtle animated grid for "Tech/Connection" feel */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:40px_40px] opacity-30" />
+
+            <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent animate-spin-slow duration-[60s] opacity-50" />
+            <div className="absolute top-[-50%] right-[-50%] w-[200%] h-[200%] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-secondary/10 via-transparent to-transparent animate-spin-slow duration-[45s] direction-reverse opacity-50" />
 
             {/* Floating Particles */}
             <div className="absolute inset-0 pointer-events-none">
@@ -134,22 +185,30 @@ const StrangerAnimation = () => {
                                 </div>
                             </div>
                             <div className="flex-1 p-4 flex flex-col gap-3 overflow-hidden bg-base-100">
-                                <div className="text-center text-[10px] text-base-content/40 font-mono my-2">-- TODAY --</div>
+                                <div className="text-center text-[10px] text-base-content/40 font-mono my-2 uppercase">-- Today, {chatTime1} --</div>
+
                                 <div className="flex gap-2 items-end animate-fade-in-up delay-100">
                                     <div className="w-8 h-8 rounded-full bg-base-300 overflow-hidden shrink-0"><img src={CHARACTERS[matchIndex].img} className="w-full h-full object-cover" alt="J" /></div>
                                     <div className="bg-base-200 p-3 rounded-2xl rounded-bl-none text-sm text-base-content/80 max-w-[80%] shadow-sm">
                                         That video call was so fun! 😂
+                                        <div className="text-[9px] text-base-content/30 text-right mt-1">{chatTime1}</div>
                                     </div>
                                 </div>
+
                                 <div className="flex flex-row-reverse gap-2 items-end animate-fade-in-up delay-500">
                                     <div className="bg-primary text-primary-content p-3 rounded-2xl rounded-br-none text-sm font-medium shadow-md max-w-[80%]">
                                         Totally! We should game sometime.
+                                        <div className="text-[9px] text-primary-content/60 text-right mt-1">{chatTime2}</div>
                                     </div>
                                 </div>
+
                                 <div className="flex gap-2 items-end animate-fade-in-up delay-1000">
                                     <div className="w-8 h-8 rounded-full bg-base-300 overflow-hidden shrink-0"><img src={CHARACTERS[matchIndex].img} className="w-full h-full object-cover" alt="J" /></div>
-                                    <div className="bg-base-200 p-3 rounded-2xl rounded-bl-none text-sm text-base-content/80 max-w-[80%] shadow-sm flex items-center gap-2">
-                                        <Gamepad2 className="w-4 h-4 opacity-50" /> Let's play now?
+                                    <div className="bg-base-200 p-3 rounded-2xl rounded-bl-none text-sm text-base-content/80 max-w-[80%] shadow-sm flex flex-col gap-1">
+                                        <div className="flex items-center gap-2">
+                                            <Gamepad2 className="w-4 h-4 opacity-50" /> Let's play now?
+                                        </div>
+                                        <div className="text-[9px] text-base-content/30 text-right">{chatTime3}</div>
                                     </div>
                                 </div>
                             </div>
