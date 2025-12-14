@@ -1,6 +1,7 @@
 import OrbitAnimation from "./animations/OrbitAnimation";
 import StrangerAnimation from "./animations/StrangerAnimation";
 import LiveMatchAnimation from "./animations/LiveMatchAnimation";
+import ConnectAnimation from "./animations/ConnectAnimation";
 import { useImagePreloader } from "../hooks/useImagePreloader";
 
 const AuthImagePattern = ({ title, subtitle, variant = "signup", animationType }) => {
@@ -19,6 +20,8 @@ const AuthImagePattern = ({ title, subtitle, variant = "signup", animationType }
       return <StrangerAnimation />;
     case "live-match":
       return <LiveMatchAnimation />;
+    case "connect":
+      return <ConnectAnimation />;
     default:
       return <OrbitAnimation title={title} subtitle={subtitle} />;
   }

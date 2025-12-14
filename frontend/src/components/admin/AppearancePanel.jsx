@@ -4,6 +4,7 @@ import { Monitor, Moon, Sun, LayoutTemplate, Sparkles, Save, Loader2, Check, Eye
 import OrbitAnimation from "../animations/OrbitAnimation";
 import StrangerAnimation from "../animations/StrangerAnimation";
 import LiveMatchAnimation from "../animations/LiveMatchAnimation";
+import ConnectAnimation from "../animations/ConnectAnimation";
 import { THEMES } from "../../constants";
 
 const AppearancePanel = () => {
@@ -91,6 +92,7 @@ const AppearancePanel = () => {
                             {localSettings?.loginAnimation === "orbit" && <OrbitAnimation />}
                             {localSettings?.loginAnimation === "stranger" && <StrangerAnimation />}
                             {localSettings?.loginAnimation === "live-match" && <LiveMatchAnimation />}
+                            {localSettings?.loginAnimation === "connect" && <ConnectAnimation />}
                         </div>
                         <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
                             Live Preview
@@ -116,6 +118,12 @@ const AppearancePanel = () => {
                         >
                             Live Match 🚀
                         </button>
+                        <button
+                            onClick={() => handleSelect("loginAnimation", "connect")}
+                            className={`btn btn-xs sm:btn-sm ${localSettings?.loginAnimation === "connect" ? "btn-primary" : "btn-ghost border-base-300"}`}
+                        >
+                            Connect 🔓
+                        </button>
                     </div>
                 </div>
 
@@ -131,6 +139,7 @@ const AppearancePanel = () => {
                             {localSettings?.signupAnimation === "orbit" && <OrbitAnimation />}
                             {localSettings?.signupAnimation === "stranger" && <StrangerAnimation />}
                             {localSettings?.signupAnimation === "live-match" && <LiveMatchAnimation />}
+                            {localSettings?.signupAnimation === "connect" && <ConnectAnimation />}
                         </div>
                         <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
                             Live Preview
@@ -155,6 +164,12 @@ const AppearancePanel = () => {
                             className={`btn btn-xs sm:btn-sm ${localSettings?.signupAnimation === "live-match" ? "btn-secondary" : "btn-ghost border-base-300"}`}
                         >
                             Live Match 🚀
+                        </button>
+                        <button
+                            onClick={() => handleSelect("signupAnimation", "connect")}
+                            className={`btn btn-xs sm:btn-sm ${localSettings?.signupAnimation === "connect" ? "btn-secondary" : "btn-ghost border-base-300"}`}
+                        >
+                            Connect 🔓
                         </button>
                     </div>
                 </div>
