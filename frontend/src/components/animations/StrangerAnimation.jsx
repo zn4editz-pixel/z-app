@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Video, Mic, PhoneOff, MapPin, Send, Globe, MessageCircle, Phone, UserPlus, Gamepad2 } from "lucide-react";
+import { CHARACTERS } from "../../constants/characters";
 
 const StrangerAnimation = () => {
     const [step, setStep] = useState(0);
@@ -12,8 +13,6 @@ const StrangerAnimation = () => {
         { title: "Face-to-Face Magic", sub: "See, hear, and laugh together in 4K resolution." },
         { title: "From Strangers to Friends", sub: "Keep the vibe going in chat and stay connected." }
     ];
-
-    import { CHARACTERS } from "../../constants/characters";
 
     // Pick a random avatar for "Me" (persistent per session ideally, but random for demo)
     const myAvatar = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
