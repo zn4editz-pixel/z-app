@@ -211,6 +211,72 @@ const ChatMessages = memo(({ messages, isVisible }) => {
 	);
 });
 
+// Lobby View Component
+const LobbyView = memo(({ onStart, isConnecting }) => (
+	<div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900 flex flex-col items-center justify-center p-4 z-50">
+		<div className="max-w-md w-full text-center space-y-8">
+			{/* Logo/Icon */}
+			<div className="relative mx-auto w-32 h-32">
+				<div className="absolute inset-0 bg-primary/20 rounded-full animate-pulse"></div>
+				<div className="absolute inset-0 flex items-center justify-center">
+					<Sparkles className="w-16 h-16 text-primary" />
+				</div>
+				<div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+					LIVE
+				</div>
+			</div>
+
+			{/* Title */}
+			<div className="space-y-4">
+				<h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary via-white to-primary animate-shine bg-[length:200%_auto]">
+					Stranger Chat
+				</h1>
+				<p className="text-lg text-base-content/70">
+					Meet verified people from around the world in a safe, moderated environment.
+				</p>
+			</div>
+
+			{/* Features Grid */}
+			<div className="grid grid-cols-2 gap-4 text-left">
+				<div className="p-4 rounded-xl bg-base-100/5 backdrop-blur-sm border border-white/5 hover:border-primary/30 transition-colors">
+					<Shield className="w-6 h-6 text-success mb-2" />
+					<h3 className="font-semibold text-white">Safe & Secure</h3>
+					<p className="text-xs text-base-content/60">AI moderation & reporting</p>
+				</div>
+				<div className="p-4 rounded-xl bg-base-100/5 backdrop-blur-sm border border-white/5 hover:border-primary/30 transition-colors">
+					<Users className="w-6 h-6 text-primary mb-2" />
+					<h3 className="font-semibold text-white">Global Match</h3>
+					<p className="text-xs text-base-content/60">Connect with anyone</p>
+				</div>
+			</div>
+
+			{/* Start Button */}
+			<button
+				onClick={onStart}
+				disabled={isConnecting}
+				className="w-full btn btn-lg btn-primary rounded-full shadow-[0_0_40px_-10px_rgba(255,153,51,0.5)] hover:shadow-[0_0_60px_-10px_rgba(255,153,51,0.7)] border-none text-xl font-bold transition-all hover:scale-105 active:scale-95"
+			>
+				{isConnecting ? (
+					<>
+						<Loader2 className="w-6 h-6 animate-spin" />
+						Starting Camera...
+					</>
+				) : (
+					<>
+						Start Chatting Now
+						<Video className="w-6 h-6" />
+					</>
+				)}
+			</button>
+
+			<p className="text-xs text-base-content/40 mt-4">
+				By clicking Start, you agree to our Community Guidelines.
+				<br />Camera and Microphone access required.
+			</p>
+		</div>
+	</div>
+));
+
 // Connection Quality Indicator
 const ConnectionIndicator = memo(({ quality, isConnected }) => {
 	const getQualityColor = () => {
@@ -254,7 +320,9 @@ const StrangerChatPage = () => {
 	const navigate = useNavigate();
 
 	// Core States
-	const [status, setStatus] = useState("initializing");
+	const [status, setStatus] = useState("lobby"); // Start in lobby
+	const [hasPermissionError, setHasPermissionError] = useState(false);
+	const [permissionErrorMessage, setPermissionErrorMessage] = useState("");
 	const [tempMessages, setTempMessages] = useState([]);
 	const [currentMessage, setCurrentMessage] = useState("");
 	const [partnerUserId, setPartnerUserId] = useState(null);
@@ -626,116 +694,136 @@ const StrangerChatPage = () => {
 		}
 	}, [partnerUserId, getFriendshipStatus]);
 
-	// Main socket effect with optimized initialization
-	useEffect(() => {
-		if (!socket || !authUser) {
-			toast.error("Connection error. Please refresh.");
-			navigate("/");
-			return;
+
+	// Optimize video element for performance
+	const optimizeVideoElement = useCallback(() => {
+		if (localVideoRef.current) {
+			localVideoRef.current.style.willChange = 'transform';
+			localVideoRef.current.style.backfaceVisibility = 'hidden';
+			localVideoRef.current.style.transform = 'translateZ(0)';
 		}
+	}, []);
 
-		let isMounted = true;
-		let hasJoinedQueue = false;
+	const initializeCamera = useCallback(async () => {
+		if (status === "initializing" || status === "waiting" || status === "connected") return;
 
-		const initializeCamera = async () => {
-			try {
-				setStatus("initializing");
+		console.log('📷 Initializing camera...');
+		setHasPermissionError(false);
+		setStatus("initializing");
 
-				// Check device support
-				if (!navigator.mediaDevices?.getUserMedia) {
-					throw new Error("Your browser doesn't support camera access");
-				}
+		try {
+			// Check device support
+			if (!navigator.mediaDevices?.getUserMedia) {
+				throw new Error("Your browser doesn't support camera access");
+			}
 
-				// Optimized media constraints for reliable connection
-				const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-				const stream = await navigator.mediaDevices.getUserMedia({
+			// Optimized media constraints with fallback logic
+			const getMediaStream = async () => {
+				const constraints = {
 					video: {
-						width: { min: 320, ideal: isMobile ? 480 : 640, max: 1280 },
-						height: { min: 240, ideal: isMobile ? 360 : 480, max: 720 },
+						width: { ideal: 640 },
+						height: { ideal: 480 },
 						facingMode: "user",
 						frameRate: { ideal: 24, max: 30 }
 					},
 					audio: {
 						echoCancellation: true,
 						noiseSuppression: true,
-						autoGainControl: true,
-						sampleRate: 44100
+						autoGainControl: true
 					}
-				});
+				};
 
-				if (!isMounted) {
-					stream.getTracks().forEach(t => t.stop());
-					return;
+				try {
+					// Attempt with ideal constraints and 10s timeout
+					const streamPromise = navigator.mediaDevices.getUserMedia(constraints);
+					const timeoutPromise = new Promise((_, reject) =>
+						setTimeout(() => reject(new Error('Camera request timed out')), 10000)
+					);
+					return await Promise.race([streamPromise, timeoutPromise]);
+				} catch (err) {
+					console.warn("Standard constraints failed, trying minimal constraints:", err);
+					// Fallback to minimal constraints
+					return await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 				}
+			};
 
-				localStreamRef.current = stream;
-				if (localVideoRef.current) {
-					localVideoRef.current.srcObject = stream;
+			const stream = await getMediaStream();
 
-					// Optimize video element for performance
-					localVideoRef.current.style.willChange = 'transform';
-					localVideoRef.current.style.backfaceVisibility = 'hidden';
-					localVideoRef.current.style.transform = 'translateZ(0)';
+			localStreamRef.current = stream;
+			if (localVideoRef.current) {
+				localVideoRef.current.srcObject = stream;
+				optimizeVideoElement();
 
-					// Reliable video loading with proper timeout
-					await new Promise((resolve, reject) => {
-						const timeout = setTimeout(() => {
-							console.warn("Video load timeout, continuing anyway");
-							resolve(); // Don't reject, just continue
-						}, 3000);
-
-						if (localVideoRef.current.readyState >= 2) {
+				// Reliable video loading
+				await new Promise((resolve) => {
+					const timeout = setTimeout(resolve, 2000);
+					if (localVideoRef.current.readyState >= 2) {
+						clearTimeout(timeout);
+						resolve();
+					} else {
+						localVideoRef.current.onloadedmetadata = () => {
 							clearTimeout(timeout);
 							resolve();
-						} else {
-							localVideoRef.current.onloadedmetadata = () => {
-								clearTimeout(timeout);
-								resolve();
-							};
-							localVideoRef.current.onerror = () => {
-								clearTimeout(timeout);
-								reject(new Error('Video load error'));
-							};
-						}
-					});
-				}
-
-				setStatus("waiting");
-
-				// Join queue immediately after camera setup with privacy settings
-				if (!hasJoinedQueue && socket?.connected && isMounted) {
-					socket.emit("stranger:joinQueue", {
-						userId: authUser.id,
-						username: privacySettings.showUsername ? authUser.username : null,
-						nickname: privacySettings.showUsername ? authUser.nickname : null,
-						profilePic: privacySettings.showProfilePic ? authUser.profilePic : null,
-						isVerified: privacySettings.showVerificationBadge ? authUser.isVerified : false,
-						allowFriendRequests: privacySettings.allowFriendRequests,
-						privacySettings: privacySettings
-					});
-					hasJoinedQueue = true;
-					toast.success("🔍 Searching for someone awesome...");
-				}
-
-			} catch (error) {
-				console.error("Camera initialization failed:", error);
-
-				if (error.name === 'NotAllowedError') {
-					toast.error("Camera access denied. Please allow permissions and refresh.");
-				} else if (error.name === 'NotFoundError') {
-					toast.error("No camera found on your device.");
-				} else {
-					toast.error("Failed to access camera. Please refresh and try again.");
-				}
-
-				setTimeout(() => navigate("/"), 2000);
+						};
+						localVideoRef.current.onerror = resolve;
+					}
+				});
 			}
-		};
 
-		// Socket event handlers
-		const onWaiting = () => {
-			if (isMounted) setStatus("waiting");
-		};
+			setStatus("waiting");
+
+			// Join queue immediately after camera setup
+			if (socket?.connected) {
+				socket.emit("stranger:joinQueue", {
+					userId: authUser.id,
+					username: privacySettings.showUsername ? authUser.username : null,
+					nickname: privacySettings.showUsername ? authUser.nickname : null,
+					profilePic: privacySettings.showProfilePic ? authUser.profilePic : null,
+					isVerified: privacySettings.showVerificationBadge ? authUser.isVerified : false,
+					allowFriendRequests: privacySettings.allowFriendRequests,
+					privacySettings: privacySettings
+				});
+				toast.success("🔍 Searching for someone awesome...");
+			}
+
+		} catch (error) {
+			console.error("Camera initialization failed:", error);
+			setStatus("error");
+			setHasPermissionError(true);
+
+			if (error.name === 'NotAllowedError') {
+				setPermissionErrorMessage("Camera access denied. Please allow permissions in your browser settings.");
+				toast.error("Camera access denied. Please allow permissions.");
+			} else if (error.name === 'NotFoundError') {
+				setPermissionErrorMessage("No camera found. Please connect a camera.");
+				toast.error("No camera found.");
+			} else {
+				setPermissionErrorMessage("Failed to access camera: " + error.message);
+				toast.error("Camera error. Please check your device.");
+			}
+		}
+	}, [status, socket, authUser, privacySettings, optimizeVideoElement]);
+
+	// Handle Start Chat
+	const handleStartChat = useCallback(() => {
+		initializeCamera();
+	}, [initializeCamera]);
+
+
+	// Socket event handlers
+	const onWaiting = useCallback(() => {
+		setStatus(prev => {
+			// Only update to waiting if we are not already connected or error
+			if (prev === 'connected' || prev === 'error') return prev;
+			return "waiting";
+		});
+	}, []);
+
+	// Socket event handlers (Moved outside useEffect to be stable)
+	useEffect(() => {
+		if (!socket) return;
+		let isMounted = true;
+
 
 		const onMatched = (data) => {
 			console.log("🎯 Matched with partner:", data);
@@ -1005,6 +1093,129 @@ const StrangerChatPage = () => {
 		}
 	}, [status, partnerUserId, friendStatus, sendFriendRequest, acceptFriendRequest, fetchFriendData]);
 
+	// --- AI VIDEO MODERATION LOOP (Fixed) ---
+	useEffect(() => {
+		let isRunning = true;
+
+		const runModeration = async () => {
+			// Load lazily to prevent blocking
+			if (!privacySettings.enableAIModeration && !MODERATION_CONFIG.enabled) return;
+
+			try {
+				const utils = await loadModerationUtils();
+				if (!isRunning) return;
+
+				// Initialize model if not ready
+				await utils.initNSFWModel();
+				setAiModerationActive(true);
+
+				// 1. Check Local Stream (Outgoing)
+				if (localVideoRef.current && localVideoRef.current.readyState === 4 && localStreamRef.current?.active) {
+					const analysis = await utils.analyzeFrame(localVideoRef.current);
+
+					if (!analysis.safe) {
+						console.warn("⚠️ AI Violation Detected:", analysis.violationType, analysis.highestRisk);
+
+						// 📸 Capture evidence immediately
+						const screenshot = utils.captureVideoFrame(localVideoRef.current);
+
+						// 🚨 ZERO TOLERANCE: Instant Disconnect & Report
+						// Don't just warn, take action.
+
+						toast.error(
+							analysis.violationType === 'explicit'
+								? "🚫 BANNED: Nudity detected!"
+								: "⚠️ Disconnected: Inappropriate camera content detected.",
+							{ duration: 5000, icon: "🛡️" }
+						);
+
+						// Report to server
+						if (socket?.connected && screenshot) {
+							socket.emit("stranger:report", {
+								reporterId: "SYSTEM_AI",
+								reportedUserId: authUser.id, // Self-report
+								reason: "AI_AUTO_BAN",
+								description: `AI detected ${analysis.violationType} content (${analysis.highestRisk.className}: ${(analysis.highestRisk.probability * 100).toFixed(1)}%)`,
+								screenshot: screenshot, // Send evidence
+								category: 'ai_violation',
+								isAIDetected: true
+							});
+						}
+
+						closeConnection();
+
+						// Show modal explanation or redirect
+						// specific handling for explicit vs doubtful
+						if (analysis.violationType === 'explicit') {
+							navigate("/"); // Kick out completely
+						} else {
+							setStatus("error"); // Soft kick to error screen
+							setPermissionErrorMessage("Your video feed was flagged as inappropriate. Please ensure you are fully clothed and in a well-lit environment.");
+						}
+					}
+				}
+
+				// 2. Check Remote Stream (Incoming)
+				if (remoteVideoRef.current && remoteVideoRef.current.readyState === 4 && isConnected) {
+					const analysis = await utils.analyzeFrame(remoteVideoRef.current);
+
+					if (!analysis.safe) {
+						console.warn("🚨 NSFW Detected in REMOTE stream", analysis.highestRisk);
+
+						// BLUR IMMEDIATELY
+						remoteVideoRef.current.style.filter = "blur(50px) grayscale(100%)"; // Heavy blur
+
+						// 📸 Capture evidence
+						const screenshot = utils.captureVideoFrame(remoteVideoRef.current);
+
+						// Auto-report & Disconnect
+						if (!reportTimeoutRef.current) {
+							toast("🛡️ Partner banned for inappropriate content.", { icon: "👮" });
+
+							// Auto report to backend
+							if (socket?.connected && screenshot) {
+								socket.emit("stranger:report", {
+									reporterId: authUser.id,
+									reportedUserId: partnerUserId,
+									reason: "AI_REMOTE_DETECT",
+									description: `Auto-reporting partner for ${analysis.violationType} content.`,
+									screenshot: screenshot,
+									category: 'ai_violation',
+									isAIDetected: true
+								});
+							}
+
+							// Disconnect immediately
+							setTimeout(() => {
+								closeConnection();
+								// Optionally auto-skip? For now just close.
+								setStatus("waiting"); // Go back to waiting
+								socket.emit("stranger:joinQueue", { userId: authUser.id }); // optional: auto next
+							}, 500); // 500ms delay to ensure report sends
+
+							reportTimeoutRef.current = setTimeout(() => {
+								reportTimeoutRef.current = null;
+							}, 10000);
+						}
+					} else {
+						remoteVideoRef.current.style.filter = "none";
+					}
+				}
+
+			} catch (err) {
+				console.error("AI Loop Error:", err);
+				setAiModerationActive(false);
+			}
+		};
+
+		// Run every 3 seconds to save battery/performance
+		const intervalId = setInterval(runModeration, 3000);
+		return () => {
+			isRunning = false;
+			clearInterval(intervalId);
+		};
+	}, [isConnected, privacySettings, navigate]);
+
 	const handleSendMessage = useCallback((e) => {
 		e.preventDefault();
 		if (!currentMessage.trim() || status !== "connected") return;
@@ -1081,37 +1292,39 @@ const StrangerChatPage = () => {
 
 		if (!reportScreenshot || !reason || !partnerUserId) {
 			toast.error("Missing report information");
-			console.error('❌ Missing report data:', { reportScreenshot: !!reportScreenshot, reason, partnerUserId });
 			return;
 		}
 
 		setIsSubmittingReport(true);
 
-		// Clear any existing timeout
-		if (reportTimeoutRef.current) {
-			clearTimeout(reportTimeoutRef.current);
-		}
+		// Emit report event
+		if (socket && socket.connected) {
+			const reportData = {
+				reporterId: authUser.id,
+				reportedUserId: partnerUserId,
+				reason,
+				description: description || `Manual report: ${reason}`,
+				screenshot: reportScreenshot,
+				category: 'stranger_chat',
+				isAIDetected: false
+			};
 
-		// Add timeout fallback in case socket events don't fire
-		reportTimeoutRef.current = setTimeout(() => {
-			console.warn('⏰ Report submission timed out');
+			console.log('📤 Emitting report to socket:', { ...reportData, screenshot: 'base64_data_hidden' });
+			socket.emit("stranger:report", reportData);
+
+			// Set a fallback timeout in case server doesn't respond
+			reportTimeoutRef.current = setTimeout(() => {
+				if (isMounted) {
+					console.error('❌ Report request timed out - no response from server');
+					toast.error("Report submission timed out, but admins may still review it.");
+					setIsSubmittingReport(false);
+					setIsReportModalOpen(false);
+				}
+			}, 10000);
+		} else {
+			toast.error("Connection lost. Cannot submit report.");
 			setIsSubmittingReport(false);
-			toast.error("Report submission timed out. Please try again.");
-			reportTimeoutRef.current = null;
-		}, 15000); // 15 second timeout
-
-		const reportData = {
-			reporterId: authUser.id,
-			reportedUserId: partnerUserId,
-			reason,
-			description: description || `Manual report: ${reason}`,
-			screenshot: reportScreenshot,
-			category: 'stranger_chat',
-			isAIDetected: false
-		};
-
-		console.log('📤 Emitting report to socket:', { ...reportData, screenshot: 'base64_data_hidden' });
-		socket?.emit("stranger:report", reportData);
+		}
 	}, [reportScreenshot, partnerUserId, authUser, socket]);
 
 	const sendReaction = useCallback((emoji) => {
@@ -1195,8 +1408,34 @@ const StrangerChatPage = () => {
 
 	return (
 		<div className="fixed inset-0 flex flex-col bg-gradient-to-br from-base-300 via-base-200 to-base-300 overflow-hidden">
+			{/* Lobby / Start Screen */}
+			{(status === "lobby" || status === "error") && (
+				<LobbyView
+					onStart={handleStartChat}
+					isConnecting={status === "initializing"}
+				/>
+			)}
+
+			{/* Permission Error Toast / Overlay - Handled by Lobby but also show backup if needed */}
+			{status === "error" && hasPermissionError && (
+				<div className="absolute top-20 left-0 right-0 z-50 px-4">
+					<div className="alert alert-error shadow-lg max-w-lg mx-auto">
+						<div className="flex flex-col">
+							<span className="font-bold flex items-center gap-2">
+								<VideoOff className="w-5 h-5" />
+								Permission Error
+							</span>
+							<span className="text-sm">{permissionErrorMessage}</span>
+							<button className="btn btn-sm btn-outline mt-2 bg-white/20 text-white" onClick={() => setStatus("lobby")}>
+								Try Again
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
 			{/* Loading State */}
-			{status === "initializing" && <LoadingSkeleton />}
+			{(status === "initializing" && !hasPermissionError) && <LoadingSkeleton />}
 
 			{/* Main Video Container */}
 			<div className="flex-1 relative overflow-hidden">

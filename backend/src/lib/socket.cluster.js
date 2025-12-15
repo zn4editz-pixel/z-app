@@ -3,7 +3,7 @@ import { Server } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient } from 'redis';
 import jwt from 'jsonwebtoken';
-import { QueryOptimizer, DatabaseCache } from './db.production.js';
+import { QueryOptimizer, DatabaseCache, prisma } from './db.production.js';
 
 class SocketCluster {
   constructor(server) {
@@ -51,7 +51,7 @@ class SocketCluster {
       await Promise.all([pubClient.connect(), subClient.connect()]);
 
       this.io.adapter(createAdapter(pubClient, subClient));
-      
+
       console.log('✅ Socket.IO Redis adapter connected');
     } catch (error) {
       console.error('❌ Redis adapter setup failed:', error);
@@ -69,7 +69,7 @@ class SocketCluster {
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await QueryOptimizer.findUserById(decoded.userId);
-        
+
         if (!user) {
           return next(new Error('Authentication error: User not found'));
         }
@@ -86,11 +86,11 @@ class SocketCluster {
     this.io.use(async (socket, next) => {
       const rateLimitKey = `rate_limit:${socket.userId}`;
       const current = await DatabaseCache.get(rateLimitKey) || 0;
-      
+
       if (current > 100) { // 100 events per minute
         return next(new Error('Rate limit exceeded'));
       }
-      
+
       await DatabaseCache.set(rateLimitKey, current + 1, 60);
       next();
     });
@@ -99,13 +99,13 @@ class SocketCluster {
   setupEventHandlers() {
     this.io.on('connection', async (socket) => {
       console.log(`👤 User ${socket.user.username} connected (${socket.id})`);
-      
+
       // Join user to their personal room
       await socket.join(`user:${socket.userId}`);
-      
+
       // Update user online status
       await this.updateUserStatus(socket.userId, true);
-      
+
       // Notify friends about online status
       await this.notifyFriendsStatus(socket.userId, true);
 
@@ -189,7 +189,7 @@ class SocketCluster {
 
       // Send to receiver if online
       this.io.to(`user:${receiverId}`).emit('new_message', message);
-      
+
       // Confirm to sender
       socket.emit('message_sent', { messageId: message.id });
 
@@ -224,7 +224,7 @@ class SocketCluster {
       });
 
       const senderIds = [...new Set(messages.map(m => m.senderId))];
-      
+
       for (const senderId of senderIds) {
         this.io.to(`user:${senderId}`).emit('messages_read', {
           messageIds,
@@ -240,7 +240,7 @@ class SocketCluster {
   async handleTyping(socket, data, isTyping) {
     try {
       const { receiverId } = data;
-      
+
       this.io.to(`user:${receiverId}`).emit('typing_status', {
         userId: socket.userId,
         username: socket.user.username,
@@ -287,7 +287,7 @@ class SocketCluster {
 
       // Notify receiver
       this.io.to(`user:${receiverId}`).emit('friend_request', friendRequest);
-      
+
       // Confirm to sender
       socket.emit('friend_request_sent', { requestId: friendRequest.id });
 
@@ -303,7 +303,7 @@ class SocketCluster {
 
       // Check if receiver is online
       const receiverSockets = await this.io.in(`user:${receiverId}`).fetchSockets();
-      
+
       if (receiverSockets.length === 0) {
         return socket.emit('call_failed', { reason: 'User offline' });
       }
@@ -357,7 +357,7 @@ class SocketCluster {
   async notifyFriendsStatus(userId, isOnline) {
     try {
       const friends = await QueryOptimizer.getFriends(userId);
-      
+
       for (const friend of friends) {
         this.io.to(`user:${friend.friendId}`).emit('friend_status', {
           userId,
@@ -388,7 +388,7 @@ class SocketCluster {
     setInterval(async () => {
       const connectedUsers = this.io.sockets.sockets.size;
       await DatabaseCache.set('socket_metrics:connected_users', connectedUsers, 60);
-      
+
       console.log(`📊 Connected users: ${connectedUsers}`);
     }, 30000); // Every 30 seconds
   }

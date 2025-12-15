@@ -532,166 +532,124 @@ export const forgotPassword = async (req, res) => {
 				</style>
 				<![endif]-->
 				<style>
+					/* Animation Keyframes */
+					@keyframes fadeIn {
+						from { opacity: 0; transform: translateY(20px); }
+						to { opacity: 1; transform: translateY(0); }
+					}
+					@keyframes pulse {
+						0% { transform: scale(1); }
+						50% { transform: scale(1.05); }
+						100% { transform: scale(1); }
+					}
+					@keyframes shimmer {
+						0% { background-position: -1000px 0; }
+						100% { background-position: 1000px 0; }
+					}
+
+					/* Global Resets */
+					body { margin: 0; padding: 0; background-color: #000000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+					table { border-collapse: collapse; }
+					
+					/* Responsive Styles */
 					@media only screen and (max-width: 600px) {
-						.email-container {
-							width: 100% !important;
-							margin: 0 !important;
-						}
-						.header-logo {
-							width: 60px !important;
-							height: 60px !important;
-						}
-						.header-title {
-							font-size: 24px !important;
-						}
-						.content-padding {
-							padding: 30px 20px !important;
-						}
-						.otp-code {
-							font-size: 36px !important;
-							letter-spacing: 8px !important;
-						}
-						.button {
-							padding: 14px 28px !important;
-							font-size: 14px !important;
-						}
+						.email-container { width: 100% !important; border-radius: 0 !important; }
+						.content-padding { padding: 20px !important; }
+						.header-title { font-size: 24px !important; }
+						.otp-box { font-size: 32px !important; letter-spacing: 4px !important; padding: 15px !important; }
 					}
 				</style>
 			</head>
-			<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0f172a; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
-				<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #0f172a; padding: 20px 10px;">
-					<tr>
-						<td align="center">
-							<!--[if mso]>
-							<table width="600" cellpadding="0" cellspacing="0"><tr><td>
-							<![endif]-->
-							<table class="email-container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-								<!-- Header with Logo -->
-								<tr>
-									<td style="padding: 40px 20px 30px; text-align: center; background: rgba(255,255,255,0.1);">
-										<table width="100%" cellpadding="0" cellspacing="0" border="0">
-											<tr>
-												<td align="center">
-													<div class="header-logo" style="background: white; width: 80px; height: 80px; border-radius: 20px; margin: 0 auto 20px; display: inline-block; line-height: 80px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-														<span style="font-size: 48px; font-weight: 900; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block; vertical-align: middle; line-height: 1;">Z</span>
+			<body style="margin: 0; padding: 0; background-color: #000000; color: #ffffff;">
+				<center style="width: 100%; background-color: #000000; padding: 40px 0;">
+					<!-- Main Container -->
+					<div style="max-width: 600px; margin: 0 auto;">
+						<!-- Card -->
+						<table class="email-container" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #111111; border: 1px solid #333333; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+							
+							<!-- Header Image / Animation -->
+							<tr>
+								<td style="padding: 0; position: relative; height: 160px; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); text-align: center; overflow: hidden;">
+									<!-- Abstract animated shapes fallback (CSS gradient) -->
+									<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(circle at 20% 150%, rgba(255,255,255,0.15) 0%, transparent 50%), radial-gradient(circle at 80% -50%, rgba(255,255,255,0.15) 0%, transparent 50%); mix-blend-mode: overlay;"></div>
+									
+									<table width="100%" height="100%" cellpadding="0" cellspacing="0" border="0">
+										<tr>
+											<td align="center" valign="middle">
+												<!-- LOGO -->
+												<img src="https://res.cloudinary.com/dsol2p21u/image/upload/v1765774920/z-app-assets/z-logo-email-v2.png" alt="Z-APP" width="80" height="80" style="display: block; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); background-color: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 10px; border: 1px solid rgba(255,255,255,0.2);">
+											</td>
+										</tr>
+									</table>
+								</td>
+							</tr>
+
+							<!-- Content Body -->
+							<tr>
+								<td class="content-padding" style="padding: 40px 40px 30px; background-color: #111111;">
+									<table width="100%" cellpadding="0" cellspacing="0" border="0">
+										<tr>
+											<td align="center">
+												<h1 class="header-title" style="margin: 0 0 10px; font-size: 28px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">Password Reset Request</h1>
+												<p style="margin: 0 0 30px; font-size: 16px; color: #a1a1aa; line-height: 1.6;">
+													Hi <strong style="color: #ffffff;">${user.fullName || user.username}</strong>, we received a request to access your account.
+												</p>
+											</td>
+										</tr>
+
+										<!-- OTP Section -->
+										<tr>
+											<td align="center" style="padding: 10px 0 30px;">
+												<div style="background: linear-gradient(45deg, rgba(124, 58, 237, 0.1), rgba(79, 70, 229, 0.1)); border: 1px solid rgba(124, 58, 237, 0.3); border-radius: 12px; padding: 25px; display: inline-block;">
+													<p style="margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #a1a1aa; font-weight: 600;">Your Verification Code</p>
+													<div class="otp-box" style="font-family: 'Courier New', monospace; font-size: 42px; font-weight: 700; letter-spacing: 8px; color: #fff; text-shadow: 0 0 20px rgba(124, 58, 237, 0.5); animation: pulse 2s infinite ease-in-out;">
+														${otp}
 													</div>
-													<h1 class="header-title" style="margin: 0; color: white; font-size: 32px; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.2);">Z-APP</h1>
-													<p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 16px; font-weight: 500;">Connect. Chat. Discover.</p>
-												</td>
-											</tr>
-										</table>
-									</td>
-								</tr>
-								
-								<!-- Content -->
-								<tr>
-									<td class="content-padding" style="padding: 40px 30px; background-color: white;">
-										<table width="100%" cellpadding="0" cellspacing="0" border="0">
-											<tr>
-												<td align="center" style="padding-bottom: 30px;">
-													<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 20px; display: inline-block; line-height: 60px;">
-														<span style="font-size: 30px; vertical-align: middle;">🔐</span>
-													</div>
-													<h2 style="margin: 0; color: #1e293b; font-size: 28px; font-weight: 700;">Password Reset</h2>
-												</td>
-											</tr>
-											<tr>
-												<td style="padding-bottom: 20px;">
-													<p style="font-size: 16px; color: #475569; line-height: 1.6; margin: 0;">
-														Hi <strong style="color: #1e293b;">${user.fullName || user.username}</strong>,
-													</p>
-												</td>
-											</tr>
-											<tr>
-												<td style="padding-bottom: 30px;">
-													<p style="font-size: 16px; color: #475569; line-height: 1.6; margin: 0;">
-														You requested to reset your password. Use the verification code below to continue:
-													</p>
-												</td>
-											</tr>
-											<!-- OTP Box -->
-											<tr>
-												<td align="center" style="padding: 30px 0;">
-													<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 3px dashed #667eea; border-radius: 15px;">
-														<tr>
-															<td style="padding: 30px 20px; text-align: center;">
-																<p style="margin: 0 0 15px; color: #475569; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
-																	Your Verification Code
-																</p>
-																<div style="background: white; border-radius: 10px; padding: 20px; display: inline-block; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);">
-																	<p class="otp-code" style="margin: 0; font-size: 48px; font-weight: 900; letter-spacing: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-family: 'Courier New', monospace;">
-																		${otp}
-																	</p>
-																</div>
-															</td>
-														</tr>
-													</table>
-												</td>
-											</tr>
-											<!-- Timer Warning -->
-											<tr>
-												<td style="padding: 30px 0;">
-													<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; border-radius: 10px;">
-														<tr>
-															<td style="padding: 20px;">
-																<p style="margin: 0; color: #92400e; font-size: 15px; font-weight: 600; line-height: 1.5;">
-																	⏰ <strong>Important:</strong> This code will expire in <strong>10 minutes</strong>
-																</p>
-															</td>
-														</tr>
-													</table>
-												</td>
-											</tr>
-											<!-- Action Button -->
-											<tr>
-												<td align="center" style="padding: 20px 0;">
-													<a href="${process.env.FRONTEND_URL || 'https://z-app.com'}/reset-password" class="button" style="display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.3s ease;">
-														Reset Password →
-													</a>
-												</td>
-											</tr>
-											<tr>
-												<td style="padding-top: 30px; border-top: 1px solid #e2e8f0;">
-													<p style="font-size: 14px; color: #64748b; line-height: 1.6; margin: 0;">
-														If you didn't request this password reset, please ignore this email and ensure your account is secure.
-													</p>
-												</td>
-											</tr>
-										</table>
-									</td>
-								</tr>
-								
-								<!-- Footer -->
-								<tr>
-									<td style="padding: 30px 20px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); text-align: center;">
-										<table width="100%" cellpadding="0" cellspacing="0" border="0">
-											<tr>
-												<td align="center">
-													<p style="margin: 0 0 15px; color: rgba(255,255,255,0.7); font-size: 14px; line-height: 1.5;">
-														Need help? Contact us at <a href="mailto:support@z-app.com" style="color: #a78bfa; text-decoration: none; font-weight: 600;">support@z-app.com</a>
-													</p>
-													<p style="margin: 0 0 20px; color: rgba(255,255,255,0.5); font-size: 12px;">
-														© ${new Date().getFullYear()} Z-APP. All rights reserved.
-													</p>
-													<div style="margin-top: 20px;">
-														<a href="#" style="display: inline-block; margin: 0 8px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px;">Privacy</a>
-														<span style="color: rgba(255,255,255,0.3);">•</span>
-														<a href="#" style="display: inline-block; margin: 0 8px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px;">Terms</a>
-														<span style="color: rgba(255,255,255,0.3);">•</span>
-														<a href="#" style="display: inline-block; margin: 0 8px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px;">Help</a>
-													</div>
-												</td>
-											</tr>
-										</table>
-									</td>
-								</tr>
-							</table>
-							<!--[if mso]>
-							</td></tr></table>
-							<![endif]-->
-						</td>
-					</tr>
-				</table>
+												</div>
+											</td>
+										</tr>
+
+										<!-- Warning -->
+										<tr>
+											<td align="center" style="padding-bottom: 30px;">
+												<p style="margin: 0; font-size: 14px; color: #9ca3af; background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 50px; display: inline-block;">
+													Failed to request this? Secure your account immediately.
+												</p>
+											</td>
+										</tr>
+
+										<!-- Divider -->
+										<tr>
+											<td style="padding-bottom: 30px;">
+												<div style="height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); width: 100%;"></div>
+											</td>
+										</tr>
+									</table>
+								</td>
+							</tr>
+
+							<!-- Footer -->
+							<tr>
+								<td style="padding: 30px; background-color: #0a0a0a; border-top: 1px solid #222222; text-align: center;">
+									<p style="margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #ffffff;">Z-APP</p>
+									<p style="margin: 0 0 20px; font-size: 12px; color: #52525b;">
+										Professional. Secure. Connected.
+									</p>
+									<p style="margin: 0; font-size: 12px; color: #52525b;">
+										&copy; ${new Date().getFullYear()} Z-APP Inc. All rights reserved.
+									</p>
+								</td>
+							</tr>
+						</table>
+
+						<!-- Unsubscribe / Extra Layout -->
+						<div style="margin-top: 20px; text-align: center;">
+							<a href="#" style="font-size: 12px; color: #52525b; text-decoration: none; margin: 0 10px;">Privacy Policy</a>
+							<span style="color: #333;">|</span>
+							<a href="#" style="font-size: 12px; color: #52525b; text-decoration: none; margin: 0 10px;">Support</a>
+						</div>
+					</div>
+				</center>
 			</body>
 			</html>
 		`;

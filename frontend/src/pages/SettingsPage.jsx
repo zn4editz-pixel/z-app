@@ -6,6 +6,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useSettingsStore } from "../store/useSettingsStore"; // ✅ Import Settings Store
 import { Send, Lock, LogOut, Video, Mic, Shield, Check, X, User, Edit2, Save, Camera, Loader2 } from "lucide-react";
 import ImageCropper from "../components/ImageCropper";
+import LogoutModal from "../components/LogoutModal";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
 
@@ -21,7 +22,9 @@ const SettingsPage = () => {
   const [showCropper, setShowCropper] = useState(false);
   const [tempImage, setTempImage] = useState(null);
   const [selectedImg, setSelectedImg] = useState(null); // For display
+
   const [newProfilePic, setNewProfilePic] = useState(null); // For upload
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Profile editing states
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -186,13 +189,21 @@ const SettingsPage = () => {
   };
 
   const handleLogout = () => {
-    if (confirm("Are you sure you want to logout?")) {
-      logout();
-    }
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    logout();
+    setShowLogoutModal(false);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={confirmLogout}
+      />
       {/* Image Cropper Modal */}
       {showCropper && tempImage && (
         <ImageCropper

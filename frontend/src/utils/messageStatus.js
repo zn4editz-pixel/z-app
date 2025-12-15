@@ -17,73 +17,75 @@ export const getMessageStatusInfo = (message, isMyMessage, isReceiverOnline, the
   }
 
   const status = message.status || 'sent';
-  const isRead = message.readAt || message.isRead;
-  const isDelivered = message.deliveredAt || message.isDelivered;
-  
+  // ✅ ROBUST CHECK: Check all possible properties for read/delivered status
+  const isRead = message.readAt || message.isRead || status === 'read';
+  const isDelivered = message.deliveredAt || message.isDelivered || status === 'delivered' || isRead;
+
   // ✅ ENHANCED: Priority order - Read > Delivered > Sent based on online status
-  
-  // If message is read - show colored double tick (theme color)
+
+  // If message is read - show colored double tick (Theme Primary Color)
   if (isRead) {
     return {
       show: true,
       type: 'double-tick',
-      color: themeColors.primary,
+      className: 'text-primary', // ✅ Tailwind class for guaranteed theme match
       animate: 'animate-check-mark-read',
       tooltip: 'Read'
     };
   }
-  
+
   // If message is delivered OR receiver is online - show gray double tick
   if (isDelivered || (isReceiverOnline && status !== 'sending' && status !== 'failed')) {
     return {
       show: true,
       type: 'double-tick',
-      color: 'hsl(var(--bc) / 0.5)',
+      className: 'text-base-content/50',
       animate: 'animate-check-mark',
       tooltip: 'Delivered'
     };
   }
-  
+
   // Handle specific statuses
   switch (status) {
     case 'sending':
       return {
         show: true,
         type: 'clock',
-        color: 'hsl(var(--bc) / 0.4)',
+        className: 'text-base-content/40',
         animate: 'animate-pulse',
         tooltip: 'Sending...'
       };
-      
+
     case 'failed':
       return {
         show: true,
         type: 'clock',
-        color: 'hsl(var(--er))',
+        className: 'text-error',
         animate: 'animate-pulse',
         tooltip: 'Failed to send'
       };
-      
+
     case 'sent':
     default:
-      // If receiver is offline - show single tick
-      if (!isReceiverOnline) {
+      // ✅ FIXED: If previously delivered (double tick), keep it that way even if user goes offline
+      // Logic: deliveredAt exists OR status says delivered OR receiver is currently online
+      if (isDelivered || message.status === 'delivered' || isReceiverOnline) {
         return {
           show: true,
-          type: 'single-tick',
-          color: 'hsl(var(--bc) / 0.4)',
-          animate: '',
-          tooltip: 'Sent'
+          type: 'double-tick',
+          className: 'text-base-content/50',
+          animate: 'animate-check-mark',
+          tooltip: 'Delivered'
         };
       }
-      
-      // If receiver is online but not delivered yet - show double tick
+
+      // Only show single tick if truly not delivered and user is offline
       return {
         show: true,
-        type: 'double-tick',
-        color: 'hsl(var(--bc) / 0.5)',
-        animate: 'animate-check-mark',
-        tooltip: 'Delivered'
+        type: 'single-tick',
+        className: 'text-base-content/40',
+        animate: '',
+        tooltip: 'Sent'
       };
   }
 };
@@ -114,7 +116,7 @@ export const getThemeColors = (theme) => {
     'acid': { primary: '#ff00ff', secondary: '#ffff00', accent: '#00ffff', success: '#00d084' },
     'lemonade': { primary: '#519903', secondary: '#e9e92f', accent: '#bf0000', success: '#00d084' },
     'winter': { primary: '#047aed', secondary: '#463aa2', accent: '#c148ac', success: '#00d084' },
-    
+
     // Dark themes
     'dark': { primary: '#661ae6', secondary: '#d926aa', accent: '#1fb2a5', success: '#00d084' },
     'synthwave': { primary: '#e779c1', secondary: '#58c7f3', accent: '#f3cc30', success: '#00d084' },
@@ -131,7 +133,7 @@ export const getThemeColors = (theme) => {
     'nord': { primary: '#5e81ac', secondary: '#81a1c1', accent: '#88c0d0', success: '#a3be8c' },
     'sunset': { primary: '#ff8a65', secondary: '#ffb74d', accent: '#a1887f', success: '#81c784' }
   };
-  
+
   return themeColorMap[theme] || themeColorMap['coffee'];
 };
 
@@ -155,7 +157,7 @@ export const getReactionBadgeStyle = (hasMyReaction, themeColors) => {
       transform: 'scale(1.02)'
     };
   }
-  
+
   // ✅ INSTAGRAM EXACT: Others' reactions - view only
   return {
     backgroundColor: '#ffffff',

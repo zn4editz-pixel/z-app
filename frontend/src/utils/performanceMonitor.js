@@ -1,10 +1,11 @@
 // ⚡ Performance Monitor - Real-time performance tracking
+import React from 'react';
 class PerformanceMonitor {
   constructor() {
     this.metrics = new Map();
     this.observers = [];
     this.isEnabled = import.meta.env.DEV || localStorage.getItem('debug-performance') === 'true';
-    
+
     if (this.isEnabled) {
       this.init();
     }
@@ -13,13 +14,13 @@ class PerformanceMonitor {
   init() {
     // ✅ PERFORMANCE: Monitor Core Web Vitals
     this.observeWebVitals();
-    
+
     // ✅ PERFORMANCE: Monitor memory usage
     this.observeMemory();
-    
+
     // ✅ PERFORMANCE: Monitor network requests
     this.observeNetwork();
-    
+
     // ✅ PERFORMANCE: Monitor React renders
     this.observeReactRenders();
   }
@@ -86,7 +87,7 @@ class PerformanceMonitor {
     // Hook into React DevTools if available
     if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
       const hook = window.__REACT_DEVTOOLS_GLOBAL_HOOK__;
-      
+
       hook.onCommitFiberRoot = (id, root, priorityLevel) => {
         const renderTime = performance.now();
         this.recordMetric('React Render', renderTime, { rootId: id });
@@ -160,7 +161,7 @@ class PerformanceMonitor {
 
     const memory = performance.memory;
     const memoryMetrics = this.getMetrics('Memory Used');
-    
+
     if (memoryMetrics.length < 10) return null;
 
     // Check if memory is consistently increasing
@@ -187,7 +188,7 @@ class PerformanceMonitor {
   generateReport() {
     const metrics = this.getAllMetrics();
     const memoryLeak = this.detectMemoryLeaks();
-    
+
     return {
       timestamp: new Date().toISOString(),
       metrics,
@@ -293,10 +294,10 @@ export default performanceMonitor;
 
 // ✅ PERFORMANCE: React hook for component performance
 export const usePerformanceMonitor = (componentName) => {
-  if (typeof window === 'undefined') return { startTimer: () => () => {}, recordMetric: () => {} };
-  
+  if (typeof window === 'undefined') return { startTimer: () => () => { }, recordMetric: () => { } };
+
   const renderStart = performance.now();
-  
+
   // Only use React hooks if React is available
   if (typeof React !== 'undefined' && React.useEffect) {
     React.useEffect(() => {

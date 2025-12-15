@@ -314,33 +314,72 @@ export const useChatStore = create((set, get) => ({
             }
         };
 
-        const messageDeliveredHandler = (messageId) => {
+        const messageDeliveredHandler = (payload) => {
+            // Backend sends: { messageId, deliveredAt }
+            const messageId = payload?.messageId || payload;
+            const deliveredAt = payload?.deliveredAt || new Date().toISOString();
+
             console.log(`✅ Message delivered: ${messageId}`);
+
             const { messages } = get();
+            const targetId = messageId.toString();
+
             const updatedMessages = messages.map(msg =>
-                msg.id === messageId ? { ...msg, status: "delivered" } : msg
+                msg.id.toString() === targetId ? { ...msg, status: "delivered", isDelivered: true, deliveredAt: deliveredAt } : msg
             );
             set({ messages: updatedMessages });
         };
 
-        const messagesDeliveredHandler = (messageIds) => {
-            if (!Array.isArray(messageIds)) return;
-            console.log(`✅ Messages delivered: ${messageIds.length}`);
+        const messagesDeliveredHandler = (payload) => {
+            // Backend sends: { messageIds: [...], deliveredAt: ... }
+            const messageIds = payload?.messageIds || payload;
+            const deliveredAt = payload?.deliveredAt || new Date().toISOString();
+
+            if (!Array.isArray(messageIds)) {
+                // Should not happen with new logic, but good for debug
+                console.warn("⚠️ messagesDelivered IDs not array:", payload);
+                return;
+            }
+
+            console.log(`✅ Messages delivered event: ${messageIds.length}`);
+
             const { messages } = get();
+            const targetIds = messageIds.map(id => id.toString());
+
             const updatedMessages = messages.map(msg =>
-                messageIds.includes(msg.id) ? { ...msg, status: "delivered" } : msg
+                targetIds.includes(msg.id.toString()) ? { ...msg, status: "delivered", isDelivered: true, deliveredAt: deliveredAt } : msg
             );
             set({ messages: updatedMessages });
         };
 
         const messagesReadHandler = (conversationId) => {
-            console.log(`👀 Messages read in conversation: ${conversationId}`);
-            const { messages, selectedUser } = get();
-            if (selectedUser?.id === conversationId) {
-                const updatedMessages = messages.map(msg =>
-                    msg.status !== "read" && msg.senderId === get().selectedUser.id ? { ...msg, status: "read" } : msg
-                );
+            console.log('👀 Socket: messagesRead event received', { conversationId });
+            const { messages, selectedUser, authUser } = get();
+
+            // Safety check
+            if (!selectedUser || !authUser) return;
+
+            // Ensure ID comparison is type-safe (string vs number)
+            const currentChatId = selectedUser.id.toString();
+            const eventChatId = conversationId.toString();
+            const currentUserId = authUser.id.toString();
+
+            if (currentChatId === eventChatId) {
+                console.log('📍 Updating read status for current chat');
+                const updatedMessages = messages.map(msg => {
+                    // Update MY messages (senderId matches ME) to 'read' status
+                    const msgSenderId = msg.senderId ? msg.senderId.toString() : '';
+
+                    if (msgSenderId === currentUserId && !msg.isRead) {
+                        return { ...msg, isRead: true, status: 'read', readAt: new Date().toISOString() };
+                    }
+                    return msg;
+                });
+
                 set({ messages: updatedMessages });
+
+                // Update cache
+                cacheMessagesDB(conversationId, updatedMessages);
             }
         };
 
@@ -348,6 +387,40 @@ export const useChatStore = create((set, get) => ({
         socket.on("messageDelivered", messageDeliveredHandler);  // defined in file
         socket.on("messagesDelivered", messagesDeliveredHandler); // defined in file
         socket.on("messagesRead", messagesReadHandler); // defined in file
+
+        // 🔥 NEW: Listen for real-time call logs
+        socket.on("call-log", (callLog) => {
+            console.log("📞 Real-time call log received:", callLog);
+            const { selectedUser, messages, authUser } = get();
+
+            // Only add if relevant to current chat
+            const isRelevant = selectedUser && (
+                (callLog.receiverId === selectedUser.id) ||
+                (callLog.callerId === selectedUser.id) ||
+                (callLog.receiverId?.id === selectedUser.id) ||
+                (callLog.callerId?.id === selectedUser.id)
+            );
+
+            if (isRelevant) {
+                // Check if already exists to avoid dupes
+                const exists = messages.some(m => m.id === callLog.id);
+                if (!exists) {
+                    set({ messages: [...messages, callLog] });
+                    // Update cache
+                    cacheMessagesDB(selectedUser.id, [...messages, callLog]);
+
+                    // Force scroll
+                    setTimeout(() => {
+                        const container = document.querySelector('.chat-scroll-container');
+                        if (container) container.scrollTop = container.scrollHeight;
+                    }, 100);
+                }
+            }
+
+            // Update friend list preview
+            const friendId = callLog.callerId === authUser.id ? callLog.receiverId : callLog.callerId;
+            useFriendStore.getState().updateFriendLastMessage(friendId, callLog);
+        });
 
         socket.on("typing", handleTyping);
         socket.on("stopTyping", handleStopTyping);

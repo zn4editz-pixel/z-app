@@ -8,7 +8,7 @@ import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import SetupProfilePage from "./pages/SetupProfilePage";
 import Navbar from "./components/Navbar";
-import PermissionHandler from "./components/PermissionHandler";
+// PermissionHandler removed as per user request to only ask on feature usage
 import ErrorBoundary from "./components/ErrorBoundary";
 
 // Lazy load non-critical pages for performance
@@ -371,7 +371,7 @@ const App = () => {
 	return (
 		<div data-theme={effectiveTheme} className={`min-h-screen bg-base-100 ${shouldShowNavbar ? "pt-14 md:pt-16" : ""}`}>
 			<ErrorBoundary>
-				{authUser && hasCompletedProfile && <PermissionHandler />}
+				{/* PermissionHandler removed - permissions requested on feature usage only */}
 				{shouldShowNavbar && <Navbar />}
 			</ErrorBoundary>
 

@@ -45,11 +45,11 @@ if (cluster.isPrimary && process.env.NODE_ENV === 'production') {
   // Graceful shutdown
   process.on('SIGTERM', () => {
     console.log('🔄 Master received SIGTERM, shutting down gracefully...');
-    
+
     for (const id in cluster.workers) {
       cluster.workers[id].kill();
     }
-    
+
     setTimeout(() => {
       console.log('💀 Forcing shutdown...');
       process.exit(1);
@@ -107,7 +107,7 @@ async function startWorker() {
   }));
 
   // Body parsing middleware
-  app.use(express.json({ 
+  app.use(express.json({
     limit: '10mb',
     verify: (req, res, buf) => {
       req.rawBody = buf;
@@ -139,7 +139,7 @@ async function startWorker() {
 
   // 404 handler
   app.use('*', (req, res) => {
-    res.status(404).json({ 
+    res.status(404).json({
       error: 'Route not found',
       path: req.originalUrl,
       method: req.method,
@@ -149,17 +149,17 @@ async function startWorker() {
   // Graceful shutdown handling
   const gracefulShutdown = async (signal) => {
     console.log(`🔄 Worker ${process.pid} received ${signal}, shutting down gracefully...`);
-    
+
     server.close(async () => {
       console.log('🔌 HTTP server closed');
-      
+
       try {
         await socketCluster.shutdown();
         console.log('🔌 Socket.IO server closed');
-        
+
         await prisma.$disconnect();
         console.log('🗄️ Database connection closed');
-        
+
         process.exit(0);
       } catch (error) {
         console.error('❌ Error during shutdown:', error);
@@ -200,9 +200,9 @@ async function startWorker() {
   setInterval(() => {
     const memUsage = process.memoryUsage();
     const cpuUsage = process.cpuUsage();
-    
+
     console.log(`📊 Worker ${process.pid} - Memory: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB, CPU: ${cpuUsage.user + cpuUsage.system}μs`);
   }, 60000); // Every minute
 }
 
-export default app;
+// End of worker process

@@ -81,7 +81,7 @@ const SignUpPage = () => {
 	};
 
 	return (
-		<div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-base-200 grid lg:grid-cols-2 touch-none overscroll-none">
+		<div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-base-100 grid lg:grid-cols-2 touch-none overscroll-none">
 			{/* Left Side */}
 			<div className="flex flex-col justify-center items-center p-6 sm:p-8 login-form-container relative overflow-hidden">
 
@@ -111,7 +111,7 @@ const SignUpPage = () => {
 				<ChatBackground />
 
 				{/* 🌟 Content Container (No Glassmorphism, just Scale Logic) */}
-				<div className="w-full max-w-md space-y-6 relative z-10 transform scale-90 sm:scale-100 origin-center">
+				<div className="w-full max-w-md space-y-6 relative z-10 transform scale-90 sm:scale-100 lg:scale-90 origin-center transition-transform">
 					{/* Logo / Heading */}
 					<div className="text-center mb-6">
 						<div className="flex flex-col items-center gap-2 group">

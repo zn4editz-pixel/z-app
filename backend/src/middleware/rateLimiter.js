@@ -1,4 +1,4 @@
-co// PRODUCTION RATE LIMITING FOR 500K+ USERS
+// PRODUCTION RATE LIMITING FOR 500K+ USERS
 import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
 
@@ -16,7 +16,7 @@ try {
 // Helper function to create Redis store with unique prefix
 const createRedisStore = (prefix) => {
   if (!redis) return undefined;
-  
+
   return new RedisStore({
     sendCommand: (...args) => redis.call(...args),
     prefix: `rl:${prefix}:`,
@@ -147,10 +147,10 @@ export class SlidingWindowRateLimiter {
     try {
       // Remove old entries
       await redis.zremrangebyscore(key, 0, windowStart);
-      
+
       // Count current requests
       const currentRequests = await redis.zcard(key);
-      
+
       if (currentRequests >= this.maxRequests) {
         return false;
       }
@@ -158,7 +158,7 @@ export class SlidingWindowRateLimiter {
       // Add current request
       await redis.zadd(key, now, `${now}-${Math.random()}`);
       await redis.expire(key, this.windowSize);
-      
+
       return true;
     } catch (error) {
       console.error('Rate limiter error:', error);
@@ -192,12 +192,12 @@ export const burstProtection = new SlidingWindowRateLimiter(10, 50, 'burst_prote
 export const advancedRateLimit = (limiter) => {
   return async (req, res, next) => {
     const identifier = req.user?.id || req.ip;
-    
+
     const isAllowed = await limiter.isAllowed(identifier);
-    
+
     if (!isAllowed) {
       const remaining = await limiter.getRemainingRequests(identifier);
-      
+
       return res.status(429).json({
         error: 'Rate limit exceeded',
         retryAfter: limiter.windowSize,
@@ -215,13 +215,13 @@ export class RateLimitMonitor {
     try {
       const keys = await redis.keys('rate_limit:*');
       const stats = {};
-      
+
       for (const key of keys) {
         const count = await redis.get(key);
         const ttl = await redis.ttl(key);
         stats[key] = { count: parseInt(count) || 0, ttl };
       }
-      
+
       return stats;
     } catch (error) {
       console.error('Rate limit stats error:', error);
@@ -237,7 +237,7 @@ export class RateLimitMonitor {
         `friend_requests:${userId}`,
         `search:${userId}`,
       ];
-      
+
       for (const pattern of patterns) {
         await redis.del(pattern);
       }

@@ -1,5 +1,5 @@
 // 🚀 PRODUCTION PERFORMANCE OPTIMIZER
-import { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 
 // 1. Memory Management
 export const useMemoryOptimizer = () => {
@@ -40,16 +40,16 @@ export const useImageOptimizer = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
-      
+
       img.onload = () => {
         const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
         canvas.width = img.width * ratio;
         canvas.height = img.height * ratio;
-        
+
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         canvas.toBlob(resolve, 'image/jpeg', quality);
       };
-      
+
       img.src = URL.createObjectURL(file);
     });
   }, []);
@@ -64,7 +64,7 @@ export const useNetworkOptimizer = () => {
     for (let i = 0; i < requests.length; i += batchSize) {
       batches.push(requests.slice(i, i + batchSize));
     }
-    
+
     return batches.reduce(async (prev, batch) => {
       await prev;
       return Promise.all(batch);
@@ -93,7 +93,7 @@ export const useMemoizedValue = (factory, deps) => {
 
 // 5. Bundle Size Optimization
 export const lazyLoadComponent = (importFunc) => {
-  return React.lazy(() => 
+  return React.lazy(() =>
     importFunc().then(module => ({
       default: module.default || module
     }))
@@ -157,7 +157,7 @@ export const useSocketOptimizer = (socket) => {
 
     const batchEmit = (event, data) => {
       emissionQueue.push({ event, data });
-      
+
       clearTimeout(emissionTimeout);
       emissionTimeout = setTimeout(() => {
         if (emissionQueue.length > 0) {

@@ -229,73 +229,75 @@ const ChatContainer = ({ onStartCall }) => {
     }
   }, [messages, selectedUser?.id]);
 
+  // ✅ PREMIUM SMOOTH SCROLL: Lenis-like feel for chat
+  const scrollToBottomSmooth = (behavior = 'smooth') => {
+    if (!scrollContainerRef.current) return;
+
+    const container = scrollContainerRef.current;
+    const targetScroll = container.scrollHeight;
+
+    // Custom smooth scroll implementation
+    container.scrollTo({
+      top: targetScroll,
+      behavior: behavior
+    });
+  };
+
   useEffect(() => {
     if (!bottomRef.current || !scrollContainerRef.current) return;
 
     const container = scrollContainerRef.current;
-    const isScrolledToBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
 
-    // INSTANT scroll to bottom - NO ANIMATION
+    // Threshold for auto-scrolling
+    const isScrolledToBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+
+    // Process new messages
     if (messages.length > 0) {
-      // ✅ FIXED: Only show button for RECEIVED messages (not sender's own)
       if (!isInitialLoad.current && messages.length > previousMessagesLength.current) {
-        // Check if new messages are from the OTHER person (not me)
+        // Source check
         const newMessages = messages.slice(previousMessagesLength.current);
         const receivedMessages = newMessages.filter(msg => msg.senderId !== authUser?.id);
+        const sentMessages = newMessages.filter(msg => msg.senderId === authUser?.id);
 
-        // Only show button if: scrolled up AND received messages from other person
-        if (!isScrolledToBottom && receivedMessages.length > 0) {
-          setNewMessageCount(prev => prev + receivedMessages.length);
-          setShowNewMessageButton(true);
-        } else {
-          // Auto-scroll if: at bottom OR sender sent message (always scroll for own messages)
-          requestAnimationFrame(() => {
-            if (scrollContainerRef.current) {
-              scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-            }
-          });
+        if (sentMessages.length > 0) {
+          // ALWAYS auto-scroll for own sent messages
+          // 'smooth' transition as requested
+          scrollToBottomSmooth('smooth');
           setShowNewMessageButton(false);
           setNewMessageCount(0);
+        } else if (receivedMessages.length > 0) {
+          // For received messages:
+          // "in the case of new message comming then give a smooth transition"
+          if (isScrolledToBottom) {
+            // User is watching the chat bottom -> Smooth scroll to show new text
+            scrollToBottomSmooth('smooth');
+          } else {
+            // User is scrolled up reading old history -> Don't jerk them down
+            setNewMessageCount(prev => prev + receivedMessages.length);
+            setShowNewMessageButton(true);
+          }
         }
       } else if (isInitialLoad.current) {
-        // ✅ ENHANCED: Multiple attempts to ensure scroll to bottom works
-        const scrollToBottomInstant = () => {
-          if (scrollContainerRef.current) {
-            const container = scrollContainerRef.current;
-            container.scrollTop = container.scrollHeight;
-
-            // ✅ DOUBLE CHECK: Ensure we actually scrolled to bottom
-            const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 10;
-            if (!isAtBottom) {
-              // Try again with requestAnimationFrame
-              requestAnimationFrame(() => {
-                container.scrollTop = container.scrollHeight;
-              });
-            }
-          }
-        };
-
-        // ✅ INSTANT: Initial load scroll - no animation, no delay
-        scrollToBottomInstant();
-
-        // ✅ BACKUP: Try again after a brief delay to ensure DOM is updated
-        setTimeout(scrollToBottomInstant, 50);
-
-        if (import.meta.env.DEV) console.log(`📜 Initial load: Jumped to bottom (${messages.length} messages)`);
+        // INITIAL LOAD: Instant jump (no animation)
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
         isInitialLoad.current = false;
       }
 
       previousMessagesLength.current = messages.length;
     }
-  }, [messages.length, authUser?.id]); // Removed isTyping from here to handle it separately
+  }, [messages.length, authUser?.id]);
 
-  // ✅ VISIBILITY: Auto-scroll when friend starts typing
+  // Handle typing indicator smooth scroll
   useEffect(() => {
-    if (isTyping && bottomRef.current) {
-      // Small delay to allow rendering
-      setTimeout(() => {
-        bottomRef.current.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+    if (isTyping && scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+
+      if (isNearBottom) {
+        scrollToBottomSmooth('smooth');
+      }
     }
   }, [isTyping]);
 
@@ -463,21 +465,22 @@ const ChatContainer = ({ onStartCall }) => {
           )}
 
           {/* Typing Indicator - Enhanced Bubble */}
+          {/* Typing Indicator - Enhanced Bubble */}
           {isTyping && (
             <div className="flex justify-start w-full my-2 animate-slide-up">
               <div className="flex items-end gap-2 max-w-[80%]">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full overflow-hidden flex-shrink-0 shadow-sm">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full overflow-hidden flex-shrink-0 shadow-sm border border-base-200">
                   <img
                     src={selectedUser.profilePic || "/avatar.png"}
                     alt="avatar"
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="chat-bubble flex items-center p-3 bg-base-200 rounded-2xl rounded-tl-none shadow-sm">
-                  <div className="flex gap-1.5 px-1">
-                    <span className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="chat-bubble flex items-center p-3 bg-base-200 rounded-2xl rounded-tl-none shadow-sm min-h-[44px]">
+                  <div className="flex gap-1.5 px-2 items-center h-full">
+                    <span className="w-2.5 h-2.5 bg-base-content/50 rounded-full animate-typing-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2.5 h-2.5 bg-base-content/50 rounded-full animate-typing-bounce" style={{ animationDelay: '200ms' }} />
+                    <span className="w-2.5 h-2.5 bg-base-content/50 rounded-full animate-typing-bounce" style={{ animationDelay: '400ms' }} />
                   </div>
                 </div>
               </div>

@@ -171,11 +171,14 @@ const StrangerAnimation = () => {
 
                 {/* UI ELEMENTS */}
 
-                {/* 1. SCANNING RETICLE (Stage 1) */}
-                <div className={`absolute z-30 transition-all duration-500 ${stage === 1 ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}>
-                    <div className="relative w-16 h-16 flex items-center justify-center">
-                        <Scan className="w-full h-full text-primary animate-spin-slow" strokeWidth={1} />
-                        <div className="absolute text-[10px] text-primary font-mono font-bold tracking-widest animate-pulse">SCAN</div>
+                {/* 1. FINDING INDICATOR (Stage 1) - Replaces Scan Reticle */}
+                <div className={`absolute z-30 transition-all duration-500 flex flex-col items-center gap-3 ${stage === 1 ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}>
+                    <div className="relative">
+                        <div className="w-4 h-4 rounded-full bg-primary animate-ping"></div>
+                        <div className="absolute inset-0 w-4 h-4 rounded-full bg-primary animate-pulse"></div>
+                    </div>
+                    <div className="text-2xl font-black text-white tracking-wider animate-pulse luxury-gradient-text">
+                        FINDING...
                     </div>
                 </div>
 
@@ -231,10 +234,10 @@ const StrangerAnimation = () => {
             {/* FOOTER TEXT */}
             <div className={`absolute bottom-8 w-full text-center z-20 pointer-events-none transition-all duration-500 ${stage === 4 ? 'opacity-0' : 'opacity-100'}`}>
                 <h2 className={`text-2xl font-black transition-all duration-700 ${stage >= 2 ? 'text-primary scale-110' : 'text-gray-600 scale-100'}`}>
-                    {stage >= 2 ? "THE COLOR OF CONNECTION" : "Finding your match..."}
+                    {stage >= 2 ? "THE COLOR OF CONNECTION" : "SEARCHING GLOBAL NETWORK"}
                 </h2>
                 <p className="text-white/30 text-xs uppercase tracking-widest mt-1">
-                    {stage >= 2 ? "100% Real People • 0% Filter" : "Connecting to Global Servers"}
+                    {stage >= 2 ? "100% Real People • 0% Filter" : "Connecting..."}
                 </p>
             </div>
 

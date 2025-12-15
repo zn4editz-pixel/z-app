@@ -33,117 +33,124 @@ const recentMatches = new Map(); // socketId -> Set of recent partner socketIds
 // Find and match strangers
 const findMatch = (socket, io) => {
 	console.log(`🔍 Finding match for ${socket.id}. Queue size: ${waitingQueue.length}`);
-	
+
 	// Check if this socket is already matched
 	if (matchedPairs.has(socket.id)) {
 		console.log(`⚠️ ${socket.id} is already matched, skipping`);
 		return;
 	}
-	
-	// Remove current socket from queue if present
+
+	// Remove self from queue to prevent matching with self
 	waitingQueue = waitingQueue.filter(id => id !== socket.id);
-	
+
 	if (waitingQueue.length > 0) {
-		// Find first person in queue who is NOT already matched and NOT a recent match
+		// Find first compatible partner in queue
 		let partnerSocketId = null;
 		let partnerSocket = null;
+		let partnerIndex = -1;
+
 		const myRecentMatches = recentMatches.get(socket.id) || new Set();
-		
-		while (waitingQueue.length > 0) {
-			partnerSocketId = waitingQueue.shift();
-			
-			// Skip if partner is already matched
-			if (matchedPairs.has(partnerSocketId)) {
+
+		// Iterate through queue without removing items yet
+		for (let i = 0; i < waitingQueue.length; i++) {
+			const candidateId = waitingQueue[i];
+
+			// Skip if candidate is already matched (shouldn't be in queue, but safety check)
+			if (matchedPairs.has(candidateId)) {
 				continue;
 			}
-			
-			// Skip if this was a recent match
-			if (myRecentMatches.has(partnerSocketId)) {
+
+			// Skip if this was a recent match (ANTI-SPAM / DIVERSITY)
+			if (myRecentMatches.has(candidateId)) {
+				console.log(`🔄 Skipping recent match: ${candidateId}`);
 				continue;
 			}
-			
-			partnerSocket = io.sockets.sockets.get(partnerSocketId);
-			
-			if (partnerSocket) {
-				break; // Found a valid partner
+
+			const candidateSocket = io.sockets.sockets.get(candidateId);
+			if (candidateSocket) {
+				// Found valid partner!
+				partnerSocketId = candidateId;
+				partnerSocket = candidateSocket;
+				partnerIndex = i;
+				break;
+			} else {
+				// Socket dead?
+				console.log(`👻 Cleanup dead socket from queue: ${candidateId}`);
 			}
 		}
-		
+
 		if (partnerSocket && partnerSocketId) {
+			// Remove partner from queue since they are now matched
+			if (partnerIndex > -1) {
+				waitingQueue.splice(partnerIndex, 1);
+			}
+
 			// Create match
 			matchedPairs.set(socket.id, partnerSocketId);
 			matchedPairs.set(partnerSocketId, socket.id);
-			
-			// Add to recent matches to prevent immediate re-matching
-			if (!recentMatches.has(socket.id)) {
-				recentMatches.set(socket.id, new Set());
-			}
-			if (!recentMatches.has(partnerSocketId)) {
-				recentMatches.set(partnerSocketId, new Set());
-			}
+
+			// Add to recent matches
+			if (!recentMatches.has(socket.id)) recentMatches.set(socket.id, new Set());
+			if (!recentMatches.has(partnerSocketId)) recentMatches.set(partnerSocketId, new Set());
+
 			recentMatches.get(socket.id).add(partnerSocketId);
 			recentMatches.get(partnerSocketId).add(socket.id);
-			
-			// Limit recent matches to last 3 partners
-			if (recentMatches.get(socket.id).size > 3) {
-				const oldestMatch = Array.from(recentMatches.get(socket.id))[0];
-				recentMatches.get(socket.id).delete(oldestMatch);
+
+			// Limit recent matches (keep last 5)
+			if (recentMatches.get(socket.id).size > 5) {
+				const [first] = recentMatches.get(socket.id);
+				recentMatches.get(socket.id).delete(first);
 			}
-			if (recentMatches.get(partnerSocketId).size > 3) {
-				const oldestMatch = Array.from(recentMatches.get(partnerSocketId))[0];
-				recentMatches.get(partnerSocketId).delete(oldestMatch);
+			if (recentMatches.get(partnerSocketId).size > 5) {
+				const [first] = recentMatches.get(partnerSocketId);
+				recentMatches.get(partnerSocketId).delete(first);
 			}
-			
-			// Clear recent matches after 30 seconds
+
+			// REDUCED COOLDOWN: Clear recent match after 5 seconds (better for testing/small pool)
+			// User requested "omegle like", allowing quick reconnections if wanted
 			setTimeout(() => {
-				if (recentMatches.has(socket.id)) {
-					recentMatches.get(socket.id).delete(partnerSocketId);
-				}
-				if (recentMatches.has(partnerSocketId)) {
-					recentMatches.get(partnerSocketId).delete(socket.id);
-				}
-			}, 30000);
-			
+				if (recentMatches.has(socket.id)) recentMatches.get(socket.id).delete(partnerSocketId);
+				if (recentMatches.has(partnerSocketId)) recentMatches.get(partnerSocketId).delete(socket.id);
+			}, 5000); // Changed from 30s to 5s
+
 			console.log(`✅ Matched ${socket.id} with ${partnerSocketId}`);
-			
-			// Send match data to both partners
+
+			// Send match data
 			const partnerDisplayData = {
 				userId: partnerSocket.strangerData?.userId,
-				displayName: partnerSocket.strangerData?.username || partnerSocket.strangerData?.nickname ? 
-					(partnerSocket.strangerData?.nickname || partnerSocket.strangerData?.username) : "Stranger",
+				displayName: partnerSocket.strangerData?.username || partnerSocket.strangerData?.nickname || "Stranger",
 				profilePic: partnerSocket.strangerData?.profilePic || null,
 				isVerified: partnerSocket.strangerData?.isVerified || false,
 				allowFriendRequests: partnerSocket.strangerData?.allowFriendRequests !== false
 			};
-			
+
 			const myDisplayData = {
 				userId: socket.strangerData?.userId,
-				displayName: socket.strangerData?.username || socket.strangerData?.nickname ? 
-					(socket.strangerData?.nickname || socket.strangerData?.username) : "Stranger",
+				displayName: socket.strangerData?.username || socket.strangerData?.nickname || "Stranger",
 				profilePic: socket.strangerData?.profilePic || null,
 				isVerified: socket.strangerData?.isVerified || false,
 				allowFriendRequests: socket.strangerData?.allowFriendRequests !== false
 			};
-			
-			socket.emit("stranger:matched", { 
+
+			socket.emit("stranger:matched", {
 				partnerId: partnerSocketId,
 				partnerUserId: partnerSocket.strangerData?.userId,
 				partnerUserData: partnerDisplayData
 			});
-			
-			partnerSocket.emit("stranger:matched", { 
+
+			partnerSocket.emit("stranger:matched", {
 				partnerId: socket.id,
 				partnerUserId: socket.strangerData?.userId,
 				partnerUserData: myDisplayData
 			});
 		} else {
-			// No valid partner found, add to queue
+			// No valid partner found, add self to queue
 			waitingQueue.push(socket.id);
 			console.log(`⏳ Added ${socket.id} to queue (no valid partner). Queue size: ${waitingQueue.length}`);
 			socket.emit("stranger:waiting");
 		}
 	} else {
-		// Add to queue
+		// Queue empty, just add self
 		waitingQueue.push(socket.id);
 		console.log(`⏳ Added ${socket.id} to queue. Queue size: ${waitingQueue.length}`);
 		socket.emit("stranger:waiting");
@@ -153,30 +160,30 @@ const findMatch = (socket, io) => {
 // Clean up matches when user disconnects or skips
 const cleanupMatch = (socket, io) => {
 	const partnerSocketId = matchedPairs.get(socket.id);
-	
+
 	if (partnerSocketId) {
 		const partnerSocket = io.sockets.sockets.get(partnerSocketId);
-		
+
 		// Remove both from matched pairs
 		matchedPairs.delete(socket.id);
 		matchedPairs.delete(partnerSocketId);
-		
+
 		console.log(`🧹 Cleaned up match: ${socket.id} <-> ${partnerSocketId}`);
-		
+
 		if (partnerSocket) {
 			return partnerSocket;
 		}
 	}
-	
+
 	// Remove from waiting queue
 	waitingQueue = waitingQueue.filter(id => id !== socket.id);
-	
+
 	return null;
 };
 
 export function initializeSocketHandlers(io) {
 	console.log('🔌 Initializing socket handlers with stranger chat support');
-	
+
 	// Store io instance for emitToUser function
 	ioInstance = io;
 
@@ -185,14 +192,14 @@ export function initializeSocketHandlers(io) {
 		try {
 			// Get token from query or auth header
 			const token = socket.handshake.auth.token || socket.handshake.query.token;
-			
+
 			if (token) {
 				// Verify token
 				const decoded = jwt.verify(token, process.env.JWT_SECRET);
 				socket.userId = decoded.userId;
 				console.log(`✅ Socket authenticated for user ${decoded.userId}`);
 			}
-			
+
 			next();
 		} catch (error) {
 			console.error("Socket authentication error:", error.message);
@@ -203,16 +210,16 @@ export function initializeSocketHandlers(io) {
 
 	io.on("connection", (socket) => {
 		console.log(`🔌 Socket connected: ${socket.id}`);
-		
+
 		// Register user for private chat
 		if (socket.userId) {
 			userSocketMap[socket.userId] = socket.id;
 			console.log(`👤 User ${socket.userId} registered with socket ${socket.id}`);
-			
+
 			// Update user's online status in database
-			prisma.user.update({ 
-				where: { id: socket.userId }, 
-				data: { isOnline: true } 
+			prisma.user.update({
+				where: { id: socket.userId },
+				data: { isOnline: true }
 			})
 				.then(user => {
 					if (user) {
@@ -233,7 +240,7 @@ export function initializeSocketHandlers(io) {
 				socket.userId = userId;
 				console.log(`✅ Manually registered user ${userId} → socket ${socket.id}`);
 				console.log(`📊 Current userSocketMap:`, Object.keys(userSocketMap));
-				
+
 				// Update user's online status in database
 				prisma.user.update({
 					where: { id: userId },
@@ -262,12 +269,12 @@ export function initializeSocketHandlers(io) {
 		socket.on("stranger:skip", () => {
 			console.log(`⏭️ ${socket.id} skipping stranger`);
 			const partnerSocket = cleanupMatch(socket, io);
-			
+
 			// Notify partner if they exist
 			if (partnerSocket) {
 				partnerSocket.emit("stranger:disconnected");
 			}
-			
+
 			// Re-queue the user who skipped
 			findMatch(socket, io);
 		});
@@ -275,7 +282,7 @@ export function initializeSocketHandlers(io) {
 		socket.on("stranger:chatMessage", (payload) => {
 			const { message } = payload;
 			const partnerSocketId = matchedPairs.get(socket.id);
-			
+
 			if (partnerSocketId) {
 				const partnerSocket = io.sockets.sockets.get(partnerSocketId);
 				if (partnerSocket) {
@@ -289,7 +296,7 @@ export function initializeSocketHandlers(io) {
 		socket.on("stranger:reaction", (payload) => {
 			const { emoji } = payload;
 			const partnerSocketId = matchedPairs.get(socket.id);
-			
+
 			if (partnerSocketId) {
 				const partnerSocket = io.sockets.sockets.get(partnerSocketId);
 				if (partnerSocket) {
@@ -340,12 +347,12 @@ export function initializeSocketHandlers(io) {
 				console.log(`   To: ${receiverId}`);
 				console.log(`   Text: ${text?.substring(0, 50)}...`);
 				console.log(`   TempId: ${tempId}`);
-				
+
 				if (!senderId || !receiverId) {
 					console.error('❌ Missing sender or receiver ID:', { senderId, receiverId });
 					throw new Error('Sender or receiver ID missing');
 				}
-				
+
 				// ⚡ CREATE MESSAGE WITH REPLY SUPPORT (ULTRA-FAST)
 				const newMessage = await prisma.message.create({
 					data: {
@@ -359,7 +366,7 @@ export function initializeSocketHandlers(io) {
 						status: 'sent' // ✅ Set status immediately
 					}
 				});
-				
+
 				// 🔥 ULTRA-FAST: Fetch replyTo separately if needed (non-blocking)
 				let replyToMessage = null;
 				if (replyTo) {
@@ -379,32 +386,32 @@ export function initializeSocketHandlers(io) {
 						console.warn('⚠️ Could not fetch reply-to message:', error.message);
 					}
 				}
-				
+
 				// Add replyTo to message object
 				const messageWithReply = {
 					...newMessage,
 					replyTo: replyToMessage
 				};
-				
+
 				console.log(`⚡ Message saved in database: ${newMessage.id}`);
-				
+
 				// ⚡ OPTIMIZATION: Send to sockets IMMEDIATELY (don't wait for cache clear)
 				const receiverSocketId = getReceiverSocketId(receiverId);
 				console.log(`📊 Looking for receiver ${receiverId} in userSocketMap...`);
 				console.log(`📊 Current userSocketMap:`, Object.keys(userSocketMap));
 				console.log(`📊 Receiver socket ID: ${receiverSocketId}`);
-				
+
 				if (receiverSocketId) {
 					io.to(receiverSocketId).emit("newMessage", messageWithReply);
 					console.log(`⚡ SUCCESS: Message sent to receiver ${receiverId} (socket: ${receiverSocketId})`);
 				} else {
 					console.log(`⚠️ OFFLINE: Receiver ${receiverId} not online - message saved but not delivered`);
 				}
-				
+
 				// ⚡ INSTANT: Send back to sender (replace optimistic message)
 				socket.emit("newMessage", messageWithReply);
 				console.log(`⚡ SUCCESS: Message confirmed to sender ${senderId}`);
-				
+
 			} catch (error) {
 				console.error('❌ Socket sendMessage error:', error);
 				socket.emit("messageError", { error: error.message, tempId });
@@ -497,7 +504,7 @@ export function initializeSocketHandlers(io) {
 
 				// Remove existing reaction from this user
 				reactions = reactions.filter(r => r.userId !== senderId);
-				
+
 				// Add new reaction
 				reactions.push({
 					userId: senderId,
@@ -603,7 +610,7 @@ export function initializeSocketHandlers(io) {
 		socket.on("private:start-call", (data) => {
 			const { receiverId, callType, callerInfo } = data;
 			const receiverSocketId = getReceiverSocketId(receiverId);
-			
+
 			if (receiverSocketId) {
 				console.log(`📞 Private call from ${socket.userId} to ${receiverId} (${callType})`);
 				io.to(receiverSocketId).emit("private:incoming-call", {
@@ -620,7 +627,7 @@ export function initializeSocketHandlers(io) {
 		socket.on("private:initiate-call", (data) => {
 			const { receiverId, callerInfo, callType } = data;
 			const receiverSocketId = getReceiverSocketId(receiverId);
-			
+
 			if (receiverSocketId) {
 				console.log(`📞 Initiating private call from ${socket.userId} to ${receiverId}`);
 				io.to(receiverSocketId).emit("private:incoming-call", {
@@ -634,7 +641,7 @@ export function initializeSocketHandlers(io) {
 		socket.on("private:accept-call", (data) => {
 			const { callerId } = data;
 			const callerSocketId = getReceiverSocketId(callerId);
-			
+
 			if (callerSocketId) {
 				console.log(`✅ Call accepted by ${socket.userId} from ${callerId}`);
 				io.to(callerSocketId).emit("private:call-accepted", {
@@ -647,7 +654,7 @@ export function initializeSocketHandlers(io) {
 		socket.on("private:call-accepted", (data) => {
 			const { callerId } = data;
 			const callerSocketId = getReceiverSocketId(callerId);
-			
+
 			if (callerSocketId) {
 				console.log(`✅ Call accepted by ${socket.userId} from ${callerId}`);
 				io.to(callerSocketId).emit("private:call-accepted", {
@@ -660,7 +667,7 @@ export function initializeSocketHandlers(io) {
 		socket.on("private:reject-call", (data) => {
 			const { callerId, reason } = data;
 			const callerSocketId = getReceiverSocketId(callerId);
-			
+
 			if (callerSocketId) {
 				console.log(`🚫 Call rejected by ${socket.userId} from ${callerId}, reason: ${reason || 'declined'}`);
 				io.to(callerSocketId).emit("private:call-rejected", {
@@ -673,7 +680,7 @@ export function initializeSocketHandlers(io) {
 		socket.on("private:end-call", (data) => {
 			const { targetUserId } = data;
 			const targetSocketId = getReceiverSocketId(targetUserId);
-			
+
 			if (targetSocketId) {
 				console.log(`🔚 Call ended by ${socket.userId} to ${targetUserId}`);
 				io.to(targetSocketId).emit("private:call-ended", {
@@ -686,7 +693,7 @@ export function initializeSocketHandlers(io) {
 		socket.on("private:offer", (data) => {
 			const { receiverId, sdp } = data;
 			const receiverSocketId = getReceiverSocketId(receiverId);
-			
+
 			if (receiverSocketId) {
 				console.log(`📤 WebRTC offer from ${socket.userId} to ${receiverId}`);
 				io.to(receiverSocketId).emit("private:offer", {
@@ -699,7 +706,7 @@ export function initializeSocketHandlers(io) {
 		socket.on("private:answer", (data) => {
 			const { callerId, sdp } = data;
 			const callerSocketId = getReceiverSocketId(callerId);
-			
+
 			if (callerSocketId) {
 				console.log(`📤 WebRTC answer from ${socket.userId} to ${callerId}`);
 				io.to(callerSocketId).emit("private:answer", {
@@ -712,7 +719,7 @@ export function initializeSocketHandlers(io) {
 		socket.on("private:ice-candidate", (data) => {
 			const { targetUserId, candidate } = data;
 			const targetSocketId = getReceiverSocketId(targetUserId);
-			
+
 			if (targetSocketId) {
 				console.log(`🧊 ICE candidate from ${socket.userId} to ${targetUserId}`);
 				io.to(targetSocketId).emit("private:ice-candidate", {
@@ -737,11 +744,11 @@ export function initializeSocketHandlers(io) {
 			if (disconnectedUserId) {
 				console.log(`❌ User ${disconnectedUserId} disconnected fully.`);
 				delete userSocketMap[disconnectedUserId];
-				
+
 				// Update user's online status and last seen in database
 				prisma.user.update({
 					where: { id: disconnectedUserId },
-					data: { 
+					data: {
 						isOnline: false,
 						lastSeen: new Date()
 					}

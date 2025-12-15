@@ -13,15 +13,15 @@ const DOUBLE_TAP_DELAY = 300; // ms
 const SWIPE_THRESHOLD = 60; // px
 
 
-  // ✅ ENHANCED: Add visual feedback when reacting
-  const addMessagePulse = (element) => {
-    if (element) {
-      element.classList.add('message-reacting');
-      setTimeout(() => {
-        element.classList.remove('message-reacting');
-      }, 600);
-    }
-  };
+// ✅ ENHANCED: Add visual feedback when reacting
+const addMessagePulse = (element) => {
+  if (element) {
+    element.classList.add('message-reacting');
+    setTimeout(() => {
+      element.classList.remove('message-reacting');
+    }, 600);
+  }
+};
 
 
 
@@ -36,29 +36,29 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
-  
+
   const longPressTimer = useRef(null);
   const lastTap = useRef(0);
   const touchStartPos = useRef({ x: 0, y: 0 });
   const touchStartTime = useRef(0);
   const audioRef = useRef(null);
   const messageRef = useRef(null);
-  
+
   const isMyMessage = message.senderId === authUser.id;
-  
+
   // ✅ FIXED: Ensure reactions is always an array
   const reactions = Array.isArray(message.reactions) ? message.reactions : [];
-  
+
   // ✅ FIXED: Proper user ID comparison for reaction detection
   const myReaction = reactions.find(r => {
     const reactionUserId = r.userId?.id || r.userId;
     const currentUserId = authUser.id;
     return reactionUserId === currentUserId;
   });
-  
+
   // Check if receiver is online for message status
   const isReceiverOnline = selectedUser && onlineUsers.includes(selectedUser.id);
-  
+
   // Get theme-based colors and status info
   const themeColors = getThemeColors(theme);
   const statusInfo = getMessageStatusInfo(message, isMyMessage, isReceiverOnline, themeColors);
@@ -81,10 +81,10 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
     const touch = e.touches[0];
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
     touchStartTime.current = Date.now();
-    
+
     console.log('👆 Touch start detected on message:', message.id);
     console.log('📍 Touch position:', touch.clientX, touch.clientY);
-    
+
     // Start long press timer for reactions or image save
     longPressTimer.current = setTimeout(() => {
       console.log('⏰ Long press timer triggered after', LONG_PRESS_DURATION, 'ms');
@@ -96,7 +96,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
         handleLongPressReaction();
       }
     }, LONG_PRESS_DURATION);
-    
+
     console.log('⏱️ Long press timer started');
   };
 
@@ -105,9 +105,9 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
     const touch = e.touches[0];
     const deltaX = touch.clientX - touchStartPos.current.x;
     const deltaY = Math.abs(touch.clientY - touchStartPos.current.y);
-    
+
     console.log('👆 Touch move - delta:', deltaX, deltaY);
-    
+
     // Cancel long press if moved significantly
     if (Math.abs(deltaX) > 10 || deltaY > 10) {
       if (longPressTimer.current) {
@@ -116,17 +116,17 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
         longPressTimer.current = null;
       }
     }
-    
+
     // Swipe to reply (only horizontal swipe)
     if (Math.abs(deltaX) > 10 && deltaY < 30) {
       const offset = isMyMessage ? Math.min(0, deltaX) : Math.max(0, deltaX);
       const newOffset = Math.abs(offset) > SWIPE_THRESHOLD ? (isMyMessage ? -SWIPE_THRESHOLD : SWIPE_THRESHOLD) : offset;
-      
+
       // ✅ HAPTIC FEEDBACK: Vibrate when threshold is reached
       if (Math.abs(newOffset) >= SWIPE_THRESHOLD && Math.abs(swipeOffset) < SWIPE_THRESHOLD) {
         if (navigator.vibrate) navigator.vibrate(30);
       }
-      
+
       setSwipeOffset(newOffset);
     }
   };
@@ -135,27 +135,27 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
   const handleTouchEnd = () => {
     const touchDuration = Date.now() - touchStartTime.current;
     console.log('👆 Touch end - duration:', touchDuration, 'ms');
-    
+
     // Clear long press timer if still active
     if (longPressTimer.current) {
       console.log('❌ Long press timer cleared on touch end');
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
-    
+
     // Check for swipe to reply
     if (Math.abs(swipeOffset) >= SWIPE_THRESHOLD) {
       console.log('↔️ Swipe to reply triggered');
       onReply && onReply(message);
       if (navigator.vibrate) navigator.vibrate(30);
     }
-    
+
     // Reset swipe
     setTimeout(() => setSwipeOffset(0), 200);
-    
+
     // Check for double tap (quick heart)
     const now = Date.now();
-    
+
     if (touchDuration < 200 && now - lastTap.current < DOUBLE_TAP_DELAY) {
       console.log('💖 Double tap detected!');
       handleDoubleTap();
@@ -186,15 +186,15 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
   }, [onFloatingReaction, message.id]);
 
   // ✅ ENHANCED: Manual floating reaction creator as fallback with proper animation
-  
+
   // ✅ GUARANTEED: Working floating reaction that always works
   const createSimpleFloatingReaction = (emoji, element) => {
     console.log('🎨 Creating GUARANTEED floating reaction:', emoji);
-    
+
     try {
       let x = window.innerWidth / 2;
       let y = window.innerHeight / 2;
-      
+
       if (element && element.getBoundingClientRect) {
         const rect = element.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) {
@@ -202,7 +202,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
           y = rect.top + rect.height / 2;
         }
       }
-      
+
       const floatingEmoji = document.createElement('div');
       floatingEmoji.innerHTML = emoji;
       floatingEmoji.style.cssText = `
@@ -217,18 +217,18 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
         animation: simpleFloatUp 3s ease-out forwards;
         text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       `;
-      
+
       document.body.appendChild(floatingEmoji);
-      
+
       setTimeout(() => {
         if (floatingEmoji.parentNode) {
           floatingEmoji.parentNode.removeChild(floatingEmoji);
         }
       }, 3500);
-      
+
       if (navigator.vibrate) navigator.vibrate(30);
       console.log('✅ GUARANTEED floating reaction created at:', x, y);
-      
+
     } catch (error) {
       console.error('❌ Error creating floating reaction:', error);
     }
@@ -236,14 +236,14 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
 
 
 
-  
-  
+
+
   // ✅ SIMPLE: Long press handler with guaranteed floating reaction
   const handleLongPressReaction = () => {
     console.log('🔥 Long press detected - showing reaction picker');
     if (navigator.vibrate) navigator.vibrate(50);
     setShowReactionPicker(true);
-    
+
     // ✅ GUARANTEED: Always trigger floating reaction
     createSimpleFloatingReaction("❤️", messageRef.current);
   };
@@ -257,7 +257,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
     } else {
       addReaction(message.id, "❤️");
       showHeartAnimation();
-      
+
       // ✅ GUARANTEED: Always trigger floating reaction
       createSimpleFloatingReaction("❤️", messageRef.current);
     }
@@ -296,7 +296,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
       removeReaction(message.id);
     } else {
       addReaction(message.id, emoji);
-      
+
       // ✅ GUARANTEED: Always trigger floating reaction
       createSimpleFloatingReaction(emoji, messageRef.current);
     }
@@ -348,7 +348,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
     acc[reaction.emoji].push(reaction.userId);
     return acc;
   }, {});
-  
+
   // ✅ DEBUG: Log reaction data to help identify issues
   if (reactions.length > 0) {
     console.log(`🎯 Message ${message.id} has ${reactions.length} reactions:`, reactions);
@@ -359,7 +359,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
   // Check if emoji-only message
   const isEmojiOnly = message.text && /^[\p{Emoji}\s]+$/u.test(message.text) && !message.image && !message.voice;
   const emojiCount = message.text ? (message.text.match(/\p{Emoji}/gu) || []).length : 0;
-  
+
   // Check if number-only message (and length)
   const isNumberOnly = message.text && /^\d+$/.test(message.text.trim()) && !message.image && !message.voice;
   const numberLength = message.text ? message.text.trim().length : 0;
@@ -395,14 +395,14 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
 
   return (
     <>
-      <div 
+      <div
         ref={messageRef}
         id={`message-${message.id}`}
         className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'message-with-reactions' : 'mb-3'} relative w-full max-w-full`}
       >
-        <div 
-          className="flex items-end gap-2 relative min-w-0" 
-          style={{ 
+        <div
+          className="flex items-end gap-2 relative min-w-0"
+          style={{
             maxWidth: 'min(75%, 350px)',
             wordBreak: 'break-word'
           }}
@@ -419,7 +419,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
 
           <div
             className="message-bubble-container relative max-w-full"
-            style={{ 
+            style={{
               WebkitTapHighlightColor: 'transparent',
               transform: `translateX(${swipeOffset}px)`,
               transition: swipeOffset === 0 ? 'transform 0.2s ease-out' : 'none',
@@ -434,26 +434,24 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
           >
             {/* ✅ ENHANCED: Instagram/WhatsApp Style Swipe Reply Icon */}
             {Math.abs(swipeOffset) > 20 && (
-              <div 
+              <div
                 className={`absolute top-1/2 -translate-y-1/2 ${isMyMessage ? '-right-12' : '-left-12'} transition-all duration-200`}
-                style={{ 
+                style={{
                   opacity: Math.min(Math.abs(swipeOffset) / SWIPE_THRESHOLD, 1),
                   transform: `translateY(-50%) scale(${Math.min(Math.abs(swipeOffset) / SWIPE_THRESHOLD, 1)})`
                 }}
               >
-                <div className={`w-8 h-8 rounded-full bg-base-300/80 backdrop-blur-sm flex items-center justify-center shadow-lg ${
-                  Math.abs(swipeOffset) >= SWIPE_THRESHOLD ? 'bg-primary/20 scale-110' : ''
-                } transition-all duration-200`}>
-                  <Reply className={`w-4 h-4 ${
-                    Math.abs(swipeOffset) >= SWIPE_THRESHOLD ? 'text-primary' : 'text-base-content/70'
-                  } ${isMyMessage ? '' : 'scale-x-[-1]'} transition-colors duration-200`} />
+                <div className={`w-8 h-8 rounded-full bg-base-300/80 backdrop-blur-sm flex items-center justify-center shadow-lg ${Math.abs(swipeOffset) >= SWIPE_THRESHOLD ? 'bg-primary/20 scale-110' : ''
+                  } transition-all duration-200`}>
+                  <Reply className={`w-4 h-4 ${Math.abs(swipeOffset) >= SWIPE_THRESHOLD ? 'text-primary' : 'text-base-content/70'
+                    } ${isMyMessage ? '' : 'scale-x-[-1]'} transition-colors duration-200`} />
                 </div>
               </div>
             )}
 
             {/* Image Only - NO BUBBLE (Instagram/WhatsApp Style) */}
             {message.image && !message.text && !message.voice ? (
-              <div 
+              <div
                 className="relative group"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -480,12 +478,11 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
             ) : (
               /* Message Bubble (for text, voice, or image+text) - NO BUBBLE for emoji-only or number-only */
               <div
-                className={(isEmojiOnly || isNumberOnly) ? "" : `relative px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-2xl shadow-sm ${
-                  isMyMessage
-                    ? "bg-gradient-to-br from-primary to-primary/90 text-primary-content"
-                    : "bg-base-200 text-base-content"
-                }`}
-                style={(isEmojiOnly || isNumberOnly) ? {} : { 
+                className={(isEmojiOnly || isNumberOnly) ? "" : `relative px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-2xl shadow-sm ${isMyMessage
+                  ? "bg-gradient-to-br from-primary to-primary/90 text-primary-content"
+                  : "bg-base-200 text-base-content"
+                  }`}
+                style={(isEmojiOnly || isNumberOnly) ? {} : {
                   display: 'inline-block',
                   maxWidth: '100%',
                   wordBreak: 'break-word',
@@ -495,12 +492,11 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
               >
                 {/* Reply To Message */}
                 {message.replyTo && (
-                  <div 
-                    className={`mb-2 border-l-4 pl-2 py-1 rounded-sm cursor-pointer active:scale-[0.98] transition-transform ${
-                      isMyMessage 
-                        ? "bg-primary-content/10 border-primary-content/50" 
-                        : "bg-base-300/40 border-primary/70"
-                    }`}
+                  <div
+                    className={`mb-2 border-l-4 pl-2 py-1 rounded-sm cursor-pointer active:scale-[0.98] transition-transform ${isMyMessage
+                      ? "bg-primary-content/10 border-primary-content/50"
+                      : "bg-base-300/40 border-primary/70"
+                      }`}
                     onClick={() => {
                       const replyElement = document.getElementById(`message-${message.replyTo.id}`);
                       if (replyElement) {
@@ -510,24 +506,22 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                       }
                     }}
                   >
-                    <div className={`text-[10px] font-bold mb-0.5 ${
-                      isMyMessage ? "text-primary-content" : "text-primary"
-                    }`}>
+                    <div className={`text-[10px] font-bold mb-0.5 ${isMyMessage ? "text-primary-content" : "text-primary"
+                      }`}>
                       {message.replyTo.senderId === authUser.id ? "You" : selectedUser?.fullName || "User"}
                     </div>
-                    <div className={`text-[11px] leading-tight truncate ${
-                      isMyMessage ? "text-primary-content/80" : "text-base-content/70"
-                    }`}>
-                      {message.replyTo.text && message.replyTo.text.trim() ? message.replyTo.text : 
-                       (message.replyTo.image ? "📷 Photo" : 
-                        message.replyTo.voice ? "🎤 Voice message" : 
-                        "Message")}
+                    <div className={`text-[11px] leading-tight truncate ${isMyMessage ? "text-primary-content/80" : "text-base-content/70"
+                      }`}>
+                      {message.replyTo.text && message.replyTo.text.trim() ? message.replyTo.text :
+                        (message.replyTo.image ? "📷 Photo" :
+                          message.replyTo.voice ? "🎤 Voice message" :
+                            "Message")}
                     </div>
                   </div>
                 )}
 
                 {isEmojiOnly && emojiCount > 0 ? (
-                  <div 
+                  <div
                     className={`${emojiCount === 1 ? 'text-5xl sm:text-6xl' : 'text-4xl sm:text-5xl'} leading-tight`}
                     style={{ maxWidth: '100%', wordBreak: 'break-word' }}
                   >
@@ -535,10 +529,10 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                   </div>
                 ) : isShortNumber ? (
                   /* Short numbers (1-3 digits) - Large, no bubble */
-                  <div 
+                  <div
                     className={`${numberLength === 1 ? 'text-5xl sm:text-6xl' : numberLength === 2 ? 'text-4xl sm:text-5xl' : 'text-3xl sm:text-4xl'} font-bold leading-tight ${isMyMessage ? 'text-primary' : 'text-base-content'}`}
-                    style={{ 
-                      maxWidth: '100%', 
+                    style={{
+                      maxWidth: '100%',
                       wordBreak: 'break-word',
                       overflowWrap: 'break-word'
                     }}
@@ -547,9 +541,9 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                   </div>
                 ) : isNumberOnly ? (
                   /* Long numbers (4+ digits) - Normal size, no bubble, but with word break */
-                  <div 
+                  <div
                     className={`text-2xl sm:text-3xl font-bold leading-tight ${isMyMessage ? 'text-primary' : 'text-base-content'}`}
-                    style={{ 
+                    style={{
                       maxWidth: '100%',
                       wordBreak: 'break-all',
                       overflowWrap: 'anywhere'
@@ -561,7 +555,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                   <>
                     {/* Image with text (inside bubble) */}
                     {message.image && message.text && (
-                      <div 
+                      <div
                         className="relative group mb-2"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -592,9 +586,8 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                       <div className="flex items-center gap-2 min-w-[200px] max-w-[280px]">
                         <button
                           onClick={toggleVoicePlayback}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                            isPlaying ? 'bg-primary/20 scale-110' : isMyMessage ? 'bg-primary-content/20' : 'bg-primary/10'
-                          }`}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${isPlaying ? 'bg-primary/20 scale-110' : isMyMessage ? 'bg-primary-content/20' : 'bg-primary/10'
+                            }`}
                         >
                           {isPlaying ? (
                             <Pause className="w-4 h-4" fill="currentColor" />
@@ -602,22 +595,21 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                             <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
                           )}
                         </button>
-                        
+
                         <div className="flex-1 flex items-center justify-center gap-[3px] h-8">
                           {[4, 7, 5, 9, 6, 10, 7, 8, 5, 9, 6, 7, 8, 6, 9, 7, 5, 8, 6, 7].map((height, i) => {
                             const duration = message.voiceDuration || 3;
                             const progress = currentTime / duration;
                             const isActive = isPlaying && (i / 20) <= progress;
-                            
+
                             return (
                               <div
                                 key={i}
-                                className={`w-[3px] rounded-full transition-all duration-150 ${
-                                  isActive 
-                                    ? isMyMessage ? 'bg-primary-content' : 'bg-primary' 
-                                    : isMyMessage ? 'bg-primary-content/30' : 'bg-base-content/30'
-                                }`}
-                                style={{ 
+                                className={`w-[3px] rounded-full transition-all duration-150 ${isActive
+                                  ? isMyMessage ? 'bg-primary-content' : 'bg-primary'
+                                  : isMyMessage ? 'bg-primary-content/30' : 'bg-base-content/30'
+                                  }`}
+                                style={{
                                   height: `${height * 2.5}px`,
                                   transform: isPlaying && isActive ? 'scaleY(1.15)' : 'scaleY(1)',
                                   opacity: isActive ? 1 : 0.6
@@ -626,14 +618,14 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                             );
                           })}
                         </div>
-                        
+
                         <span className="text-xs opacity-70 font-medium min-w-[32px] text-right">
-                          {isPlaying 
+                          {isPlaying
                             ? `${Math.max(0, Math.ceil((message.voiceDuration || 0) - currentTime))}s`
                             : `${message.voiceDuration || 0}s`
                           }
                         </span>
-                        
+
                         <audio
                           ref={audioRef}
                           src={message.voice}
@@ -658,7 +650,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
 
             {/* ✅ INSTAGRAM EXACT: Reactions with individual tap-to-remove */}
             {Object.keys(groupedReactions).length > 0 && (
-              <div 
+              <div
                 className={`reaction-badges-container ${isMyMessage ? 'my-message' : 'other-message'}`}
                 style={{
                   // ✅ FORCE VISIBILITY: Ensure reactions are always visible
@@ -674,9 +666,9 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                     return userId === authUser.id;
                   });
                   const badgeStyle = getReactionBadgeStyle(hasMyReaction, themeColors);
-                  
+
                   console.log(`🎯 Rendering reaction badge: ${emoji} for ${users.length} users`);
-                  
+
                   return (
                     <div
                       key={emoji}
@@ -731,8 +723,8 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                     >
                       <span style={{ fontSize: '12px', lineHeight: '1' }}>{emoji}</span>
                       {users.length > 1 && (
-                        <span 
-                          style={{ 
+                        <span
+                          style={{
                             fontSize: '10px',
                             fontWeight: '700',
                             lineHeight: '1'
@@ -758,35 +750,32 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
             <span className="flex items-center" title={statusInfo.tooltip}>
               {statusInfo.type === 'clock' ? (
                 // Clock icon for sending/failed
-                <svg 
-                  className={`w-3 h-3 ${statusInfo.animate}`} 
-                  fill="currentColor" 
+                <svg
+                  className={`w-3 h-3 ${statusInfo.animate} ${statusInfo.className}`}
+                  fill="currentColor"
                   viewBox="0 0 16 16"
-                  style={{ color: statusInfo.color }}
                 >
-                  <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
-                  <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                  <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z" />
+                  <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" />
                 </svg>
               ) : statusInfo.type === 'double-tick' ? (
                 // Double tick for delivered/read
-                <svg 
-                  className={`w-4 h-4 ${statusInfo.animate}`} 
-                  fill="currentColor" 
+                <svg
+                  className={`w-4 h-4 ${statusInfo.animate} ${statusInfo.className}`}
+                  fill="currentColor"
                   viewBox="0 0 16 16"
-                  style={{ color: statusInfo.color }}
                 >
-                  <path d="M12.354 4.354a.5.5 0 0 0-.708-.708L5 10.293 1.854 7.146a.5.5 0 1 0-.708.708l3.5 3.5a.5.5 0 0 0 .708 0l7-7zm-4.208 7-.896-.897.707-.707.543.543 6.646-6.647a.5.5 0 0 1 .708.708l-7 7a.5.5 0 0 1-.708 0z"/>
-                  <path d="m5.354 7.146.896.897-.707.707-.897-.896a.5.5 0 1 1 .708-.708z"/>
+                  <path d="M12.354 4.354a.5.5 0 0 0-.708-.708L5 10.293 1.854 7.146a.5.5 0 1 0-.708.708l3.5 3.5a.5.5 0 0 0 .708 0l7-7zm-4.208 7-.896-.897.707-.707.543.543 6.646-6.647a.5.5 0 0 1 .708.708l-7 7a.5.5 0 0 1-.708 0z" />
+                  <path d="m5.354 7.146.896.897-.707.707-.897-.896a.5.5 0 1 1 .708-.708z" />
                 </svg>
               ) : (
                 // Single tick for sent
-                <svg 
-                  className={`w-3.5 h-3.5 ${statusInfo.animate}`} 
-                  fill="currentColor" 
+                <svg
+                  className={`w-3.5 h-3.5 ${statusInfo.animate} ${statusInfo.className}`}
+                  fill="currentColor"
                   viewBox="0 0 16 16"
-                  style={{ color: statusInfo.color }}
                 >
-                  <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                  <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z" />
                 </svg>
               )}
             </span>
@@ -813,9 +802,8 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                     handleReactionSelect(emoji);
                     setShowReactionPicker(false);
                   }}
-                  className={`text-2xl sm:text-3xl hover:scale-110 active:scale-95 transition-transform p-2 rounded-full hover:bg-base-200 ${
-                    myReaction?.emoji === emoji ? 'scale-110 bg-base-200' : ''
-                  }`}
+                  className={`text-2xl sm:text-3xl hover:scale-110 active:scale-95 transition-transform p-2 rounded-full hover:bg-base-200 ${myReaction?.emoji === emoji ? 'scale-110 bg-base-200' : ''
+                    }`}
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   {emoji}
@@ -864,23 +852,22 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                   <div className="space-y-1 ml-6">
                     {userIds.map((userId, idx) => {
                       // ✅ FIXED: Get actual user data from reactions array
-                      const reactionData = reactions.find(r => 
+                      const reactionData = reactions.find(r =>
                         (r.userId?.id || r.userId) === (userId?.id || userId) && r.emoji === emoji
                       );
-                      
+
                       const isMyReaction = (userId?.id || userId) === authUser.id;
-                      const userName = isMyReaction 
-                        ? "You" 
+                      const userName = isMyReaction
+                        ? "You"
                         : (reactionData?.user?.fullName || reactionData?.user?.nickname || selectedUser?.fullName || "User");
-                      
+
                       return (
-                        <div 
-                          key={idx} 
-                          className={`flex items-center justify-between py-1.5 px-2 rounded-lg transition-colors ${
-                            isMyReaction 
-                              ? 'bg-primary/10 hover:bg-primary/20 cursor-pointer' 
-                              : 'bg-base-200/50'
-                          }`}
+                        <div
+                          key={idx}
+                          className={`flex items-center justify-between py-1.5 px-2 rounded-lg transition-colors ${isMyReaction
+                            ? 'bg-primary/10 hover:bg-primary/20 cursor-pointer'
+                            : 'bg-base-200/50'
+                            }`}
                           onClick={() => {
                             if (isMyReaction) {
                               console.log(`🗑️ Removing my reaction: ${emoji} from modal`);
