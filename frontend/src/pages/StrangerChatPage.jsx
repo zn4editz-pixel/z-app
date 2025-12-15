@@ -37,7 +37,7 @@ const loadModerationUtils = async () => {
 
 const REPORT_REASONS = [
 	"Nudity or Sexual Content",
-	"Harassment or Hate Speech", 
+	"Harassment or Hate Speech",
 	"Spam or Scams",
 	"Threatening Behavior",
 	"Underage User",
@@ -61,8 +61,8 @@ const LoadingSkeleton = memo(() => (
 		</div>
 		<div className="mt-6 flex space-x-2">
 			<div className="w-3 h-3 bg-white rounded-full animate-bounce"></div>
-			<div className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-			<div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+			<div className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+			<div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
 		</div>
 	</div>
 ));
@@ -71,19 +71,19 @@ const LoadingSkeleton = memo(() => (
 const ReportModal = memo(({ isOpen, onClose, onSubmit, screenshotPreview, isSubmitting }) => {
 	const [reason, setReason] = useState("");
 	const [description, setDescription] = useState("");
-	
-	useEffect(() => { 
+
+	useEffect(() => {
 		if (isOpen) {
 			setReason("");
 			setDescription("");
 		}
 	}, [isOpen]);
-	
+
 	const handleSubmit = useCallback((e) => {
 		e.preventDefault();
-		if (!reason) { 
-			toast.error("Please select a reason."); 
-			return; 
+		if (!reason) {
+			toast.error("Please select a reason.");
+			return;
 		}
 		onSubmit(reason, description);
 	}, [reason, description, onSubmit]);
@@ -102,32 +102,32 @@ const ReportModal = memo(({ isOpen, onClose, onSubmit, screenshotPreview, isSubm
 						<X className="w-4 h-4" />
 					</button>
 				</div>
-				
+
 				<p className="text-sm mb-4 text-base-content/70">
 					Help us keep the community safe. Your report will be reviewed by our team.
 				</p>
-				
+
 				{screenshotPreview && (
 					<div className="mb-4 border border-base-300 rounded-lg overflow-hidden">
-						<img 
-							src={screenshotPreview} 
-							alt="Report Evidence" 
-							className="max-h-40 w-full object-contain bg-black" 
-							loading="lazy" 
-							decoding="async" 
+						<img
+							src={screenshotPreview}
+							alt="Report Evidence"
+							className="max-h-40 w-full object-contain bg-black"
+							loading="lazy"
+							decoding="async"
 						/>
 					</div>
 				)}
-				
+
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div className="form-control">
 						<label className="label">
 							<span className="label-text font-medium">Reason *</span>
 						</label>
-						<select 
-							className="select select-bordered w-full focus:select-primary" 
-							value={reason} 
-							onChange={(e) => setReason(e.target.value)} 
+						<select
+							className="select select-bordered w-full focus:select-primary"
+							value={reason}
+							onChange={(e) => setReason(e.target.value)}
 							required
 						>
 							<option value="" disabled>Select a reason</option>
@@ -136,32 +136,32 @@ const ReportModal = memo(({ isOpen, onClose, onSubmit, screenshotPreview, isSubm
 							))}
 						</select>
 					</div>
-					
+
 					<div className="form-control">
 						<label className="label">
 							<span className="label-text font-medium">Additional Details</span>
 						</label>
-						<textarea 
-							className="textarea textarea-bordered focus:textarea-primary resize-none" 
+						<textarea
+							className="textarea textarea-bordered focus:textarea-primary resize-none"
 							placeholder="Provide more context (optional)"
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
 							rows={3}
 						/>
 					</div>
-					
+
 					<div className="flex justify-end gap-3 pt-2">
-						<button 
-							type="button" 
-							className="btn btn-ghost" 
-							onClick={onClose} 
+						<button
+							type="button"
+							className="btn btn-ghost"
+							onClick={onClose}
 							disabled={isSubmitting}
 						>
 							Cancel
 						</button>
-						<button 
-							type="submit" 
-							className="btn btn-error gap-2" 
+						<button
+							type="submit"
+							className="btn btn-error gap-2"
 							disabled={isSubmitting || !reason}
 						>
 							{isSubmitting ? (
@@ -186,22 +186,21 @@ const ReportModal = memo(({ isOpen, onClose, onSubmit, screenshotPreview, isSubm
 // Chat Messages Component
 const ChatMessages = memo(({ messages, isVisible }) => {
 	const messagesEndRef = useRef(null);
-	
+
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	}, [messages]);
-	
+
 	if (!isVisible || messages.length === 0) return null;
-	
+
 	return (
 		<div className="absolute left-4 bottom-36 max-w-xs z-40 pointer-events-none">
 			<div className="bg-base-100/95 backdrop-blur-md rounded-2xl border border-base-300 shadow-xl max-h-64 overflow-y-auto pointer-events-auto">
 				<div className="p-3 space-y-2">
 					{messages.slice(-5).map((msg, idx) => (
-						<div key={idx} className={`text-sm ${
-							msg.sender === 'You' ? 'text-primary font-medium' : 
+						<div key={idx} className={`text-sm ${msg.sender === 'You' ? 'text-primary font-medium' :
 							msg.sender === 'System' ? 'text-warning' : 'text-base-content'
-						}`}>
+							}`}>
 							<span className="font-semibold">{msg.sender}:</span> {msg.message}
 						</div>
 					))}
@@ -224,7 +223,7 @@ const ConnectionIndicator = memo(({ quality, isConnected }) => {
 			default: return 'text-base-content/50';
 		}
 	};
-	
+
 	const getQualityText = () => {
 		if (!isConnected) return 'Disconnected';
 		switch (quality) {
@@ -235,7 +234,7 @@ const ConnectionIndicator = memo(({ quality, isConnected }) => {
 			default: return 'Connecting...';
 		}
 	};
-	
+
 	return (
 		<div className={`flex items-center gap-1 text-xs ${getQualityColor()}`}>
 			<div className="flex gap-0.5">
@@ -261,7 +260,7 @@ const StrangerChatPage = () => {
 	const [partnerUserId, setPartnerUserId] = useState(null);
 	const [partnerUserData, setPartnerUserData] = useState(null);
 	const [friendStatus, setFriendStatus] = useState("NOT_FRIENDS");
-	
+
 	// Privacy Settings
 	const [privacySettings, setPrivacySettings] = useState({
 		showUsername: true,
@@ -269,29 +268,29 @@ const StrangerChatPage = () => {
 		showVerificationBadge: true,
 		allowFriendRequests: true
 	});
-	
+
 	// UI States
 	const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 	const [reportScreenshot, setReportScreenshot] = useState(null);
 	const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 	const [showChatMessages, setShowChatMessages] = useState(false);
 	const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
-	
+
 	// Media States
 	const [isVideoMuted, setIsVideoMuted] = useState(false);
 	const [isAudioMuted, setIsAudioMuted] = useState(false);
 	const [connectionQuality, setConnectionQuality] = useState("good");
 	const [isConnected, setIsConnected] = useState(false);
-	
+
 	// Stats
 	const [chatTime, setChatTime] = useState(0);
 	const [onlineCount, setOnlineCount] = useState(0);
 	const [reactions, setReactions] = useState([]);
-	
+
 	// AI Moderation
 	const [aiModerationActive, setAiModerationActive] = useState(false);
 	const [MODERATION_CONFIG, setModerationConfig] = useState({ enabled: false });
-	
+
 	// Refs
 	const chatTimerRef = useRef(null);
 	const peerConnectionRef = useRef(null);
@@ -301,6 +300,10 @@ const StrangerChatPage = () => {
 	const remoteVideoRef = useRef(null);
 	const iceCandidateQueueRef = useRef([]);
 	const reportTimeoutRef = useRef(null);
+	// AI Vision Refs
+	const moderationIntervalRef = useRef(null);
+	const isScanningRef = useRef(false);
+	const violationsRef = useRef(0);
 
 	// Optimized WebRTC Configuration for faster connections
 	const rtcConfig = useMemo(() => ({
@@ -364,7 +367,7 @@ const StrangerChatPage = () => {
 		pc.onconnectionstatechange = () => {
 			const state = pc.connectionState;
 			console.log("🔗 Connection state:", state);
-			
+
 			switch (state) {
 				case 'connected':
 					setIsConnected(true);
@@ -409,7 +412,7 @@ const StrangerChatPage = () => {
 		pc.oniceconnectionstatechange = () => {
 			const iceState = pc.iceConnectionState;
 			console.log("🧊 ICE connection state:", iceState);
-			
+
 			switch (iceState) {
 				case 'connected':
 				case 'completed':
@@ -444,7 +447,7 @@ const StrangerChatPage = () => {
 		if (localStreamRef.current) {
 			localStreamRef.current.getTracks().forEach((track) => {
 				const sender = pc.addTrack(track, localStreamRef.current);
-				
+
 				if (track.kind === 'video') {
 					const parameters = sender.getParameters();
 					if (!parameters.encodings) parameters.encodings = [{}];
@@ -478,7 +481,7 @@ const StrangerChatPage = () => {
 	// WebRTC handlers
 	const startCall = useCallback(async () => {
 		if (!localStreamRef.current) return;
-		
+
 		try {
 			const pc = createPeerConnection();
 			const offer = await pc.createOffer({
@@ -487,10 +490,10 @@ const StrangerChatPage = () => {
 				voiceActivityDetection: true,
 				iceRestart: false
 			});
-			
+
 			await pc.setLocalDescription(offer);
 			socket.emit("webrtc:offer", { sdp: offer });
-			
+
 			// Set connection timeout
 			setTimeout(() => {
 				if (pc.connectionState === 'connecting' || pc.connectionState === 'new') {
@@ -498,11 +501,11 @@ const StrangerChatPage = () => {
 					pc.restartIce();
 				}
 			}, 10000); // 10 second timeout
-			
+
 		} catch (err) {
 			console.error("❌ Offer creation failed:", err);
 			toast.error("Failed to start video call. Trying again...");
-			
+
 			// Retry after short delay
 			setTimeout(() => {
 				if (localStreamRef.current?.active) {
@@ -521,10 +524,10 @@ const StrangerChatPage = () => {
 		try {
 			const pc = createPeerConnection();
 			await pc.setRemoteDescription(new RTCSessionDescription(sdp));
-			
+
 			const answer = await pc.createAnswer();
 			await pc.setLocalDescription(answer);
-			
+
 			socket.emit("webrtc:answer", { sdp: answer });
 
 			// Process queued ICE candidates
@@ -572,21 +575,21 @@ const StrangerChatPage = () => {
 	// Close connection and cleanup
 	const closeConnection = useCallback(() => {
 		console.log("🔌 Closing connection");
-		
+
 		if (peerConnectionRef.current) {
 			peerConnectionRef.current.close();
 			peerConnectionRef.current = null;
 		}
-		
+
 		if (remoteStreamRef.current) {
 			remoteStreamRef.current.getTracks().forEach(t => t.stop());
 			remoteStreamRef.current = null;
 		}
-		
+
 		if (remoteVideoRef.current) {
 			remoteVideoRef.current.srcObject = null;
 		}
-		
+
 		// Clear states
 		setTempMessages([]);
 		setPartnerUserId(null);
@@ -596,7 +599,7 @@ const StrangerChatPage = () => {
 		setIsConnected(false);
 		setHasUnreadMessages(false);
 		iceCandidateQueueRef.current = [];
-		
+
 		// Clear timer
 		if (chatTimerRef.current) {
 			clearInterval(chatTimerRef.current);
@@ -637,7 +640,7 @@ const StrangerChatPage = () => {
 		const initializeCamera = async () => {
 			try {
 				setStatus("initializing");
-				
+
 				// Check device support
 				if (!navigator.mediaDevices?.getUserMedia) {
 					throw new Error("Your browser doesn't support camera access");
@@ -668,19 +671,19 @@ const StrangerChatPage = () => {
 				localStreamRef.current = stream;
 				if (localVideoRef.current) {
 					localVideoRef.current.srcObject = stream;
-					
+
 					// Optimize video element for performance
 					localVideoRef.current.style.willChange = 'transform';
 					localVideoRef.current.style.backfaceVisibility = 'hidden';
 					localVideoRef.current.style.transform = 'translateZ(0)';
-					
+
 					// Reliable video loading with proper timeout
 					await new Promise((resolve, reject) => {
 						const timeout = setTimeout(() => {
 							console.warn("Video load timeout, continuing anyway");
 							resolve(); // Don't reject, just continue
 						}, 3000);
-						
+
 						if (localVideoRef.current.readyState >= 2) {
 							clearTimeout(timeout);
 							resolve();
@@ -698,7 +701,7 @@ const StrangerChatPage = () => {
 				}
 
 				setStatus("waiting");
-				
+
 				// Join queue immediately after camera setup with privacy settings
 				if (!hasJoinedQueue && socket?.connected && isMounted) {
 					socket.emit("stranger:joinQueue", {
@@ -716,7 +719,7 @@ const StrangerChatPage = () => {
 
 			} catch (error) {
 				console.error("Camera initialization failed:", error);
-				
+
 				if (error.name === 'NotAllowedError') {
 					toast.error("Camera access denied. Please allow permissions and refresh.");
 				} else if (error.name === 'NotFoundError') {
@@ -724,12 +727,10 @@ const StrangerChatPage = () => {
 				} else {
 					toast.error("Failed to access camera. Please refresh and try again.");
 				}
-				
+
 				setTimeout(() => navigate("/"), 2000);
 			}
 		};
-
-		initializeCamera();
 
 		// Socket event handlers
 		const onWaiting = () => {
@@ -738,15 +739,15 @@ const StrangerChatPage = () => {
 
 		const onMatched = (data) => {
 			console.log("🎯 Matched with partner:", data);
-			
+
 			if (isMounted) {
 				addMessage("System", "🎉 Partner found! Connecting...");
 				setStatus("connected");
 				setPartnerUserId(data.partnerUserId);
 				setPartnerUserData(data.partnerUserData);
-				
+
 				const shouldInitiate = socket.id < data.partnerId;
-				
+
 				if (shouldInitiate) {
 					// Start call immediately for faster connection
 					if (isMounted && localStreamRef.current?.active) {
@@ -845,7 +846,7 @@ const StrangerChatPage = () => {
 					clearTimeout(reportTimeoutRef.current);
 					reportTimeoutRef.current = null;
 				}
-				
+
 				toast.success(message || "Report submitted successfully");
 				setIsSubmittingReport(false);
 				setIsReportModalOpen(false);
@@ -861,7 +862,7 @@ const StrangerChatPage = () => {
 					clearTimeout(reportTimeoutRef.current);
 					reportTimeoutRef.current = null;
 				}
-				
+
 				toast.error(error || "Failed to submit report");
 				setIsSubmittingReport(false);
 				// Keep modal open so user can try again
@@ -886,25 +887,25 @@ const StrangerChatPage = () => {
 
 		return () => {
 			isMounted = false;
-			
+
 			// Cleanup media
 			if (localStreamRef.current) {
 				localStreamRef.current.getTracks().forEach(t => t.stop());
 				localStreamRef.current = null;
 			}
-			
+
 			// Clear report timeout
 			if (reportTimeoutRef.current) {
 				clearTimeout(reportTimeoutRef.current);
 				reportTimeoutRef.current = null;
 			}
-			
+
 			closeConnection();
-			
+
 			if (socket?.connected) {
 				socket.emit("stranger:skip");
 			}
-			
+
 			// Remove all listeners
 			socket.off("stranger:waiting", onWaiting);
 			socket.off("stranger:matched", onMatched);
@@ -937,7 +938,7 @@ const StrangerChatPage = () => {
 				setAiModerationActive(false);
 			}
 		};
-		
+
 		// Delay moderation loading to not block initial render
 		setTimeout(initModeration, 1000);
 	}, []);
@@ -945,15 +946,15 @@ const StrangerChatPage = () => {
 	// Action handlers
 	const handleSkip = useCallback(() => {
 		if (status === "initializing") return;
-		
+
 		if (status === "connected") {
 			addMessage("System", "⏭️ Skipping to next person...");
 		}
-		
+
 		socket?.emit("stranger:skip");
 		closeConnection();
 		setStatus("waiting");
-		
+
 		// Immediately rejoin queue for faster matching with privacy settings
 		setTimeout(() => {
 			if (socket?.connected) {
@@ -968,7 +969,7 @@ const StrangerChatPage = () => {
 				});
 			}
 		}, 100);
-		
+
 		toast("🔄 Finding new match...", { icon: "⏭️" });
 	}, [status, socket, closeConnection, addMessage, authUser]);
 
@@ -991,7 +992,7 @@ const StrangerChatPage = () => {
 					toast.success("🎉 Friend request accepted!");
 				}
 			}
-			
+
 			// Force refresh friend data after action
 			if (success) {
 				setTimeout(() => {
@@ -1007,7 +1008,7 @@ const StrangerChatPage = () => {
 	const handleSendMessage = useCallback((e) => {
 		e.preventDefault();
 		if (!currentMessage.trim() || status !== "connected") return;
-		
+
 		socket?.emit("stranger:chatMessage", { message: currentMessage });
 		addMessage("You", currentMessage);
 		setCurrentMessage("");
@@ -1023,13 +1024,13 @@ const StrangerChatPage = () => {
 
 	const captureScreenshot = useCallback(() => {
 		console.log('📸 Attempting to capture screenshot...');
-		
+
 		if (!remoteVideoRef.current) {
 			console.error('❌ No remote video element');
 			toast.error("Cannot capture screenshot - video element not found.");
 			return null;
 		}
-		
+
 		if (remoteVideoRef.current.videoWidth === 0 || remoteVideoRef.current.videoHeight === 0) {
 			console.error('❌ Remote video dimensions are 0:', {
 				width: remoteVideoRef.current.videoWidth,
@@ -1039,22 +1040,22 @@ const StrangerChatPage = () => {
 			toast.error("Cannot capture screenshot - partner video not ready.");
 			return null;
 		}
-		
+
 		try {
 			const canvas = document.createElement("canvas");
 			canvas.width = remoteVideoRef.current.videoWidth;
 			canvas.height = remoteVideoRef.current.videoHeight;
 			const ctx = canvas.getContext("2d");
-			
+
 			ctx.drawImage(remoteVideoRef.current, 0, 0);
 			const screenshot = canvas.toDataURL("image/jpeg", 0.9);
-			
+
 			console.log('✅ Screenshot captured successfully:', {
 				width: canvas.width,
 				height: canvas.height,
 				dataSize: screenshot.length
 			});
-			
+
 			return screenshot;
 		} catch (error) {
 			console.error('❌ Error capturing screenshot:', error);
@@ -1077,20 +1078,20 @@ const StrangerChatPage = () => {
 
 	const handleSubmitReport = useCallback((reason, description) => {
 		console.log('📝 Submitting report:', { reason, description, partnerUserId, hasScreenshot: !!reportScreenshot });
-		
+
 		if (!reportScreenshot || !reason || !partnerUserId) {
 			toast.error("Missing report information");
 			console.error('❌ Missing report data:', { reportScreenshot: !!reportScreenshot, reason, partnerUserId });
 			return;
 		}
-		
+
 		setIsSubmittingReport(true);
-		
+
 		// Clear any existing timeout
 		if (reportTimeoutRef.current) {
 			clearTimeout(reportTimeoutRef.current);
 		}
-		
+
 		// Add timeout fallback in case socket events don't fire
 		reportTimeoutRef.current = setTimeout(() => {
 			console.warn('⏰ Report submission timed out');
@@ -1098,7 +1099,7 @@ const StrangerChatPage = () => {
 			toast.error("Report submission timed out. Please try again.");
 			reportTimeoutRef.current = null;
 		}, 15000); // 15 second timeout
-		
+
 		const reportData = {
 			reporterId: authUser.id,
 			reportedUserId: partnerUserId,
@@ -1108,7 +1109,7 @@ const StrangerChatPage = () => {
 			category: 'stranger_chat',
 			isAIDetected: false
 		};
-		
+
 		console.log('📤 Emitting report to socket:', { ...reportData, screenshot: 'base64_data_hidden' });
 		socket?.emit("stranger:report", reportData);
 	}, [reportScreenshot, partnerUserId, authUser, socket]);
@@ -1119,13 +1120,13 @@ const StrangerChatPage = () => {
 			emoji,
 			x: Math.random() * 80 + 10,
 		};
-		
+
 		setReactions(prev => [...prev, reaction]);
-		
+
 		setTimeout(() => {
 			setReactions(prev => prev.filter(r => r.id !== reaction.id));
 		}, 3000);
-		
+
 		if (socket && status === "connected") {
 			socket.emit("stranger:reaction", { emoji });
 		}
@@ -1155,39 +1156,39 @@ const StrangerChatPage = () => {
 	const getFriendButtonConfig = useMemo(() => {
 		switch (friendStatus) {
 			case "NOT_FRIENDS":
-				return { 
-					text: "Add Friend", 
-					icon: UserPlus, 
+				return {
+					text: "Add Friend",
+					icon: UserPlus,
 					className: "btn-primary",
-					disabled: false 
+					disabled: false
 				};
 			case "REQUEST_SENT":
-				return { 
-					text: "Request Sent", 
-					icon: Clock, 
+				return {
+					text: "Request Sent",
+					icon: Clock,
 					className: "btn-outline btn-primary",
-					disabled: true 
+					disabled: true
 				};
 			case "REQUEST_RECEIVED":
-				return { 
-					text: "Accept Request", 
-					icon: UserCheck, 
+				return {
+					text: "Accept Request",
+					icon: UserCheck,
 					className: "btn-success",
-					disabled: false 
+					disabled: false
 				};
 			case "FRIENDS":
-				return { 
-					text: "Friends", 
-					icon: UserCheck, 
+				return {
+					text: "Friends",
+					icon: UserCheck,
 					className: "btn-outline btn-success",
-					disabled: true 
+					disabled: true
 				};
 			default:
-				return { 
-					text: "Add Friend", 
-					icon: UserPlus, 
+				return {
+					text: "Add Friend",
+					icon: UserPlus,
 					className: "btn-primary",
-					disabled: true 
+					disabled: true
 				};
 		}
 	}, [friendStatus]);
@@ -1196,14 +1197,14 @@ const StrangerChatPage = () => {
 		<div className="fixed inset-0 flex flex-col bg-gradient-to-br from-base-300 via-base-200 to-base-300 overflow-hidden">
 			{/* Loading State */}
 			{status === "initializing" && <LoadingSkeleton />}
-			
+
 			{/* Main Video Container */}
 			<div className="flex-1 relative overflow-hidden">
 				{/* Remote Video - Full Screen with Performance Optimization */}
-				<video 
+				<video
 					ref={remoteVideoRef}
-					autoPlay 
-					playsInline 
+					autoPlay
+					playsInline
 					muted={false}
 					className="absolute inset-0 w-full h-full object-cover bg-gradient-to-br from-primary/10 to-secondary/10"
 					style={{
@@ -1214,7 +1215,7 @@ const StrangerChatPage = () => {
 						transform: "translateZ(0)"
 					}}
 				/>
-				
+
 				{/* Waiting State Overlay */}
 				{status === "waiting" && (
 					<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-black/50 via-gray-900/30 to-black/50 backdrop-blur-md">
@@ -1223,7 +1224,7 @@ const StrangerChatPage = () => {
 								<div className="w-24 h-24 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>
 								<Users className="absolute inset-0 m-auto w-8 h-8 text-yellow-400" />
 							</div>
-							
+
 							<div className="space-y-2">
 								<h2 className="text-3xl font-bold luxury-gradient-text animate-luxury-shimmer">
 									Finding Your Match
@@ -1237,14 +1238,13 @@ const StrangerChatPage = () => {
 									</p>
 								)}
 							</div>
-							
+
 							<div className="flex justify-center space-x-1">
 								{[0, 1, 2].map((i) => (
 									<div
 										key={i}
-										className={`w-2 h-2 rounded-full animate-pulse ${
-											i === 1 ? 'bg-yellow-400' : 'bg-white'
-										}`}
+										className={`w-2 h-2 rounded-full animate-pulse ${i === 1 ? 'bg-yellow-400' : 'bg-white'
+											}`}
 										style={{ animationDelay: `${i * 0.2}s` }}
 									/>
 								))}
@@ -1282,7 +1282,7 @@ const StrangerChatPage = () => {
 									</span>
 								</div>
 							)}
-							
+
 							{status === "connected" && (
 								<ConnectionIndicator quality={connectionQuality} isConnected={isConnected} />
 							)}
@@ -1293,8 +1293,8 @@ const StrangerChatPage = () => {
 							<div className="flex items-center gap-3 bg-black/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/20">
 								<div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white/50">
 									{partnerUserData.profilePic ? (
-										<img 
-											src={partnerUserData.profilePic} 
+										<img
+											src={partnerUserData.profilePic}
 											alt={partnerUserData.displayName || "Stranger"}
 											className="w-full h-full object-cover"
 										/>
@@ -1325,7 +1325,7 @@ const StrangerChatPage = () => {
 						<div className="flex items-center gap-2">
 							{status === "connected" && (
 								<>
-									<button 
+									<button
 										onClick={handleChatToggle}
 										className="btn btn-circle btn-sm bg-black/30 border-white/20 text-white hover:bg-black/50 relative"
 									>
@@ -1334,7 +1334,7 @@ const StrangerChatPage = () => {
 											<div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
 										)}
 									</button>
-									<button 
+									<button
 										onClick={handleReport}
 										className="btn btn-circle btn-sm bg-red-500/80 border-red-400/50 text-white hover:bg-red-600"
 									>
@@ -1349,19 +1349,19 @@ const StrangerChatPage = () => {
 				{/* Self Video - Picture in Picture */}
 				<div className="absolute top-20 right-4 z-30">
 					<div className="relative w-32 h-44 sm:w-36 sm:h-48 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/30 bg-black/20 backdrop-blur-sm">
-						<video 
+						<video
 							ref={localVideoRef}
-							autoPlay 
-							playsInline 
+							autoPlay
+							playsInline
 							muted={true}
 							className="w-full h-full object-cover"
-							style={{ 
+							style={{
 								transform: 'scaleX(-1) translateZ(0)',
 								willChange: "transform",
 								backfaceVisibility: "hidden"
 							}}
 						/>
-						
+
 						{/* Video controls overlay */}
 						<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
 							<div className="flex items-center justify-between">
@@ -1437,11 +1437,10 @@ const StrangerChatPage = () => {
 						<button
 							onClick={handleSkip}
 							disabled={status === "initializing"}
-							className={`btn btn-lg gap-3 border-none shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 font-semibold ${
-								status === "waiting" 
-									? "bg-gradient-to-r from-gray-700 via-gray-800 to-gray-900 text-white hover:from-gray-600 hover:via-gray-700 hover:to-gray-800" 
-									: "bg-gradient-to-r from-primary to-primary-focus text-primary-content hover:from-primary-focus hover:to-primary"
-							}`}
+							className={`btn btn-lg gap-3 border-none shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 font-semibold ${status === "waiting"
+								? "bg-gradient-to-r from-gray-700 via-gray-800 to-gray-900 text-white hover:from-gray-600 hover:via-gray-700 hover:to-gray-800"
+								: "bg-gradient-to-r from-primary to-primary-focus text-primary-content hover:from-primary-focus hover:to-primary"
+								}`}
 						>
 							<SkipForward className="w-5 h-5" />
 							<span className="font-bold">
@@ -1476,12 +1475,12 @@ const StrangerChatPage = () => {
 			</div>
 
 			{/* Report Modal */}
-			<ReportModal 
-				isOpen={isReportModalOpen} 
-				onClose={() => setIsReportModalOpen(false)} 
-				onSubmit={handleSubmitReport} 
-				screenshotPreview={reportScreenshot} 
-				isSubmitting={isSubmittingReport} 
+			<ReportModal
+				isOpen={isReportModalOpen}
+				onClose={() => setIsReportModalOpen(false)}
+				onSubmit={handleSubmitReport}
+				screenshotPreview={reportScreenshot}
+				isSubmitting={isSubmittingReport}
 			/>
 
 			{/* Custom Styles */}
