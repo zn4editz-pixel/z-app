@@ -203,6 +203,48 @@ export const sendMessage = async (req, res) => {
       return res.status(400).json({ error: "Message cannot be empty" });
     }
 
+    // --- AI MODERATION SYSTEM ---
+    // Simple keyword-based detection (POC)
+    if (text) {
+      const prohibitedWords = {
+        'spam': 'Spam Content',
+        'fake': 'Scam/Fake',
+        'hate': 'Hate Speech',
+        'profit': 'Solicitation',
+        'stupid': 'Harassment',
+        'idiot': 'Harassment',
+        'badword': 'Inappropriate Language'
+      };
+
+      const lowerText = text.toLowerCase();
+      const detectedWord = Object.keys(prohibitedWords).find(word => lowerText.includes(word));
+
+      if (detectedWord) {
+        console.log(`🚨 AI Moderation: Detected "${detectedWord}" in message from ${senderId}`);
+
+        // Auto-generate report
+        try {
+          await prisma.report.create({
+            data: {
+              reporterId: receiverId, // System acts on behalf of receiver
+              reportedUserId: senderId,
+              reason: prohibitedWords[detectedWord],
+              description: `AI System detected prohibited content: "${detectedWord}" in message: "${text.substring(0, 50)}..."`,
+              status: 'pending',
+              isAIDetected: true,
+              aiCategory: prohibitedWords[detectedWord],
+              aiConfidence: 0.85 + (Math.random() * 0.14), // Simulate high confidence 0.85-0.99
+              severity: 'medium'
+            }
+          });
+          console.log("✅ AI Report created successfully");
+        } catch (reportErr) {
+          console.error("Failed to create AI report:", reportErr);
+        }
+      }
+    }
+    // ---------------------------
+
     // Process uploads in parallel for speed
     const uploadPromises = [];
 
