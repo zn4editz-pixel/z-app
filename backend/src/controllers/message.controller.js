@@ -370,8 +370,19 @@ export const markMessagesAsRead = async (req, res) => {
     const { id: senderId } = req.params;
     const myId = req.user.id;
 
-    // Note: The current Prisma schema doesn't have status/readAt fields
-    // This is a placeholder that counts messages
+    // Update all unread messages from this sender
+    await prisma.message.updateMany({
+      where: {
+        senderId: senderId,
+        receiverId: myId,
+        status: { not: "read" }
+      },
+      data: {
+        status: "read",
+        readAt: new Date()
+      }
+    });
+
     const messages = await prisma.message.findMany({
       where: {
         senderId: senderId,

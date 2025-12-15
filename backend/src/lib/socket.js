@@ -408,7 +408,7 @@ io.on("connection", (socket) => {
 			}
 
 			// 🚀 ULTRA-FAST: Confirm to sender immediately
-			socket.emit("newMessage", newMessage);
+			socket.emit("newMessage", { ...newMessage, tempId });
 			const totalTime = Date.now() - startTime;
 			console.log(`🚀 ULTRA-FAST: Message processed in ${totalTime}ms`);
 

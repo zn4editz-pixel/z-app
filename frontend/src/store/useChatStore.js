@@ -252,6 +252,18 @@ export const useChatStore = create((set, get) => ({
                 // Stop typing indicator when message received
                 set({ isTyping: false, typingUserId: null });
 
+                // 🔥 REAL-TIME ACKNOWLEDGEMENT: Emit Delivered event
+                const socket = get().socket;
+                if (socket && newMessage.id) {
+                    console.log(`📤 Emitting messageDelivered for: ${newMessage.id}`);
+                    socket.emit("messageDelivered", { messageId: newMessage.id });
+
+                    // If chat is open, also mark as read immediately
+                    // We use a timeout to ensuring rendering happens first, or just fire it
+                    // Also use API to persist 'read' status which likely emits socket event too
+                    get().markMessagesAsRead(selectedUserId);
+                }
+
                 let currentMessages = get().messages;
                 // ... (rest of logic)
                 const isDuplicateById = currentMessages.some(m => m.id === newMessage.id);
@@ -280,6 +292,13 @@ export const useChatStore = create((set, get) => ({
             } else if (msgSenderId !== authUserId) {
                 get().incrementUnread(msgSenderId);
                 useFriendStore.getState().updateFriendLastMessage(msgSenderId, newMessage);
+
+                // 🔥 REAL-TIME ACKNOWLEDGEMENT: Emit Delivered event even if not current chat
+                const socket = get().socket;
+                if (socket && newMessage.id) {
+                    console.log(`📤 Emitting messageDelivered (background) for: ${newMessage.id}`);
+                    socket.emit("messageDelivered", { messageId: newMessage.id });
+                }
             }
         };
 
@@ -352,8 +371,11 @@ export const useChatStore = create((set, get) => ({
             set({ messages: updatedMessages });
         };
 
-        const messagesReadHandler = (conversationId) => {
-            console.log('👀 Socket: messagesRead event received', { conversationId });
+        const messagesReadHandler = (payload) => {
+            // Backend sends: { readBy: userId }
+            const conversationId = payload?.readBy || payload;
+
+            console.log('👀 Socket: messagesRead event received', { payload, conversationId });
             const { messages, selectedUser, authUser } = get();
 
             // Safety check
@@ -361,7 +383,7 @@ export const useChatStore = create((set, get) => ({
 
             // Ensure ID comparison is type-safe (string vs number)
             const currentChatId = selectedUser.id.toString();
-            const eventChatId = conversationId.toString();
+            const eventChatId = conversationId?.toString();
             const currentUserId = authUser.id.toString();
 
             if (currentChatId === eventChatId) {

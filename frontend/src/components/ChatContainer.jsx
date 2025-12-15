@@ -36,8 +36,9 @@ const ChatContainer = ({ onStartCall }) => {
   const audioRefs = useRef({});
 
 
-  // Typing indicator - Local state for maximum reliability
-  const [isTyping, setIsTyping] = useState(false);
+  // Typing indicator - Use Global Store State
+  //   const [isTyping, setIsTyping] = useState(false); // ❌ Removed local state
+  const { isTyping, typingUserId } = useChatStore(); // ✅ Use store state
   const typingTimeoutRef = useRef(null);
 
 

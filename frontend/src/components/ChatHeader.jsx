@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import VerifiedBadge from "./VerifiedBadge";
 
 const ChatHeader = ({ onStartCall }) => {
-	const { selectedUser, setSelectedUser } = useChatStore();
+	const { selectedUser, setSelectedUser, isTyping, typingUserId } = useChatStore();
 	const { onlineUsers } = useAuthStore();
 	const navigate = useNavigate();
 
@@ -61,7 +61,9 @@ const ChatHeader = ({ onStartCall }) => {
 						{selectedUser.isVerified && <VerifiedBadge size="xs" />}
 					</div>
 					<p className="text-sm text-base-content/60 truncate">
-						{isOnline ? (
+						{isTyping && typingUserId === selectedUser.id ? (
+							<span className="text-secondary font-medium animate-pulse">Typing...</span>
+						) : isOnline ? (
 							<span className="flex items-center gap-1.5">
 								<span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
 								Online
