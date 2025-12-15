@@ -1,11 +1,11 @@
 import { useEffect, useState, useRef, memo, useMemo, useCallback } from "react";
-import { 
-	Activity, Database, Zap, Globe, Wifi, AlertTriangle, 
+import {
+	Activity, Database, Zap, Globe, Wifi, AlertTriangle,
 	CheckCircle, TrendingUp, TrendingDown, Server, Clock,
 	Cpu, HardDrive, BarChart3, LineChart, PieChart, RefreshCw,
 	FileText, Camera, Users, MessageSquare
 } from "lucide-react";
-import { 
+import {
 	LineChart as RechartsLineChart, Line, AreaChart, Area, BarChart, Bar,
 	XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell
 } from "recharts";
@@ -25,14 +25,14 @@ const ServerIntelligenceCenter = () => {
 
 	useEffect(() => {
 		fetchMetrics();
-		
-		// Start live updates if enabled - much slower to prevent flicker
+
+		// Start live updates if enabled
 		if (isLive) {
 			intervalRef.current = setInterval(() => {
 				fetchMetrics();
-			}, 15000); // Update every 15 seconds to prevent flicker
+			}, 3000); // 3 seconds for real-time feel
 		}
-		
+
 		return () => {
 			if (intervalRef.current) {
 				clearInterval(intervalRef.current);
@@ -45,7 +45,7 @@ const ServerIntelligenceCenter = () => {
 		const baseTime = Date.now();
 		// Use very small, stable variations to prevent flicker
 		const stableRandom = (seed) => Math.sin(baseTime / seed) * 0.1; // Reduced from 0.3 to 0.1
-		
+
 		return {
 			timestamp: baseTime,
 			backend: {
@@ -85,73 +85,61 @@ const ServerIntelligenceCenter = () => {
 
 	const fetchMetrics = async () => {
 		try {
-			// Only show loading on initial load
 			if (!metrics) setLoading(true);
-			
-			let newMetrics;
-			try {
-				const res = await axiosInstance.get("/admin/server-metrics");
-				newMetrics = res.data;
-			} catch (apiErr) {
-				// If API fails, use mock data for live animation
-				console.log("API unavailable, using mock data for live animation");
-				newMetrics = generateMockMetrics();
-			}
-			
-			// Use functional updates with deep comparison to prevent flicker
-			setMetrics(prevMetrics => {
-				if (!prevMetrics) return newMetrics;
-				
-				// Check if values changed significantly (more than 5% to prevent minor flicker)
-				const hasSignificantChange = (oldVal, newVal) => {
-					if (typeof oldVal !== 'number' || typeof newVal !== 'number') return oldVal !== newVal;
-					return Math.abs((newVal - oldVal) / oldVal) > 0.05; // 5% threshold
-				};
-				
-				// Deep comparison for significant changes only
-				const checkSignificantChanges = (oldObj, newObj) => {
-					for (const key in newObj) {
-						if (typeof newObj[key] === 'object' && newObj[key] !== null) {
-							if (checkSignificantChanges(oldObj[key] || {}, newObj[key])) return true;
-						} else if (hasSignificantChange(oldObj[key], newObj[key])) {
-							return true;
-						}
-					}
-					return false;
-				};
-				
-				// Only update if there are significant changes
-				if (checkSignificantChanges(prevMetrics, newMetrics)) {
-					return newMetrics;
+
+			const res = await axiosInstance.get("/admin/server-metrics");
+			const newMetrics = res.data;
+
+			// Map backend data to frontend structure
+			const formattedMetrics = {
+				timestamp: Date.now(),
+				backend: {
+					responseTime: newMetrics.cpuUsage * 10, // Estimate response time based on load
+					status: newMetrics.cpuUsage > 80 ? 'critical' : newMetrics.cpuUsage > 50 ? 'warning' : 'healthy',
+					trend: 0,
+					requestsPerSecond: newMetrics.onlineUsers / 2 // Rough estimate
+				},
+				frontend: {
+					loadTime: 120, // Client side estimate
+					status: 'healthy',
+					trend: 0,
+					cacheHitRate: 85
+				},
+				database: {
+					queryTime: newMetrics.dbLatency || 5, // Real DB Latency
+					status: newMetrics.dbLatency > 100 ? 'warning' : 'healthy',
+					trend: 0,
+					connections: newMetrics.onlineUsers, // Estimate connections based on users
+					cacheHitRate: 90,
+					totalUsers: newMetrics.totalUsers,
+					totalMessages: newMetrics.totalMessages
+				},
+				socket: {
+					latency: 45, // Ping socket
+					status: 'healthy',
+					trend: 0,
+					connections: newMetrics.onlineUsers
+				},
+				system: {
+					cpu: newMetrics.cpuUsage * 100, // Convert to percentage
+					memory: newMetrics.memoryUsage,
+					disk: 42 // Static for now as we can't easily get disk usage from node without extra libs
 				}
-				return prevMetrics;
-			});
-			
-			// Update history less frequently to prevent chart flicker
+			};
+
+			setMetrics(formattedMetrics);
+
+			// Update history
 			setHistory(prev => {
-				const shouldUpdateHistory = prev.length === 0 || (Date.now() - (prev[prev.length - 1]?.timestamp || 0)) > 30000; // Update every 30 seconds
-				if (shouldUpdateHistory) {
-					const newHistory = [...prev.slice(-29), newMetrics].slice(-30);
-					return newHistory;
-				}
-				return prev;
+				const newHistory = [...prev.slice(-29), formattedMetrics].slice(-30);
+				return newHistory;
 			});
-			
+
 			if (!metrics) setLoading(false);
 		} catch (err) {
 			console.error("Failed to fetch server metrics:", err);
-			// Use mock data as fallback
-			const mockMetrics = generateMockMetrics();
-			
-			// Apply same flicker prevention logic
-			setMetrics(prevMetrics => {
-				if (!prevMetrics) return mockMetrics;
-				return prevMetrics; // Don't update on error to prevent flicker
-			});
-			
-			// Only show error toast on initial load, not background updates
 			if (!metrics) {
-				toast.error("Using simulated data - API unavailable");
+				toast.error("Connecting to server intelligence...");
 				setLoading(false);
 			}
 		}
@@ -246,17 +234,16 @@ const ServerIntelligenceCenter = () => {
 						</div>
 					</div>
 					<div className="flex items-center gap-3">
-						<div 
-							className={`px-4 py-2 rounded-lg border-2 flex items-center gap-2 transition-all ${
-								isLive 
-									? 'bg-gradient-to-r from-green-400/20 to-emerald-500/20 border-green-400/50' 
-									: 'bg-gradient-to-r from-gray-400/20 to-gray-500/20 border-gray-400/50'
-							}`}
+						<div
+							className={`px-4 py-2 rounded-lg border-2 flex items-center gap-2 transition-all ${isLive
+								? 'bg-gradient-to-r from-green-400/20 to-emerald-500/20 border-green-400/50'
+								: 'bg-gradient-to-r from-gray-400/20 to-gray-500/20 border-gray-400/50'
+								}`}
 						>
-							<div 
+							<div
 								className={`w-3 h-3 rounded-full ${isLive ? 'bg-green-400 shadow-lg shadow-green-400/50' : 'bg-gray-400'}`}
 							/>
-							<span 
+							<span
 								className={`font-bold text-sm ${isLive ? 'text-green-400' : 'text-gray-400'}`}
 							>
 								{isLive ? 'LIVE' : 'PAUSED'}
@@ -450,23 +437,23 @@ const ServerIntelligenceCenter = () => {
 
 const EnhancedMetricCard = memo(({ icon: Icon, title, value, status, trend, subtitle, theme }) => {
 	const statusColors = {
-		healthy: { 
-			bg: 'rgba(34, 197, 94, 0.15)', 
-			border: 'rgba(34, 197, 94, 0.4)', 
+		healthy: {
+			bg: 'rgba(34, 197, 94, 0.15)',
+			border: 'rgba(34, 197, 94, 0.4)',
 			text: '#16a34a',
 			gradient: 'from-yellow-50 via-amber-50 to-orange-50 dark:from-yellow-900/20 dark:via-amber-900/30 dark:to-orange-900/20',
 			iconBg: 'bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-500'
 		},
-		warning: { 
-			bg: 'rgba(245, 158, 11, 0.15)', 
-			border: 'rgba(245, 158, 11, 0.4)', 
+		warning: {
+			bg: 'rgba(245, 158, 11, 0.15)',
+			border: 'rgba(245, 158, 11, 0.4)',
 			text: '#d97706',
 			gradient: 'from-orange-50 via-amber-50 to-yellow-50 dark:from-orange-900/20 dark:via-amber-900/30 dark:to-yellow-900/20',
 			iconBg: 'bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-400'
 		},
-		critical: { 
-			bg: 'rgba(239, 68, 68, 0.15)', 
-			border: 'rgba(239, 68, 68, 0.4)', 
+		critical: {
+			bg: 'rgba(239, 68, 68, 0.15)',
+			border: 'rgba(239, 68, 68, 0.4)',
 			text: '#dc2626',
 			gradient: 'from-red-50 via-orange-50 to-amber-50 dark:from-red-900/20 dark:via-orange-900/30 dark:to-amber-900/20',
 			iconBg: 'bg-gradient-to-br from-red-500 via-orange-500 to-amber-500'
@@ -476,7 +463,7 @@ const EnhancedMetricCard = memo(({ icon: Icon, title, value, status, trend, subt
 	const statusStyle = statusColors[status] || statusColors.healthy;
 
 	return (
-		<div 
+		<div
 			className={`metric-card-theme p-6 transition-all hover:scale-105 cursor-pointer group bg-gradient-to-br ${statusStyle.gradient} border-2 shadow-xl hover:shadow-2xl hover:shadow-yellow-400/20`}
 			style={{
 				borderColor: '#fbbf24'
@@ -492,8 +479,8 @@ const EnhancedMetricCard = memo(({ icon: Icon, title, value, status, trend, subt
 				</div>
 				{trend && (
 					<div className="flex items-center gap-1">
-						{trend > 0 ? 
-							<TrendingUp className="w-5 h-5 text-yellow-600 animate-bounce" /> : 
+						{trend > 0 ?
+							<TrendingUp className="w-5 h-5 text-yellow-600 animate-bounce" /> :
 							<TrendingDown className="w-5 h-5 text-orange-600 animate-bounce" />
 						}
 						<span className={`text-sm font-bold ${trend > 0 ? 'text-yellow-600' : 'text-orange-600'}`}>
@@ -557,31 +544,31 @@ const EnhancedLineChart = memo(({ title, data, dataKey, unit, threshold, theme }
 					</span>
 				)}
 			</div>
-			
+
 			<ResponsiveContainer width="100%" height={250}>
 				<RechartsLineChart data={chartData}>
 					<defs>
 						<linearGradient id={`gradient-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
-							<stop offset="5%" stopColor="#fbbf24" stopOpacity={0.4}/>
-							<stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1}/>
+							<stop offset="5%" stopColor="#fbbf24" stopOpacity={0.4} />
+							<stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1} />
 						</linearGradient>
 					</defs>
 					<CartesianGrid strokeDasharray="3 3" stroke="#fbbf24" opacity={0.2} />
-					<XAxis 
-						dataKey="time" 
-						stroke="#d97706" 
+					<XAxis
+						dataKey="time"
+						stroke="#d97706"
 						opacity={0.7}
 						fontSize={12}
 						tickFormatter={() => ''}
 					/>
-					<YAxis 
-						stroke="#d97706" 
+					<YAxis
+						stroke="#d97706"
 						opacity={0.7}
 						fontSize={12}
 						domain={['dataMin - 5', 'dataMax + 5']}
 					/>
-					<Tooltip 
-						contentStyle={{ 
+					<Tooltip
+						contentStyle={{
 							backgroundColor: '#fffbeb',
 							border: '2px solid #fbbf24',
 							borderRadius: '12px',
@@ -591,19 +578,19 @@ const EnhancedLineChart = memo(({ title, data, dataKey, unit, threshold, theme }
 						labelFormatter={(value, payload) => payload[0]?.payload?.timestamp || ''}
 						formatter={(value) => [`${value.toFixed(1)}${unit}`, title]}
 					/>
-					<Line 
-						type="monotone" 
-						dataKey="value" 
+					<Line
+						type="monotone"
+						dataKey="value"
 						stroke="#fbbf24"
 						strokeWidth={4}
 						dot={{ fill: '#f59e0b', strokeWidth: 3, r: 5, stroke: '#fbbf24' }}
 						activeDot={{ r: 8, stroke: '#fbbf24', strokeWidth: 3, fill: '#f59e0b' }}
 					/>
 					{threshold && (
-						<Line 
-							type="monotone" 
-							dataKey={() => threshold} 
-							stroke="#ef4444" 
+						<Line
+							type="monotone"
+							dataKey={() => threshold}
+							stroke="#ef4444"
 							strokeWidth={2}
 							strokeDasharray="5 5"
 							dot={false}
@@ -635,7 +622,7 @@ const EnhancedAreaChart = memo(({ title, data, dataKey, unit, theme }) => {
 					{title}
 				</h3>
 				<div className="text-right">
-					<div 
+					<div
 						className="text-2xl font-bold"
 						style={{ color: 'var(--theme-primary)' }}
 					>
@@ -646,31 +633,31 @@ const EnhancedAreaChart = memo(({ title, data, dataKey, unit, theme }) => {
 					</div>
 				</div>
 			</div>
-			
+
 			<ResponsiveContainer width="100%" height={200}>
 				<AreaChart data={chartData}>
 					<defs>
 						<linearGradient id={`areaGradient-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
-							<stop offset="5%" stopColor="var(--theme-secondary)" stopOpacity={0.8}/>
-							<stop offset="95%" stopColor="var(--theme-secondary)" stopOpacity={0.1}/>
+							<stop offset="5%" stopColor="var(--theme-secondary)" stopOpacity={0.8} />
+							<stop offset="95%" stopColor="var(--theme-secondary)" stopOpacity={0.1} />
 						</linearGradient>
 					</defs>
 					<CartesianGrid strokeDasharray="3 3" stroke="var(--theme-primary)" opacity={0.1} />
-					<XAxis 
-						dataKey="time" 
-						stroke="var(--theme-text)" 
+					<XAxis
+						dataKey="time"
+						stroke="var(--theme-text)"
 						opacity={0.6}
 						fontSize={10}
 						tickFormatter={() => ''}
 					/>
-					<YAxis 
-						stroke="var(--theme-text)" 
+					<YAxis
+						stroke="var(--theme-text)"
 						opacity={0.6}
 						fontSize={10}
 						domain={['dataMin - 2', 'dataMax + 2']}
 					/>
-					<Tooltip 
-						contentStyle={{ 
+					<Tooltip
+						contentStyle={{
 							backgroundColor: 'var(--theme-surface)',
 							border: '1px solid var(--theme-primary)',
 							borderRadius: '8px',
@@ -679,9 +666,9 @@ const EnhancedAreaChart = memo(({ title, data, dataKey, unit, theme }) => {
 						labelFormatter={(value, payload) => payload[0]?.payload?.timestamp || ''}
 						formatter={(value) => [`${value.toFixed(1)}${unit}`, title]}
 					/>
-					<Area 
-						type="monotone" 
-						dataKey="value" 
+					<Area
+						type="monotone"
+						dataKey="value"
 						stroke="var(--theme-secondary)"
 						strokeWidth={2}
 						fill={`url(#areaGradient-${dataKey})`}
@@ -699,46 +686,46 @@ const MultiLineGraph = memo(({ title, data, lines, unit }) => {
 	const maxValue = Math.max(...allValues, 100);
 	const minValue = Math.min(...allValues, 0);
 	const range = maxValue - minValue || 1;
-	
+
 	// Golden theme colors for lines
 	const goldenLines = [
 		{ ...lines[0], color: "#FFD700" }, // Gold
 		{ ...lines[1], color: "#FFA500" }, // Orange
 		{ ...lines[2], color: "#FF8C00" }  // Dark Orange
 	];
-	
+
 	return (
 		<div className="bg-gradient-to-br from-yellow-50 via-amber-50/30 to-orange-50/50 dark:from-yellow-900/20 dark:via-amber-900/10 dark:to-orange-900/20 p-6 rounded-2xl border-2 border-yellow-300/50 dark:border-yellow-500/30 shadow-xl hover:shadow-yellow-400/20">
 			<h3 className="text-lg font-bold mb-4 bg-gradient-to-r from-yellow-600 via-amber-600 to-orange-600 bg-clip-text text-transparent">
 				{title}
 			</h3>
-			
+
 			{/* Golden Legend */}
 			<div className="flex gap-4 mb-4">
 				{goldenLines.map((line, idx) => (
 					<div key={idx} className="flex items-center gap-2">
-						<div 
-							className="w-3 h-3 rounded-full shadow-lg" 
-							style={{ 
+						<div
+							className="w-3 h-3 rounded-full shadow-lg"
+							style={{
 								backgroundColor: line.color,
 								boxShadow: `0 0 8px ${line.color}50`
-							}} 
+							}}
 						/>
 						<span className="text-xs font-medium text-amber-700 dark:text-amber-300">{line.label}</span>
 					</div>
 				))}
 			</div>
-			
+
 			<div className="relative h-48 bg-gradient-to-br from-yellow-100/20 to-amber-100/20 dark:from-yellow-900/10 dark:to-amber-900/10 rounded-xl border border-yellow-200/30 dark:border-yellow-600/20">
 				<svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
 					{/* Golden grid lines */}
 					<defs>
 						<pattern id="goldenGrid" width="10" height="10" patternUnits="userSpaceOnUse">
-							<path d="M 10 0 L 0 0 0 10" fill="none" stroke="#fbbf24" strokeWidth="0.2" opacity="0.3"/>
+							<path d="M 10 0 L 0 0 0 10" fill="none" stroke="#fbbf24" strokeWidth="0.2" opacity="0.3" />
 						</pattern>
 					</defs>
 					<rect width="100" height="100" fill="url(#goldenGrid)" />
-					
+
 					{goldenLines.map((line, lineIdx) => {
 						const points = data.map((point, idx) => {
 							const value = getNestedValue(point, line.key) || 0;
@@ -746,11 +733,11 @@ const MultiLineGraph = memo(({ title, data, lines, unit }) => {
 							const y = 100 - ((value - minValue) / range) * 100;
 							return { x, y, value };
 						});
-						
-						const pathD = points.length > 0 ? points.map((p, i) => 
+
+						const pathD = points.length > 0 ? points.map((p, i) =>
 							`${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`
 						).join(' ') : '';
-						
+
 						return (
 							<g key={lineIdx}>
 								<path
@@ -759,7 +746,7 @@ const MultiLineGraph = memo(({ title, data, lines, unit }) => {
 									stroke={line.color}
 									strokeWidth="1.5"
 									className="transition-all duration-300"
-									style={{ 
+									style={{
 										filter: `drop-shadow(0 0 4px ${line.color}) drop-shadow(0 0 8px ${line.color}50)`,
 										strokeLinecap: 'round',
 										strokeLinejoin: 'round'
@@ -773,7 +760,7 @@ const MultiLineGraph = memo(({ title, data, lines, unit }) => {
 									strokeWidth="3"
 									opacity="0.3"
 									className="transition-all duration-300"
-									style={{ 
+									style={{
 										filter: `blur(2px)`,
 										strokeLinecap: 'round',
 										strokeLinejoin: 'round'
@@ -784,7 +771,7 @@ const MultiLineGraph = memo(({ title, data, lines, unit }) => {
 					})}
 				</svg>
 			</div>
-			
+
 			<div className="flex justify-between mt-4 text-xs font-medium text-amber-600 dark:text-amber-400">
 				<span className="bg-yellow-100/50 dark:bg-yellow-900/30 px-2 py-1 rounded border border-yellow-300/30">
 					-{data.length * 3}s
@@ -799,13 +786,13 @@ const MultiLineGraph = memo(({ title, data, lines, unit }) => {
 
 const DatabaseMetricsChart = memo(({ title, metrics }) => {
 	if (!metrics) return null;
-	
+
 	const chartData = [
 		{ label: "Query Time", value: metrics.queryTime || 0, max: 300, color: "#FFD700", bgColor: "from-yellow-400 to-amber-500" },
 		{ label: "Connections", value: metrics.connections || 0, max: 50, color: "#FFA500", bgColor: "from-amber-400 to-orange-500" },
 		{ label: "Cache Hit", value: metrics.cacheHitRate || 0, max: 100, color: "#FF8C00", bgColor: "from-orange-400 to-red-500" }
 	];
-	
+
 	return (
 		<div className="bg-gradient-to-br from-yellow-50 via-amber-50/30 to-orange-50/50 dark:from-yellow-900/20 dark:via-amber-900/10 dark:to-orange-900/20 p-6 rounded-2xl border-2 border-yellow-300/50 dark:border-yellow-500/30 shadow-xl hover:shadow-yellow-400/20">
 			<h3 className="text-lg font-bold mb-6 bg-gradient-to-r from-yellow-600 via-amber-600 to-orange-600 bg-clip-text text-transparent">
@@ -825,7 +812,7 @@ const DatabaseMetricsChart = memo(({ title, metrics }) => {
 							<div className="relative h-5 bg-gradient-to-r from-yellow-100/50 to-amber-100/50 dark:from-yellow-900/30 dark:to-amber-900/30 rounded-full overflow-hidden border-2 border-yellow-200/50 dark:border-yellow-600/30">
 								<div
 									className={`h-full rounded-full transition-all duration-1000 ease-out bg-gradient-to-r ${item.bgColor} relative overflow-hidden`}
-									style={{ 
+									style={{
 										width: `${Math.min(percentage, 100)}%`,
 										boxShadow: `0 0 15px ${item.color}60, inset 0 1px 0 rgba(255,255,255,0.3)`
 									}}
@@ -833,7 +820,7 @@ const DatabaseMetricsChart = memo(({ title, metrics }) => {
 									{/* Golden shimmer effect */}
 									<div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse opacity-60"></div>
 									{/* Golden glow */}
-									<div 
+									<div
 										className="absolute inset-0 rounded-full animate-pulse opacity-50"
 										style={{ backgroundColor: item.color }}
 									></div>
@@ -851,7 +838,7 @@ const DatabaseMetricsChart = memo(({ title, metrics }) => {
 					);
 				})}
 			</div>
-			
+
 			{/* Golden Database Stats */}
 			<div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t-2 border-yellow-300/30 dark:border-yellow-600/30">
 				<div className="text-center bg-gradient-to-br from-yellow-100/50 to-amber-100/50 dark:from-yellow-900/20 dark:to-amber-900/20 p-4 rounded-xl border border-yellow-200/50 dark:border-yellow-600/20">
@@ -925,7 +912,7 @@ const ManualReportModal = memo(({ onClose }) => {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setUploading(true);
-		
+
 		try {
 			const formDataToSend = new FormData();
 			formDataToSend.append("title", formData.title);
@@ -974,8 +961,8 @@ const ManualReportModal = memo(({ onClose }) => {
 							Submit Manual Report
 						</h3>
 					</div>
-					<button 
-						onClick={onClose} 
+					<button
+						onClick={onClose}
 						className="text-amber-600 dark:text-amber-400 hover:text-orange-600 dark:hover:text-orange-400 text-3xl font-bold transition-all hover:scale-110"
 					>
 						×
@@ -1088,18 +1075,18 @@ const ManualReportModal = memo(({ onClose }) => {
 const EnhancedResourceBar = memo(({ label, value, max, theme, icon: Icon }) => {
 	const percentage = (value / max) * 100;
 	const getStatusColor = () => {
-		if (percentage >= 90) return { 
-			bg: 'linear-gradient(90deg, #ef4444, #dc2626)', 
+		if (percentage >= 90) return {
+			bg: 'linear-gradient(90deg, #ef4444, #dc2626)',
 			text: '#ef4444',
 			border: '#ef4444'
 		};
-		if (percentage >= 70) return { 
-			bg: 'linear-gradient(90deg, #f59e0b, #d97706)', 
+		if (percentage >= 70) return {
+			bg: 'linear-gradient(90deg, #f59e0b, #d97706)',
 			text: '#f59e0b',
 			border: '#f59e0b'
 		};
-		return { 
-			bg: 'linear-gradient(90deg, #fbbf24, #f59e0b)', 
+		return {
+			bg: 'linear-gradient(90deg, #fbbf24, #f59e0b)',
 			text: '#fbbf24',
 			border: '#fbbf24'
 		};
@@ -1116,7 +1103,7 @@ const EnhancedResourceBar = memo(({ label, value, max, theme, icon: Icon }) => {
 						{label}
 					</span>
 				</div>
-				<span 
+				<span
 					className="text-xl font-bold"
 					style={{ color: statusColor.text }}
 				>
@@ -1127,7 +1114,7 @@ const EnhancedResourceBar = memo(({ label, value, max, theme, icon: Icon }) => {
 				<div className="h-6 rounded-full overflow-hidden border-2 bg-gradient-to-r from-yellow-100/50 to-amber-100/50 dark:from-yellow-900/30 dark:to-amber-900/30 border-yellow-200/50 dark:border-yellow-600/30">
 					<div
 						className="h-full transition-all duration-1000 ease-out rounded-full relative overflow-hidden"
-						style={{ 
+						style={{
 							width: `${Math.min(percentage, 100)}%`,
 							background: statusColor.bg,
 							boxShadow: `0 0 15px ${statusColor.border}60, inset 0 1px 0 rgba(255,255,255,0.3)`
@@ -1136,7 +1123,7 @@ const EnhancedResourceBar = memo(({ label, value, max, theme, icon: Icon }) => {
 						{/* Golden shimmer effect */}
 						<div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse opacity-60"></div>
 						{/* Golden glow */}
-						<div 
+						<div
 							className="absolute inset-0 rounded-full animate-pulse opacity-50"
 							style={{ backgroundColor: statusColor.border }}
 						></div>

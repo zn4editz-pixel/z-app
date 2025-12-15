@@ -9,9 +9,9 @@ export const getAIAnalysis = async (req, res) => {
 	try {
 		const currentMetrics = await collectMetrics();
 		const analysis = await analyzeMetrics(currentMetrics, previousMetrics);
-		
+
 		previousMetrics = currentMetrics;
-		
+
 		// Store in history
 		analysisHistory.push({
 			timestamp: new Date().toISOString(),
@@ -20,7 +20,7 @@ export const getAIAnalysis = async (req, res) => {
 		if (analysisHistory.length > 100) {
 			analysisHistory.shift();
 		}
-		
+
 		res.status(200).json(analysis);
 	} catch (err) {
 		console.error("AI Analysis error:", err);
@@ -30,7 +30,7 @@ export const getAIAnalysis = async (req, res) => {
 
 async function collectMetrics() {
 	const { userSocketMap } = await import("../lib/socket.js");
-	
+
 	const [
 		totalUsers,
 		onlineUsers,
@@ -54,10 +54,15 @@ async function collectMetrics() {
 		prisma.report.count({ where: { status: 'pending' } }),
 		prisma.user.count({ where: { isSuspended: true } })
 	]);
-	
+
 	const memoryUsage = process.memoryUsage().heapUsed / 1024 / 1024; // MB
 	const cpuUsage = os.loadavg()[0]; // 1-minute load average
-	
+
+	// Measure DB Latency
+	const start = Date.now();
+	await prisma.$queryRaw`SELECT 1`;
+	const dbLatency = Date.now() - start;
+
 	return {
 		totalUsers,
 		onlineUsers,
@@ -68,6 +73,7 @@ async function collectMetrics() {
 		suspendedUsers,
 		memoryUsage,
 		cpuUsage,
+		dbLatency, // Real latency
 		timestamp: Date.now()
 	};
 }
@@ -76,7 +82,7 @@ async function analyzeMetrics(current, previous) {
 	const positiveInsights = [];
 	const issues = [];
 	let score = 100;
-	
+
 	// Compare with previous if available
 	if (previous) {
 		// User growth
@@ -88,7 +94,7 @@ async function analyzeMetrics(current, previous) {
 				impact: "positive"
 			});
 		}
-		
+
 		// Activity increase
 		if (current.recentMessages > previous.recentMessages * 1.2) {
 			positiveInsights.push({
@@ -98,7 +104,7 @@ async function analyzeMetrics(current, previous) {
 				impact: "positive"
 			});
 		}
-		
+
 		// Online users increase
 		if (current.onlineUsers > previous.onlineUsers) {
 			positiveInsights.push({
@@ -108,7 +114,7 @@ async function analyzeMetrics(current, previous) {
 				impact: "positive"
 			});
 		}
-		
+
 		// Memory decrease
 		if (current.memoryUsage < previous.memoryUsage * 0.9) {
 			positiveInsights.push({
@@ -118,7 +124,7 @@ async function analyzeMetrics(current, previous) {
 				impact: "positive"
 			});
 		}
-		
+
 		// Reports decrease
 		if (current.pendingReports < previous.pendingReports) {
 			positiveInsights.push({
@@ -129,9 +135,9 @@ async function analyzeMetrics(current, previous) {
 			});
 		}
 	}
-	
+
 	// Check for issues
-	
+
 	// High memory usage
 	if (current.memoryUsage > 500) {
 		issues.push({
@@ -142,7 +148,7 @@ async function analyzeMetrics(current, previous) {
 		});
 		score -= 15;
 	}
-	
+
 	// Too many pending reports
 	if (current.pendingReports > 10) {
 		issues.push({
@@ -153,7 +159,7 @@ async function analyzeMetrics(current, previous) {
 		});
 		score -= 10;
 	}
-	
+
 	// Low online users (if total users > 10)
 	if (current.totalUsers > 10 && current.onlineUsers < current.totalUsers * 0.05) {
 		issues.push({
@@ -164,7 +170,7 @@ async function analyzeMetrics(current, previous) {
 		});
 		score -= 5;
 	}
-	
+
 	// Suspended users
 	if (current.suspendedUsers > 0) {
 		issues.push({
@@ -174,7 +180,7 @@ async function analyzeMetrics(current, previous) {
 			severity: "info"
 		});
 	}
-	
+
 	// Generate AI report
 	const report = {
 		type: issues.length > 0 ? "⚠️ Issues Detected" : "✅ All Clear",
@@ -182,7 +188,7 @@ async function analyzeMetrics(current, previous) {
 		timestamp: new Date().toLocaleTimeString(),
 		score
 	};
-	
+
 	return {
 		positiveInsights,
 		issues,
@@ -217,9 +223,9 @@ export const triggerAnalysis = async (req, res) => {
 		// Force a new analysis
 		const currentMetrics = await collectMetrics();
 		const analysis = await analyzeMetrics(currentMetrics, previousMetrics);
-		
+
 		previousMetrics = currentMetrics;
-		
+
 		// Store in history
 		analysisHistory.push({
 			timestamp: new Date().toISOString(),
@@ -228,10 +234,10 @@ export const triggerAnalysis = async (req, res) => {
 		if (analysisHistory.length > 100) {
 			analysisHistory.shift();
 		}
-		
-		res.status(200).json({ 
+
+		res.status(200).json({
 			message: "Analysis triggered successfully",
-			analysis 
+			analysis
 		});
 	} catch (err) {
 		console.error("Trigger analysis error:", err);
