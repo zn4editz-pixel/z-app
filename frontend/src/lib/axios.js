@@ -9,7 +9,7 @@ console.log("API Base URL:", apiBaseUrl);
 export const axiosInstance = axios.create({
   baseURL: import.meta.env.PROD
     ? `${apiBaseUrl}/api`
-    : "http://localhost:5001/api",
+    : "http://localhost:5002/api",
   // withCredentials: true, // Removed to fix CORS issues
   timeout: 15000, // 15 second timeout
   headers: {
@@ -42,27 +42,27 @@ axiosInstance.interceptors.response.use(
         url: error.config?.url
       });
     }
-    
+
     if (error.response?.status === 401) {
       const url = error.config?.url || '';
       const errorMessage = error.response?.data?.message || error.response?.data?.error || '';
-      
-      const isAuthFailure = 
-        url.includes('/auth/check') || 
+
+      const isAuthFailure =
+        url.includes('/auth/check') ||
         errorMessage.toLowerCase().includes('invalid') ||
         errorMessage.toLowerCase().includes('expired') ||
         errorMessage.toLowerCase().includes('no token');
-      
+
       if (isAuthFailure) {
         localStorage.removeItem("token");
         localStorage.removeItem("authUser");
-        
+
         if (!window.location.pathname.includes('/login')) {
           window.location.href = "/login";
         }
       }
     }
-    
+
     return Promise.reject(error);
   }
 );

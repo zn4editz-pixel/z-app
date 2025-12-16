@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  url      = env("DATABASE_URL")
 }
 
 // ─── User Model (Simplified) ───────────────────────────────────────────
@@ -120,12 +120,6 @@ model Message {
   
   // Message Reactions (JSON field for SQLite)
   reactions String? @default("[]") // JSON string storing reactions array
-
-  // 🚀 PERFORMANCE INDEXES for ultra-fast message operations
-  @@index([senderId, receiverId])
-  @@index([createdAt])
-  @@index([status])
-  @@index([isCallLog])
 }
 
 // ─── Friend Request Model ─────────────────────────────────────────────
@@ -142,7 +136,6 @@ model FriendRequest {
   receiver User @relation("FriendRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@unique([senderId, receiverId])
-  @@index([status])
 }
 
 // ─── Report Model (Simplified) ─────────────────────────────────────────
@@ -184,25 +177,4 @@ model AdminNotification {
   message   String
   isRead    Boolean  @default(false)
   link      String?
-}
-
-// ─── System Settings Model ─────────────────────────────────────────────
-model SystemSettings {
-  id        String   @id @default("default_settings") // Singleton ID
-  
-  // Animation Settings
-  loginAnimation  String @default("orbit")
-  signupAnimation String @default("stranger")
-  
-  // Theme Settings
-  seasonalTheme   String? // e.g., "christmas", "halloween", or null
-  isSeasonalMode  Boolean @default(false)
-  allowedThemes   String  @default("all") // "all" or comma-separated list like "light,dark,bumblebee"
-  defaultTheme    String  @default("dark") // Global default theme for new/incognito users
-  
-  // Feature Flags can be added here
-  maintenanceMode Boolean @default(false)
-  
-  updatedAt       DateTime @updatedAt
-  updatedBy       String? // Admin ID who made the last change
 }

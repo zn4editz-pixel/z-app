@@ -2,6 +2,9 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-
 import { useEffect, useCallback, lazy, Suspense, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
 
+// 🔧 CRITICAL FIX: Import message status visibility CSS
+import "./styles/message-status-fix.css";
+
 // ✅ CRITICAL IMPORTS: Import essential components directly to prevent loading errors
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -30,14 +33,17 @@ const MessageDiagnosticPage = lazy(() => import("./pages/MessageDiagnosticPage")
 
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
+import { useNotificationStore } from "./store/useNotificationStore"; // ✅ FIX: Add missing import
+import { showMessageToast } from "./components/ToastNotification"; // ✅ FIX: Add missing import
 import { initSmoothScroll, destroySmoothScroll } from "./utils/smoothScroll";
 import { useFriendStore } from "./store/useFriendStore"; // ✅ 1. Import Friend Store
 import { useChatStore } from "./store/useChatStore"; // 🔥 Import Chat Store for global message handling
 import { useSettingsStore } from "./store/useSettingsStore"; // ✅ Import Settings Store
 import { useProductionOptimizations } from "./utils/performanceOptimizer.production"; // ✅ Restore missing import
+import { useSocketListeners } from "./hooks/useSocketListeners"; // ✅ NEW: Centralized socket listeners hook
 
 const App = () => {
-	const { authUser, checkAuth, isCheckingAuth, socket, setAuthUser } = useAuthStore();
+	const { authUser, checkAuth, isCheckingAuth, onlineUsers, initNetworkListeners, socket, setAuthUser } = useAuthStore();
 	const { theme } = useThemeStore();
 	const { settings, fetchSettings } = useSettingsStore(); // ✅ Get settings
 	// ✅ 2. Get the action to update the pending received requests
@@ -75,7 +81,9 @@ const App = () => {
 
 	useEffect(() => {
 		checkAuth();
-	}, []); // eslint-disable-line react-hooks/exhaustive-deps
+		// ✅ PERFORMANCE: Initialize network listeners for auto-reconnect
+		initNetworkListeners();
+	}, [checkAuth, initNetworkListeners]);
 
 	// 🚀 PRODUCTION OPTIMIZATIONS
 	useProductionOptimizations();
@@ -101,239 +109,16 @@ const App = () => {
 		}
 	}, [authUser, navigate]);
 
-	// --- MAIN SOCKET LISTENER EFFECT ---
-	// ✅ FIXED: Only register once when socket connects
+	// --- SOCKET LISTENERS ---
+	// ✅ NEW: Centralized socket listeners hook
+	useSocketListeners();
+
+	// 🧹 CLEANUP: Reset chat state when user logs out
 	useEffect(() => {
-		if (!socket || !authUser?.id) return;
-
-		// Register user on connect
-		const handleConnect = () => {
-			console.log('🔌 Socket connected, registering user:', authUser.id);
-			socket.emit("register-user", authUser.id);
-		};
-
-		// Register immediately if already connected
-		if (socket.connected) {
-			handleConnect();
+		if (!authUser) {
+			useChatStore.setState({ selectedUser: null, messages: [] });
 		}
-
-		// Listen for reconnections
-		socket.on('connect', handleConnect);
-
-		// ✅ NEW: Setup real-time listeners for friend store
-		const { setupRealtimeListeners } = useFriendStore.getState();
-		setupRealtimeListeners();
-
-		// 1. User/Admin actions listener
-		socket.on("user-action", ({ type, reason, until }) => {
-			switch (type) {
-				case "suspended":
-					forceLogout(
-						`⛔ Suspended until ${new Date(until).toLocaleString()}. Reason: ${reason}`,
-						"/suspended"
-					);
-					break;
-				case "unsuspended":
-					toast.success("✅ Suspension lifted. Please log in again.");
-					navigate("/login");
-					break;
-				case "blocked":
-					forceLogout("🚫 You have been blocked by admin.", "/blocked");
-					break;
-				case "unblocked":
-					toast.success("✅ You’ve been unblocked. Please log in again.");
-					navigate("/login");
-					break;
-				case "deleted":
-					forceLogout("❌ Your account has been deleted.", "/goodbye");
-					break;
-				default:
-					break;
-			}
-		});
-
-		// 2. Message listener - ✅ FIX: Add to notification store
-		socket.on("message-received", ({ sender, text }) => {
-			if (sender?.id !== authUser?.id) {
-				// Show toast
-				showMessageToast({
-					senderName: sender?.name || "Unknown",
-					senderAvatar: sender?.profilePic || "/default-avatar.png",
-					messageText: text || "",
-					theme: effectiveTheme, // ✅ Update to use effectiveTheme
-				});
-
-				// ✅ FIX: Add to notification store for persistence
-				const { addNotification } = useNotificationStore.getState();
-				addNotification({
-					type: 'message',
-					title: sender?.name || sender?.nickname || "New Message",
-					message: text || "Sent you a message",
-					senderId: sender?.id,
-					senderAvatar: sender?.profilePic,
-					createdAt: new Date().toISOString(),
-					id: `msg-${Date.now()}-${sender?.id}`
-				});
-			}
-		});
-
-		// 🔥 GLOBAL: Additional message listener to catch all real-time messages
-		socket.on("newMessage", (messageData) => {
-			console.log('🌍 GLOBAL: newMessage received in App.jsx:', messageData);
-
-			// Force chat store to handle this message if it's not already handled
-			const { messages, selectedUser } = useChatStore.getState();
-			const authUserId = authUser?.id;
-			const msgSenderId = messageData.senderId?.toString();
-			const msgReceiverId = messageData.receiverId?.toString();
-
-			// If this is for the current chat and not from me, ensure it's added
-			if (selectedUser && msgSenderId !== authUserId &&
-				(msgSenderId === selectedUser.id || msgReceiverId === selectedUser.id)) {
-
-				const messageExists = messages.some(m => m.id === messageData.id);
-				if (!messageExists) {
-					console.log('🔥 GLOBAL: Adding missed message to chat store');
-					const updatedMessages = [...messages, messageData];
-					useChatStore.setState({ messages: updatedMessages });
-				}
-			}
-		});
-
-		// 3. Friend request listeners
-		socket.on("friendRequest:received", (senderProfileData) => {
-			addPendingReceived(senderProfileData);
-		});
-
-		socket.on("friendRequest:accepted", ({ user, message }) => {
-			console.log("🎉 Friend request accepted event received:", user);
-			toast.success(message || `${user.nickname || user.username} accepted your friend request!`);
-			console.log("🔄 Fetching updated friend data...");
-			useFriendStore.getState().fetchFriendData();
-		});
-
-		socket.on("friendRequest:rejected", ({ message }) => {
-			toast.error(message || "Your friend request was declined");
-			useFriendStore.getState().fetchFriendData();
-		});
-
-		// Admin notification listeners
-		socket.on("admin-notification", (notification) => {
-			toast(notification.message, {
-				icon: notification.type === 'success' ? '✅' :
-					notification.type === 'error' ? '❌' :
-						notification.type === 'warning' ? '⚠️' : 'ℹ️',
-				duration: 5000,
-			});
-			// Store notification for Social Hub
-			const { addNotification } = useNotificationStore.getState();
-			addNotification({
-				type: 'admin',
-				title: notification.title,
-				message: notification.message,
-				color: notification.color,
-				notificationType: notification.type,
-				createdAt: notification.createdAt,
-				id: notification.id,
-				dbId: notification.id,
-			});
-		});
-
-		socket.on("admin-broadcast", (notification) => {
-			toast(notification.message, {
-				icon: notification.type === 'success' ? '✅' :
-					notification.type === 'error' ? '❌' :
-						notification.type === 'warning' ? '⚠️' : 'ℹ️',
-				duration: 5000,
-			});
-			// Store notification for Social Hub
-			const { addNotification } = useNotificationStore.getState();
-			addNotification({
-				type: 'admin_broadcast',
-				title: notification.title,
-				message: notification.message,
-				color: notification.color,
-				notificationType: notification.type,
-				createdAt: notification.createdAt,
-				id: notification.id,
-				dbId: notification.id,
-			});
-		});
-
-		// 4. Verification notifications
-		socket.on("verification-approved", ({ message }) => {
-			toast.success(message || "Your verification request has been approved!");
-			// ✅ FIXED: Update localStorage first to prevent race condition
-			const updatedUser = {
-				...authUser,
-				isVerified: true,
-				verificationRequest: {
-					...authUser.verificationRequest,
-					status: "approved",
-					reviewedAt: new Date()
-				}
-			};
-			localStorage.setItem("authUser", JSON.stringify(updatedUser));
-			setAuthUser(updatedUser);
-		});
-
-		socket.on("verification-rejected", ({ message, reason }) => {
-			toast.error(message || "Your verification request has been rejected");
-			if (reason) {
-				toast.error(`Reason: ${reason}`, { duration: 5000 });
-			}
-			// ✅ FIXED: Update localStorage first to prevent race condition
-			const updatedUser = {
-				...authUser,
-				isVerified: false,
-				verificationRequest: {
-					...authUser.verificationRequest,
-					status: "rejected",
-					adminNote: reason || "Does not meet verification criteria",
-					reviewedAt: new Date()
-				}
-			};
-			localStorage.setItem("authUser", JSON.stringify(updatedUser));
-			setAuthUser(updatedUser);
-		});
-
-		// 5. Report status notifications (FIXED: removed duplicate)
-		socket.on("report-status-updated", ({ title, message, status, actionTaken, reportedUser }) => {
-			// Show toast notification
-			if (status === "action_taken") {
-				toast.success(`${title}: ${message}`, { duration: 6000 });
-			} else {
-				toast(message, { icon: "📋", duration: 5000 });
-			}
-
-			// Add to notification store
-			const { addNotification } = useNotificationStore.getState();
-			addNotification({
-				type: "report_update",
-				title,
-				message,
-				status,
-				actionTaken,
-				reportedUser,
-			});
-		});
-
-		// 6. Cleanup
-		return () => {
-			socket.off('connect', handleConnect); // ✅ FIXED: Cleanup connect listener
-			socket.off("user-action");
-			socket.off("message-received");
-			socket.off("friendRequest:received");
-			socket.off("friendRequest:accepted");
-			socket.off("friendRequest:rejected");
-			socket.off("verification-approved");
-			socket.off("verification-rejected");
-			socket.off("report-status-updated");
-			socket.off("admin-notification");
-			socket.off("admin-broadcast");
-		};
-		// ✅ FIXED: Only depend on socket and authUser.id to prevent duplicate listeners
-	}, [socket, authUser?.id, navigate, forceLogout, effectiveTheme, addPendingReceived, setAuthUser]); // ✅ Depend on effectiveTheme
+	}, [authUser]);
 
 	const hasCompletedProfile = authUser?.hasCompletedProfile;
 

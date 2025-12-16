@@ -1,8 +1,7 @@
 import prisma from "../lib/prisma.js";
 import cloudinary from "../lib/cloudinary.js";
-import { getReceiverSocketId, io } from "../lib/socket.js";
 import { clearFriendsCache } from "./friend.controller.js";
-import { emitToUser } from "../lib/socketHandlers.js";
+import { getReceiverSocketId, getIO } from "../lib/socketHandlers.js";
 
 // Cache for sidebar users (1 minute TTL)
 let sidebarUsersCache = new Map();
@@ -117,37 +116,36 @@ export const getMessages = async (req, res) => {
     });
 
     // Parse reactions JSON and fetch reply-to messages separately
-    const messagesWithParsedReactions = await Promise.all(
-      messages.map(async (message) => {
-        let replyTo = null;
+    // 🔥 ULTRA-OPTIMIZATION: Batch fetch all reply-to messages in ONE query
+    const replyIds = [...new Set(messages.filter(m => m.replyToId).map(m => m.replyToId))];
+    let repliesMap = {};
 
-        // Fetch reply-to message if replyToId exists
-        if (message.replyToId) {
-          try {
-            replyTo = await prisma.message.findUnique({
-              where: { id: message.replyToId },
-              select: {
-                id: true,
-                senderId: true,
-                text: true,
-                image: true,
-                voice: true,
-                createdAt: true
-              }
-            });
-          } catch (error) {
-            console.error('Error fetching reply-to message:', error);
-            // Continue without reply-to data
-          }
+    if (replyIds.length > 0) {
+      const replies = await prisma.message.findMany({
+        where: { id: { in: replyIds } },
+        select: {
+          id: true,
+          senderId: true,
+          text: true,
+          image: true,
+          voice: true,
+          createdAt: true
         }
+      });
+      // Convert to map for O(1) lookup
+      replies.forEach(r => { repliesMap[r.id] = r; });
+    }
 
-        return {
-          ...message,
-          reactions: typeof message.reactions === 'string' ? JSON.parse(message.reactions || "[]") : (message.reactions || []),
-          replyTo
-        };
-      })
-    );
+    const messagesWithParsedReactions = messages.map((message) => {
+      // O(1) lookup from ephemeral map
+      const replyTo = message.replyToId ? repliesMap[message.replyToId] : null;
+
+      return {
+        ...message,
+        reactions: typeof message.reactions === 'string' ? JSON.parse(message.reactions || "[]") : (message.reactions || []),
+        replyTo
+      };
+    });
 
     console.log(`✅ getMessages: Returning ${messagesWithParsedReactions.length} messages`);
     res.status(200).json(messagesWithParsedReactions.reverse());
@@ -183,7 +181,10 @@ export const createCallLog = async (req, res) => {
     // Emit to receiver
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", callLogMessage);
+      const io = getIO();
+      if (io) {
+        io.to(receiverSocketId).emit("newMessage", callLogMessage);
+      }
     }
 
     res.status(201).json(callLogMessage);
@@ -203,8 +204,10 @@ export const sendMessage = async (req, res) => {
       return res.status(400).json({ error: "Message cannot be empty" });
     }
 
-    // --- AI MODERATION SYSTEM ---
-    // Simple keyword-based detection (POC)
+    // Parse voiceDuration if it exists to ensure integer type
+    const parsedVoiceDuration = voiceDuration ? parseInt(voiceDuration) : null;
+
+    // --- AI MODERATION SYSTEM (NON-BLOCKING) ---
     if (text) {
       const prohibitedWords = {
         'spam': 'Spam Content',
@@ -220,32 +223,29 @@ export const sendMessage = async (req, res) => {
       const detectedWord = Object.keys(prohibitedWords).find(word => lowerText.includes(word));
 
       if (detectedWord) {
-        console.log(`🚨 AI Moderation: Detected "${detectedWord}" in message from ${senderId}`);
-
-        // Auto-generate report
-        try {
-          await prisma.report.create({
-            data: {
-              reporterId: receiverId, // System acts on behalf of receiver
-              reportedUserId: senderId,
-              reason: prohibitedWords[detectedWord],
-              description: `AI System detected prohibited content: "${detectedWord}" in message: "${text.substring(0, 50)}..."`,
-              status: 'pending',
-              isAIDetected: true,
-              aiCategory: prohibitedWords[detectedWord],
-              aiConfidence: 0.85 + (Math.random() * 0.14), // Simulate high confidence 0.85-0.99
-              severity: 'medium'
-            }
-          });
-          console.log("✅ AI Report created successfully");
-        } catch (reportErr) {
-          console.error("Failed to create AI report:", reportErr);
-        }
+        // 🔥 OPTIMIZATION: Fire-and-forget (Don't await)
+        prisma.report.create({
+          data: {
+            reporterId: receiverId, // System acts on behalf of receiver
+            reportedUserId: senderId,
+            reason: prohibitedWords[detectedWord],
+            description: `AI System detected prohibited content: "${detectedWord}" in message: "${text.substring(0, 50)}..."`,
+            status: 'pending',
+            isAIDetected: true,
+            aiCategory: prohibitedWords[detectedWord],
+            aiConfidence: 0.85 + (Math.random() * 0.14),
+            severity: 'medium'
+          }
+        }).then(() => console.log("✅ AI Report created (Async)"))
+          .catch(err => console.error("Failed to create AI report:", err));
       }
     }
     // ---------------------------
 
-    // Process uploads in parallel for speed
+    // Debug payload size
+    console.log(`📨 message.send payload: text=${text?.length || 0} chars, image=${image ? (image.length / 1024).toFixed(2) + 'KB' : 'null'}, voice=${voice ? (voice.length / 1024).toFixed(2) + 'KB' : 'null'}`);
+
+    // Process uploads
     const uploadPromises = [];
 
     if (image) {
@@ -254,12 +254,7 @@ export const sendMessage = async (req, res) => {
           folder: "chat_images",
           resource_type: "image",
           format: 'webp',
-          quality: 'auto:good',
-          transformation: [
-            { width: 1200, crop: 'limit' },
-            { quality: 'auto:good' },
-            { fetch_format: 'auto' }
-          ]
+          quality: 'auto:good'
         })
       );
     } else {
@@ -268,17 +263,51 @@ export const sendMessage = async (req, res) => {
 
     if (voice) {
       uploadPromises.push(
-        cloudinary.uploader.upload(voice, {
-          folder: "chat_voices",
-          resource_type: "video"
-        })
+        (async () => {
+          try {
+            console.log('🎙️ Uploading voice as video...');
+            return await cloudinary.uploader.upload(voice, {
+              folder: "chat_voices",
+              resource_type: "video"
+            });
+          } catch (err1) {
+            console.warn('⚠️ Voice/Video upload failed, retrying as auto:', err1.message);
+            try {
+              return await cloudinary.uploader.upload(voice, {
+                folder: "chat_voices",
+                resource_type: "auto"
+              });
+            } catch (err2) {
+              console.warn('⚠️ Voice/Auto upload failed, retrying as raw:', err2.message);
+              return await cloudinary.uploader.upload(voice, {
+                folder: "chat_voices",
+                resource_type: "raw"
+              });
+            }
+          }
+        })()
       );
     } else {
       uploadPromises.push(Promise.resolve(null));
     }
 
-    // Wait for uploads to complete
-    const [imageUpload, voiceUpload] = await Promise.all(uploadPromises);
+    let imageUpload = null;
+    let voiceUpload = null;
+
+    try {
+      const results = await Promise.all(uploadPromises);
+      imageUpload = results[0];
+      voiceUpload = results[1];
+      console.log('✅ Media upload successful');
+    } catch (uploadError) {
+      console.error('❌ Cloudinary Upload Failed:', uploadError);
+      return res.status(500).json({
+        error: "Media upload failed",
+        details: uploadError.message,
+        hint: "Check Cloudinary configuration"
+      });
+    }
+
     const imageUrl = imageUpload?.secure_url || null;
     const voiceUrl = voiceUpload?.secure_url || null;
 
@@ -290,56 +319,46 @@ export const sendMessage = async (req, res) => {
         text: text || "",
         image: imageUrl,
         voice: voiceUrl,
-        voiceDuration: voiceDuration || null,
+        voiceDuration: parsedVoiceDuration || 0,
         replyToId: replyTo || null
       }
     });
 
-    // Clear friends cache for both users so last message updates
+    // Clear friends cache (Sync Map operation, fast)
     clearFriendsCache(senderId);
     clearFriendsCache(receiverId);
 
-    // Get sender info
-    const sender = await prisma.user.findUnique({
-      where: { id: senderId },
-      select: { fullName: true, profilePic: true }
-    });
+    // 🔥 OPTIMIZATION: Use req.user instead of fetching again
+    // protectRoute already populated req.user with fullName and profilePic
+    const sender = req.user;
 
-    const receiverSocketId = getReceiverSocketId(receiverId);
-
-    // Prepare message data for socket
+    // Prepare message data
     const messageData = {
       ...newMessage,
       senderName: sender?.fullName,
       senderAvatar: sender?.profilePic
     };
 
-    // 🔥 REAL-TIME: Emit new message to receiver
-    const messageDelivered = emitToUser(receiverId, "newMessage", messageData);
+    // 🔥 REAL-TIME: Emit new message to receiver (Using Shared Socket)
+    console.log(`📤 Message sent to DB. Emitting to receiver ${receiverId}...`);
+    const receiverSocketId = getReceiverSocketId(receiverId);
 
-    // ✅ FIX: Only mark as delivered if receiver is online and message was actually delivered
-    if (messageDelivered) {
-      // Update message status to delivered in database
-      await prisma.message.update({
-        where: { id: newMessage.id },
-        data: {
-          status: 'delivered',
-          deliveredAt: new Date()
-        }
-      });
-
-      // Notify sender that message was delivered
-      emitToUser(senderId, "messageDelivered", {
-        messageId: newMessage.id,
-        deliveredAt: new Date()
-      });
+    if (receiverSocketId) {
+      const io = getIO();
+      if (io) {
+        io.to(receiverSocketId).emit("newMessage", messageData);
+        console.log(`✅ Socket sent to ${receiverSocketId}`);
+      } else {
+        console.log(`❌ IO Instance is null, cannot emit!`);
+      }
+    } else {
+      console.log(`⚠️ Receiver ${receiverId} not online (no socket found)`);
     }
 
-    // Return response immediately
     res.status(201).json(newMessage);
   } catch (error) {
-    console.error("Error in sendMessage:", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("❌ Error in sendMessage:", error);
+    res.status(500).json({ error: "Internal server error", details: error.message });
   }
 };
 
@@ -348,7 +367,6 @@ export const clearChat = async (req, res) => {
     const { id: userToChatId } = req.params;
     const myId = req.user.id;
 
-    // Delete all messages between the two users
     await prisma.message.deleteMany({
       where: {
         OR: [
@@ -368,36 +386,45 @@ export const clearChat = async (req, res) => {
 export const markMessagesAsRead = async (req, res) => {
   try {
     const { id: senderId } = req.params;
-    const myId = req.user.id;
+    const userId = req.user.id;
 
-    // Update all unread messages from this sender
-    await prisma.message.updateMany({
+    const unreadMessages = await prisma.message.findMany({
       where: {
         senderId: senderId,
-        receiverId: myId,
+        receiverId: userId,
         status: { not: "read" }
       },
-      data: {
-        status: "read",
-        readAt: new Date()
+      select: { id: true, senderId: true }
+    });
+
+    if (unreadMessages.length > 0) {
+      await prisma.message.updateMany({
+        where: {
+          id: { in: unreadMessages.map(msg => msg.id) }
+        },
+        data: {
+          status: "read",
+          readAt: new Date()
+        }
+      });
+
+      // Emit read receipts
+      const io = getIO();
+      if (io) {
+        const uniqueSenders = [...new Set(unreadMessages.map(m => m.senderId))];
+        uniqueSenders.forEach(sId => {
+          const sSocket = getReceiverSocketId(sId);
+          if (sSocket) {
+            io.to(sSocket).emit("messagesRead", {
+              receiverId: userId,
+              messageIds: unreadMessages.filter(m => m.senderId === sId).map(m => m.id)
+            });
+          }
+        });
       }
-    });
+    }
 
-    const messages = await prisma.message.findMany({
-      where: {
-        senderId: senderId,
-        receiverId: myId
-      },
-      select: { id: true }
-    });
-
-    // 🔥 REAL-TIME: Notify sender that messages were read
-    emitToUser(senderId, "messagesRead", {
-      readBy: myId,
-      count: messages.length
-    });
-
-    res.status(200).json({ message: "Messages marked as read", count: messages.length });
+    res.status(200).json({ message: "Messages marked as read" });
   } catch (error) {
     console.error("Error in markMessagesAsRead:", error.message);
     res.status(500).json({ error: "Internal server error" });
@@ -410,60 +437,34 @@ export const addReaction = async (req, res) => {
     const { emoji } = req.body;
     const userId = req.user.id;
 
-    if (!emoji) {
-      return res.status(400).json({ error: "Emoji is required" });
-    }
+    if (!emoji) return res.status(400).json({ error: "Emoji is required" });
 
-    const message = await prisma.message.findUnique({
-      where: { id: messageId },
-      include: {
-        sender: { select: { id: true, fullName: true, nickname: true, profilePic: true } },
-        receiver: { select: { id: true, fullName: true, nickname: true, profilePic: true } }
-      }
-    });
+    const message = await prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) return res.status(404).json({ error: "Message not found" });
 
-    if (!message) {
-      return res.status(404).json({ error: "Message not found" });
-    }
-
-    // Get current reactions (parse JSON string or use object)
     let reactions = [];
     try {
       reactions = typeof message.reactions === 'string' ? JSON.parse(message.reactions || "[]") : (message.reactions || []);
-    } catch (error) {
-      reactions = [];
-    }
+    } catch (e) { reactions = []; }
 
-    // Remove existing reaction from this user (if any)
     reactions = reactions.filter(r => r.userId !== userId);
+    reactions.push({ emoji, userId, createdAt: new Date().toISOString() });
 
-    // Add new reaction
-    reactions.push({
-      emoji,
-      userId,
-      createdAt: new Date().toISOString()
-    });
-
-    // Update message with new reactions
-    // For SQLite we need string, for Postgres we can pass object but stringify is safe if schema expects Json
     const updatedMessage = await prisma.message.update({
       where: { id: messageId },
-      data: { reactions: JSON.stringify(reactions) },
-      include: {
-        sender: { select: { id: true, fullName: true, nickname: true, profilePic: true } },
-        receiver: { select: { id: true, fullName: true, nickname: true, profilePic: true } }
-      }
+      data: { reactions: JSON.stringify(reactions) }
     });
 
-    // 🔥 REAL-TIME: Notify both users about reaction
-    const parsedReactions = typeof updatedMessage.reactions === 'string' ? JSON.parse(updatedMessage.reactions) : updatedMessage.reactions;
-    const reactionData = {
-      messageId,
-      reactions: parsedReactions
-    };
+    const parsedReactions = reactions;
+    const reactionData = { messageId, reactions: parsedReactions };
 
-    emitToUser(message.receiverId, "messageReaction", reactionData);
-    emitToUser(message.senderId, "messageReaction", reactionData);
+    const io = getIO();
+    if (io) {
+      const receiverSocket = getReceiverSocketId(message.receiverId);
+      const senderSocket = getReceiverSocketId(message.senderId);
+      if (receiverSocket) io.to(receiverSocket).emit("messageReaction", reactionData);
+      if (senderSocket) io.to(senderSocket).emit("messageReaction", reactionData);
+    }
 
     res.status(200).json({ message: "Reaction added", reactions: parsedReactions });
   } catch (error) {
@@ -477,48 +478,31 @@ export const removeReaction = async (req, res) => {
     const { messageId } = req.params;
     const userId = req.user.id;
 
-    const message = await prisma.message.findUnique({
-      where: { id: messageId },
-      include: {
-        sender: { select: { id: true, fullName: true, nickname: true, profilePic: true } },
-        receiver: { select: { id: true, fullName: true, nickname: true, profilePic: true } }
-      }
-    });
+    const message = await prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) return res.status(404).json({ error: "Message not found" });
 
-    if (!message) {
-      return res.status(404).json({ error: "Message not found" });
-    }
-
-    // Get current reactions
     let reactions = [];
     try {
       reactions = typeof message.reactions === 'string' ? JSON.parse(message.reactions || "[]") : (message.reactions || []);
-    } catch (error) {
-      reactions = [];
-    }
+    } catch (e) { reactions = []; }
+
     reactions = reactions.filter(r => r.userId !== userId);
 
-    // Update message with new reactions
     const updatedMessage = await prisma.message.update({
       where: { id: messageId },
-      data: { reactions: JSON.stringify(reactions) },
-      include: {
-        sender: { select: { id: true, fullName: true, nickname: true, profilePic: true } },
-        receiver: { select: { id: true, fullName: true, nickname: true, profilePic: true } }
-      }
+      data: { reactions: JSON.stringify(reactions) }
     });
 
-    // 🔥 REAL-TIME: Notify both users about reaction removal
-    const parsedReactions = typeof updatedMessage.reactions === 'string' ? JSON.parse(updatedMessage.reactions) : updatedMessage.reactions;
-    const reactionData = {
-      messageId,
-      reactions: parsedReactions
-    };
+    const reactionData = { messageId, reactions };
+    const io = getIO();
+    if (io) {
+      const receiverSocket = getReceiverSocketId(message.receiverId);
+      const senderSocket = getReceiverSocketId(message.senderId);
+      if (receiverSocket) io.to(receiverSocket).emit("messageReaction", reactionData);
+      if (senderSocket) io.to(senderSocket).emit("messageReaction", reactionData);
+    }
 
-    emitToUser(message.receiverId, "messageReaction", reactionData);
-    emitToUser(message.senderId, "messageReaction", reactionData);
-
-    res.status(200).json({ message: "Reaction removed", reactions: parsedReactions });
+    res.status(200).json({ message: "Reaction removed", reactions });
   } catch (error) {
     console.error("Error in removeReaction:", error.message);
     res.status(500).json({ error: "Internal server error" });
@@ -530,25 +514,13 @@ export const deleteMessage = async (req, res) => {
     const { messageId } = req.params;
     const userId = req.user.id;
 
-    const message = await prisma.message.findUnique({
-      where: { id: messageId }
-    });
+    const message = await prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) return res.status(404).json({ error: "Message not found" });
 
-    if (!message) {
-      return res.status(404).json({ error: "Message not found" });
-    }
+    if (message.senderId !== userId) return res.status(403).json({ error: "You can only delete your own messages" });
 
-    // Only sender can delete their own message
-    if (message.senderId !== userId) {
-      return res.status(403).json({ error: "You can only delete your own messages" });
-    }
+    await prisma.message.delete({ where: { id: messageId } });
 
-    // Delete the message
-    await prisma.message.delete({
-      where: { id: messageId }
-    });
-
-    // Delete images/voice from cloudinary if exists
     if (message.image) {
       const publicId = message.image.split('/').pop().split('.')[0];
       await cloudinary.uploader.destroy(`chat_images/${publicId}`).catch(err => console.log("Cloudinary delete error:", err));
@@ -558,16 +530,14 @@ export const deleteMessage = async (req, res) => {
       await cloudinary.uploader.destroy(`chat_voices/${publicId}`, { resource_type: 'video' }).catch(err => console.log("Cloudinary delete error:", err));
     }
 
-    // 🔥 REAL-TIME: Notify both users about message deletion
-    const deleteData = {
-      messageId,
-      deletedBy: userId,
-      isDeleted: true,
-      deletedAt: new Date()
-    };
-
-    emitToUser(message.receiverId, "messageDeleted", deleteData);
-    emitToUser(message.senderId, "messageDeleted", deleteData);
+    const deleteData = { messageId, deletedBy: userId, isDeleted: true, deletedAt: new Date() };
+    const io = getIO();
+    if (io) {
+      const receiverSocket = getReceiverSocketId(message.receiverId);
+      const senderSocket = getReceiverSocketId(message.senderId);
+      if (receiverSocket) io.to(receiverSocket).emit("messageDeleted", deleteData);
+      if (senderSocket) io.to(senderSocket).emit("messageDeleted", deleteData);
+    }
 
     res.status(200).json({ message: "Message deleted successfully" });
   } catch (error) {

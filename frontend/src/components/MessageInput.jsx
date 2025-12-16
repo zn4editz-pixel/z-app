@@ -1,50 +1,90 @@
 import { useRef, useState, useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
-import { Image, Send, X, Smile } from "lucide-react";
+import { Image, Send, X, Smile, ChevronUp, Gamepad2 } from "lucide-react"; // ✅ Imported Gamepad2
 import toast from "react-hot-toast";
 import VoiceRecorder from "./VoiceRecorder";
+
+// ... (rest of imports and component setup)
+
+// ... inside the menu render ...
+
+// ... inside the menu render ...
+
 
 const MessageInput = ({ replyingTo, onCancelReply }) => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false); // ✅ NEW: Attachment Menu State
   const [showImagePreview, setShowImagePreview] = useState(false);
   const [tempImage, setTempImage] = useState(null);
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const inputRef = useRef(null); // ✅ NEW: For instant focus
+  const attachmentMenuRef = useRef(null); // ✅ NEW: Ref for outside click
+  const [isTyping, setIsTyping] = useState(false); // ✅ Fix: Add state for isTyping
   const { sendMessage, selectedUser } = useChatStore();
   const { socket } = useAuthStore();
 
   const emojis = ["😊", "😂", "❤️", "👍", "🎉", "🔥", "😍", "🤔", "👏", "🙌", "💯", "✨"];
 
+  // Handle outside click for attachment menu
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (attachmentMenuRef.current && !attachmentMenuRef.current.contains(event.target)) {
+        setShowAttachmentMenu(false);
+      }
+    };
+
+    if (showAttachmentMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showAttachmentMenu]);
+
   // Handle typing indicator
+  // Emit typing event - THROTTLED to once every 2 seconds
+  const lastTyped = useRef(0);
+
   const handleTyping = (value) => {
     setText(value);
 
-    if (!socket || !selectedUser) return;
+    if (!socket) {
+      console.error("❌ MessageInput: Socket is missing!");
+      return;
+    }
+    if (!selectedUser) {
+      console.error("❌ MessageInput: SelectedUser is missing!");
+      return;
+    }
 
-    // Clear existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    } // <-- Removed "else" block, simpler logic
+    const now = Date.now();
+    if (now - lastTyped.current > 2000) {
+      console.log(`⌨️ UI: Emitting 'typing' to ${selectedUser.id}`);
+      const { authUser } = useAuthStore.getState();
+      socket.emit("typing", {
+        receiverId: selectedUser.id,
+        senderId: authUser?.id // ✅ Fallback if socket.userId missing
+      });
+      lastTyped.current = now;
+      setIsTyping(true); // Set typing state to true
+    }
 
-    // Emit typing event immediately if not recently emitted (simple throttle could go here, but per-keystroke is fine for now if handled by backend, 
-    // actually let's prevent spamming: emit only if we haven't emitted in last 2 seconds OR if we are just starting)
-
-    // For now, let's keep it simple and robust: Emit typing on every key press, rely on backend/frontend to handle. 
-    // Better: Emit "typing" and set a timeout for "stopTyping".
-
-    // socket.emit("typing", { receiverId: selectedUser.id }); // Replaced by below debug block
-
-    console.log("📤 EMITTING TYPING for", selectedUser.id);
-    socket.emit("typing", { receiverId: selectedUser.id });
-
-    // Stop typing after 3 seconds of inactivity (increased from 2s)
+    // Stop typing after 3 seconds of inactivity
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      console.log("🛑 Auto-sending stopTyping due to inactivity");
-      socket.emit("stopTyping", { receiverId: selectedUser.id });
+      if (isTyping) { // Only send stopTyping if we were actually typing
+        console.log("🛑 UI: Auto-sending stopTyping due to inactivity");
+        const { authUser } = useAuthStore.getState();
+        socket.emit("stopTyping", {
+          receiverId: selectedUser.id,
+          senderId: authUser?.id // ✅ Fallback
+        });
+        setIsTyping(false);
+      }
     }, 3000);
   };
 
@@ -81,6 +121,7 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
     reader.onloadend = () => {
       // Directly set image preview without cropping
       setImagePreview(reader.result);
+      setShowAttachmentMenu(false); // Close menu on selection
     };
     reader.readAsDataURL(file);
   };
@@ -144,10 +185,11 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
         voice: audioData,
         voiceDuration: duration,
       });
-      // ✅ No toast - silent send for better UX
+      // toast.success("Voice message sent!"); // 🔇 Disabled by user request
     } catch (error) {
       console.error("Failed to send voice:", error);
-      toast.error("Failed to send voice message");
+      const errorMsg = error.response?.data?.details || error.response?.data?.error || "Failed to send voice message";
+      toast.error(`Error: ${errorMsg}`);
     }
   };
 
@@ -335,8 +377,58 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
 
         <form
           onSubmit={handleSendMessage}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 relative"
         >
+          {/* ATTACHMENT MENU CONTAINER */}
+          <div className="relative" ref={attachmentMenuRef}>
+            {/* Drop-up Menu */}
+            {showAttachmentMenu && (
+              <div className={`
+                absolute bottom-full left-0 mb-2 p-2 bg-base-100 rounded-xl shadow-xl border border-base-200
+                flex flex-col gap-2 min-w-[40px] z-50 transform origin-bottom-left transition-all duration-200
+                ${showAttachmentMenu ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}
+            `}>
+                {/* Image Upload Button */}
+                <button
+                  type="button"
+                  className={`btn btn-circle btn-sm btn-ghost hover:bg-base-200 transition-all ${imagePreview ? "text-emerald-500" : "text-base-content/70"}`}
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Attach Image"
+                >
+                  <Image size={20} />
+                </button>
+
+                {/* Dummy Game Button (Placeholder) */}
+                <button
+                  type="button"
+                  className="btn btn-circle btn-sm btn-ghost hover:bg-base-200 transition-all text-base-content/70"
+                  onClick={() => toast.success("Games coming soon!")}
+                  title="Play Games (Coming Soon)"
+                >
+                  <Gamepad2 size={20} />
+                </button>
+              </div>
+            )}
+
+            {/* Trigger Button - Chevron Up */}
+            <button
+              type="button"
+              className={`flex btn btn-circle btn-sm btn-ghost text-base-content/70 transition-transform duration-200 ${showAttachmentMenu ? 'rotate-180 bg-base-200' : ''}`}
+              onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
+            >
+              <ChevronUp size={22} />
+            </button>
+          </div>
+
+          {/* Hidden File Input */}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleImageChange}
+          />
+
           {/* Text Input Container */}
           <div className="flex-1 flex items-center gap-2.5 bg-base-200 rounded-full px-4 py-2.5 min-w-0">
             <input
@@ -361,26 +453,6 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
               <Smile className="w-5 h-5" />
             </button>
 
-            {/* Image Upload Button */}
-            <button
-              type="button"
-              className={`w-9 h-9 flex items-center justify-center rounded-full hover:bg-base-300 active:scale-95 transition-all flex-shrink-0
-              ${imagePreview ? "bg-base-300 text-primary" : "bg-base-300/50 text-base-content/70 hover:text-base-content"}`}
-              onClick={() => fileInputRef.current?.click()}
-              title="Attach image"
-              aria-label="Attach image"
-            >
-              <Image className="w-5 h-5" />
-            </button>
-
-            {/* Hidden File Input */}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              ref={fileInputRef}
-              onChange={handleImageChange}
-            />
           </div>
 
           {/* Voice Recorder - Show when no text */}

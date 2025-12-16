@@ -1,0 +1,16 @@
+{
+    "ignore": [
+        "*.db",
+        "*.sqlite",
+        "*.sqlite3",
+        "*.log",
+        "dev.db-journal",
+        "diagnose.log",
+        "src/tests/*",
+        "dist/*"
+    ],
+    "watch": [
+        "src"
+    ],
+    "ext": "js,json,env"
+}

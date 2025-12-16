@@ -314,7 +314,8 @@ const AppearancePanel = () => {
                 </button>
             </div>
 
-            <style jsx>{`
+            {/* Use standard style tag to avoid 'jsx' attribute warning */}
+            <style>{`
                 @keyframes fall {
                     0% { transform: translateY(-10vh) translateX(-10px); opacity: 0; }
                     20% { opacity: 1; }

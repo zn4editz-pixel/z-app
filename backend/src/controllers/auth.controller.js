@@ -471,8 +471,9 @@ export const checkAuth = async (req, res) => {
 			nickname: user.nickname,
 			bio: user.bio,
 			profilePic: user.profilePic,
+			profilePic: user.profilePic,
 			hasCompletedProfile: user.hasCompletedProfile,
-			isAdmin: user.email === process.env.ADMIN_EMAIL,
+			isAdmin: user.email === process.env.ADMIN_EMAIL, // ✅ Verified by environment variable
 			isBlocked: user.isBlocked,
 			isSuspended: user.isSuspended,
 			isVerified: user.isVerified,

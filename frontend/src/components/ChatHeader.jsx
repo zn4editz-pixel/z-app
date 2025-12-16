@@ -1,13 +1,11 @@
-import { ArrowLeft, Phone, Video } from "lucide-react";
+import { Phone, Video, ArrowLeft } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
-import { useNavigate } from "react-router-dom";
 import VerifiedBadge from "./VerifiedBadge";
 
 const ChatHeader = ({ onStartCall }) => {
 	const { selectedUser, setSelectedUser, isTyping, typingUserId } = useChatStore();
 	const { onlineUsers } = useAuthStore();
-	const navigate = useNavigate();
 
 	if (!selectedUser) return null;
 
@@ -19,85 +17,55 @@ const ChatHeader = ({ onStartCall }) => {
 		}
 	};
 
-	const handleViewProfile = () => {
-		navigate(`/profile/${selectedUser.username}`);
-	};
-
 	return (
-		<div className="px-2.5 sm:px-4 py-2.5 sm:py-3 border-b border-base-300 flex items-center justify-between bg-base-100">
-			<div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
-				{/* Back Button - Mobile */}
-				<button
-					className="btn btn-ghost btn-circle btn-sm md:hidden"
-					onClick={() => setSelectedUser(null)}
-					aria-label="Back to chat list"
-				>
-					<ArrowLeft className="w-5 h-5" />
-				</button>
+		<div className="p-2.5 border-b border-base-300 relative">
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-3">
+					{/* Back Button */}
+					<button onClick={() => setSelectedUser(null)} className="btn btn-ghost btn-circle btn-sm -ml-1">
+						<ArrowLeft className="size-5" />
+					</button>
 
-				{/* Avatar */}
-				<button
-					onClick={handleViewProfile}
-					className="flex-shrink-0 touch-feedback"
-				>
-					<div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full ring-2 ring-base-300 overflow-hidden">
-						<img
-							src={selectedUser.profilePic || "/avatar.png"}
-							alt={selectedUser.nickname || selectedUser.username}
-							className="w-full h-full object-cover"
-						/>
+					{/* Avatar */}
+					<div className="avatar">
+						<div className="size-10 rounded-full relative border border-base-300">
+							<img
+								src={selectedUser.profilePic || "/avatar.png"}
+								alt={selectedUser.username}
+								className="size-full object-cover rounded-full"
+							/>
+						</div>
 					</div>
-				</button>
 
-				{/* User Info */}
-				<button
-					onClick={handleViewProfile}
-					className="min-w-0 flex-1 text-left hover:opacity-80 transition-opacity"
-				>
-					<div className="font-semibold truncate text-base flex items-center gap-1.5">
-						<span className="truncate">
+					{/* User Info */}
+					<div>
+						<h3 className="font-medium flex items-center gap-1">
 							{selectedUser.nickname || selectedUser.username}
-						</span>
-						{selectedUser.isVerified && <VerifiedBadge size="xs" />}
+							{selectedUser.isVerified && <VerifiedBadge size="xs" />}
+						</h3>
+						<p className="text-sm text-base-content/70">
+							{isTyping && typingUserId === selectedUser.id ? (
+								<span className="text-secondary font-medium animate-pulse">Typing...</span>
+							) : isOnline ? (
+								"Online"
+							) : (
+								"Offline"
+							)}
+						</p>
 					</div>
-					<p className="text-sm text-base-content/60 truncate">
-						{isTyping && typingUserId === selectedUser.id ? (
-							<span className="text-secondary font-medium animate-pulse">Typing...</span>
-						) : isOnline ? (
-							<span className="flex items-center gap-1.5">
-								<span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
-								Online
-							</span>
-						) : (
-							"Offline"
-						)}
-					</p>
-				</button>
+				</div>
+
+				{/* Header Actions */}
+				<div className="flex items-center gap-2">
+					{/* Calls */}
+					<button onClick={() => handleStartCall('video')} className="btn btn-ghost btn-circle btn-sm">
+						<Video className="size-5" />
+					</button>
+					<button onClick={() => handleStartCall('audio')} className="btn btn-ghost btn-circle btn-sm">
+						<Phone className="size-5" />
+					</button>
+				</div>
 			</div>
-
-			{/* Action Buttons */}
-			<div className="flex items-center gap-2 sm:gap-3">
-				{/* Audio Call */}
-				<button
-					className="btn btn-ghost btn-circle btn-sm sm:btn-md btn-touch"
-					onClick={() => handleStartCall('audio')}
-					title="Audio call"
-					aria-label="Start audio call"
-				>
-					<Phone className="w-5 h-5 sm:w-6 sm:h-6" />
-				</button>
-
-				{/* Video Call */}
-				<button
-					className="btn btn-ghost btn-circle btn-sm sm:btn-md btn-touch"
-					onClick={() => handleStartCall('video')}
-					title="Video call"
-					aria-label="Start video call"
-				>
-					<Video className="w-5 h-5 sm:w-6 sm:h-6" />
-				</button>
-			</div>
-
 		</div>
 	);
 };

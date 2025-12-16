@@ -367,7 +367,7 @@ export const useFriendStore = create((set, get) => ({
 
     // Update lastMessage for a friend (called when message is sent/received)
     updateFriendLastMessage: (friendId, messageData) => {
-        if (import.meta.env.DEV) console.log('📝 Updating last message for friend:', friendId, messageData);
+        // Debug logging removed for performance
         
         set((state) => {
             const updatedFriends = state.friends.map(friend => {
@@ -394,7 +394,7 @@ export const useFriendStore = create((set, get) => ({
                         }
                     };
                     
-                    if (import.meta.env.DEV) console.log('✅ Updated friend with last message:', updatedFriend);
+                    // Debug logging removed for performance
                     return updatedFriend;
                 }
                 return friend;
@@ -421,7 +421,7 @@ export const useFriendStore = create((set, get) => ({
                         }
                     };
                     
-                    if (import.meta.env.DEV) console.log('✅ Updated friend message status:', updatedFriend.lastMessage);
+                    // Debug logging removed for performance
                     return updatedFriend;
                 }
                 return friend;

@@ -125,3 +125,28 @@ body {
   Removed hardcoded text color overrides to fixes consistency issues.
   Text color should be handled by the DaisyUI theme variables (base-content).
 */
+
+/* Highlight Animation for Reply Navigation */
+@keyframes highlight-flash {
+  0% {
+    background-color: oklch(var(--p) / 0.3);
+    transform: scale(1.02);
+  }
+
+  50% {
+    background-color: oklch(var(--p) / 0.1);
+    transform: scale(1.01);
+  }
+
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+.highlight-flash {
+  animation: highlight-flash 1.5s ease-out forwards;
+  position: relative;
+  z-index: 10;
+  border-radius: 1rem;
+}

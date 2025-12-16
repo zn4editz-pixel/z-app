@@ -169,59 +169,13 @@ const ChatContainer = ({ onStartCall }) => {
   }, [selectedUser?.id, getMessages, subscribeToMessages]);
 
 
-  // ✅ RELIABLE: Handle typing events locally in the component
+  // ✅ RELIABLE: Use Global Store State for Typing
+  // We no longer listen locally. We trust useChatStore.js which handles 'typing' and 'stopTyping' global events.
+  // This prevents double-listeners and inconsistencies.
   useEffect(() => {
-    if (!socket || !selectedUser) return;
-
-    const handleTypingEvent = (data) => {
-      console.log('🔥 FRONTEND RECEIVED TYPING:', data);
-      const senderId = data?.senderId || data;
-      console.log(`   -> Check: Sender ${senderId} vs Selected ${selectedUser?.id}`);
-
-
-      // Update debug log UI
-      const debugContainer = document.getElementById('debug-log-container');
-      if (debugContainer) {
-        const log = document.createElement('div');
-        log.innerText = `RX Typing: ${senderId?.slice(0, 8)}...`;
-        debugContainer.prepend(log);
-      }
-
-      // Strict check: Only show if the typing user is the one we are currently chatting with
-      if (senderId && selectedUser && senderId.toString() === selectedUser.id.toString()) {
-        console.log('   -> ✅ MATCH! Showing indicator');
-        // toast.success("📥 Rx Typing", { id: "debug-typing-rx", duration: 2000, icon: '📥' });
-        setIsTyping(true);
-
-        // Auto-scroll to bottom to show the indicator
-        if (scrollContainerRef.current) {
-          const container = scrollContainerRef.current;
-          // Only scroll if we are already near bottom
-          const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-          if (isNearBottom) {
-            setTimeout(() => {
-              container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-            }, 50);
-          }
-        }
-      }
-    };
-
-    const handleStopTypingEvent = (data) => {
-      const senderId = data?.senderId || data;
-      if (senderId && selectedUser && senderId.toString() === selectedUser.id.toString()) {
-        setIsTyping(false);
-      }
-    };
-
-    socket.on("typing", handleTypingEvent);
-    socket.on("stopTyping", handleStopTypingEvent);
-
-    return () => {
-      socket.off("typing", handleTypingEvent);
-      socket.off("stopTyping", handleStopTypingEvent);
-    };
-  }, [socket, selectedUser]);
+    // Logic moved to useChatStore.js
+    // Just consuming 'isTyping' from store now.
+  }, []);
 
   // ✅ INSTANT SCROLL: Use useLayoutEffect to scroll before paint
   useLayoutEffect(() => {
@@ -479,9 +433,9 @@ const ChatContainer = ({ onStartCall }) => {
                 </div>
                 <div className="chat-bubble flex items-center p-3 bg-base-200 rounded-2xl rounded-tl-none shadow-sm min-h-[44px]">
                   <div className="flex gap-1.5 px-2 items-center h-full">
-                    <span className="w-2.5 h-2.5 bg-base-content/50 rounded-full animate-typing-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2.5 h-2.5 bg-base-content/50 rounded-full animate-typing-bounce" style={{ animationDelay: '200ms' }} />
-                    <span className="w-2.5 h-2.5 bg-base-content/50 rounded-full animate-typing-bounce" style={{ animationDelay: '400ms' }} />
+                    <span className="w-2.5 h-2.5 bg-base-content/50 rounded-full typing-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2.5 h-2.5 bg-base-content/50 rounded-full typing-bounce" style={{ animationDelay: '200ms' }} />
+                    <span className="w-2.5 h-2.5 bg-base-content/50 rounded-full typing-bounce" style={{ animationDelay: '400ms' }} />
                   </div>
                 </div>
               </div>

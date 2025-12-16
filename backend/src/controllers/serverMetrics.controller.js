@@ -129,7 +129,8 @@ const getDatabaseMetrics = async () => {
 // WebSocket Performance Metrics
 const getSocketMetrics = async () => {
 	try {
-		const { io, userSocketMap } = await import("../lib/socket.js");
+		const { getIO, userSocketMap } = await import("../lib/socketHandlers.js");
+		const io = getIO();
 
 		const connectedUsers = Object.keys(userSocketMap || {}).length;
 		const totalSockets = io?.sockets?.sockets?.size || 0;

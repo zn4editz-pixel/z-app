@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
-import prisma from "./prisma.js";
+import prisma from "./db.js";
 
 // === PRIVATE CHAT LOGIC ===
-const userSocketMap = {}; // { userId: socketId }
+export const userSocketMap = {}; // { userId: socketId }
 
 const getUserIdFromSocketId = (socketId) => {
 	return Object.keys(userSocketMap).find(
@@ -15,13 +15,20 @@ export const getReceiverSocketId = (userId) => userSocketMap[userId];
 // Store io instance for use in emitToUser
 let ioInstance = null;
 
+export const getIO = () => ioInstance;
+
 export const emitToUser = (userId, event, data) => {
-	const socketId = userSocketMap[userId];
+	const stringId = String(userId);
+	const socketId = userSocketMap[stringId];
+	console.log(`🚀 emitToUser: Checking socket for User: ${stringId} (Original: ${userId})`);
 	if (socketId && ioInstance) {
-		console.log(`Emitting ['${event}'] to user ${userId} (socket ${socketId})`);
+		console.log(`✅ FOUND SOCKET ${socketId} for user ${stringId}. Emitting [${event}]`);
 		ioInstance.to(socketId).emit(event, data);
+		return true;
 	} else {
-		console.log(`Could not find socket for user ${userId} to emit ['${event}']`);
+		console.log(`❌ NO SOCKET FOUND for user ${stringId}. Cannot emit [${event}]`);
+		console.log(`   -> Current userSocketMap keys: ${Object.keys(userSocketMap).join(", ")}`);
+		return false;
 	}
 };
 
@@ -213,21 +220,68 @@ export function initializeSocketHandlers(io) {
 
 		// Register user for private chat
 		if (socket.userId) {
-			userSocketMap[socket.userId] = socket.id;
-			console.log(`👤 User ${socket.userId} registered with socket ${socket.id}`);
+			const stringUserId = String(socket.userId);
+			userSocketMap[stringUserId] = socket.id;
+			console.log(`👤 User ${stringUserId} registered with socket ${socket.id}`);
 
 			// Update user's online status in database
 			prisma.user.update({
-				where: { id: socket.userId },
+				where: { id: stringUserId },
 				data: { isOnline: true }
 			})
-				.then(user => {
+				.then(async user => {
 					if (user) {
 						console.log(`✅ User ${socket.userId} marked as online in database`);
 						// Emit online users to ALL clients
 						const onlineUserIds = Object.keys(userSocketMap);
 						console.log(`📡 Broadcasting online users: ${onlineUserIds.length} users online`);
 						io.emit("getOnlineUsers", onlineUserIds);
+
+						// 🔥 REALTIME DELIVERY: Mark 'sent' messages as 'delivered' when user comes online
+						try {
+							const pendingMessages = await prisma.message.findMany({
+								where: {
+									receiverId: socket.userId,
+									status: 'sent'
+								},
+								select: { id: true, senderId: true }
+							});
+
+							if (pendingMessages.length > 0) {
+								console.log(`📩 REALTIME: Found ${pendingMessages.length} pending messages for ${socket.userId}, marking as delivered...`);
+
+								// Update in DB
+								await prisma.message.updateMany({
+									where: {
+										id: { in: pendingMessages.map(m => m.id) }
+									},
+									data: {
+										status: 'delivered',
+										deliveredAt: new Date()
+									}
+								});
+
+								// 🔥 REALTIME: Emit delivery status to senders immediately
+								const senderIds = [...new Set(pendingMessages.map(m => m.senderId))];
+								senderIds.forEach(senderId => {
+									const senderSocketId = userSocketMap[senderId];
+									if (senderSocketId) {
+										// Send bulk delivery notification
+										const messagesForSender = pendingMessages.filter(m => m.senderId === senderId);
+										console.log(`📡 REALTIME: Notifying sender ${senderId} of ${messagesForSender.length} delivered messages`);
+
+										io.to(senderSocketId).emit("messagesDelivered", {
+											receiverId: socket.userId,
+											messageIds: messagesForSender.map(m => m.id),
+											deliveredAt: new Date()
+										});
+									}
+								});
+								console.log(`✅ REALTIME: Marked ${pendingMessages.length} messages as delivered with instant notifications.`);
+							}
+						} catch (error) {
+							console.error('❌ Failed to update pending messages:', error);
+						}
 					}
 				})
 				.catch(err => console.error('Failed to update online status:', err));
@@ -303,6 +357,57 @@ export function initializeSocketHandlers(io) {
 					console.log(`😊 Reaction ${emoji} from ${socket.id} to ${partnerSocketId}`);
 					partnerSocket.emit("stranger:reaction", { emoji });
 				}
+			}
+		});
+
+		// Report handler
+		socket.on("stranger:report", async (payload) => {
+			console.log(`🚨 Report received from ${socket.id}`, { ...payload, screenshot: payload.screenshot ? 'BASE64_HIDDEN' : null });
+
+			try {
+				const { reporterId, reportedUserId, reason, description, screenshot, category, isAIDetected } = payload;
+
+				if (!reporterId || !reportedUserId || !reason) {
+					console.error("❌ Invalid report data:", payload);
+					return;
+				}
+
+				// Create report in database
+				const report = await prisma.report.create({
+					data: {
+						reporterId,
+						reportedUserId,
+						reason,
+						description,
+						screenshot,
+						category: category || 'stranger_chat',
+						isAIDetected: isAIDetected || false,
+						status: 'pending'
+					}
+				});
+
+				console.log(`✅ Report created: ${report.id}`);
+
+				// Create Admin Notification
+				await prisma.adminNotification.create({
+					data: {
+						type: 'report',
+						title: `New ${isAIDetected ? 'AI ' : ''}Report: ${reason}`,
+						message: `User ${reporterId} reported ${reportedUserId} for ${reason}`,
+						link: `/admin/reports/${report.id}`
+					}
+				});
+
+				// Acknowledge success to reporter
+				socket.emit("stranger:report_success", { reportId: report.id });
+
+				// Notify admins via socket if they are online
+				// (Assuming admin room exists, or just broadcast to admins - simplified here)
+				// io.emit("admin:new_report", report); 
+
+			} catch (error) {
+				console.error("❌ Failed to process report:", error);
+				socket.emit("stranger:report_error", { message: "Failed to save report" });
 			}
 		});
 
@@ -402,8 +507,29 @@ export function initializeSocketHandlers(io) {
 				console.log(`📊 Receiver socket ID: ${receiverSocketId}`);
 
 				if (receiverSocketId) {
+					// 🔥 REALTIME FIX: Mark as delivered IMMEDIATELY if user is online
+					// Don't wait for client ACK - this ensures instant double-ticks
+					await prisma.message.update({
+						where: { id: newMessage.id },
+						data: {
+							status: 'delivered',
+							deliveredAt: new Date()
+						}
+					});
+
+					// Update local object to send correct status to receiver
+					messageWithReply.status = 'delivered';
+					messageWithReply.deliveredAt = new Date();
+
 					io.to(receiverSocketId).emit("newMessage", messageWithReply);
 					console.log(`⚡ SUCCESS: Message sent to receiver ${receiverId} (socket: ${receiverSocketId})`);
+
+					// 🔥 Notify sender immediately of delivery
+					socket.emit("messageDelivered", {
+						messageId: newMessage.id,
+						receiverId: receiverId,
+						deliveredAt: new Date()
+					});
 				} else {
 					console.log(`⚠️ OFFLINE: Receiver ${receiverId} not online - message saved but not delivered`);
 				}
@@ -435,35 +561,90 @@ export function initializeSocketHandlers(io) {
 			}
 		});
 
-		// Typing indicators
+
+
+		// Typing indicators (Updated for consistency)
 		socket.on("typing", (data) => {
-			const receiverSocketId = getReceiverSocketId(data.receiverId);
-			if (receiverSocketId) {
-				io.to(receiverSocketId).emit("userTyping", {
-					senderId: socket.userId,
-					isTyping: data.isTyping
-				});
+			try {
+				if (!data) return;
+				const receiverId = data.receiverId;
+				const senderId = socket.userId || data.senderId; // Robust fallback
+
+				if (!senderId) return;
+
+				const receiverSocketId = getReceiverSocketId(receiverId);
+				if (receiverSocketId) {
+					io.to(receiverSocketId).emit("typing", {
+						senderId: senderId,
+						isTyping: true
+					});
+				}
+			} catch (error) {
+				console.error("❌ Error in typing handler:", error);
 			}
 		});
 
+		socket.on("stopTyping", (data) => {
+			try {
+				if (!data) return;
+				const receiverId = data.receiverId;
+				const senderId = socket.userId || data.senderId;
+
+				if (!senderId) return;
+
+				const receiverSocketId = getReceiverSocketId(receiverId);
+				if (receiverSocketId) {
+					io.to(receiverSocketId).emit("stopTyping", {
+						senderId: senderId,
+						isTyping: false
+					});
+				}
+			} catch (error) {
+				console.error("❌ Error in stopTyping handler:", error);
+			}
+		});
+
+
+
 		// Message status updates
+
 		socket.on("messageDelivered", (data) => {
 			const senderSocketId = getReceiverSocketId(data.senderId);
 			if (senderSocketId) {
-				io.to(senderSocketId).emit("messageStatusUpdate", {
+				io.to(senderSocketId).emit("messageDelivered", {
 					messageId: data.messageId,
-					status: "delivered"
+					deliveredAt: new Date()
 				});
 			}
 		});
 
-		socket.on("messageRead", (data) => {
-			const senderSocketId = getReceiverSocketId(data.senderId);
-			if (senderSocketId) {
-				io.to(senderSocketId).emit("messageStatusUpdate", {
-					messageId: data.messageId,
-					status: "read"
+		socket.on("messageRead", async (data) => {
+			try {
+				const { messageId, senderId } = data;
+				const readerId = socket.userId;
+
+				console.log(`👀 REALTIME: Message ${messageId} read by ${readerId} from ${senderId}`);
+
+				// Update message status in database
+				await prisma.message.update({
+					where: { id: messageId },
+					data: {
+						status: 'read',
+						readAt: new Date()
+					}
 				});
+
+				// Notify sender that message was read
+				const senderSocketId = getReceiverSocketId(senderId);
+				if (senderSocketId) {
+					console.log(`📡 REALTIME: Notifying sender ${senderId} that message ${messageId} was read`);
+					io.to(senderSocketId).emit("messagesRead", {
+						receiverId: readerId,
+						messageIds: [messageId]
+					});
+				}
+			} catch (error) {
+				console.error('❌ Error marking message as read:', error);
 			}
 		});
 

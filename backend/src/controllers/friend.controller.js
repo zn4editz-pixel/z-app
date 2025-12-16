@@ -265,50 +265,73 @@ export const getFriends = async (req, res) => {
 			}
 		});
 
-		// Extract friends (the other person in each request) and get their last messages
-		const friendsWithLastMessage = await Promise.all(
-			friendRequests.map(async (request) => {
-				const friend = request.senderId === userId ? request.receiver : request.sender;
-				
-				// Get the last message between current user and this friend
-				const lastMessage = await prisma.message.findFirst({
-					where: {
-						OR: [
-							{ senderId: userId, receiverId: friend.id },
-							{ senderId: friend.id, receiverId: userId }
-						],
-						isDeleted: false
-					},
-					orderBy: { createdAt: 'desc' },
-					select: {
-						id: true,
-						text: true,
-						image: true,
-						voice: true,
-						voiceDuration: true,
-						senderId: true,
-						receiverId: true,
-						createdAt: true,
-						status: true,
-						deliveredAt: true,
-						readAt: true,
-						reactions: true,
-						isCallLog: true,
-						callType: true,
-						callStatus: true,
-						callDuration: true
-					}
-				});
+		// 🔥 ULTRA-OPTIMIZATION: Batch fetch all last messages
+		const friendIds = friendRequests.map(r => r.senderId === userId ? r.receiverId : r.senderId);
 
-				return {
-					...friend,
-					lastMessage: lastMessage ? {
-						...lastMessage,
-						timestamp: lastMessage.createdAt
-					} : null
-				};
-			})
-		);
+		let lastMessagesMap = {};
+
+		if (friendIds.length > 0) {
+			// Fetch last messages for ALL friends in one go
+			// Strategy: Get latest message where (sender=me AND receiver=friend) OR (sender=friend AND receiver=me)
+			// Since Prisma doesn't support "distinct on" easily with complex ORs in findMany for this specific case without raw query,
+			// we will fetch the most recent messages for these pairs.
+			// Optimization: We'll fetch the last 100 messages involving the user, and filter in memory (fast in JS vs slow DB RTT)
+
+			const recentMessages = await prisma.message.findMany({
+				where: {
+					OR: [
+						{ senderId: userId, receiverId: { in: friendIds } },
+						{ senderId: { in: friendIds }, receiverId: userId }
+					],
+					isDeleted: false
+				},
+				orderBy: { createdAt: 'desc' },
+				// Fetch reasonable amount to cover recent convos. 
+				// If a user has 1000s of friends, we might miss very old ones, but for "Sidebar" this is usually sufficient and drastically faster.
+				take: 200,
+				select: {
+					id: true,
+					text: true,
+					image: true,
+					voice: true,
+					voiceDuration: true,
+					senderId: true,
+					receiverId: true,
+					createdAt: true,
+					status: true,
+					deliveredAt: true,
+					readAt: true,
+					reactions: true,
+					isCallLog: true,
+					callType: true,
+					callStatus: true,
+					callDuration: true
+				}
+			});
+
+			// Map latest message per friend
+			recentMessages.forEach(msg => {
+				const friendId = msg.senderId === userId ? msg.receiverId : msg.senderId;
+				// Since ordered by desc, the first one we find for a friend is the latest
+				if (!lastMessagesMap[friendId]) {
+					lastMessagesMap[friendId] = msg;
+				}
+			});
+		}
+
+		// Extract friends and attach last message from map
+		const friendsWithLastMessage = friendRequests.map((request) => {
+			const friend = request.senderId === userId ? request.receiver : request.sender;
+			const lastMessage = lastMessagesMap[friend.id] || null;
+
+			return {
+				...friend,
+				lastMessage: lastMessage ? {
+					...lastMessage,
+					timestamp: lastMessage.createdAt
+				} : null
+			};
+		});
 
 		// Cache result
 		friendsCache.set(userId, {
@@ -330,7 +353,7 @@ export const getPendingRequests = async (req, res) => {
 
 		// Get received requests (pending for this user to accept/reject)
 		const receivedRequests = await prisma.friendRequest.findMany({
-			where: { 
+			where: {
 				receiverId: userId,
 				status: "pending"
 			},
@@ -350,7 +373,7 @@ export const getPendingRequests = async (req, res) => {
 
 		// Get sent requests (waiting for others to accept/reject)
 		const sentRequests = await prisma.friendRequest.findMany({
-			where: { 
+			where: {
 				senderId: userId,
 				status: "pending"
 			},

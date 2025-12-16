@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useFriendStore } from "../store/useFriendStore";
@@ -409,7 +410,7 @@ const HomePage = () => {
 
         {/* Chat container - Full screen on mobile, contained on desktop */}
         <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0">
-          <div className="bg-base-100 w-full h-full max-w-7xl flex overflow-hidden md:border-x border-base-300">
+          <div className="bg-base-100 w-full h-full flex overflow-hidden border-base-300">
             {/* Sidebar */}
             <Sidebar />
 
@@ -425,6 +426,16 @@ const HomePage = () => {
               </div>
             ) : (
               <NoChatSelected />
+            )}
+
+            {/* Loading State */}
+            {isRestoringChat && !selectedUser && (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="loading loading-spinner loading-lg text-primary mb-4"></div>
+                  <p className="text-base-content/70">Restoring your chat...</p>
+                </div>
+              </div>
             )}
           </div>
         </div>

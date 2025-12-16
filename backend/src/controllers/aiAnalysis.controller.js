@@ -29,7 +29,7 @@ export const getAIAnalysis = async (req, res) => {
 };
 
 async function collectMetrics() {
-	const { userSocketMap } = await import("../lib/socket.js");
+	const { userSocketMap } = await import("../lib/socketHandlers.js");
 
 	const [
 		totalUsers,

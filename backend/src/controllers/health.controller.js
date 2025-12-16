@@ -1,7 +1,7 @@
 import os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import prisma from '../lib/prisma.js';
+import prisma from '../lib/db.js';
 import redisClient from '../lib/redis.js';
 
 const execAsync = promisify(exec);
@@ -17,12 +17,12 @@ const metricsHistory = {
 // Get system resource usage
 export const getSystemHealth = async (req, res) => {
 	try {
-		const { userSocketMap } = await import('../lib/socket.js');
+		const { userSocketMap } = await import('../lib/socketHandlers.js');
 		const cpus = os.cpus();
 		const totalMem = os.totalmem();
 		const freeMem = os.freemem();
 		const usedMem = totalMem - freeMem;
-		
+
 		// CPU usage per core
 		const cpuUsage = cpus.map((cpu, index) => {
 			const total = Object.values(cpu.times).reduce((acc, time) => acc + time, 0);
@@ -30,16 +30,16 @@ export const getSystemHealth = async (req, res) => {
 			const usage = ((total - idle) / total) * 100;
 			return { core: index, usage: usage.toFixed(2) };
 		});
-		
+
 		// Average CPU usage
 		const avgCpuUsage = cpuUsage.reduce((acc, cpu) => acc + parseFloat(cpu.usage), 0) / cpuUsage.length;
-		
+
 		// Active connections
 		const activeConnections = Object.keys(userSocketMap).length;
-		
+
 		// Uptime
 		const uptime = process.uptime();
-		
+
 		res.json({
 			cpu: {
 				cores: cpuUsage,
@@ -76,7 +76,7 @@ export const getSystemHealth = async (req, res) => {
 export const getProcessInfo = async (req, res) => {
 	try {
 		const memUsage = process.memoryUsage();
-		
+
 		res.json({
 			pid: process.pid,
 			memory: {
@@ -101,10 +101,10 @@ export const getDatabaseHealth = async (req, res) => {
 		const start = Date.now();
 		await prisma.$queryRaw`SELECT 1`;
 		const pingTime = Date.now() - start;
-		
+
 		const userCount = await prisma.user.count();
 		const messageCount = await prisma.message.count();
-		
+
 		res.json({
 			status: 'healthy',
 			pingTime,
@@ -114,9 +114,9 @@ export const getDatabaseHealth = async (req, res) => {
 			}
 		});
 	} catch (error) {
-		res.status(500).json({ 
+		res.status(500).json({
 			status: 'unhealthy',
-			error: error.message 
+			error: error.message
 		});
 	}
 };
@@ -124,12 +124,12 @@ export const getDatabaseHealth = async (req, res) => {
 // Get WebRTC stats
 export const getWebRTCStats = async (req, res) => {
 	try {
-		const { userSocketMap } = await import('../lib/socket.js');
+		const { userSocketMap } = await import('../lib/socketHandlers.js');
 		const activeConnections = Object.keys(userSocketMap).length;
-		
+
 		// Get active video calls (you can enhance this based on your call tracking)
 		const activeCalls = 0; // Implement based on your call tracking system
-		
+
 		res.json({
 			activeConnections,
 			activeCalls,
@@ -145,19 +145,19 @@ export const getWebRTCStats = async (req, res) => {
 export const emergencyAction = async (req, res) => {
 	try {
 		const { action } = req.body;
-		
+
 		switch (action) {
 			case 'clearCache':
 				// Clear any in-memory caches
 				global.gc && global.gc();
 				res.json({ message: 'Cache cleared' });
 				break;
-				
+
 			case 'maintenanceMode':
 				// Implement maintenance mode
 				res.json({ message: 'Maintenance mode enabled' });
 				break;
-				
+
 			default:
 				res.status(400).json({ error: 'Unknown action' });
 		}
@@ -170,9 +170,10 @@ export const emergencyAction = async (req, res) => {
 // Get Socket.io stats
 export const getSocketStats = async (req, res) => {
 	try {
-		const { userSocketMap, io } = await import('../lib/socket.js');
+		const { userSocketMap, getIO } = await import('../lib/socketHandlers.js');
+		const io = getIO();
 		const activeConnections = Object.keys(userSocketMap).length;
-		
+
 		// Get socket rooms info
 		const rooms = [];
 		if (io && io.sockets && io.sockets.adapter && io.sockets.adapter.rooms) {
@@ -185,7 +186,7 @@ export const getSocketStats = async (req, res) => {
 				}
 			});
 		}
-		
+
 		res.json({
 			activeConnections,
 			messagesPerSecond: metricsHistory.socket[metricsHistory.socket.length - 1]?.messagesPerSecond || 0,
@@ -216,18 +217,18 @@ export const getRedisStats = async (req, res) => {
 		const info = await redisClient.info('stats');
 		const dbSize = await redisClient.dbsize();
 		const memoryInfo = await redisClient.info('memory');
-		
+
 		// Parse memory usage
 		const memoryMatch = memoryInfo.match(/used_memory_human:(\d+\.?\d*)([KMG])/);
 		const memoryUsage = memoryMatch ? parseFloat(memoryMatch[1]) : 0;
-		
+
 		// Parse hit rate
 		const hitsMatch = info.match(/keyspace_hits:(\d+)/);
 		const missesMatch = info.match(/keyspace_misses:(\d+)/);
 		const hits = hitsMatch ? parseInt(hitsMatch[1]) : 0;
 		const misses = missesMatch ? parseInt(missesMatch[1]) : 0;
 		const hitRate = hits + misses > 0 ? ((hits / (hits + misses)) * 100).toFixed(2) : 0;
-		
+
 		res.json({
 			memoryUsage,
 			hitRate: parseFloat(hitRate),
@@ -249,13 +250,13 @@ export const getAPIStats = async (req, res) => {
 		const avgResponseTime = Math.floor(Math.random() * 200) + 50;
 		const requestsPerSecond = Math.floor(Math.random() * 50) + 10;
 		const errorRate = (Math.random() * 2).toFixed(2);
-		
+
 		const slowEndpoints = [
 			{ path: '/api/messages', avgTime: 245, method: 'GET' },
 			{ path: '/api/users/search', avgTime: 189, method: 'POST' },
 			{ path: '/api/friends', avgTime: 156, method: 'GET' }
 		];
-		
+
 		res.json({
 			avgResponseTime,
 			requestsPerSecond,
@@ -279,7 +280,7 @@ export const getNetworkStats = async (req, res) => {
 			{ name: 'South America', latency: Math.floor(Math.random() * 100) + 80 },
 			{ name: 'Australia', latency: Math.floor(Math.random() * 150) + 100 }
 		];
-		
+
 		res.json({
 			latency: Math.floor(Math.random() * 30) + 10,
 			bandwidth: (Math.random() * 500 + 100).toFixed(2),
@@ -298,7 +299,7 @@ export const getNetworkStats = async (req, res) => {
 export const getLogs = async (req, res) => {
 	try {
 		const limit = parseInt(req.query.limit) || 50;
-		
+
 		// Simulated logs - implement real log streaming in production
 		const logs = [
 			{ timestamp: new Date().toISOString(), level: 'info', message: 'Server started successfully' },
@@ -307,7 +308,7 @@ export const getLogs = async (req, res) => {
 			{ timestamp: new Date().toISOString(), level: 'info', message: 'Socket.io server initialized' },
 			{ timestamp: new Date().toISOString(), level: 'info', message: 'WebRTC signaling ready' }
 		];
-		
+
 		res.json({
 			logs: logs.slice(0, limit),
 			timestamp: new Date().toISOString()
@@ -322,7 +323,7 @@ export const getLogs = async (req, res) => {
 export const executeAction = async (req, res) => {
 	try {
 		const { action } = req.body;
-		
+
 		switch (action) {
 			case 'clear-cache':
 			case 'clear-redis':
@@ -333,38 +334,38 @@ export const executeAction = async (req, res) => {
 					res.json({ success: false, message: 'Redis not available' });
 				}
 				break;
-				
+
 			case 'restart-backend':
 				res.json({ success: true, message: 'Backend restart initiated (requires manual restart)' });
 				// In production, implement graceful restart
 				break;
-				
+
 			case 'maintenance-mode':
 				res.json({ success: true, message: 'Maintenance mode enabled' });
 				break;
-				
+
 			case 'optimize-db':
 				// Run database optimization
 				await prisma.$executeRaw`VACUUM ANALYZE`;
 				res.json({ success: true, message: 'Database optimization completed' });
 				break;
-				
+
 			case 'rebuild-indexes':
 				res.json({ success: true, message: 'Index rebuild initiated' });
 				break;
-				
+
 			case 'kill-heavy-processes':
 				res.json({ success: true, message: 'Heavy processes terminated' });
 				break;
-				
+
 			case 'enable-caching':
 				res.json({ success: true, message: 'Response caching enabled' });
 				break;
-				
+
 			case 'optimize-queries':
 				res.json({ success: true, message: 'Query optimization applied' });
 				break;
-				
+
 			case 'flush-expired':
 				if (redisClient) {
 					// Redis automatically handles expired keys
@@ -373,7 +374,7 @@ export const executeAction = async (req, res) => {
 					res.json({ success: false, message: 'Redis not available' });
 				}
 				break;
-				
+
 			default:
 				res.status(400).json({ success: false, error: 'Unknown action' });
 		}

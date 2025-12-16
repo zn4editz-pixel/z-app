@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import React from 'react'; // Added for store-level react usage if needed, though strictly not typical for vanilla zustand, kept for safety with listeners
 import { axiosInstance } from "../lib/axios.js"; // Used for API calls
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
@@ -6,11 +7,13 @@ import { useFriendStore } from "./useFriendStore.js";
 import { SocketMonitor } from "../utils/socketMonitor.js";
 
 // ✅ --- CORRECTED BASE_URL ---
-// Get the base URL from the environment variable with fallback
-const SOCKET_URL = import.meta.env.VITE_API_BASE_URL || "https://z-app-backend.onrender.com";
+// Get the base URL from the environment variable with fallback, defaulting to localhost for dev
+const SOCKET_URL = import.meta.env.MODE === "development"
+	? "http://localhost:5002"
+	: (import.meta.env.VITE_API_BASE_URL || "https://z-app-backend.onrender.com");
 
 // Log the socket URL being used for debugging
-if (import.meta.env.DEV) console.log("Socket URL:", SOCKET_URL);
+console.log("Socket URL Configured:", SOCKET_URL);
 // ✅ --- END CORRECTION ---
 
 
@@ -403,4 +406,36 @@ export const useAuthStore = create((set, get) => ({
 			set({ socket: null, onlineUsers: [] }); // Clear socket and online users
 		}
 	},
+
+	// ✅ PERFORMANCE: Check network status
+	initNetworkListeners: () => {
+		if (typeof window === 'undefined') return;
+
+		console.log("🔌 Initializing Network Listeners...");
+
+		window.addEventListener('online', () => {
+			console.log("🌐 Network is ONLINE! Attempting immediate socket reconnect...");
+			const { authUser, socket } = get();
+
+			// Force check auth to ensure token is valid, then connect
+			if (authUser) {
+				if (socket && !socket.connected) {
+					socket.connect();
+				} else if (!socket) {
+					get().connectSocket();
+				}
+				// Refresh data
+				useFriendStore.getState().fetchFriendData();
+			}
+		});
+
+		window.addEventListener('offline', () => {
+			console.log("🔌 Network is OFFLINE.");
+			// Optional: visual indicator or pause queue
+		});
+	}
 }));
+
+// Initialize listeners outside the store definition to run once (or call from App.jsx)
+// For simplicity, we can let the App component call this, OR just run it here if side-effects allowed.
+// But valid zustand pattern is to expose it.

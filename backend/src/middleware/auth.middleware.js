@@ -5,7 +5,7 @@ export const protectRoute = async (req, res, next) => {
   try {
     // Check both cookie and Authorization header for token (mobile compatibility)
     let token = req.cookies?.jwt;
-    
+
     // If no cookie, check Authorization header
     if (!token && req.headers.authorization) {
       const authHeader = req.headers.authorization;
@@ -57,9 +57,9 @@ export const protectRoute = async (req, res, next) => {
         verificationReviewedAt: true,
         verificationReviewedBy: true,
         verificationAdminNote: true,
-        // friends: true, // Removed - not supported in SQLite
-        // friendRequestsSent: true, // Removed - not supported in SQLite
-        // friendRequestsReceived: true, // Removed - not supported in SQLite
+        // friends: true, // Removed - not supported in backend schema yet
+        sentFriendRequests: true,
+        receivedFriendRequests: true,
         createdAt: true,
         updatedAt: true
       }

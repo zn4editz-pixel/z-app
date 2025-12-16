@@ -23,7 +23,7 @@ const Sidebar = () => {
   const { theme } = useThemeStore();
 
   const [searchOpen, setSearchOpen] = useState(false);
-  
+
   // 🔥 REAL-TIME: Force re-render for live status updates
   const [, forceUpdate] = useState({});
   useEffect(() => {
@@ -38,18 +38,9 @@ const Sidebar = () => {
   // ✅ ENHANCED: Smart message preview with better logic
   const getMessagePreview = (user, unreadCount) => {
     const lastMsg = user.lastMessage;
-    
-    // Debug logging
-    if (import.meta.env.DEV) {
-      console.log(`📋 Message preview for ${user.nickname || user.username}:`, {
-        lastMsg,
-        unreadCount,
-        hasText: !!lastMsg?.text,
-        hasImage: !!lastMsg?.image,
-        hasVoice: !!lastMsg?.voice
-      });
-    }
-    
+
+    // Debug logging removed for performance
+
     // No messages yet - show "Tap to chat"
     if (!lastMsg || (!lastMsg.text && !lastMsg.image && !lastMsg.voice && !lastMsg.isCallLog)) {
       return { text: "Tap to chat", icon: null, bold: false, muted: true };
@@ -57,12 +48,12 @@ const Sidebar = () => {
 
     const isFromMe = lastMsg.senderId === authUser?.id;
     const isReceiverOnline = onlineUsers.includes(user.id);
-    
+
     // Handle call logs
     if (lastMsg.isCallLog) {
       const callIcon = lastMsg.callType === 'video' ? '📹' : '📞';
       let callText = '';
-      
+
       if (lastMsg.callStatus === 'completed') {
         const duration = lastMsg.callDuration ? ` (${Math.floor(lastMsg.callDuration / 60)}:${String(lastMsg.callDuration % 60).padStart(2, '0')})` : '';
         callText = isFromMe ? `You called${duration}` : `Called you${duration}`;
@@ -73,15 +64,15 @@ const Sidebar = () => {
       } else {
         callText = isFromMe ? 'You called' : 'Called you';
       }
-      
+
       return { text: callText, icon: callIcon, bold: unreadCount > 0, muted: false };
     }
-    
+
     // Handle reactions
     if (lastMsg.reactions && Array.isArray(lastMsg.reactions) && lastMsg.reactions.length > 0) {
       const myReaction = lastMsg.reactions.find(r => r.userId === authUser?.id);
       const theirReaction = lastMsg.reactions.find(r => r.userId === user.id);
-      
+
       if (myReaction && isFromMe) {
         return { text: `You reacted ${myReaction.emoji} to your message`, icon: null, bold: false, muted: false };
       } else if (myReaction && !isFromMe) {
@@ -114,71 +105,61 @@ const Sidebar = () => {
     if (lastMsg.voice) {
       return { text: isFromMe ? "You sent a voice message" : "Sent a voice message", icon: "🎤", bold: false, muted: false };
     }
-    
+
     // ✅ FIXED: Regular text message with proper status sync
     const prefix = isFromMe ? "You: " : "";
     let statusIcon = null;
-    
+
     if (isFromMe) {
       // Get theme colors and status info for proper sync
       const themeColors = getThemeColors(theme);
       const statusInfo = getMessageStatusInfo(lastMsg, true, isReceiverOnline, themeColors);
-      
-      // Debug logging for message status
-      if (import.meta.env.DEV) {
-        console.log(`📊 Message status for ${user.nickname || user.username}:`, {
-          messageId: lastMsg.id,
-          status: lastMsg.status,
-          isReceiverOnline,
-          statusInfo,
-          deliveredAt: lastMsg.deliveredAt,
-          readAt: lastMsg.readAt
-        });
-      }
-      
+
+      // Debug logging removed for performance
+
       if (statusInfo.show) {
         if (statusInfo.type === 'double-tick') {
           // Double tick for delivered/read
           statusIcon = (
-            <svg 
-              className="w-3 h-3 flex-shrink-0" 
-              fill="currentColor" 
+            <svg
+              className="w-3 h-3 flex-shrink-0"
+              fill="currentColor"
               viewBox="0 0 16 16"
               style={{ color: statusInfo.color }}
             >
-              <path d="M12.354 4.354a.5.5 0 0 0-.708-.708L5 10.293 1.854 7.146a.5.5 0 1 0-.708.708l3.5 3.5a.5.5 0 0 0 .708 0l7-7zm-4.208 7-.896-.897.707-.707.543.543 6.646-6.647a.5.5 0 0 1 .708.708l-7 7a.5.5 0 0 1-.708 0z"/>
-              <path d="m5.354 7.146.896.897-.707.707-.897-.896a.5.5 0 1 1 .708-.708z"/>
+              <path d="M12.354 4.354a.5.5 0 0 0-.708-.708L5 10.293 1.854 7.146a.5.5 0 1 0-.708.708l3.5 3.5a.5.5 0 0 0 .708 0l7-7zm-4.208 7-.896-.897.707-.707.543.543 6.646-6.647a.5.5 0 0 1 .708.708l-7 7a.5.5 0 0 1-.708 0z" />
+              <path d="m5.354 7.146.896.897-.707.707-.897-.896a.5.5 0 1 1 .708-.708z" />
             </svg>
           );
         } else if (statusInfo.type === 'single-tick') {
           // Single tick for sent
           statusIcon = (
-            <svg 
-              className="w-3 h-3 flex-shrink-0" 
-              fill="currentColor" 
+            <svg
+              className="w-3 h-3 flex-shrink-0"
+              fill="currentColor"
               viewBox="0 0 16 16"
               style={{ color: statusInfo.color }}
             >
-              <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+              <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z" />
             </svg>
           );
         } else if (statusInfo.type === 'clock') {
           // Clock for sending/failed
           statusIcon = (
-            <svg 
-              className="w-3 h-3 flex-shrink-0" 
-              fill="currentColor" 
+            <svg
+              className="w-3 h-3 flex-shrink-0"
+              fill="currentColor"
               viewBox="0 0 16 16"
               style={{ color: statusInfo.color }}
             >
-              <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
-              <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+              <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z" />
+              <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" />
             </svg>
           );
         }
       }
     }
-    
+
     return { text: prefix + (lastMsg.text || ""), icon: statusIcon, bold: false, muted: false };
   };
 
@@ -201,23 +182,23 @@ const Sidebar = () => {
       // This ensures the person you most recently chatted with appears at the top
       const aTimestamp = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : 0;
       const bTimestamp = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
-      
+
       // If both have messages, sort by most recent
       if (aTimestamp && bTimestamp) {
         return bTimestamp - aTimestamp; // Most recent first
       }
-      
+
       // If only one has messages, that one comes first
       if (aTimestamp && !bTimestamp) return -1;
       if (!aTimestamp && bTimestamp) return 1;
-      
+
       // Priority 2: If no messages, online users come first
       const aOnline = onlineUsers.includes(a.id);
       const bOnline = onlineUsers.includes(b.id);
-      
+
       if (aOnline && !bOnline) return -1;
       if (!aOnline && bOnline) return 1;
-      
+
       // Priority 3: Alphabetical by display name
       const aName = (a.nickname || a.username || '').toLowerCase();
       const bName = (b.nickname || b.username || '').toLowerCase();
@@ -243,7 +224,7 @@ const Sidebar = () => {
         <div className="flex-shrink-0 px-3 sm:px-4 pt-3 sm:pt-4 pb-2 sm:pb-3 border-b border-base-300">
           {/* Title and Search */}
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xl sm:text-2xl font-bold">Chats</h3> 
+            <h3 className="text-xl sm:text-2xl font-bold">Chats</h3>
             <button
               onClick={() => setSearchOpen(true)}
               className="btn btn-ghost btn-circle btn-sm"
@@ -274,66 +255,64 @@ const Sidebar = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Scrollable Friends Container - Added padding top to prevent clipping on hover */}
             <div className="flex gap-3 sm:gap-4 overflow-x-auto pr-3 sm:pr-4 scrollbar-hide pl-3 overflow-y-visible">
-            
-            {/* All Friends - Online first with green ring, then offline */}
-            {friends
-              .sort((a, b) => {
-                const aOnline = onlineUsers.includes(a.id);
-                const bOnline = onlineUsers.includes(b.id);
-                if (aOnline && !bOnline) return -1;
-                if (!aOnline && bOnline) return 1;
-                return 0;
-              })
-              .map((u) => {
-                const isOnline = onlineUsers.includes(u.id);
-                return (
-                  <button
-                    key={u.id}
-                    onClick={() => setSelectedUser(u)}
-                    className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-all duration-200 focus:outline-none hover:scale-105"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
-                  >
-                    <div className="relative">
-                      {/* Avatar with enhanced online indicator */}
+
+              {/* All Friends - Online first with green ring, then offline */}
+              {friends
+                .sort((a, b) => {
+                  const aOnline = onlineUsers.includes(a.id);
+                  const bOnline = onlineUsers.includes(b.id);
+                  if (aOnline && !bOnline) return -1;
+                  if (!aOnline && bOnline) return 1;
+                  return 0;
+                })
+                .map((u) => {
+                  const isOnline = onlineUsers.includes(u.id);
+                  return (
+                    <button
+                      key={u.id}
+                      onClick={() => setSelectedUser(u)}
+                      className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-all duration-200 focus:outline-none hover:scale-105"
+                      style={{ WebkitTapHighlightColor: 'transparent' }}
+                    >
                       <div className="relative">
-                        {/* Outer glow for online users */}
-                        {isOnline && (
-                          <div className="absolute inset-0 rounded-full bg-success/20 blur-sm"></div>
-                        )}
-                        
-                        {/* Avatar container */}
-                        <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] transition-all ${
-                          isOnline 
-                            ? 'bg-gradient-to-br from-success to-success/80 shadow-lg shadow-success/30' 
-                            : 'bg-base-content/15'
-                        }`}>
-                          <img
-                            src={u.profilePic || "/avatar.png"}
-                            alt={u.nickname || u.username}
-                            className="w-full h-full object-cover rounded-full border-2 border-base-100"
-                          />
-                          
-                          {/* Enhanced online indicator */}
+                        {/* Avatar with enhanced online indicator */}
+                        <div className="relative">
+                          {/* Outer glow for online users */}
                           {isOnline && (
-                            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-success rounded-full border-[3px] border-base-100 shadow-md">
-                              <div className="absolute inset-0 rounded-full bg-success animate-ping opacity-75"></div>
-                            </div>
+                            <div className="absolute inset-0 rounded-full bg-success/20 blur-sm"></div>
                           )}
+
+                          {/* Avatar container */}
+                          <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] transition-all ${isOnline
+                            ? 'bg-gradient-to-br from-success to-success/80 shadow-lg shadow-success/30'
+                            : 'bg-base-content/15'
+                            }`}>
+                            <img
+                              src={u.profilePic || "/avatar.png"}
+                              alt={u.nickname || u.username}
+                              className="w-full h-full object-cover rounded-full border-2 border-base-100"
+                            />
+
+                            {/* Enhanced online indicator */}
+                            {isOnline && (
+                              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-success rounded-full border-[3px] border-base-100 shadow-md">
+                                <div className="absolute inset-0 rounded-full bg-success animate-ping opacity-75"></div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    
-                    <span className={`text-xs sm:text-sm truncate w-14 sm:w-16 text-center font-medium transition-colors ${
-                      isOnline ? 'text-success' : 'text-base-content/60'
-                    }`}>
-                      {(u.nickname || u.username || "User").split(" ")[0]}
-                    </span>
-                  </button>
-                );
-              })}
+
+                      <span className={`text-xs sm:text-sm truncate w-14 sm:w-16 text-center font-medium transition-colors ${isOnline ? 'text-success' : 'text-base-content/60'
+                        }`}>
+                        {(u.nickname || u.username || "User").split(" ")[0]}
+                      </span>
+                    </button>
+                  );
+                })}
             </div>
           </div>
         </div>
@@ -341,15 +320,26 @@ const Sidebar = () => {
         {/* Scrollable Chat List - THIS IS THE KEY FIX */}
         <div className="flex-1 min-h-0 flex flex-col">
           {/* Online Filter - Compact for mobile */}
-          <div className="flex-shrink-0 px-2 sm:px-3 py-1 border-b border-base-200">
-            <label className="flex items-center gap-1 cursor-pointer">
+          <div className="flex-shrink-0 px-2 sm:px-3 !py-0.5 border-b border-base-200 min-h-0">
+            <label className="flex items-center gap-2 cursor-pointer py-0.5 group">
               <input
                 type="checkbox"
                 checked={showOnlineOnly}
                 onChange={(e) => setShowOnlineOnly(e.target.checked)}
-                className="checkbox checkbox-primary w-1.5 h-1.5 sm:w-1.5 sm:h-1.5 rounded-full border-base-content/30"
+                className="sr-only"
               />
-              <span className="text-[10px] sm:text-xs font-medium text-base-content/70">Show Active only</span>
+              {/* Custom Visual Checkbox - Guaranteed Size */}
+              <div
+                style={{ width: '12px', height: '12px' }}
+                className={`
+                  rounded-full border transition-all duration-200 flex-shrink-0
+                  ${showOnlineOnly
+                    ? "bg-primary border-primary"
+                    : "border-base-content/30 group-hover:border-base-content/50"
+                  }
+                `}
+              />
+              <span className="text-[10px] sm:text-xs font-medium text-base-content/70 select-none">Show Active only</span>
             </label>
           </div>
 
@@ -373,11 +363,10 @@ const Sidebar = () => {
                       key={userId}
                       onClick={() => {
                         setSelectedUser(user);
-                        if (searchOpen) setSearchOpen(false); 
+                        if (searchOpen) setSearchOpen(false);
                       }}
-                      className={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg text-left transition-all hover:bg-base-200 card-touch ${
-                        (selectedUser?.id || selectedUser?.id) === userId ? "bg-base-200 ring-2 ring-primary/20" : ""
-                      }`}
+                      className={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg text-left transition-all hover:bg-base-200 card-touch ${(selectedUser?.id || selectedUser?.id) === userId ? "bg-base-200 ring-2 ring-primary/20" : ""
+                        }`}
                     >
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
@@ -389,7 +378,7 @@ const Sidebar = () => {
                           />
                         </div>
                         {isOnline && (
-                          <span className="absolute right-0 bottom-0 w-3 h-3 rounded-full ring-2 ring-base-100 bg-success" /> 
+                          <span className="absolute right-0 bottom-0 w-3 h-3 rounded-full ring-2 ring-base-100 bg-success" />
                         )}
                       </div>
 
@@ -402,11 +391,10 @@ const Sidebar = () => {
                         {(() => {
                           const preview = getMessagePreview(user, unread);
                           return (
-                            <div className={`text-xs sm:text-sm truncate flex items-center gap-1 ${
-                              preview.bold ? 'font-semibold text-base-content' : 
-                              preview.muted ? 'text-base-content/40' : 
-                              'text-base-content/60'
-                            }`}>
+                            <div className={`text-xs sm:text-sm truncate flex items-center gap-1 ${preview.bold ? 'font-semibold text-base-content' :
+                              preview.muted ? 'text-base-content/40' :
+                                'text-base-content/60'
+                              }`}>
                               {preview.icon && (
                                 typeof preview.icon === 'string' ? (
                                   <span className="flex-shrink-0">{preview.icon}</span>
@@ -424,7 +412,7 @@ const Sidebar = () => {
                       {unread > 0 && (
                         <div className="flex-shrink-0">
                           <div className="relative">
-                            <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] sm:min-w-[24px] sm:h-[24px] px-1.5 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white rounded-full text-[10px] sm:text-xs font-bold shadow-lg border-2 border-white dark:border-gray-800 transform transition-transform duration-200 hover:scale-110"> 
+                            <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] sm:min-w-[24px] sm:h-[24px] px-1.5 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white rounded-full text-[10px] sm:text-xs font-bold shadow-lg border-2 border-white dark:border-gray-800 transform transition-transform duration-200 hover:scale-110">
                               {unread > 9 ? "9+" : unread}
                             </span>
                             <span className="absolute inset-0 rounded-full bg-blue-500 animate-pulse opacity-30"></span>
@@ -442,14 +430,14 @@ const Sidebar = () => {
 
       {/* Enhanced Search Overlay */}
       {searchOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn"
           onClick={() => {
             setSearchOpen(false);
             setQuery("");
           }}
         >
-          <div 
+          <div
             className="bg-gradient-to-br from-base-100 to-base-200 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col border border-primary/20 animate-scaleIn"
             onClick={(e) => e.stopPropagation()}
           >

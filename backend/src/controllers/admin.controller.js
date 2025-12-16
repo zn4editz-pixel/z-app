@@ -1,23 +1,13 @@
 import prisma from "../lib/prisma.js";
-import { 
-	sendVerificationApprovedEmail, 
+import { emitToUser } from "../lib/socketHandlers.js";
+import {
+	sendVerificationApprovedEmail,
 	sendVerificationRejectedEmail,
 	sendReportStatusEmail,
-	sendAccountSuspendedEmail 
+	sendAccountSuspendedEmail
 } from "../lib/email.js";
 
-const emitToUser = (io, userId, event, data) => {
-	if (!io || !userId) return false;
-	const userIdStr = userId.toString();
-	const sockets = io.sockets.sockets;
-	for (const [socketId, socket] of sockets) {
-		if (socket.userId && socket.userId.toString() === userIdStr) {
-			io.to(socketId).emit(event, data);
-			return true;
-		}
-	}
-	return false;
-};
+
 
 let adminUsersCache = null;
 let adminUsersCacheTime = 0;
@@ -36,11 +26,11 @@ const clearAdminStatsCache = () => {
 export const getAllUsers = async (req, res) => {
 	try {
 		// ALWAYS get fresh online status from socket connections (source of truth)
-		const { userSocketMap } = await import("../lib/socket.js");
+		const { userSocketMap } = await import("../lib/socketHandlers.js");
 		const onlineUserIds = Object.keys(userSocketMap);
-		
+
 		console.log(`📊 Admin: Fetching users. ${onlineUserIds.length} users currently online`);
-		
+
 		// Fetch fresh user data from database (no caching for admin to ensure accuracy)
 		const users = await prisma.user.findMany({
 			select: {
@@ -53,13 +43,13 @@ export const getAllUsers = async (req, res) => {
 			orderBy: { createdAt: "desc" },
 			take: 100
 		});
-		
+
 		// ALWAYS override database isOnline with socket map (socket is source of truth)
 		const usersWithAccurateOnlineStatus = users.map(user => ({
 			...user,
 			isOnline: onlineUserIds.includes(user.id) // Socket map is the truth
 		}));
-		
+
 		console.log(`✅ Admin: Returning ${usersWithAccurateOnlineStatus.length} users with accurate online status`);
 		res.status(200).json(usersWithAccurateOnlineStatus);
 	} catch (err) {
@@ -84,7 +74,7 @@ export const suspendUser = async (req, res) => {
 			if (match) {
 				const value = parseInt(match[1]);
 				const unit = match[2];
-				const multipliers = { d: 24*60*60*1000, h: 60*60*1000, m: 60*1000 };
+				const multipliers = { d: 24 * 60 * 60 * 1000, h: 60 * 60 * 1000, m: 60 * 1000 };
 				suspendUntilDate = new Date(now.getTime() + value * multipliers[unit]);
 			} else {
 				return res.status(400).json({ error: "Invalid duration format" });
@@ -98,8 +88,7 @@ export const suspendUser = async (req, res) => {
 		});
 		clearAdminUsersCache();
 		clearAdminStatsCache();
-		const io = req.app.get("io");
-		emitToUser(io, userId, "user-action", { type: "suspended", reason, until: suspendUntilDate });
+		emitToUser(userId, "user-action", { type: "suspended", reason, until: suspendUntilDate });
 		try {
 			await sendAccountSuspendedEmail(user.email, user.nickname || user.username, reason, suspendUntilDate);
 		} catch (emailErr) {
@@ -114,13 +103,17 @@ export const suspendUser = async (req, res) => {
 
 export const unsuspendUser = async (req, res) => {
 	try {
+		const { userId } = req.params;
 		const updatedUser = await prisma.user.update({
-			where: { id: req.params.userId },
+			where: { id: userId },
 			data: { isSuspended: false, suspensionEndTime: null, suspensionReason: null }
 		});
 		clearAdminUsersCache();
 		clearAdminStatsCache();
-		emitToUser(req.app.get("io"), req.params.userId, "user-action", { type: "unsuspended" });
+		// 🔥 REAL-TIME: Notify user
+		emitToUser(userId, "user-action", {
+			type: "unsuspended"
+		});
 		res.status(200).json({ message: "User unsuspended successfully", user: updatedUser });
 	} catch (err) {
 		res.status(500).json({ error: "Failed to unsuspend user" });
@@ -129,11 +122,15 @@ export const unsuspendUser = async (req, res) => {
 
 export const blockUser = async (req, res) => {
 	try {
+		const { userId } = req.params;
 		const updatedUser = await prisma.user.update({
-			where: { id: req.params.userId },
+			where: { id: userId },
 			data: { isBlocked: true }
 		});
-		emitToUser(req.app.get("io"), req.params.userId, "user-action", { type: "blocked" });
+		// 🔥 REAL-TIME: Notify user
+		emitToUser(userId, "user-action", {
+			type: "blocked"
+		});
 		res.status(200).json({ message: "User blocked successfully", user: updatedUser });
 	} catch (err) {
 		res.status(500).json({ error: "Failed to block user" });
@@ -146,7 +143,7 @@ export const unblockUser = async (req, res) => {
 			where: { id: req.params.userId },
 			data: { isBlocked: false }
 		});
-		emitToUser(req.app.get("io"), req.params.userId, "user-action", { type: "unblocked" });
+		emitToUser(req.params.userId, "user-action", { type: "unblocked" });
 		res.status(200).json({ message: "User unblocked successfully", user: updatedUser });
 	} catch (err) {
 		res.status(500).json({ error: "Failed to unblock user" });
@@ -159,7 +156,7 @@ export const deleteUser = async (req, res) => {
 			await tx.message.deleteMany({ OR: [{ senderId: req.params.userId }, { receiverId: req.params.userId }] });
 			await tx.user.delete({ where: { id: req.params.userId } });
 		});
-		emitToUser(req.app.get("io"), req.params.userId, "admin-action", { action: "account-deleted" });
+		emitToUser(req.params.userId, "admin-action", { action: "account-deleted" });
 		res.status(200).json({ message: "User deleted successfully" });
 	} catch (err) {
 		res.status(500).json({ error: "Failed to delete user" });
@@ -173,7 +170,7 @@ export const toggleVerification = async (req, res) => {
 			where: { id: req.params.userId },
 			data: { isVerified: !user.isVerified }
 		});
-		emitToUser(req.app.get("io"), req.params.userId, "verification-status-changed", { isVerified: updatedUser.isVerified });
+		emitToUser(req.params.userId, "verification-status-changed", { isVerified: updatedUser.isVerified });
 		res.status(200).json({ message: "Verification toggled", user: updatedUser });
 	} catch (err) {
 		res.status(500).json({ error: "Failed to toggle verification" });
@@ -206,11 +203,11 @@ export const getAIReports = async (req, res) => {
 				reportedUser: { select: { username: true, nickname: true, profilePic: true, email: true } }
 			}
 		});
-		
+
 		// ✅ FIX: Calculate average confidence
 		const totalConfidence = aiReports.reduce((sum, r) => sum + (r.aiConfidence || 0), 0);
 		const avgConfidence = aiReports.length > 0 ? totalConfidence / aiReports.length : 0;
-		
+
 		const stats = {
 			total: aiReports.length,
 			pending: aiReports.filter(r => r.status === "pending").length,
@@ -293,7 +290,7 @@ export const approveVerification = async (req, res) => {
 				verificationReviewedBy: req.user.id
 			}
 		});
-		emitToUser(req.app.get("io"), req.params.userId, "verification-approved", { message: "Verification approved!" });
+		emitToUser(req.params.userId, "verification-approved", { message: "Verification approved!" });
 		await sendVerificationApprovedEmail(user.email, user.nickname || user.username);
 		res.status(200).json({ message: "Verification approved", user });
 	} catch (err) {
@@ -313,7 +310,7 @@ export const rejectVerification = async (req, res) => {
 				verificationReviewedBy: req.user.id
 			}
 		});
-		emitToUser(req.app.get("io"), req.params.userId, "verification-rejected", { message: "Verification rejected", reason: user.verificationAdminNote });
+		emitToUser(req.params.userId, "verification-rejected", { message: "Verification rejected", reason: user.verificationAdminNote });
 		await sendVerificationRejectedEmail(user.email, user.nickname || user.username, user.verificationAdminNote);
 		res.status(200).json({ message: "Verification rejected", user });
 	} catch (err) {
@@ -329,11 +326,11 @@ const ADMIN_STATS_CACHE_TTL = 30000; // 30 seconds cache
 export const getAdminStats = async (req, res) => {
 	try {
 		const now = Date.now();
-		
+
 		// Return cached data if still valid
 		if (adminStatsCache && (now - adminStatsCacheTime) < ADMIN_STATS_CACHE_TTL) {
 			// Always get fresh online count from socket
-			const { userSocketMap } = await import("../lib/socket.js");
+			const { userSocketMap } = await import("../lib/socketHandlers.js");
 			const freshStats = {
 				...adminStatsCache,
 				onlineUsers: Object.keys(userSocketMap).length
@@ -341,16 +338,16 @@ export const getAdminStats = async (req, res) => {
 			return res.status(200).json(freshStats);
 		}
 
-		const { userSocketMap } = await import("../lib/socket.js");
-		
+		const { userSocketMap } = await import("../lib/socketHandlers.js");
+
 		// Optimized parallel queries
 		const [
-			totalUsers, 
-			verifiedUsers, 
-			suspendedUsers, 
-			pendingVerifications, 
-			pendingReports, 
-			totalReports, 
+			totalUsers,
+			verifiedUsers,
+			suspendedUsers,
+			pendingVerifications,
+			pendingReports,
+			totalReports,
 			recentUsers,
 			approvedVerifications
 		] = await Promise.all([
@@ -360,18 +357,18 @@ export const getAdminStats = async (req, res) => {
 			prisma.user.count({ where: { verificationStatus: "pending" } }),
 			prisma.report.count({ where: { status: "pending" } }),
 			prisma.report.count(),
-			prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 7*24*60*60*1000) } } }),
+			prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
 			prisma.user.count({ where: { verificationStatus: "approved" } })
 		]);
 
 		const stats = {
-			totalUsers, 
-			verifiedUsers, 
+			totalUsers,
+			verifiedUsers,
 			onlineUsers: Object.keys(userSocketMap).length,
-			suspendedUsers, 
-			pendingVerifications, 
-			pendingReports, 
-			totalReports, 
+			suspendedUsers,
+			pendingVerifications,
+			pendingReports,
+			totalReports,
 			recentUsers,
 			approvedVerifications
 		};
@@ -389,7 +386,7 @@ export const getAdminStats = async (req, res) => {
 
 export const getDashboardStats = async (req, res) => {
 	try {
-		const { userSocketMap } = await import("../lib/socket.js");
+		const { userSocketMap } = await import("../lib/socketHandlers.js");
 		const [totalUsers, verifiedUsers, suspendedUsers, blockedUsers, pendingVerifications, pendingReports, newUsersThisWeek, newUsersThisMonth] = await Promise.all([
 			prisma.user.count(),
 			prisma.user.count({ where: { isVerified: true } }),
@@ -397,8 +394,8 @@ export const getDashboardStats = async (req, res) => {
 			prisma.user.count({ where: { isBlocked: true } }),
 			prisma.user.count({ where: { verificationStatus: "pending" } }),
 			prisma.report.count({ where: { status: "pending" } }),
-			prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 7*24*60*60*1000) } } }),
-			prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 30*24*60*60*1000) } } })
+			prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
+			prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } })
 		]);
 		res.status(200).json({
 			totalUsers, verifiedUsers, onlineUsers: Object.keys(userSocketMap).length,

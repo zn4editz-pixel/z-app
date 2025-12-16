@@ -58,8 +58,22 @@
   }
 }
 
-.story-swipe {
-  animation: story-swipe 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+/* Instagram-like Page Slide Transition */
+@keyframes instagram-page-slide {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.instagram-page-slide {
+  animation: instagram-page-slide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
 }
 
 /* Smooth Elastic Bounce (Instagram Like) */

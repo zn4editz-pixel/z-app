@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 import { useThemeStore } from "../store/useThemeStore";
 import { formatMessageTime } from "../lib/utils";
 import { getMessageStatusInfo, getThemeColors, getReactionBadgeStyle } from "../utils/messageStatus";
 import { Trash2, Download, Play, Pause, Reply, X } from "lucide-react";
+import MessageStatus from "./MessageStatus";
 import toast from "react-hot-toast";
 
 const REACTION_EMOJIS = ["❤️", "😂", "👍", "😮", "😢", "🔥"];
@@ -36,6 +37,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [forceUpdate, setForceUpdate] = useState(0);
 
   const longPressTimer = useRef(null);
   const lastTap = useRef(0);
@@ -46,8 +48,25 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
 
   const isMyMessage = message.senderId === authUser.id;
 
+  // Check if receiver is online for message status (moved up to avoid temporal dead zone)
+  const isReceiverOnline = selectedUser && onlineUsers.includes(selectedUser.id);
+
+  // Debug logging removed for performance
+
   // ✅ FIXED: Ensure reactions is always an array
   const reactions = Array.isArray(message.reactions) ? message.reactions : [];
+
+  // Auto-mark messages as read when viewed
+  useEffect(() => {
+    if (!isMyMessage && selectedUser && message.status !== 'read') {
+      const timer = setTimeout(() => {
+        useChatStore.getState().markMessagesAsRead(selectedUser.id);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isMyMessage, selectedUser?.id, message.status]);
+
+  // Removed complex socket handlers - using simple store updates instead
 
   // ✅ FIXED: Proper user ID comparison for reaction detection
   const myReaction = reactions.find(r => {
@@ -56,8 +75,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
     return reactionUserId === currentUserId;
   });
 
-  // Check if receiver is online for message status
-  const isReceiverOnline = selectedUser && onlineUsers.includes(selectedUser.id);
+
 
   // Get theme-based colors and status info
   const themeColors = getThemeColors(theme);
@@ -182,8 +200,27 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
           createGuaranteedFloating(emoji, messageRef.current);
         }
       };
+
+      // 🔧 DEBUG: Add status testing function
+      window.testMessageStatus = (messageId, status = 'read') => {
+        console.log(`🧪 Testing message status update: ${messageId} -> ${status}`);
+        const { updateMessageStatus } = useChatStore.getState();
+        updateMessageStatus(messageId, status);
+      };
+
+      // 🔧 DEBUG: Add current message info
+      if (isMyMessage) {
+        window[`message_${message.id}`] = {
+          id: message.id,
+          status: message.status,
+          isRead: message.isRead,
+          readAt: message.readAt,
+          testRead: () => window.testMessageStatus(message.id, 'read'),
+          testDelivered: () => window.testMessageStatus(message.id, 'delivered')
+        };
+      }
     }
-  }, [onFloatingReaction, message.id]);
+  }, [onFloatingReaction, message.id, message.status, message.isRead, isMyMessage]);
 
   // ✅ ENHANCED: Manual floating reaction creator as fallback with proper animation
 
@@ -491,31 +528,50 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                 }}
               >
                 {/* Reply To Message */}
+                {/* Reply To Message - Instagram/WhatsApp Style Quote Box */}
                 {message.replyTo && (
                   <div
-                    className={`mb-2 border-l-4 pl-2 py-1 rounded-sm cursor-pointer active:scale-[0.98] transition-transform ${isMyMessage
-                      ? "bg-primary-content/10 border-primary-content/50"
-                      : "bg-base-300/40 border-primary/70"
+                    className={`mb-2 rounded-lg p-2 cursor-pointer active:scale-[0.98] transition-all overflow-hidden relative ${isMyMessage
+                      ? "bg-black/10 dark:bg-black/20"
+                      : "bg-base-content/5"
                       }`}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent bubbling
                       const replyElement = document.getElementById(`message-${message.replyTo.id}`);
                       if (replyElement) {
                         replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        replyElement.classList.remove('highlight-flash'); // Reset animation
+                        void replyElement.offsetWidth; // Trigger reflow
                         replyElement.classList.add('highlight-flash');
-                        setTimeout(() => replyElement.classList.remove('highlight-flash'), 1500);
+                      } else {
+                        toast.error("Message not found within loaded chat");
                       }
                     }}
                   >
-                    <div className={`text-[10px] font-bold mb-0.5 ${isMyMessage ? "text-primary-content" : "text-primary"
-                      }`}>
-                      {message.replyTo.senderId === authUser.id ? "You" : selectedUser?.fullName || "User"}
-                    </div>
-                    <div className={`text-[11px] leading-tight truncate ${isMyMessage ? "text-primary-content/80" : "text-base-content/70"
-                      }`}>
-                      {message.replyTo.text && message.replyTo.text.trim() ? message.replyTo.text :
-                        (message.replyTo.image ? "📷 Photo" :
-                          message.replyTo.voice ? "🎤 Voice message" :
-                            "Message")}
+                    {/* Colored Bar */}
+                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${isMyMessage ? "bg-primary-content" : "bg-primary"}`} />
+
+                    <div className="pl-2.5">
+                      <div className={`text-[11px] font-bold mb-0.5 truncate flex items-center gap-1 ${isMyMessage ? "text-primary-content" : "text-primary"
+                        }`}>
+                        {message.replyTo.senderId === authUser.id ? "You" : selectedUser?.fullName || selectedUser?.nickname || "User"}
+                        {message.replyTo.isCallLog && <span className="opacity-70 font-normal">• Call</span>}
+                      </div>
+
+                      <div className={`text-[12px] leading-tight truncate opacity-90 ${isMyMessage ? "text-primary-content/90" : "text-base-content/80"
+                        }`}>
+                        {message.replyTo.isCallLog ? (
+                          message.replyTo.callType === 'video' ? '📹 Video Call' : '📞 Voice Call'
+                        ) : message.replyTo.text && message.replyTo.text.trim() ? (
+                          message.replyTo.text
+                        ) : message.replyTo.image ? (
+                          <div className="flex items-center gap-1"><span className="text-xs">📷</span> Photo</div>
+                        ) : message.replyTo.voice ? (
+                          <div className="flex items-center gap-1"><span className="text-xs">🎤</span> Voice message</div>
+                        ) : (
+                          "Message"
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -741,45 +797,16 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
           </div>
         </div>
 
-        {/* Time + Enhanced Status Ticks (WhatsApp Style with Theme Colors) */}
+        {/* Time + Simple Message Status */}
         <div className="flex items-center gap-1.5 mt-1 px-1">
           <span className="text-[10px] text-base-content/50">
             {formatMessageTime(message.createdAt)}
           </span>
-          {statusInfo.show && (
-            <span className="flex items-center" title={statusInfo.tooltip}>
-              {statusInfo.type === 'clock' ? (
-                // Clock icon for sending/failed
-                <svg
-                  className={`w-3 h-3 ${statusInfo.animate} ${statusInfo.className}`}
-                  fill="currentColor"
-                  viewBox="0 0 16 16"
-                >
-                  <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z" />
-                  <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" />
-                </svg>
-              ) : statusInfo.type === 'double-tick' ? (
-                // Double tick for delivered/read
-                <svg
-                  className={`w-4 h-4 ${statusInfo.animate} ${statusInfo.className}`}
-                  fill="currentColor"
-                  viewBox="0 0 16 16"
-                >
-                  <path d="M12.354 4.354a.5.5 0 0 0-.708-.708L5 10.293 1.854 7.146a.5.5 0 1 0-.708.708l3.5 3.5a.5.5 0 0 0 .708 0l7-7zm-4.208 7-.896-.897.707-.707.543.543 6.646-6.647a.5.5 0 0 1 .708.708l-7 7a.5.5 0 0 1-.708 0z" />
-                  <path d="m5.354 7.146.896.897-.707.707-.897-.896a.5.5 0 1 1 .708-.708z" />
-                </svg>
-              ) : (
-                // Single tick for sent
-                <svg
-                  className={`w-3.5 h-3.5 ${statusInfo.animate} ${statusInfo.className}`}
-                  fill="currentColor"
-                  viewBox="0 0 16 16"
-                >
-                  <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z" />
-                </svg>
-              )}
-            </span>
-          )}
+          {/* Simple Message Status Component */}
+          <MessageStatus
+            message={message}
+            isMyMessage={isMyMessage}
+          />
         </div>
 
       </div>
@@ -938,4 +965,14 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
   );
 };
 
-export default ChatMessage;
+// ✅ PERFORMANCE: Memoize to prevent re-renders on every keystroke
+export default React.memo(ChatMessage, (prevProps, nextProps) => {
+  // Deep comparison for crucial props to avoid unnecessary renders
+  return (
+    prevProps.message.id === nextProps.message.id &&
+    prevProps.message.status === nextProps.message.status &&
+    prevProps.message.isRead === nextProps.message.isRead &&
+    prevProps.message.reactions?.length === nextProps.message.reactions?.length &&
+    JSON.stringify(prevProps.message.reactions) === JSON.stringify(nextProps.message.reactions)
+  );
+});

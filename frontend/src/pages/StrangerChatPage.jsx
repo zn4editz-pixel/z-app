@@ -379,21 +379,8 @@ const StrangerChatPage = () => {
 			{ urls: "stun:stun.l.google.com:19302" },
 			{ urls: "stun:stun1.l.google.com:19302" },
 			{ urls: "stun:stun2.l.google.com:19302" },
-			{
-				urls: "turn:a.relay.metered.ca:80",
-				username: "87e69d452a19d7be8c0a6c70",
-				credential: "uBqeBEI+0xKJYEHm"
-			},
-			{
-				urls: "turn:a.relay.metered.ca:80?transport=tcp",
-				username: "87e69d452a19d7be8c0a6c70",
-				credential: "uBqeBEI+0xKJYEHm"
-			},
-			{
-				urls: "turn:a.relay.metered.ca:443",
-				username: "87e69d452a19d7be8c0a6c70",
-				credential: "uBqeBEI+0xKJYEHm"
-			}
+			{ urls: "stun:stun3.l.google.com:19302" },
+			{ urls: "stun:stun4.l.google.com:19302" },
 		],
 		iceCandidatePoolSize: 10,
 		bundlePolicy: 'max-bundle',
@@ -519,7 +506,7 @@ const StrangerChatPage = () => {
 				if (track.kind === 'video') {
 					const parameters = sender.getParameters();
 					if (!parameters.encodings) parameters.encodings = [{}];
-					parameters.encodings[0].maxBitrate = 2500000; // 2.5 Mbps
+					parameters.encodings[0].maxBitrate = 1000000; // 1 Mbps (Stable)
 					parameters.encodings[0].maxFramerate = 30;
 					sender.setParameters(parameters).catch(console.warn);
 				}
@@ -970,8 +957,8 @@ const StrangerChatPage = () => {
 		socket.on("webrtc:answer", onAnswer);
 		socket.on("webrtc:ice-candidate", onIce);
 		socket.on("stranger:addFriendError", onAddFriendError);
-		socket.on("stranger:reportSuccess", onReportSuccess);
-		socket.on("stranger:reportError", onReportError);
+		socket.on("stranger:report_success", onReportSuccess);
+		socket.on("stranger:report_error", onReportError);
 
 		return () => {
 			isMounted = false;
@@ -1002,12 +989,13 @@ const StrangerChatPage = () => {
 			socket.off("stranger:friendRequest", onFriendRequest);
 			socket.off("stranger:friendRequestSent", onFriendRequestSent);
 			socket.off("stranger:reaction", onReaction);
+			socket.off("stranger:queueStats", onQueueStats);
 			socket.off("webrtc:offer", onOffer);
 			socket.off("webrtc:answer", onAnswer);
 			socket.off("webrtc:ice-candidate", onIce);
 			socket.off("stranger:addFriendError", onAddFriendError);
-			socket.off("stranger:reportSuccess", onReportSuccess);
-			socket.off("stranger:reportError", onReportError);
+			socket.off("stranger:report_success", onReportSuccess);
+			socket.off("stranger:report_error", onReportError);
 		};
 	}, [socket, authUser, navigate, addMessage, closeConnection, startCall, handleOffer, handleAnswer, handleIceCandidate, fetchFriendData]);
 
@@ -1142,15 +1130,22 @@ const StrangerChatPage = () => {
 							});
 						}
 
-						closeConnection();
-
-						// Show modal explanation or redirect
-						// specific handling for explicit vs doubtful
-						if (analysis.violationType === 'explicit') {
-							navigate("/"); // Kick out completely
+						// show modal or redirect
+						// Only strict ban for explicit content with high confidence
+						if (analysis.violationType === 'explicit' && analysis.highestRisk.probability > 0.90) {
+							// Strict ban
+							closeConnection();
+							navigate("/");
+							toast.error("🚫 BANNED: Explicit content detected.");
 						} else {
-							setStatus("error"); // Soft kick to error screen
-							setPermissionErrorMessage("Your video feed was flagged as inappropriate. Please ensure you are fully clothed and in a well-lit environment.");
+							// Soft warning for lower confidence or suggestive content
+							// setStatus("error"); // Optional: soft kick to error screen
+
+							// Just warn the user without disconnecting
+							toast(
+								"Your video may contain inappropriate content. Please ensure you are fully clothed.",
+								{ icon: "⚠️", duration: 4000 }
+							);
 						}
 					}
 				}
@@ -1186,12 +1181,18 @@ const StrangerChatPage = () => {
 							}
 
 							// Disconnect immediately
-							setTimeout(() => {
-								closeConnection();
-								// Optionally auto-skip? For now just close.
-								setStatus("waiting"); // Go back to waiting
-								socket.emit("stranger:joinQueue", { userId: authUser.id }); // optional: auto next
-							}, 500); // 500ms delay to ensure report sends
+							// Disconnect immediately ONLY if high confidence
+							if (analysis.violationType === 'explicit' && analysis.highestRisk.probability > 0.90) {
+								setTimeout(() => {
+									closeConnection();
+									setStatus("waiting");
+									socket.emit("stranger:joinQueue", { userId: authUser.id });
+									toast.error("Partner banned: Explicit content.");
+								}, 500);
+							} else {
+								// Just warn for suspicious content
+								toast("⚠️ Partner video flagged as potentially inappropriate.", { icon: "🛡️" });
+							}
 
 							reportTimeoutRef.current = setTimeout(() => {
 								reportTimeoutRef.current = null;
@@ -1407,7 +1408,7 @@ const StrangerChatPage = () => {
 	}, [friendStatus]);
 
 	return (
-		<div className="fixed inset-0 flex flex-col bg-gradient-to-br from-base-300 via-base-200 to-base-300 overflow-hidden">
+		<div className="fixed w-full h-[100dvh] flex flex-col bg-gradient-to-br from-base-300 via-base-200 to-base-300 overflow-hidden">
 			{/* Lobby / Start Screen */}
 			{(status === "lobby" || status === "error") && (
 				<LobbyView
@@ -1416,10 +1417,10 @@ const StrangerChatPage = () => {
 				/>
 			)}
 
-			{/* Permission Error Toast / Overlay - Handled by Lobby but also show backup if needed */}
+			{/* Permission Error - Adjusted z-index and top position */}
 			{status === "error" && hasPermissionError && (
-				<div className="absolute top-20 left-0 right-0 z-50 px-4">
-					<div className="alert alert-error shadow-lg max-w-lg mx-auto">
+				<div className="absolute top-20 left-0 right-0 z-[60] px-4 pointer-events-none">
+					<div className="alert alert-error shadow-lg max-w-lg mx-auto pointer-events-auto">
 						<div className="flex flex-col">
 							<span className="font-bold flex items-center gap-2">
 								<VideoOff className="w-5 h-5" />
@@ -1434,12 +1435,12 @@ const StrangerChatPage = () => {
 				</div>
 			)}
 
-			{/* Loading State */}
+			{/* Loading */}
 			{(status === "initializing" && !hasPermissionError) && <LoadingSkeleton />}
 
 			{/* Main Video Container */}
 			<div className="flex-1 relative overflow-hidden">
-				{/* Remote Video - Full Screen with Performance Optimization */}
+				{/* Remote Video */}
 				<video
 					ref={remoteVideoRef}
 					autoPlay
@@ -1455,24 +1456,24 @@ const StrangerChatPage = () => {
 					}}
 				/>
 
-				{/* Waiting State Overlay */}
+				{/* Waiting Overlay */}
 				{status === "waiting" && (
-					<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-black/50 via-gray-900/30 to-black/50 backdrop-blur-md">
-						<div className="text-center space-y-6 p-8">
+					<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-black/50 via-gray-900/30 to-black/50 backdrop-blur-md px-4">
+						<div className="text-center space-y-6 p-8 w-full max-w-sm">
 							<div className="relative">
-								<div className="w-24 h-24 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>
-								<Users className="absolute inset-0 m-auto w-8 h-8 text-yellow-400" />
+								<div className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>
+								<Users className="absolute inset-0 m-auto w-6 h-6 sm:w-8 sm:h-8 text-yellow-400" />
 							</div>
 
 							<div className="space-y-2">
-								<h2 className="text-3xl font-bold luxury-gradient-text animate-luxury-shimmer">
-									Finding Your Match
+								<h2 className="text-2xl sm:text-3xl font-bold luxury-gradient-text animate-luxury-shimmer">
+									Finding Match
 								</h2>
-								<p className="text-white/80">
+								<p className="text-white/80 text-sm sm:text-base">
 									Connecting you with someone amazing...
 								</p>
 								{onlineCount > 0 && (
-									<p className="text-sm text-white/60">
+									<p className="text-xs sm:text-sm text-white/60">
 										{onlineCount} people online
 									</p>
 								)}
@@ -1492,12 +1493,12 @@ const StrangerChatPage = () => {
 					</div>
 				)}
 
-				{/* Floating Reactions */}
+				{/* Floating Reactions - Move up slightly */}
 				<div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
 					{reactions.map((reaction) => (
 						<div
 							key={reaction.id}
-							className="absolute bottom-0 animate-float-up text-4xl"
+							className="absolute bottom-24 sm:bottom-0 animate-float-up text-4xl"
 							style={{
 								left: `${reaction.x}%`,
 								textShadow: '0 2px 8px rgba(0,0,0,0.5)',
@@ -1508,29 +1509,29 @@ const StrangerChatPage = () => {
 					))}
 				</div>
 
-				{/* Top Status Bar */}
-				<div className="absolute top-0 left-0 right-0 z-40 bg-gradient-to-b from-black/50 to-transparent">
-					<div className="flex items-center justify-between p-4">
-						{/* Left: AI Protection & Connection */}
-						<div className="flex items-center gap-3">
+				{/* Top Status Bar - Compact on Mobile */}
+				<div className="absolute top-0 left-0 right-0 z-40 bg-gradient-to-b from-black/60 to-transparent pb-4">
+					<div className="flex items-center justify-between p-3 sm:p-4">
+						{/* Left: AI/Connection */}
+						<div className="flex items-center gap-2">
 							{MODERATION_CONFIG.enabled && (
-								<div className={`badge gap-2 ${aiModerationActive ? 'badge-success' : 'badge-warning'}`}>
+								<div className={`badge badge-sm sm:badge-md gap-1 ${aiModerationActive ? 'badge-success' : 'badge-warning'}`}>
 									<Shield className="w-3 h-3" />
 									<span className="hidden sm:inline">
 										{aiModerationActive ? 'Protected' : 'Loading'}
 									</span>
 								</div>
 							)}
-
+							{/* Connection indicator simplified on mobile */}
 							{status === "connected" && (
-								<ConnectionIndicator quality={connectionQuality} isConnected={isConnected} />
+								<div className={`w-2 h-2 rounded-full ${connectionQuality === 'good' ? 'bg-green-500' : connectionQuality === 'poor' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
 							)}
 						</div>
 
 						{/* Center: Partner Info */}
 						{status === "connected" && partnerUserData && (
-							<div className="flex items-center gap-3 bg-black/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/20">
-								<div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white/50">
+							<div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 max-w-[150px] sm:max-w-none justify-center">
+								<div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full overflow-hidden border border-white/50 shrink-0">
 									{partnerUserData.profilePic ? (
 										<img
 											src={partnerUserData.profilePic}
@@ -1539,24 +1540,19 @@ const StrangerChatPage = () => {
 										/>
 									) : (
 										<div className="w-full h-full bg-gray-500 flex items-center justify-center">
-											<Users className="w-4 h-4 text-white" />
+											<Users className="w-3 h-3 text-white" />
 										</div>
 									)}
 								</div>
-								<div className="flex items-center gap-2">
-									<span className="font-semibold text-white text-sm">
-										{partnerUserData.displayName || "Stranger"}
-									</span>
-									{partnerUserData.isVerified && (
-										<VerifiedBadge size="sm" />
-									)}
-								</div>
-								{chatTime > 0 && (
-									<div className="flex items-center gap-1 text-white/70 text-xs">
-										<Clock className="w-3 h-3" />
+								<span className="font-semibold text-white text-xs sm:text-sm truncate">
+									{partnerUserData.displayName || "Stranger"}
+								</span>
+								{/* {chatTime > 0 && (
+									<div className="flex items-center gap-0.5 text-white/70 text-[10px] sm:text-xs shrink-0">
+										<Clock className="w-2.5 h-2.5" />
 										{formatTime(chatTime)}
 									</div>
-								)}
+								)} */}
 							</div>
 						)}
 
@@ -1566,11 +1562,11 @@ const StrangerChatPage = () => {
 								<>
 									<button
 										onClick={handleChatToggle}
-										className="btn btn-circle btn-sm bg-black/30 border-white/20 text-white hover:bg-black/50 relative"
+										className="btn btn-circle btn-sm bg-black/40 border-white/20 text-white hover:bg-black/60 relative"
 									>
 										<MessageCircle className="w-4 h-4" />
 										{hasUnreadMessages && (
-											<div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
+											<div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white animate-pulse"></div>
 										)}
 									</button>
 									<button
@@ -1585,9 +1581,9 @@ const StrangerChatPage = () => {
 					</div>
 				</div>
 
-				{/* Self Video - Picture in Picture */}
-				<div className="absolute top-20 right-4 z-30">
-					<div className="relative w-32 h-44 sm:w-36 sm:h-48 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/30 bg-black/20 backdrop-blur-sm">
+				{/* Self Video - Smaller & repositioned on mobile */}
+				<div className="absolute top-16 right-3 sm:top-20 sm:right-4 z-30">
+					<div className="relative w-24 h-36 sm:w-36 sm:h-48 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-white/30 bg-black/20 backdrop-blur-sm transition-all duration-300">
 						<video
 							ref={localVideoRef}
 							autoPlay
@@ -1600,23 +1596,22 @@ const StrangerChatPage = () => {
 								backfaceVisibility: "hidden"
 							}}
 						/>
-
-						{/* Video controls overlay */}
-						<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+						{/* Video controls */}
+						<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 sm:p-2">
 							<div className="flex items-center justify-between">
-								<span className="text-white text-xs font-medium">You</span>
+								<span className="text-white text-[10px] sm:text-xs font-medium">You</span>
 								<div className="flex gap-1">
 									<button
 										onClick={toggleVideo}
-										className={`btn btn-circle btn-xs ${isVideoMuted ? 'btn-error' : 'btn-ghost'} text-white`}
+										className={`btn btn-circle btn-xs ${isVideoMuted ? 'btn-error' : 'btn-ghost'} text-white w-5 h-5 min-h-0 sm:w-6 sm:h-6`}
 									>
-										{isVideoMuted ? <VideoOff className="w-3 h-3" /> : <Video className="w-3 h-3" />}
+										{isVideoMuted ? <VideoOff className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : <Video className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
 									</button>
 									<button
 										onClick={toggleAudio}
-										className={`btn btn-circle btn-xs ${isAudioMuted ? 'btn-error' : 'btn-ghost'} text-white`}
+										className={`btn btn-circle btn-xs ${isAudioMuted ? 'btn-error' : 'btn-ghost'} text-white w-5 h-5 min-h-0 sm:w-6 sm:h-6`}
 									>
-										{isAudioMuted ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+										{isAudioMuted ? <MicOff className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : <Mic className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
 									</button>
 								</div>
 							</div>
@@ -1627,16 +1622,16 @@ const StrangerChatPage = () => {
 				{/* Chat Messages */}
 				<ChatMessages messages={tempMessages} isVisible={showChatMessages} />
 
-				{/* Message Input */}
+				{/* Message Input - Adjusted position */}
 				{status === "connected" && showChatMessages && (
-					<div className="absolute left-4 bottom-20 max-w-xs z-50 message-input-container">
+					<div className="absolute left-2 right-2 bottom-20 sm:left-4 sm:bottom-20 sm:w-auto sm:max-w-xs z-50 message-input-container">
 						<form onSubmit={handleSendMessage} className="flex gap-2 message-input-container">
 							<input
 								type="text"
 								value={currentMessage}
 								onChange={(e) => setCurrentMessage(e.target.value)}
-								placeholder="Type a message..."
-								className="input input-sm input-bordered flex-1 bg-base-100/95 backdrop-blur-md border-base-300 focus:border-primary focus:outline-none shadow-lg"
+								placeholder="Type..."
+								className="input input-sm input-bordered flex-1 bg-base-100/95 backdrop-blur-md border-base-300 focus:border-primary focus:outline-none shadow-lg text-sm"
 								maxLength={200}
 								autoComplete="off"
 								autoFocus={showChatMessages}
@@ -1644,58 +1639,61 @@ const StrangerChatPage = () => {
 							<button
 								type="submit"
 								disabled={!currentMessage.trim()}
-								className="btn btn-sm btn-primary shadow-lg hover:shadow-xl transition-all duration-200"
+								className="btn btn-sm btn-primary shadow-lg"
 							>
-								<Send className="w-4 h-4" />
+								<Send className="w-3 h-3 sm:w-4 sm:h-4" />
 							</button>
 						</form>
 					</div>
 				)}
 
-				{/* Reaction Buttons */}
+				{/* Reaction Buttons - Scroller on mobile */}
 				{status === "connected" && (
-					<div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-30">
-						<div className="flex gap-2 bg-black/30 backdrop-blur-md rounded-full px-4 py-2 border border-white/20">
-							{['❤️', '👍', '😂', '🎉', '😊', '🔥'].map((emoji) => (
-								<button
-									key={emoji}
-									onClick={() => sendReaction(emoji)}
-									className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20 active:scale-90 transition-all duration-200"
-								>
-									<span className="text-2xl">{emoji}</span>
-								</button>
-							))}
+					<div className="absolute bottom-24 sm:bottom-32 left-0 right-0 z-30 px-4">
+						<div className="flex justify-center">
+							<div className="flex gap-2 sm:gap-2 bg-black/20 backdrop-blur-md rounded-full px-3 py-1.5 border border-white/10 overflow-x-auto no-scrollbar max-w-full">
+								{['❤️', '👍', '😂', '🎉', '😊', '🔥'].map((emoji) => (
+									<button
+										key={emoji}
+										onClick={() => sendReaction(emoji)}
+										className="w-8 h-8 sm:w-10 sm:h-10 flex shrink-0 items-center justify-center rounded-full hover:bg-white/20 active:scale-90 transition-all duration-200"
+									>
+										<span className="text-xl sm:text-2xl">{emoji}</span>
+									</button>
+								))}
+							</div>
 						</div>
 					</div>
 				)}
 
-				{/* Bottom Control Bar */}
-				<div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black/70 to-transparent pointer-events-none">
-					<div className="flex items-center justify-center gap-4 p-4 pb-6 pointer-events-auto">
+				{/* Bottom Control Bar - Responsive Buttons */}
+				<div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none pb-safe">
+					<div className="flex items-center justify-center gap-2 sm:gap-4 p-3 sm:p-4 pb-4 sm:pb-6 pointer-events-auto w-full max-w-lg mx-auto">
 						{/* Skip Button */}
 						<button
 							onClick={handleSkip}
 							disabled={status === "initializing"}
-							className={`btn btn-lg gap-3 border-none shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 font-semibold ${status === "waiting"
-								? "bg-gradient-to-r from-gray-700 via-gray-800 to-gray-900 text-white hover:from-gray-600 hover:via-gray-700 hover:to-gray-800"
-								: "bg-gradient-to-r from-primary to-primary-focus text-primary-content hover:from-primary-focus hover:to-primary"
+							className={`btn btn-md sm:btn-lg flex-1 gap-2 border-none shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 font-semibold ${status === "waiting"
+								? "bg-gray-800 text-white hover:bg-gray-700"
+								: "bg-primary text-primary-content hover:bg-primary-focus"
 								}`}
 						>
-							<SkipForward className="w-5 h-5" />
-							<span className="font-bold">
+							<SkipForward className="w-4 h-4 sm:w-5 sm:h-5" />
+							<span className="font-bold text-sm sm:text-base">
 								{status === "connected" ? "Skip" : status === "waiting" ? "Searching..." : "Start"}
 							</span>
 						</button>
 
-						{/* Add Friend Button - Only show if both users allow friend requests */}
+						{/* Add Friend - Conditional */}
 						{status === "connected" && partnerUserId && privacySettings.allowFriendRequests && partnerUserData?.allowFriendRequests && (
 							<button
 								onClick={handleAddFriend}
 								disabled={getFriendButtonConfig.disabled}
-								className={`btn btn-lg gap-3 ${getFriendButtonConfig.className} shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105`}
+								className={`btn btn-md sm:btn-lg aspect-square sm:aspect-auto sm:px-6 ${getFriendButtonConfig.className} shadow-lg active:scale-95`}
+								title={getFriendButtonConfig.text}
 							>
-								<getFriendButtonConfig.icon className="w-5 h-5" />
-								<span className="font-semibold hidden sm:inline">
+								<getFriendButtonConfig.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+								<span className="hidden sm:inline font-semibold">
 									{getFriendButtonConfig.text}
 								</span>
 							</button>
@@ -1704,14 +1702,15 @@ const StrangerChatPage = () => {
 						{/* Leave Button */}
 						<button
 							onClick={() => navigate("/")}
-							className="btn btn-lg btn-outline btn-error gap-3 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+							className="btn btn-md sm:btn-lg flex-1 btn-outline btn-error gap-2 shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 bg-black/20 backdrop-blur-sm"
 						>
-							<PhoneOff className="w-5 h-5" />
-							<span className="font-semibold">Leave</span>
+							<PhoneOff className="w-4 h-4 sm:w-5 sm:h-5" />
+							<span className="font-semibold text-sm sm:text-base">Leave</span>
 						</button>
 					</div>
 				</div>
 			</div>
+
 
 			{/* Report Modal */}
 			<ReportModal
@@ -1723,7 +1722,7 @@ const StrangerChatPage = () => {
 			/>
 
 			{/* Custom Styles */}
-			<style jsx>{`
+			<style>{`
 				@keyframes float-up {
 					0% {
 						transform: translateY(0) scale(0);

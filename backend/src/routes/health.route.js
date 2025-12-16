@@ -1,8 +1,8 @@
 import express from 'express';
-import { 
-	getSystemHealth, 
-	getProcessInfo, 
-	getDatabaseHealth, 
+import {
+	getSystemHealth,
+	getProcessInfo,
+	getDatabaseHealth,
 	getWebRTCStats,
 	getSocketStats,
 	getRedisStats,
@@ -18,6 +18,16 @@ const router = express.Router();
 // Public health check endpoint
 router.get('/ping', (req, res) => {
 	res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Basic info at /
+router.get('/', (req, res) => {
+	res.json({
+		status: 'healthy',
+		service: 'z-app-backend',
+		version: '2.0.0',
+		environment: process.env.NODE_ENV || 'development'
+	});
 });
 
 // Protected admin endpoints

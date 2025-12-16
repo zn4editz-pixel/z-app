@@ -4,7 +4,7 @@
  */
 
 /**
- * Get message status display information with enhanced online/offline logic
+ * Get message status display information - WhatsApp Style
  * @param {Object} message - The message object
  * @param {boolean} isMyMessage - Whether the message is from current user
  * @param {boolean} isReceiverOnline - Whether the receiver is online
@@ -17,77 +17,45 @@ export const getMessageStatusInfo = (message, isMyMessage, isReceiverOnline, the
   }
 
   const status = message.status || 'sent';
-  // ✅ ROBUST CHECK: Check all possible properties for read/delivered status
   const isRead = message.readAt || message.isRead || status === 'read';
   const isDelivered = message.deliveredAt || message.isDelivered || status === 'delivered' || isRead;
 
-  // ✅ ENHANCED: Priority order - Read > Delivered > Sent based on online status
-
-  // If message is read - show colored double tick (Theme Primary Color)
+  // 🔵 READ: Blue Double Ticks (Message was viewed)
   if (isRead) {
     return {
       show: true,
       type: 'double-tick',
-      className: 'text-primary', // ✅ Tailwind class for guaranteed theme match
-      animate: 'animate-check-mark-read',
-      tooltip: 'Read'
+      className: 'text-blue-500',
+      color: '#3B82F6', // Blue color
+      animate: 'animate-pulse',
+      tooltip: 'Read',
+      icon: '✓✓'
     };
   }
 
-  // If message is delivered OR receiver is online - show gray double tick
-  if (isDelivered || (isReceiverOnline && status !== 'sending' && status !== 'failed')) {
+  // ⚫ DELIVERED: Gray Double Ticks (Recipient is online, message delivered)
+  if (isDelivered || (isReceiverOnline && status !== 'sent')) {
     return {
       show: true,
       type: 'double-tick',
-      className: 'text-base-content/50',
-      animate: 'animate-check-mark',
-      tooltip: 'Delivered'
+      className: 'text-gray-400',
+      color: '#9CA3AF', // Gray color
+      animate: '',
+      tooltip: 'Delivered',
+      icon: '✓✓'
     };
   }
 
-  // Handle specific statuses
-  switch (status) {
-    case 'sending':
-      return {
-        show: true,
-        type: 'clock',
-        className: 'text-base-content/40',
-        animate: 'animate-pulse',
-        tooltip: 'Sending...'
-      };
-
-    case 'failed':
-      return {
-        show: true,
-        type: 'clock',
-        className: 'text-error',
-        animate: 'animate-pulse',
-        tooltip: 'Failed to send'
-      };
-
-    case 'sent':
-    default:
-      // ✅ FIXED: If previously delivered (double tick), keep it that way even if user goes offline
-      // Logic: deliveredAt exists OR status says delivered OR receiver is currently online
-      if (isDelivered || message.status === 'delivered' || isReceiverOnline) {
-        return {
-          show: true,
-          type: 'double-tick',
-          className: 'text-base-content/50',
-          animate: 'animate-check-mark',
-          tooltip: 'Delivered'
-        };
-      }
-
-      // Only show single tick if truly not delivered and user is offline
-      return {
-        show: true,
-        type: 'single-tick',
-        className: 'text-base-content/40',
-        animate: '',
-        tooltip: 'Sent'
-      };
-  }
+  // ⚫ SENT: Gray Single Tick (Message sent but recipient offline or not delivered)
+  return {
+    show: true,
+    type: 'single-tick',
+    className: 'text-gray-400',
+    color: '#9CA3AF', // Gray color
+    animate: '',
+    tooltip: 'Sent',
+    icon: '✓'
+  };
 };
 
 /**
