@@ -1,0 +1,272 @@
+#!/usr/bin/env node
+
+// PREVIEW IMAGE GENERATOR
+// Generates a high-quality 1200x630 preview image for social media sharing
+
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+console.log('🎨 Generating Z-APP preview image...');
+
+// Create SVG version of the preview (scalable and high quality)
+const createSVGPreview = () => {
+  const svg = `
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0f23;stop-opacity:1" />
+      <stop offset="25%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#16213e;stop-opacity:1" />
+      <stop offset="75%" style="stop-color:#0f3460;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#533483;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="titleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+    </linearGradient>
+    
+    <radialGradient id="orb1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:0.4" />
+      <stop offset="70%" style="stop-color:#764ba2;stop-opacity:0.2" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:0" />
+    </radialGradient>
+    
+    <radialGradient id="orb2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#a855f7;stop-opacity:0.4" />
+      <stop offset="70%" style="stop-color:#8b5cf6;stop-opacity:0.2" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0" />
+    </radialGradient>
+    
+    <!-- Filters -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Grid Pattern -->
+  <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+    <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+  </pattern>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  
+  <!-- Background Orbs -->
+  <circle cx="75" cy="75" r="150" fill="url(#orb1)" opacity="0.6"/>
+  <circle cx="1100" cy="200" r="100" fill="url(#orb2)" opacity="0.5"/>
+  <circle cx="275" cy="555" r="75" fill="url(#orb1)" opacity="0.4"/>
+  <circle cx="1000" cy="530" r="200" fill="url(#orb2)" opacity="0.3"/>
+  
+  <!-- Connection Lines -->
+  <line x1="200" y1="115" x2="400" y2="135" stroke="url(#logoGradient)" stroke-width="1" opacity="0.5"/>
+  <line x1="950" y1="480" x2="800" y2="455" stroke="url(#logoGradient)" stroke-width="1" opacity="0.5"/>
+  
+  <!-- Sparkles -->
+  <circle cx="280" cy="80" r="2" fill="white" opacity="0.8"/>
+  <circle cx="1020" cy="150" r="2" fill="white" opacity="0.6"/>
+  <circle cx="225" cy="550" r="2" fill="white" opacity="0.9"/>
+  <circle cx="950" cy="200" r="2" fill="white" opacity="0.7"/>
+  <circle cx="600" cy="200" r="2" fill="white" opacity="0.5"/>
+  
+  <!-- Free Badge -->
+  <rect x="1070" y="30" width="100" height="36" rx="18" fill="#10b981" filter="url(#shadow)"/>
+  <text x="1120" y="52" text-anchor="middle" fill="white" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700">FREE</text>
+  
+  <!-- Logo -->
+  <rect x="530" y="180" width="140" height="140" rx="35" fill="url(#logoGradient)" filter="url(#glow)"/>
+  <text x="600" y="275" text-anchor="middle" fill="white" font-family="Inter, Arial, sans-serif" font-size="80" font-weight="900">Z</text>
+  
+  <!-- Title -->
+  <text x="600" y="380" text-anchor="middle" fill="url(#titleGradient)" font-family="Inter, Arial, sans-serif" font-size="64" font-weight="900" filter="url(#shadow)">Z-APP</text>
+  
+  <!-- Subtitle -->
+  <text x="600" y="420" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="500">Connect Instantly - Real-time Chat &amp; Video Calling</text>
+  
+  <!-- Feature Pills -->
+  <g transform="translate(200, 480)">
+    <!-- Instant Chat -->
+    <rect x="0" y="0" width="160" height="44" rx="22" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+    <circle cx="22" cy="22" r="16" fill="rgba(255,255,255,0.2)"/>
+    <text x="32" y="27" fill="white" font-family="Arial" font-size="16">💬</text>
+    <text x="50" y="28" fill="white" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600">Instant Chat</text>
+    
+    <!-- HD Video Calls -->
+    <rect x="180" y="0" width="180" height="44" rx="22" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+    <circle cx="202" cy="22" r="16" fill="rgba(255,255,255,0.2)"/>
+    <text x="212" y="27" fill="white" font-family="Arial" font-size="16">📹</text>
+    <text x="230" y="28" fill="white" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600">HD Video Calls</text>
+    
+    <!-- Secure & Private -->
+    <rect x="380" y="0" width="190" height="44" rx="22" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+    <circle cx="402" cy="22" r="16" fill="rgba(255,255,255,0.2)"/>
+    <text x="412" y="27" fill="white" font-family="Arial" font-size="16">🔒</text>
+    <text x="430" y="28" fill="white" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600">Secure &amp; Private</text>
+    
+    <!-- Lightning Fast -->
+    <rect x="590" y="0" width="170" height="44" rx="22" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+    <circle cx="612" cy="22" r="16" fill="rgba(255,255,255,0.2)"/>
+    <text x="622" y="27" fill="white" font-family="Arial" font-size="16">⚡</text>
+    <text x="640" y="28" fill="white" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600">Lightning Fast</text>
+  </g>
+</svg>`;
+
+  return svg;
+};
+
+// Save SVG file
+const svgContent = createSVGPreview();
+const svgPath = path.join(__dirname, 'frontend/public/z-app-preview.svg');
+fs.writeFileSync(svgPath, svgContent);
+
+console.log('✅ Created SVG preview: frontend/public/z-app-preview.svg');
+
+// Create instructions for converting to PNG
+const instructions = `
+# 📸 PREVIEW IMAGE GENERATION COMPLETE
+
+## ✅ Files Created:
+- \`frontend/public/z-app-preview.html\` - Interactive preview (for testing)
+- \`frontend/public/z-app-preview.svg\` - High-quality vector image
+
+## 🚀 Next Steps:
+
+### Option 1: Use Online Converter (Recommended)
+1. Go to https://cloudconvert.com/svg-to-png
+2. Upload \`frontend/public/z-app-preview.svg\`
+3. Set dimensions: 1200x630 pixels
+4. Download the PNG
+5. Upload to Cloudinary or your image host
+6. Update the meta tags with the new URL
+
+### Option 2: Use Command Line (if you have ImageMagick)
+\`\`\`bash
+convert frontend/public/z-app-preview.svg -resize 1200x630 frontend/public/z-app-preview.png
+\`\`\`
+
+### Option 3: Use Browser Screenshot
+1. Open \`frontend/public/z-app-preview.html\` in browser
+2. Set browser window to exactly 1200x630
+3. Take screenshot
+4. Save as PNG
+
+## 📱 Social Media Specifications:
+- **Facebook/LinkedIn**: 1200x630px (1.91:1 ratio) ✅
+- **Twitter**: 1200x675px (16:9 ratio) - crop slightly
+- **Discord**: 1200x630px ✅
+
+## 🔗 Update Meta Tags:
+Replace the og:image URL in \`frontend/index.html\` with your hosted image URL.
+
+The preview will look professional and attract more clicks! 🎨
+`;
+
+console.log(instructions);
+
+// Also create a simple fallback image generator
+const createFallbackCSS = () => `
+/* FALLBACK PREVIEW STYLES */
+/* Use this if you need a simple CSS-only version */
+
+.z-app-preview {
+  width: 1200px;
+  height: 630px;
+  background: linear-gradient(135deg, #0f0f23 0%, #533483 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', Arial, sans-serif;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.z-app-preview::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 20%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.3) 0%, transparent 50%);
+  z-index: 1;
+}
+
+.z-app-preview-content {
+  text-align: center;
+  z-index: 2;
+  position: relative;
+}
+
+.z-app-preview-logo {
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 30px;
+  font-size: 72px;
+  font-weight: 900;
+  color: white;
+  box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+}
+
+.z-app-preview-title {
+  font-size: 56px;
+  font-weight: 900;
+  margin-bottom: 15px;
+  background: linear-gradient(135deg, #ffffff, #e2e8f0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.z-app-preview-subtitle {
+  font-size: 24px;
+  font-weight: 500;
+  opacity: 0.9;
+  margin-bottom: 30px;
+}
+
+.z-app-preview-features {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.z-app-preview-feature {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+}
+`;
+
+fs.writeFileSync(path.join(__dirname, 'z-app-preview-fallback.css'), createFallbackCSS());
+console.log('✅ Created fallback CSS: z-app-preview-fallback.css');
