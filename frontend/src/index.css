@@ -1189,41 +1189,12 @@ body.react-loaded {
 
 /* Simple Message Entry Animation */
 /* Smooth message appearance animation */
-/* ===== INSTAGRAM-STYLE MESSAGE ANIMATIONS ===== */
+/* ===== NO MESSAGE ANIMATIONS - INSTANT APPEARANCE ===== */
 
-/* INSTANT message slide-in from bottom (like Instagram/WhatsApp) */
-@keyframes instagram-message-enter {
-  0% {
-    opacity: 0.85;
-    transform: translateY(6px) scale(0.99);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* INSTANT message slide-in for sent messages (ultra fast) */
-@keyframes instagram-message-sent {
-  0% {
-    opacity: 0.9;
-    transform: translateY(4px) scale(0.995);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Instagram-style INSTANT message animations - NO FLICKER */
-.animate-message-enter {
-  animation: instagram-message-enter 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  opacity: 0.85; /* Start with high opacity to prevent flicker */
-}
-
-.animate-message-sent {
-  animation: instagram-message-sent 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  opacity: 0.9; /* Start with very high opacity for sent messages */
+/* Messages appear instantly with no animations */
+.message-instant {
+  opacity: 1;
+  transform: none;
 }
 
 /* Prevent layout shifts in chat container */
@@ -1236,30 +1207,104 @@ body.react-loaded {
   transition: none !important;
   transform: translateZ(0);
 }
-/* ULTRA-FAST animation for optimistic messages (sent messages) */
-@keyframes ultra-fast-sent {
-  0% {
-    opacity: 0.95;
-    transform: translateY(2px) scale(0.998);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.animate-message-optimistic {
-  animation: ultra-fast-sent 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  opacity: 0.95;
-}
-
-/* Prevent any layout shift during message animation */
+/* No animations - instant message appearance */
 .message-container-stable {
   contain: layout style;
-  will-change: transform, opacity;
+}
+/* ===== INSTAGRAM-STYLE REPLY ENHANCEMENTS ===== */
+
+/* Instagram-style highlight flash for replied messages */
+@keyframes instagram-highlight-flash {
+  0% {
+    background-color: transparent;
+    transform: scale(1);
+    box-shadow: none;
+  }
+  15% {
+    background-color: hsl(var(--p) / 0.15);
+    transform: scale(1.02);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+  30% {
+    background-color: hsl(var(--p) / 0.25);
+    transform: scale(1.01);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  }
+  60% {
+    background-color: hsl(var(--p) / 0.12);
+    transform: scale(1.005);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+    box-shadow: none;
+  }
 }
 
-/* Smooth message bubble appearance */
-.message-bubble-instant {
-  animation: professional-message-fade 0.1s ease-out forwards;
+.instagram-highlight-flash {
+  animation: instagram-highlight-flash 2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 1.5rem;
+  position: relative;
+  z-index: 20;
+}
+
+/* Instagram-style reply preview */
+.instagram-reply-preview {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.instagram-reply-preview:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+/* Line clamp utility for reply text */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Smooth transitions for reply interactions */
+.reply-smooth-transition {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Enhanced reply preview hover effect */
+.instagram-reply-preview:hover {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Responsive reply preview */
+@media (max-width: 640px) {
+  .instagram-reply-preview {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .instagram-reply-preview .pl-3 {
+    padding-left: 0.75rem;
+  }
+}
+/* ===== WORKING REPLY HIGHLIGHT EFFECT ===== */
+.message-highlight {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  border-radius: 1rem !important;
+  transform: scale(1.02) !important;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2) !important;
+  transition: all 0.3s ease !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.message-highlight-fade {
+  background-color: transparent !important;
+  transform: scale(1) !important;
+  box-shadow: none !important;
+  transition: all 0.5s ease !important;
 }

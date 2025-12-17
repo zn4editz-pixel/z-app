@@ -260,12 +260,35 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
             <div
               className="flex items-start gap-3 p-3 bg-gradient-to-r from-base-200/80 to-base-200/60 rounded-2xl border border-base-300/50 shadow-sm backdrop-blur-sm cursor-pointer hover:bg-gradient-to-r hover:from-base-200/90 hover:to-base-200/70 transition-all duration-200 active:scale-[0.98]"
               onClick={() => {
-                // ✅ CLICK TO SCROLL: Jump to original message
+                // ✅ INSTAGRAM-STYLE: Jump to original message with enhanced highlight
+                
+                // Add haptic feedback
+                if (navigator.vibrate) navigator.vibrate(30);
+                
                 const replyElement = document.getElementById(`message-${replyingTo.id}`);
                 if (replyElement) {
-                  replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  replyElement.classList.add('highlight-flash');
-                  setTimeout(() => replyElement.classList.remove('highlight-flash'), 1500);
+                  // Smooth scroll to the message
+                  replyElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center',
+                    inline: 'nearest'
+                  });
+                  
+                  // Instagram-style highlight effect
+                  // Simple working highlight
+                  replyElement.classList.add('message-highlight');
+                  setTimeout(() => {
+                    replyElement.classList.remove('message-highlight');
+                    replyElement.classList.add('message-highlight-fade');
+                    setTimeout(() => {
+                      replyElement.classList.remove('message-highlight-fade');
+                    }, 500);
+                  }, 1500);
+                } else {
+                  toast.error("Message not found in current chat", {
+                    icon: "📍",
+                    duration: 2000
+                  });
                 }
               }}
             >

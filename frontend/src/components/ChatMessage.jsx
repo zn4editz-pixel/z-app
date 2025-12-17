@@ -438,7 +438,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction, isNewMessage = fals
       <div
         ref={messageRef}
         id={`message-${message.id}`}
-        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'message-with-reactions' : 'mb-3'} relative w-full max-w-full px-3 ${message.tempId ? 'animate-message-optimistic' : (isMyMessage ? 'animate-message-sent' : 'animate-message-enter')} message-no-flicker message-container-stable message-scroll-item`}
+        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'message-with-reactions' : 'mb-3'} relative w-full max-w-full px-3 message-scroll-item`}
       >
         <div
           className="flex items-end gap-2 relative min-w-0"
@@ -458,7 +458,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction, isNewMessage = fals
           )}
 
           <div
-            className="message-bubble-container relative max-w-full message-bubble-hover"
+            className="message-bubble-container relative max-w-full"
             style={{
               WebkitTapHighlightColor: 'transparent',
               transform: `translateX(${swipeOffset}px)`,
@@ -551,7 +551,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction, isNewMessage = fals
             ) : (
               /* Message Bubble (for text, voice, or image+text) - NO BUBBLE for emoji-only or number-only */
               <div
-                className={(isEmojiOnly || isNumberOnly) ? "" : `relative px-4 py-3 text-sm shadow-sm message-bubble-professional message-bubble-instagram message-bubble-instant ${isMyMessage
+                className={(isEmojiOnly || isNumberOnly) ? "" : `relative px-4 py-3 text-sm shadow-sm message-bubble-professional ${isMyMessage
                   ? "bg-gradient-to-br from-primary to-primary/95 text-primary-content rounded-3xl rounded-br-lg"
                   : "bg-base-200/80 backdrop-blur-sm text-base-content rounded-3xl rounded-bl-lg border border-base-300/20"
                   }`}
@@ -567,47 +567,91 @@ const ChatMessage = ({ message, onReply, onFloatingReaction, isNewMessage = fals
                 {/* Reply To Message - Instagram/WhatsApp Style Quote Box */}
                 {message.replyTo && (
                   <div
-                    className={`mb-2 rounded-lg p-2 cursor-pointer active:scale-[0.98] transition-all overflow-hidden relative ${isMyMessage
-                      ? "bg-black/10 dark:bg-black/20"
-                      : "bg-base-content/5"
+                    className={`mb-2 rounded-xl p-3 cursor-pointer active:scale-[0.98] transition-all duration-200 overflow-hidden relative instagram-reply-preview ${isMyMessage
+                      ? "bg-black/8 dark:bg-black/15 hover:bg-black/12 dark:hover:bg-black/20"
+                      : "bg-base-content/4 hover:bg-base-content/8 border border-base-content/10"
                       }`}
                     onClick={(e) => {
                       e.stopPropagation(); // Prevent bubbling
+                      
+                      // Add haptic feedback
+                      if (navigator.vibrate) navigator.vibrate(30);
+                      
                       const replyElement = document.getElementById(`message-${message.replyTo.id}`);
                       if (replyElement) {
-                        replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        replyElement.classList.remove('highlight-flash'); // Reset animation
+                        // Smooth scroll to the message
+                        replyElement.scrollIntoView({ 
+                          behavior: 'smooth', 
+                          block: 'center',
+                          inline: 'nearest'
+                        });
+                        
+                        // Instagram-style highlight effect
+                        replyElement.classList.remove('instagram-highlight-flash');
                         void replyElement.offsetWidth; // Trigger reflow
-                        replyElement.classList.add('highlight-flash');
+                        replyElement.classList.add('instagram-highlight-flash');
+                        
+                        // Remove highlight after animation
+                        setTimeout(() => {
+                          replyElement.classList.remove('instagram-highlight-flash');
+                        }, 2000);
                       } else {
-                        toast.error("Message not found within loaded chat");
+                        toast.error("Message not found in current chat", {
+                          icon: "📍",
+                          duration: 2000
+                        });
                       }
                     }}
                   >
-                    {/* Colored Bar */}
-                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${isMyMessage ? "bg-primary-content" : "bg-primary"}`} />
+                    {/* Instagram-style colored bar */}
+                    <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-full ${isMyMessage ? "bg-primary-content/80" : "bg-primary/80"}`} />
 
-                    <div className="pl-2.5">
-                      <div className={`text-[11px] font-bold mb-0.5 truncate flex items-center gap-1 ${isMyMessage ? "text-primary-content" : "text-primary"
+                    <div className="pl-3">
+                      {/* Header with user info */}
+                      <div className={`text-[11px] font-semibold mb-1 truncate flex items-center gap-1.5 ${isMyMessage ? "text-primary-content/90" : "text-primary"
                         }`}>
-                        {message.replyTo.senderId === authUser.id ? "You" : selectedUser?.fullName || selectedUser?.nickname || "User"}
-                        {message.replyTo.isCallLog && <span className="opacity-70 font-normal">• Call</span>}
+                        <span>
+                          {message.replyTo.senderId === authUser.id ? "You" : selectedUser?.fullName || selectedUser?.nickname || "User"}
+                        </span>
+                        {message.replyTo.isCallLog && <span className="opacity-60 font-normal text-[10px]">• Call</span>}
+                        <span className="text-[10px] opacity-50 ml-auto">Tap to view</span>
                       </div>
 
-                      <div className={`text-[12px] leading-tight truncate opacity-90 ${isMyMessage ? "text-primary-content/90" : "text-base-content/80"
+                      {/* Message content preview */}
+                      <div className={`text-[12px] leading-tight opacity-90 ${isMyMessage ? "text-primary-content/85" : "text-base-content/75"
                         }`}>
                         {message.replyTo.isCallLog ? (
-                          message.replyTo.callType === 'video' ? '📹 Video Call' : '📞 Voice Call'
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm">{message.replyTo.callType === 'video' ? '📹' : '📞'}</span>
+                            <span>{message.replyTo.callType === 'video' ? 'Video Call' : 'Voice Call'}</span>
+                          </div>
                         ) : message.replyTo.text && message.replyTo.text.trim() ? (
-                          message.replyTo.text
+                          <div className="line-clamp-2 break-words">
+                            {message.replyTo.text}
+                          </div>
                         ) : message.replyTo.image ? (
-                          <div className="flex items-center gap-1"><span className="text-xs">📷</span> Photo</div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm">📷</span>
+                            <span>Photo</span>
+                          </div>
                         ) : message.replyTo.voice ? (
-                          <div className="flex items-center gap-1"><span className="text-xs">🎤</span> Voice message</div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm">🎤</span>
+                            <span>Voice message</span>
+                          </div>
                         ) : (
-                          "Message"
+                          <span className="italic opacity-60">Message</span>
                         )}
                       </div>
+
+                      {/* Show nested reply indicator if this is a reply to a reply */}
+                      {message.replyTo.replyTo && (
+                        <div className={`text-[10px] mt-1 opacity-60 flex items-center gap-1 ${isMyMessage ? "text-primary-content/70" : "text-base-content/60"
+                          }`}>
+                          <span>↳</span>
+                          <span>Reply to {message.replyTo.replyTo.senderId === authUser.id ? "You" : selectedUser?.fullName || "User"}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
