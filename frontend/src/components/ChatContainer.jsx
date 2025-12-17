@@ -190,7 +190,7 @@ const ChatContainer = ({ onStartCall }) => {
     getMessages?.(selectedUser.id);
 
     // ✅ ENHANCED: Force scroll to bottom after a brief delay to ensure messages are rendered
-    // ✅ ENHANCED: Smooth scroll to bottom after chat switch
+    // ✅ SMOOTH: Scroll to bottom after chat switch
     setTimeout(() => {
       if (scrollContainerRef.current) {
         scrollToBottomSmooth('smooth');
@@ -218,21 +218,20 @@ const ChatContainer = ({ onStartCall }) => {
   // ✅ INSTANT SCROLL: Use useLayoutEffect to scroll before paint
   useLayoutEffect(() => {
     if (messages.length > 0 && isInitialLoad.current && scrollContainerRef.current) {
-      // Use smooth scroll for initial load animation as requested
+      // Smooth scroll for initial load
       scrollToBottomSmooth('smooth');
     }
   }, [messages, selectedUser?.id]);
 
-  // ✅ PREMIUM SMOOTH SCROLL: Lenis-like feel for chat
+  // ✅ SMOOTH SCROLL: Professional feel
   const scrollToBottomSmooth = (behavior = 'smooth') => {
     if (!scrollContainerRef.current) return;
 
     const container = scrollContainerRef.current;
-    const targetScroll = container.scrollHeight;
-
-    // Custom smooth scroll implementation
+    
+    // Smooth scroll animation
     container.scrollTo({
-      top: targetScroll,
+      top: container.scrollHeight,
       behavior: behavior
     });
   };
@@ -254,16 +253,14 @@ const ChatContainer = ({ onStartCall }) => {
         const sentMessages = newMessages.filter(msg => msg.senderId === authUser?.id);
 
         if (sentMessages.length > 0) {
-          // ALWAYS auto-scroll for own sent messages
-          // 'smooth' transition as requested
+          // ALWAYS auto-scroll for own sent messages - SMOOTH
           scrollToBottomSmooth('smooth');
           setShowNewMessageButton(false);
           setNewMessageCount(0);
         } else if (receivedMessages.length > 0) {
-          // For received messages:
-          // "in the case of new message comming then give a smooth transition"
+          // For received messages - SMOOTH
           if (isScrolledToBottom) {
-            // User is watching the chat bottom -> Smooth scroll to show new text
+            // User is watching the chat bottom -> Smooth scroll
             scrollToBottomSmooth('smooth');
           } else {
             // User is scrolled up reading old history -> Don't jerk them down
@@ -311,7 +308,7 @@ const ChatContainer = ({ onStartCall }) => {
     }
   }, [messages]);
 
-  // ✅ ENHANCED: Reliable scroll to bottom function
+  // ✅ SMOOTH: Scroll to bottom function with animation
   const scrollToBottom = (smooth = true) => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
@@ -322,15 +319,8 @@ const ChatContainer = ({ onStartCall }) => {
           behavior: 'smooth'
         });
       } else {
-        // Instant scroll
+        // Instant scroll for fallback
         container.scrollTop = container.scrollHeight;
-
-        // ✅ ENSURE: Double-check we reached the bottom
-        requestAnimationFrame(() => {
-          if (container.scrollTop < container.scrollHeight - container.clientHeight - 10) {
-            container.scrollTop = container.scrollHeight;
-          }
-        });
       }
 
       setShowNewMessageButton(false);

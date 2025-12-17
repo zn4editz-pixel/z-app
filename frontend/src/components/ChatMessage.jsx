@@ -438,7 +438,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction, isNewMessage = fals
       <div
         ref={messageRef}
         id={`message-${message.id}`}
-        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'message-with-reactions' : 'mb-3'} relative w-full max-w-full px-3 animate-message-enter`}
+        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'message-with-reactions' : 'mb-3'} relative w-full max-w-full px-3 ${isMyMessage ? 'animate-message-sent' : 'animate-message-enter'}`}
       >
         <div
           className="flex items-end gap-2 relative min-w-0"

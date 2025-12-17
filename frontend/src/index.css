@@ -126,7 +126,7 @@ body {
   }
 }
 
-/* Native smooth scrolling - works on all devices */
+/* Smooth scrolling for better UX */
 html {
   scroll-behavior: smooth;
 }
@@ -230,33 +230,28 @@ html {
     }
   }
 
-  /* Touch feedback animations */
+  /* Professional touch feedback - no scaling */
   .touch-feedback {
-    transition: all 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    transform-origin: center;
+    transition: opacity 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .touch-feedback:active {
-    transform: scale(0.95);
-    opacity: 0.8;
+    opacity: 0.7;
   }
 
-  /* Instagram-style button animations */
+  /* Professional button animations */
   .instagram-button {
-    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    transform: translateZ(0);
+    transition: opacity 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .instagram-button:hover {
-    /* transform: translateY(-1px) translateZ(0); */
     opacity: 0.95;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   }
 
   .instagram-button:active {
-    /* transform: translateY(0) scale(0.98) translateZ(0); */
     opacity: 0.8;
-    transition-duration: 0.1s;
   }
 
   /* Smooth scroll for all containers */
@@ -1193,21 +1188,38 @@ body.react-loaded {
 }
 
 /* Simple Message Entry Animation */
-@keyframes message-enter-simple {
+/* Smooth message appearance animation */
+@keyframes message-appear {
   0% {
     opacity: 0;
-    transform: translate3d(0, 10px, 0);
+    transform: translateY(8px);
   }
-
   100% {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
+    transform: translateY(0);
   }
 }
 
+/* Smooth message appearance animations */
 .animate-message-enter {
-  animation: message-enter-simple 0.25s ease-out forwards;
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  animation: message-appear 0.2s ease-out forwards;
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.animate-message-sent {
+  animation: message-appear 0.15s ease-out forwards;
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* Prevent layout shifts in chat container */
+[data-chat-container] {
+  contain: layout style;
+}
+
+/* Smooth message transitions */
+.message-bubble-container {
+  transition: none !important;
+  transform: translateZ(0);
 }

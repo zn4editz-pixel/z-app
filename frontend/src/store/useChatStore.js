@@ -143,10 +143,12 @@ export const useChatStore = create((set, get) => ({
             senderAvatar: authUser.profilePic
         };
 
-        // ⚡ INSTANT: Update UI with zero delay
-        set(state => ({ 
-            messages: [...state.messages, optimisticMessage] 
-        }));
+        // ⚡ INSTANT: Update UI with zero delay - use requestAnimationFrame for smoother rendering
+        requestAnimationFrame(() => {
+            set(state => ({ 
+                messages: [...state.messages, optimisticMessage] 
+            }));
+        });
 
         // ⚡ INSTANT: Update sidebar (async, non-blocking)
         setTimeout(() => {
@@ -166,11 +168,14 @@ export const useChatStore = create((set, get) => ({
                     reactions: Array.isArray(res.data.reactions) ? res.data.reactions : []
                 };
                 
-                set(state => ({
-                    messages: state.messages.map(m =>
-                        m.tempId === tempId ? serverMessage : m
-                    )
-                }));
+                // Use requestAnimationFrame for smoother replacement
+                requestAnimationFrame(() => {
+                    set(state => ({
+                        messages: state.messages.map(m =>
+                            m.tempId === tempId ? { ...m, ...serverMessage, tempId: undefined } : m
+                        )
+                    }));
+                });
             })
             .catch(error => {
                 console.error('❌ Send failed:', error);
