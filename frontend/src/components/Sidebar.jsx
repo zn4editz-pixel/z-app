@@ -22,6 +22,9 @@ const Sidebar = () => {
   const { notifications } = useNotificationStore();
   const { theme } = useThemeStore();
 
+  // State declarations
+  const [showOnlineOnly, setShowOnlineOnly] = useState(false);
+  const [, forceUpdate] = useState({});
 
   // 🔥 REAL-TIME: Force re-render for live status updates
   useEffect(() => {
