@@ -1,10 +1,10 @@
-// PRODUCTION PRISMA SCHEMA - POSTGRESQL FOR MASSIVE SCALE
+// PRODUCTION PRISMA SCHEMA - POSTGRESQL FOR RENDER DEPLOYMENT
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "cockroachdb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -199,4 +199,18 @@ model AdminNotification {
   @@index([type])
   @@index([isRead])
   @@index([createdAt])
+}
+
+// ─── System Settings Model ─────────────────────────────────────────────
+model SystemSettings {
+  id              String   @id @default("default_settings")
+  loginAnimation  String   @default("orbit")
+  signupAnimation String   @default("stranger")
+  isSeasonalMode  Boolean  @default(false)
+  seasonalTheme   String?
+  defaultTheme    String   @default("dark")
+  allowedThemes   String   @default("all")
+
+  updatedBy       String?
+  updatedAt       DateTime @updatedAt
 }

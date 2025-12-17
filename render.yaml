@@ -4,17 +4,13 @@ services:
     env: node
     plan: free
     rootDir: backend
-    buildCommand: npm install && npx prisma generate
+    buildCommand: npm install && node scripts/setup-schema.js && npx prisma generate && npx prisma db push
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
+      - key: RENDER
+        value: true
     healthCheckPath: /health/ping
-    
-  - type: pserv
-    name: z-app-database
-    plan: free
-    databaseName: z_app_db
-    user: z_app_user

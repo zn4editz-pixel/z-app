@@ -19,7 +19,7 @@
     "prisma:migrate": "prisma migrate deploy",
     "seed": "node src/seeds/seed-users.js",
     "build:frontend": "cd ../frontend && npm install --include=dev && npm run build && xcopy /e /i dist ..\\backend\\public",
-    "postinstall": "npx prisma generate",
+    "postinstall": "node scripts/setup-schema.js && npx prisma generate",
     "setup:schema": "node scripts/setup-schema.js",
     "health": "node -e \"console.log('Health check passed')\"",
     "test:db": "node -e \"require('./src/lib/db.js').default.$queryRaw\\`SELECT 1\\`.then(() => console.log('DB OK')).catch(e => {console.error('DB Error:', e.message); process.exit(1);})\"",
