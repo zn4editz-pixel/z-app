@@ -1,17 +1,17 @@
-# 🚀 RENDER DEPLOYMENT FIX - PostgreSQL Schema Issue
+# 🚀 RENDER DEPLOYMENT FIX - CockroachDB Schema Issue
 
 ## ❌ Problem Identified
 The Render deployment was failing because:
 1. **Schema Mismatch**: `backend/prisma/schema.prisma` was configured for SQLite (`provider = "sqlite"`)
-2. **Render Requirement**: Render requires PostgreSQL for production databases
+2. **Render Reality**: Render uses CockroachDB (not regular PostgreSQL) for their database service
 3. **Build Process**: The build command wasn't switching to the production schema
 
 ## ✅ Solution Applied
 
 ### 1. Fixed Production Schema
-- Updated `backend/prisma/schema.production.prisma` to use `postgresql` provider (was `cockroachdb`)
+- Updated `backend/prisma/schema.production.prisma` to use `cockroachdb` provider
 - Added missing `SystemSettings` model
-- Optimized with proper indexes for PostgreSQL
+- Optimized with proper indexes for CockroachDB
 
 ### 2. Updated Build Process
 - Modified `render.yaml` to include schema switching: `node scripts/setup-schema.js`
@@ -24,13 +24,13 @@ The Render deployment was failing because:
 
 ## 🔧 Deployment Steps for Render
 
-### Step 1: Create PostgreSQL Database
+### Step 1: Create PostgreSQL Database (CockroachDB)
 1. Go to your Render dashboard
-2. Click "New" → "PostgreSQL"
+2. Click "New" → "PostgreSQL" (This creates a CockroachDB instance)
 3. Name: `z-app-database`
 4. Plan: Free
 5. Click "Create Database"
-6. **Copy the Internal Database URL** (starts with `postgresql://`)
+6. **Copy the Internal Database URL** (will be CockroachDB format)
 
 ### Step 2: Update Web Service Environment
 1. Go to your `z-app-backend` web service
@@ -43,7 +43,6 @@ PORT=10000
 RENDER=true
 DATABASE_URL=<paste_your_postgresql_internal_url_here>
 
-# Security (CHANGE THESE!)
 JWT_SECRET=your_super_secure_jwt_secret_minimum_32_characters_long
 ADMIN_USERNAME=admin
 ADMIN_EMAIL=admin@yourdomain.com
@@ -83,13 +82,13 @@ git push origin main
 
 ### What Happens During Build:
 1. `npm install` - Installs dependencies
-2. `node scripts/setup-schema.js` - Switches to PostgreSQL schema
-3. `npx prisma generate` - Generates Prisma client for PostgreSQL
+2. `node scripts/setup-schema.js` - Switches to CockroachDB schema
+3. `npx prisma generate` - Generates Prisma client for CockroachDB
 4. `npx prisma db push` - Creates database tables
 
 ### Schema Switching Logic:
 - **Development**: Uses SQLite (`schema.development.prisma`)
-- **Production/Render**: Uses PostgreSQL (`schema.production.prisma`)
+- **Production/Render**: Uses CockroachDB (`schema.production.prisma`)
 - **Detection**: Checks for `NODE_ENV=production` or `RENDER=true`
 
 ## 🎯 Expected Results
