@@ -598,8 +598,8 @@ export const loadNonCriticalCSS = () => {
 // Preload critical resources
 export const preloadCriticalResources = () => {
   const criticalResources = [
-    { href: '/avatar.png', as: 'image' },
-    { href: '/zn4.png', as: 'image' }
+    // Only preload resources that exist and are used immediately
+    // Removed avatar.png and zn4.png as they don't exist in public folder
   ];
   
   criticalResources.forEach(resource => {
@@ -630,9 +630,8 @@ const DYNAMIC_CACHE = 'z-app-dynamic-v1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/avatar.png',
-  '/zn4.png',
-  '/manifest.json'
+  '/manifest.json',
+  '/z-fav.png'
 ];
 
 // Install event
@@ -743,8 +742,8 @@ self.addEventListener('push', (event) => {
     event.waitUntil(
       self.registration.showNotification(data.title, {
         body: data.body,
-        icon: '/avatar.png',
-        badge: '/zn4.png',
+        icon: '/z-fav.png',
+        badge: '/z-fav.png',
         tag: 'z-app-notification',
         requireInteraction: true
       })
@@ -855,13 +854,13 @@ function createManifest() {
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/avatar.png",
+      "src": "/z-fav.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/zn4.png",
+      "src": "/z-fav.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
