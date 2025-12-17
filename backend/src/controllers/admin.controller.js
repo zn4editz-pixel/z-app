@@ -6,6 +6,7 @@ import {
 	sendReportStatusEmail,
 	sendAccountSuspendedEmail
 } from "../lib/email.js";
+import { adminErrorHandler } from "../middleware/adminErrorHandler.js";
 
 
 
@@ -61,119 +62,434 @@ export const getAllUsers = async (req, res) => {
 export const suspendUser = async (req, res) => {
 	const { userId } = req.params;
 	const { until, duration, reason } = req.body;
-	if (!reason) return res.status(400).json({ error: "Reason is required" });
+	
+	if (!reason) {
+		return res.status(400).json({ error: "Reason is required" });
+	}
+	
 	try {
+		// Check if user exists
 		const user = await prisma.user.findUnique({ where: { id: userId } });
-		if (!user) return res.status(404).json({ error: "User not found" });
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
+		}
+
+		// Check if user is already suspended
+		if (user.isSuspended) {
+			return res.status(400).json({ error: "User is already suspended" });
+		}
+
+		console.log(`⚠️ Admin: Suspending user ${userId} (${user.username}) for: ${reason}`);
+
 		let suspendUntilDate;
 		if (until) {
 			suspendUntilDate = new Date(until);
+			if (isNaN(suspendUntilDate.getTime())) {
+				return res.status(400).json({ error: "Invalid date format" });
+			}
 		} else if (duration) {
 			const now = new Date();
 			const match = duration.match(/^(\d+)([dhm])$/);
 			if (match) {
 				const value = parseInt(match[1]);
 				const unit = match[2];
-				const multipliers = { d: 24 * 60 * 60 * 1000, h: 60 * 60 * 1000, m: 60 * 1000 };
+				const multipliers = { 
+					d: 24 * 60 * 60 * 1000, 
+					h: 60 * 60 * 1000, 
+					m: 60 * 1000 
+				};
 				suspendUntilDate = new Date(now.getTime() + value * multipliers[unit]);
 			} else {
-				return res.status(400).json({ error: "Invalid duration format" });
+				return res.status(400).json({ error: "Invalid duration format. Use format like '7d', '24h', '30m'" });
 			}
 		} else {
 			return res.status(400).json({ error: "Either until or duration is required" });
 		}
+
+		// Update user suspension status
 		const updatedUser = await prisma.user.update({
 			where: { id: userId },
-			data: { isSuspended: true, suspensionEndTime: suspendUntilDate, suspensionReason: reason }
+			data: { 
+				isSuspended: true, 
+				suspensionEndTime: suspendUntilDate, 
+				suspensionReason: reason,
+				suspensionStartTime: new Date()
+			}
 		});
+
+		// Clear admin caches
 		clearAdminUsersCache();
 		clearAdminStatsCache();
-		emitToUser(userId, "user-action", { type: "suspended", reason, until: suspendUntilDate });
+
+		// Notify user via socket
 		try {
-			await sendAccountSuspendedEmail(user.email, user.nickname || user.username, reason, suspendUntilDate);
+			emitToUser(userId, "user-action", { 
+				type: "suspended", 
+				reason, 
+				until: suspendUntilDate 
+			});
+		} catch (socketErr) {
+			console.log("User not connected for suspension notification");
+		}
+
+		// Send suspension email
+		try {
+			await sendAccountSuspendedEmail(
+				user.email, 
+				user.nickname || user.username, 
+				reason, 
+				suspendUntilDate
+			);
 		} catch (emailErr) {
 			console.error("Failed to send suspension email:", emailErr);
 		}
-		res.status(200).json({ message: "User suspended successfully", user: updatedUser });
+
+		console.log(`✅ Admin: User ${userId} suspended until ${suspendUntilDate}`);
+
+		res.status(200).json({ 
+			message: "User suspended successfully", 
+			user: {
+				id: updatedUser.id,
+				username: updatedUser.username,
+				isSuspended: updatedUser.isSuspended,
+				suspensionReason: updatedUser.suspensionReason,
+				suspensionEndTime: updatedUser.suspensionEndTime
+			}
+		});
 	} catch (err) {
 		console.error("suspendUser error:", err);
-		res.status(500).json({ error: "Failed to suspend user" });
+		res.status(500).json({ 
+			error: "Failed to suspend user", 
+			details: process.env.NODE_ENV === 'development' ? err.message : undefined
+		});
 	}
 };
 
 export const unsuspendUser = async (req, res) => {
 	try {
 		const { userId } = req.params;
+		
+		// Check if user exists
+		const user = await prisma.user.findUnique({ where: { id: userId } });
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
+		}
+
+		console.log(`✅ Admin: Unsuspending user ${userId} (${user.username})`);
+
 		const updatedUser = await prisma.user.update({
 			where: { id: userId },
-			data: { isSuspended: false, suspensionEndTime: null, suspensionReason: null }
+			data: { 
+				isSuspended: false, 
+				suspensionEndTime: null, 
+				suspensionReason: null,
+				suspensionStartTime: null
+			}
 		});
+		
 		clearAdminUsersCache();
 		clearAdminStatsCache();
-		// 🔥 REAL-TIME: Notify user
-		emitToUser(userId, "user-action", {
-			type: "unsuspended"
+		
+		// Notify user via socket
+		try {
+			emitToUser(userId, "user-action", {
+				type: "unsuspended"
+			});
+		} catch (socketErr) {
+			console.log("User not connected for unsuspension notification");
+		}
+		
+		res.status(200).json({ 
+			message: "User unsuspended successfully", 
+			user: {
+				id: updatedUser.id,
+				username: updatedUser.username,
+				isSuspended: updatedUser.isSuspended
+			}
 		});
-		res.status(200).json({ message: "User unsuspended successfully", user: updatedUser });
 	} catch (err) {
-		res.status(500).json({ error: "Failed to unsuspend user" });
+		console.error("unsuspendUser error:", err);
+		res.status(500).json({ 
+			error: "Failed to unsuspend user", 
+			details: err.message 
+		});
 	}
 };
 
 export const blockUser = async (req, res) => {
 	try {
 		const { userId } = req.params;
+		
+		// Check if user exists
+		const user = await prisma.user.findUnique({ where: { id: userId } });
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
+		}
+
+		// Check if user is already blocked
+		if (user.isBlocked) {
+			return res.status(400).json({ error: "User is already blocked" });
+		}
+
+		console.log(`🚫 Admin: Blocking user ${userId} (${user.username})`);
+
 		const updatedUser = await prisma.user.update({
 			where: { id: userId },
 			data: { isBlocked: true }
 		});
-		// 🔥 REAL-TIME: Notify user
-		emitToUser(userId, "user-action", {
-			type: "blocked"
+		
+		clearAdminUsersCache();
+		clearAdminStatsCache();
+		
+		// Notify user via socket
+		try {
+			emitToUser(userId, "user-action", {
+				type: "blocked"
+			});
+		} catch (socketErr) {
+			console.log("User not connected for block notification");
+		}
+		
+		res.status(200).json({ 
+			message: "User blocked successfully", 
+			user: {
+				id: updatedUser.id,
+				username: updatedUser.username,
+				isBlocked: updatedUser.isBlocked
+			}
 		});
-		res.status(200).json({ message: "User blocked successfully", user: updatedUser });
 	} catch (err) {
-		res.status(500).json({ error: "Failed to block user" });
+		console.error("blockUser error:", err);
+		res.status(500).json({ 
+			error: "Failed to block user", 
+			details: err.message 
+		});
 	}
 };
 
 export const unblockUser = async (req, res) => {
 	try {
+		const { userId } = req.params;
+		
+		// Check if user exists
+		const user = await prisma.user.findUnique({ where: { id: userId } });
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
+		}
+
+		// Check if user is actually blocked
+		if (!user.isBlocked) {
+			return res.status(400).json({ error: "User is not blocked" });
+		}
+
+		console.log(`✅ Admin: Unblocking user ${userId} (${user.username})`);
+
 		const updatedUser = await prisma.user.update({
-			where: { id: req.params.userId },
+			where: { id: userId },
 			data: { isBlocked: false }
 		});
-		emitToUser(req.params.userId, "user-action", { type: "unblocked" });
-		res.status(200).json({ message: "User unblocked successfully", user: updatedUser });
+		
+		clearAdminUsersCache();
+		clearAdminStatsCache();
+		
+		// Notify user via socket
+		try {
+			emitToUser(userId, "user-action", { type: "unblocked" });
+		} catch (socketErr) {
+			console.log("User not connected for unblock notification");
+		}
+		
+		res.status(200).json({ 
+			message: "User unblocked successfully", 
+			user: {
+				id: updatedUser.id,
+				username: updatedUser.username,
+				isBlocked: updatedUser.isBlocked
+			}
+		});
 	} catch (err) {
-		res.status(500).json({ error: "Failed to unblock user" });
+		console.error("unblockUser error:", err);
+		res.status(500).json({ 
+			error: "Failed to unblock user", 
+			details: err.message 
+		});
 	}
 };
 
 export const deleteUser = async (req, res) => {
 	try {
-		await prisma.$transaction(async (tx) => {
-			await tx.message.deleteMany({ OR: [{ senderId: req.params.userId }, { receiverId: req.params.userId }] });
-			await tx.user.delete({ where: { id: req.params.userId } });
+		const { userId } = req.params;
+		
+		// Check if user exists
+		const user = await prisma.user.findUnique({ where: { id: userId } });
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
+		}
+
+		console.log(`🗑️ Admin: Deleting user ${userId} (${user.username})`);
+
+		// Use transaction to ensure all related data is deleted properly
+		const result = await prisma.$transaction(async (tx) => {
+			// Delete all messages (both sent and received)
+			const deletedMessages = await tx.message.deleteMany({ 
+				OR: [
+					{ senderId: userId }, 
+					{ receiverId: userId }
+				] 
+			});
+			console.log(`🗑️ Deleted ${deletedMessages.count} messages`);
+
+			// Delete all friend requests (both sent and received)
+			const deletedFriendRequests = await tx.friendRequest.deleteMany({ 
+				OR: [
+					{ senderId: userId }, 
+					{ receiverId: userId }
+				] 
+			});
+			console.log(`🗑️ Deleted ${deletedFriendRequests.count} friend requests`);
+
+			// Delete all reports (both made by user and against user)
+			const deletedReports = await tx.report.deleteMany({ 
+				OR: [
+					{ reporterId: userId }, 
+					{ reportedUserId: userId }
+				] 
+			});
+			console.log(`🗑️ Deleted ${deletedReports.count} reports`);
+
+			// Delete any admin notifications related to this user (skip if table doesn't exist)
+			try {
+				const deletedNotifications = await tx.adminNotification.deleteMany({
+					OR: [
+						{ message: { contains: userId } },
+						{ title: { contains: user.username } },
+						{ link: { contains: userId } }
+					]
+				});
+				console.log(`🗑️ Deleted ${deletedNotifications.count} admin notifications`);
+			} catch (notificationErr) {
+				console.log("No admin notifications to delete or table doesn't exist");
+			}
+
+			// Finally delete the user
+			const deletedUser = await tx.user.delete({ where: { id: userId } });
+			console.log(`🗑️ User ${userId} deleted successfully`);
+			
+			return {
+				deletedMessages: deletedMessages.count,
+				deletedFriendRequests: deletedFriendRequests.count,
+				deletedReports: deletedReports.count,
+				deletedUser
+			};
+		}, {
+			timeout: 30000, // 30 second timeout for large deletions
+			maxWait: 5000,  // Don't wait more than 5 seconds to start the transaction
 		});
-		emitToUser(req.params.userId, "admin-action", { action: "account-deleted" });
-		res.status(200).json({ message: "User deleted successfully" });
+
+		// Clear admin caches
+		clearAdminUsersCache();
+		clearAdminStatsCache();
+
+		// Notify user (if still connected)
+		try {
+			emitToUser(userId, "admin-action", { action: "account-deleted" });
+		} catch (socketErr) {
+			console.log("User not connected for deletion notification");
+		}
+
+		res.status(200).json({ 
+			message: "User and all related data deleted successfully",
+			deletedUser: {
+				id: userId,
+				username: user.username,
+				email: user.email
+			},
+			deletionStats: {
+				messages: result.deletedMessages,
+				friendRequests: result.deletedFriendRequests,
+				reports: result.deletedReports
+			}
+		});
 	} catch (err) {
-		res.status(500).json({ error: "Failed to delete user" });
+		console.error("deleteUser error:", err);
+		
+		// Provide more specific error messages
+		let errorMessage = "Failed to delete user";
+		let statusCode = 500;
+		
+		if (err.code === 'P2003') {
+			errorMessage = "Cannot delete user due to foreign key constraints";
+			statusCode = 400;
+		} else if (err.code === 'P2025') {
+			errorMessage = "User not found or already deleted";
+			statusCode = 404;
+		} else if (err.message && err.message.includes('timeout')) {
+			errorMessage = "Deletion timeout - user has too much data";
+			statusCode = 408;
+		} else if (err.code === 'P2034') {
+			errorMessage = "Transaction conflict - please try again";
+			statusCode = 409;
+		}
+		
+		res.status(statusCode).json({ 
+			error: errorMessage, 
+			details: process.env.NODE_ENV === 'development' ? err.message : undefined,
+			code: err.code || 'UNKNOWN'
+		});
 	}
 };
 
 export const toggleVerification = async (req, res) => {
 	try {
-		const user = await prisma.user.findUnique({ where: { id: req.params.userId } });
+		const { userId } = req.params;
+		
+		// Check if user exists
+		const user = await prisma.user.findUnique({ where: { id: userId } });
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
+		}
+
+		const newVerificationStatus = !user.isVerified;
+		console.log(`${newVerificationStatus ? '✅' : '❌'} Admin: ${newVerificationStatus ? 'Verifying' : 'Unverifying'} user ${userId} (${user.username})`);
+
 		const updatedUser = await prisma.user.update({
-			where: { id: req.params.userId },
-			data: { isVerified: !user.isVerified }
+			where: { id: userId },
+			data: { 
+				isVerified: newVerificationStatus,
+				verificationStatus: newVerificationStatus ? "approved" : "none",
+				verificationReviewedAt: new Date(),
+				verificationReviewedBy: req.user?.id || "admin"
+			}
 		});
-		emitToUser(req.params.userId, "verification-status-changed", { isVerified: updatedUser.isVerified });
-		res.status(200).json({ message: "Verification toggled", user: updatedUser });
+		
+		clearAdminUsersCache();
+		clearAdminStatsCache();
+		
+		// Notify user via socket
+		try {
+			emitToUser(userId, "verification-status-changed", { 
+				isVerified: updatedUser.isVerified,
+				message: newVerificationStatus ? "Account verified!" : "Verification removed"
+			});
+		} catch (socketErr) {
+			console.log("User not connected for verification notification");
+		}
+		
+		res.status(200).json({ 
+			message: `User ${newVerificationStatus ? 'verified' : 'unverified'} successfully`, 
+			user: {
+				id: updatedUser.id,
+				username: updatedUser.username,
+				isVerified: updatedUser.isVerified,
+				verificationStatus: updatedUser.verificationStatus
+			}
+		});
 	} catch (err) {
-		res.status(500).json({ error: "Failed to toggle verification" });
+		console.error("toggleVerification error:", err);
+		res.status(500).json({ 
+			error: "Failed to toggle verification", 
+			details: err.message 
+		});
 	}
 };
 

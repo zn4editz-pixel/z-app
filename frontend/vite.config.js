@@ -27,9 +27,23 @@ export default defineConfig({
       external: [],
       output: {
         // Ensure all JS files have .js extension (not .jsx)
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]',
+        entryFileNames: (chunkInfo) => {
+          return `assets/${chunkInfo.name}-[hash].js`;
+        },
+        chunkFileNames: (chunkInfo) => {
+          return `assets/${chunkInfo.name}-[hash].js`;
+        },
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name.split('.');
+          const ext = info[info.length - 1];
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
+            return `assets/images/[name]-[hash].[ext]`;
+          }
+          if (/css/i.test(ext)) {
+            return `assets/css/[name]-[hash].[ext]`;
+          }
+          return `assets/[name]-[hash].[ext]`;
+        },
         // Simpler chunking to avoid MIME type issues
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
