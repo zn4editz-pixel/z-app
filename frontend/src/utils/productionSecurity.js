@@ -140,21 +140,7 @@ export const initProductionSecurity = () => {
     window.top.location = window.self.location;
   }
 
-  // 9. Add security headers via meta tags
-  const securityMeta = [
-    { name: 'referrer', content: 'strict-origin-when-cross-origin' },
-    { 'http-equiv': 'X-Content-Type-Options', content: 'nosniff' },
-    { 'http-equiv': 'X-Frame-Options', content: 'DENY' },
-    { 'http-equiv': 'X-XSS-Protection', content: '1; mode=block' }
-  ];
-
-  securityMeta.forEach(meta => {
-    const metaTag = document.createElement('meta');
-    Object.keys(meta).forEach(key => {
-      metaTag.setAttribute(key, meta[key]);
-    });
-    document.head.appendChild(metaTag);
-  });
+  // Security headers are now handled by Vercel HTTP headers instead of meta tags
 
   console.log = noop; // Final console disable
 };

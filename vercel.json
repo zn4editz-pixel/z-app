@@ -10,7 +10,7 @@
   ],
   "headers": [
     {
-      "source": "/assets/(.*\\.(js|mjs|jsx))$",
+      "source": "/assets/(.*\\.js)$",
       "headers": [
         {
           "key": "Content-Type",
@@ -23,7 +23,33 @@
       ]
     },
     {
-      "source": "/(.*\\.(js|mjs|jsx))$",
+      "source": "/assets/(.*\\.mjs)$",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*\\.css)$",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/css; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.js)$",
       "headers": [
         {
           "key": "Content-Type",
@@ -32,16 +58,16 @@
       ]
     },
     {
-      "source": "/static/(.*)",
+      "source": "/(.*\\.mjs)$",
       "headers": [
         {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
         }
       ]
     },
     {
-      "source": "/(.*)",
+      "source": "/index.html",
       "headers": [
         {
           "key": "X-Frame-Options",
@@ -54,13 +80,26 @@
         {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://z-app-backend.onrender.com wss://z-app-backend.onrender.com https://res.cloudinary.com;"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
         }
       ]
     }
   ],
   "env": {
-    "VITE_API_BASE_URL": "https://your-backend-name.onrender.com",
-    "VITE_API_URL": "https://your-backend-name.onrender.com",
+    "VITE_API_BASE_URL": "https://z-app-backend.onrender.com",
+    "VITE_API_URL": "https://z-app-backend.onrender.com",
     "VITE_APP_NAME": "Z-App",
     "VITE_ENVIRONMENT": "production"
   }
