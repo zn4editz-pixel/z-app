@@ -597,40 +597,134 @@ export const getVerificationRequests = async (req, res) => {
 
 export const approveVerification = async (req, res) => {
 	try {
+		const { userId } = req.params;
+		
+		// Check if user exists
+		const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+		if (!existingUser) {
+			return res.status(404).json({ error: "User not found" });
+		}
+
+		console.log(`✅ Admin: Approving verification for user ${userId} (${existingUser.username})`);
+
 		const user = await prisma.user.update({
-			where: { id: req.params.userId },
+			where: { id: userId },
 			data: {
 				isVerified: true,
 				verificationStatus: "approved",
 				verificationReviewedAt: new Date(),
-				verificationReviewedBy: req.user.id
+				verificationReviewedBy: req.user?.id || "admin"
 			}
 		});
-		emitToUser(req.params.userId, "verification-approved", { message: "Verification approved!" });
-		await sendVerificationApprovedEmail(user.email, user.nickname || user.username);
-		res.status(200).json({ message: "Verification approved", user });
+
+		// Clear admin caches
+		clearAdminUsersCache();
+		clearAdminStatsCache();
+
+		// Send socket notification with enhanced data
+		try {
+			emitToUser(userId, "verification-approved", { 
+				message: "Verification approved! You now have a verified badge.",
+				isVerified: true,
+				verificationStatus: "approved"
+			});
+			console.log(`📡 Socket notification sent to user ${userId}`);
+		} catch (socketErr) {
+			console.error("Failed to send socket notification:", socketErr);
+		}
+
+		// Send email notification
+		try {
+			await sendVerificationApprovedEmail(user.email, user.nickname || user.username);
+			console.log(`📧 Approval email sent to ${user.email}`);
+		} catch (emailErr) {
+			console.error("Failed to send approval email:", emailErr);
+		}
+
+		res.status(200).json({ 
+			message: "Verification approved successfully", 
+			user: {
+				id: user.id,
+				username: user.username,
+				isVerified: user.isVerified,
+				verificationStatus: user.verificationStatus
+			}
+		});
 	} catch (err) {
-		res.status(500).json({ error: "Failed to approve verification" });
+		console.error("approveVerification error:", err);
+		res.status(500).json({ 
+			error: "Failed to approve verification", 
+			details: process.env.NODE_ENV === 'development' ? err.message : undefined
+		});
 	}
 };
 
 export const rejectVerification = async (req, res) => {
 	try {
+		const { userId } = req.params;
+		const { reason } = req.body;
+		
+		// Check if user exists
+		const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+		if (!existingUser) {
+			return res.status(404).json({ error: "User not found" });
+		}
+
+		const rejectionReason = reason || "Does not meet verification criteria";
+		console.log(`❌ Admin: Rejecting verification for user ${userId} (${existingUser.username}) - Reason: ${rejectionReason}`);
+
 		const user = await prisma.user.update({
-			where: { id: req.params.userId },
+			where: { id: userId },
 			data: {
 				isVerified: false,
 				verificationStatus: "rejected",
-				verificationAdminNote: req.body.reason || "Does not meet criteria",
+				verificationAdminNote: rejectionReason,
 				verificationReviewedAt: new Date(),
-				verificationReviewedBy: req.user.id
+				verificationReviewedBy: req.user?.id || "admin"
 			}
 		});
-		emitToUser(req.params.userId, "verification-rejected", { message: "Verification rejected", reason: user.verificationAdminNote });
-		await sendVerificationRejectedEmail(user.email, user.nickname || user.username, user.verificationAdminNote);
-		res.status(200).json({ message: "Verification rejected", user });
+
+		// Clear admin caches
+		clearAdminUsersCache();
+		clearAdminStatsCache();
+
+		// Send socket notification with enhanced data
+		try {
+			emitToUser(userId, "verification-rejected", { 
+				message: "Verification request was rejected",
+				reason: rejectionReason,
+				isVerified: false,
+				verificationStatus: "rejected"
+			});
+			console.log(`📡 Socket rejection notification sent to user ${userId}`);
+		} catch (socketErr) {
+			console.error("Failed to send socket notification:", socketErr);
+		}
+
+		// Send email notification
+		try {
+			await sendVerificationRejectedEmail(user.email, user.nickname || user.username, rejectionReason);
+			console.log(`📧 Rejection email sent to ${user.email}`);
+		} catch (emailErr) {
+			console.error("Failed to send rejection email:", emailErr);
+		}
+
+		res.status(200).json({ 
+			message: "Verification rejected successfully", 
+			user: {
+				id: user.id,
+				username: user.username,
+				isVerified: user.isVerified,
+				verificationStatus: user.verificationStatus,
+				verificationAdminNote: user.verificationAdminNote
+			}
+		});
 	} catch (err) {
-		res.status(500).json({ error: "Failed to reject verification" });
+		console.error("rejectVerification error:", err);
+		res.status(500).json({ 
+			error: "Failed to reject verification", 
+			details: process.env.NODE_ENV === 'development' ? err.message : undefined
+		});
 	}
 };
 

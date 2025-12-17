@@ -6,7 +6,7 @@ import VerificationRequestModal from "../components/VerificationRequestModal";
 import { Link } from "react-router-dom";
 
 const ProfilePage = () => {
-  const { authUser } = useAuthStore();
+  const { authUser, checkAuth } = useAuthStore();
   const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   return (
@@ -156,7 +156,9 @@ const ProfilePage = () => {
           isOpen={showVerificationModal}
           onClose={() => setShowVerificationModal(false)}
           onSuccess={() => {
-            window.location.reload();
+            // Instead of full page reload, just refresh auth data
+            checkAuth();
+            setShowVerificationModal(false);
           }}
         />
       </div>

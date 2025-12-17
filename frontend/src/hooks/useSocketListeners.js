@@ -91,14 +91,25 @@ export const useSocketListeners = () => {
         });
 
         // 4. Verification & Admin
-        socket.on("verification-approved", () => {
-            toast.success("Verification Approved! ✅");
-            checkAuth();
+        socket.on("verification-approved", (data) => {
+            console.log("🎉 Verification approved notification received:", data);
+            toast.success("🎉 Verification Approved! You now have a verified badge.", {
+                duration: 5000,
+                position: 'top-center'
+            });
+            // Refresh auth data to get updated verification status
+            setTimeout(() => checkAuth(), 500);
         });
 
-        socket.on("verification-rejected", ({ reason }) => {
-            toast.error(`Verification Rejected: ${reason}`);
-            checkAuth();
+        socket.on("verification-rejected", (data) => {
+            console.log("❌ Verification rejected notification received:", data);
+            const reason = data?.reason || "Does not meet verification criteria";
+            toast.error(`❌ Verification Rejected: ${reason}`, {
+                duration: 6000,
+                position: 'top-center'
+            });
+            // Refresh auth data to get updated verification status
+            setTimeout(() => checkAuth(), 500);
         });
 
         socket.on("admin-notification", (note) => {
