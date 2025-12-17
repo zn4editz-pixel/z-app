@@ -15,14 +15,6 @@ const prisma = new PrismaClient({
       url: process.env.DATABASE_URL,
     },
   },
-  // Production optimizations
-  ...(process.env.NODE_ENV === 'production' && {
-    connectionLimit: 10,
-    pool: {
-      timeout: 20,
-      idleTimeout: 300,
-    },
-  }),
 });
 
 // Simple in-memory cache
