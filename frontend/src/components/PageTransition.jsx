@@ -1,18 +1,31 @@
-import { motion } from "framer-motion";
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 const PageTransition = ({ children }) => {
+  const location = useLocation();
+  const [displayLocation, setDisplayLocation] = useState(location);
+  const [transitionStage, setTransitionStage] = useState('fadeIn');
+
+  useEffect(() => {
+    if (location !== displayLocation) {
+      setTransitionStage('fadeOut');
+    }
+  }, [location, displayLocation]);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{
-        duration: 0.2,
-        ease: "easeInOut"
+    <div
+      className={`page-transition-wrapper ${transitionStage}`}
+      onAnimationEnd={() => {
+        if (transitionStage === 'fadeOut') {
+          setDisplayLocation(location);
+          setTransitionStage('fadeIn');
+        }
       }}
     >
-      {children}
-    </motion.div>
+      <div className="page-content">
+        {children}
+      </div>
+    </div>
   );
 };
 

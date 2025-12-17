@@ -43,6 +43,7 @@ import { useChatStore } from "./store/useChatStore"; // 🔥 Import Chat Store f
 import { useSettingsStore } from "./store/useSettingsStore"; // ✅ Import Settings Store
 import { useProductionOptimizations } from "./utils/performanceOptimizer.production"; // ✅ Restore missing import
 import { useSocketListeners } from "./hooks/useSocketListeners"; // ✅ NEW: Centralized socket listeners hook
+import { initMobileEnhancements } from "./utils/mobileEnhancements"; // ✅ NEW: Mobile enhancements
 
 const App = () => {
 	const { authUser, checkAuth, isCheckingAuth, onlineUsers, initNetworkListeners, socket, setAuthUser } = useAuthStore();
@@ -96,10 +97,14 @@ const App = () => {
 
 	// Performance optimizations are now built-in to components
 
-	// Initialize Lenis smooth scrolling
+	// Initialize Lenis smooth scrolling and mobile enhancements
 	useEffect(() => {
 		const lenis = initSmoothScroll();
-		return () => destroySmoothScroll();
+		const cleanupMobile = initMobileEnhancements();
+		return () => {
+			destroySmoothScroll();
+			cleanupMobile?.();
+		};
 	}, []);
 
 	// Fetch friend data when user is authenticated

@@ -19,12 +19,12 @@ const MobileBottomNav = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-base-100 border-t border-base-300 safe-area-bottom shadow-lg">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 mobile-bottom-bar safe-area-bottom">
       <div className="flex items-center justify-around h-16 px-2">
         {/* Home - Shows Users */}
         <Link
           to="/"
-          className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-200 relative ${
+          className={`flex flex-col items-center justify-center flex-1 h-full gap-1 touch-feedback relative ${
             isActive("/") ? "text-primary" : "text-base-content/60"
           }`}
         >
@@ -38,7 +38,7 @@ const MobileBottomNav = () => {
         {/* Social Hub / Discover */}
         <Link
           to="/discover"
-          className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-200 relative ${
+          className={`flex flex-col items-center justify-center flex-1 h-full gap-1 touch-feedback relative ${
             isActive("/discover") ? "text-primary" : "text-base-content/60"
           }`}
         >
@@ -57,7 +57,7 @@ const MobileBottomNav = () => {
         {/* Profile */}
         <Link
           to="/profile"
-          className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-200 relative ${
+          className={`flex flex-col items-center justify-center flex-1 h-full gap-1 touch-feedback relative ${
             isActive("/profile") ? "text-primary" : "text-base-content/60"
           }`}
         >
@@ -71,7 +71,7 @@ const MobileBottomNav = () => {
         {/* Settings */}
         <Link
           to="/settings"
-          className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-200 relative ${
+          className={`flex flex-col items-center justify-center flex-1 h-full gap-1 touch-feedback relative ${
             isActive("/settings") ? "text-primary" : "text-base-content/60"
           }`}
         >

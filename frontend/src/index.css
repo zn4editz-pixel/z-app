@@ -50,6 +50,209 @@
 /* Native smooth scrolling - works on all devices */
 html {
   scroll-behavior: smooth;
+}
+
+/* Instagram-style page transitions and mobile fixes */
+@layer base {
+  /* Fix mobile viewport and scrolling issues */
+  html, body {
+    height: 100%;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Fix mobile bottom safe area */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Prevent mobile bounce scrolling */
+  body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix mobile address bar color */
+  meta[name="theme-color"] {
+    content: oklch(var(--b1));
+  }
+}
+
+/* Instagram-style smooth transitions */
+@layer utilities {
+  /* Page transition animations */
+  .page-transition {
+    animation: pageSlideIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+  
+  .page-transition-out {
+    animation: pageSlideOut 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+  
+  @keyframes pageSlideIn {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes pageSlideOut {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+  }
+  
+  /* Touch feedback animations */
+  .touch-feedback {
+    transition: all 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform-origin: center;
+  }
+  
+  .touch-feedback:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  
+  /* Instagram-style button animations */
+  .instagram-button {
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: translateZ(0);
+  }
+  
+  .instagram-button:hover {
+    transform: translateY(-1px) translateZ(0);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .instagram-button:active {
+    transform: translateY(0) scale(0.98) translateZ(0);
+    transition-duration: 0.1s;
+  }
+  
+  /* Smooth scroll for all containers */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix mobile bottom navigation */
+  .mobile-nav-fix {
+    background: oklch(var(--b1) / 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid oklch(var(--bc) / 0.1);
+  }
+  
+  /* Prevent mobile zoom on input focus */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+  
+  @media (max-width: 768px) {
+    input, textarea, select {
+      font-size: 16px !important;
+      transform: translateZ(0);
+    }
+  }
+  
+  /* Page transition wrapper styles */
+  .page-transition-wrapper {
+    width: 100%;
+    height: 100%;
+  }
+  
+  .page-transition-wrapper.fadeIn {
+    animation: fadeIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+  
+  .page-transition-wrapper.fadeOut {
+    animation: fadeOut 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateX(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+  }
+  
+  /* Instagram-style card animations */
+  .instagram-card {
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: translateZ(0);
+  }
+  
+  .instagram-card:hover {
+    transform: translateY(-2px) translateZ(0);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Smooth list animations */
+  .list-item-enter {
+    animation: listItemEnter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+  
+  @keyframes listItemEnter {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Fix mobile scrolling issues */
+  .mobile-scroll-fix {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scroll-behavior: smooth;
+  }
+  
+  /* Theme-aware mobile bottom bar */
+  .mobile-bottom-bar {
+    background: oklch(var(--b1) / 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid oklch(var(--bc) / 0.08);
+    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Dark theme adjustments */
+  [data-theme="dark"] .mobile-bottom-bar {
+    background: oklch(var(--b1) / 0.9);
+    border-top: 1px solid oklch(var(--bc) / 0.15);
+    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
+  }
+}
+html {
+  scroll-behavior: smooth;
   /* Don't override background - let inline script handle it */
   min-height: 100%;
 }
