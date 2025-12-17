@@ -11,6 +11,11 @@ const SOSBoard = () => {
 
     const containerRef = useRef(null);
 
+    // Missing state declarations - fixed
+    const [timeLeft, setTimeLeft] = useState(15);
+    const [closeTimer, setCloseTimer] = useState(5);
+    const [selectedLetter, setSelectedLetter] = useState('S');
+
     // Timer Logic
     useEffect(() => {
         if (!gameState?.turnExpiresAt || gameState?.status !== 'playing') return;
@@ -195,49 +200,6 @@ const SOSBoard = () => {
                     )}
 
                     <div className="relative grid grid-cols-5 gap-0.5 w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] aspect-square mx-auto">
-                        {/* Neon Lines SVG Overlay */}
-                        {gameState.lines && gameState.lines.length > 0 && (
-                            <svg
-                                className="absolute inset-0 w-full h-full pointer-events-none z-30"
-                                style={{ overflow: 'visible' }}
-                                viewBox="0 0 100 100"
-                                preserveAspectRatio="none"
-                            >
-                                <defs>
-                                    <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
-                                        <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-                                        <feMerge>
-                                            <feMergeNode in="coloredBlur" />
-                                            <feMergeNode in="SourceGraphic" />
-                                        </feMerge>
-                                    </filter>
-                                </defs>
-                                {gameState.lines.map((line, i) => {
-                                    // Calculate coordinates (0-4 grid -> 0-100 viewBox)
-                                    // Center of cell = (index * 20) + 10
-                                    const x1 = line.start.c * 20 + 10;
-                                    const y1 = line.start.r * 20 + 10;
-                                    const x2 = line.end.c * 20 + 10;
-                                    const y2 = line.end.r * 20 + 10;
-                                    const color = line.playerId === authUser.id ? "#10B981" : "#EF4444";
-
-                                    console.log(`📏 Drawing line ${i}: (${x1},${y1}) to (${x2},${y2}) color:${color}`);
-
-                                    return (
-                                        <line
-                                            key={`line-${i}-${x1}-${y1}-${x2}-${y2}`}
-                                            x1={x1} y1={y1}
-                                            x2={x2} y2={y2}
-                                            stroke={color}
-                                            strokeWidth="3"
-                                            strokeLinecap="round"
-                                            filter="url(#neon-glow)"
-                                        />
-                                    );
-                                })}
-                            </svg>
-                        )}
-
                         {gameState.board.map((row, rIndex) => (
                             row.map((cell, cIndex) => (
                                 <button
@@ -248,7 +210,7 @@ const SOSBoard = () => {
                                         rounded-md sm:rounded-lg md:rounded-xl 
                                         text-lg sm:text-xl md:text-2xl lg:text-3xl font-black 
                                         flex items-center justify-center transition-all duration-200 aspect-square shadow-sm
-                                        min-h-[48px] sm:min-h-[56px] md:min-h-[64px]
+                                        min-h-[48px] sm:min-h-[56px] md:min-h-[64px] relative z-10
                                         ${getCellColor(rIndex, cIndex)}
                                         ${(!cell && isMyTurn) ? "hover:scale-95 cursor-pointer ring-2 ring-primary/20" : ""}
                                     `}
@@ -261,6 +223,36 @@ const SOSBoard = () => {
                                 </button>
                             ))
                         ))}
+
+                        {/* Simple Animated Lines Overlay */}
+                        {gameState.lines && gameState.lines.length > 0 && (
+                            <svg
+                                className="absolute inset-0 w-full h-full pointer-events-none z-20"
+                                style={{ overflow: 'visible' }}
+                                viewBox="0 0 100 100"
+                                preserveAspectRatio="none"
+                            >
+                                {gameState.lines.map((line, i) => {
+                                    const x1 = line.start.c * 20 + 10;
+                                    const y1 = line.start.r * 20 + 10;
+                                    const x2 = line.end.c * 20 + 10;
+                                    const y2 = line.end.r * 20 + 10;
+                                    const color = line.playerId === authUser.id ? "#10B981" : "#EF4444"; // Green for me, Red for opponent
+
+                                    return (
+                                        <line
+                                            key={`line-${i}`}
+                                            x1={x1} y1={y1}
+                                            x2={x2} y2={y2}
+                                            stroke={color}
+                                            strokeWidth="2.5"
+                                            strokeLinecap="round"
+                                            className="animate-draw-line opacity-80"
+                                        />
+                                    );
+                                })}
+                            </svg>
+                        )}
                     </div>
                 </div>
 
@@ -295,16 +287,19 @@ const SOSBoard = () => {
 export default SOSBoard;
 
 // Inject CSS for line animation (only once)
-if (typeof document !== 'undefined' && !document.getElementById('sos-line-animation')) {
+// Inject CSS for line animation (only once)
+if (typeof document !== 'undefined' && !document.getElementById('sos-line-animation-fixed')) {
     const styleSheet = document.createElement("style");
-    styleSheet.id = 'sos-line-animation';
+    styleSheet.id = 'sos-line-animation-fixed';
     styleSheet.textContent = `
         @keyframes dash {
             from { stroke-dashoffset: 1000; }
             to { stroke-dashoffset: 0; }
         }
         .animate-draw-line {
-            animation: dash 0.5s ease-out forwards;
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: dash 0.6s ease-out forwards;
         }
     `;
     document.head.appendChild(styleSheet);

@@ -37,6 +37,9 @@ const PublicProfilePage = () => {
 	const navigate = useNavigate();
 
 	const {
+		friends,
+		pendingSent,
+		pendingReceived,
 		getFriendshipStatus,
 		sendRequest,
 		acceptRequest,
@@ -47,6 +50,10 @@ const PublicProfilePage = () => {
 	// ✅ 2. Get setSelectedUser from chat store
 	const { setSelectedUser } = useChatStore();
 
+	// State declarations
+	const [isLoading, setIsLoading] = useState(true);
+	const [user, setUser] = useState(null);
+	const [isButtonLoading, setIsButtonLoading] = useState(false);
 
 	useEffect(() => {
 		if (username.toLowerCase() === authUser?.username.toLowerCase()) {
@@ -73,8 +80,7 @@ const PublicProfilePage = () => {
 
 	const handleFriendAction = async () => {
 		if (!user) return;
-		setIsButtonLoading(true);
-
+		// Removed local loading state to allow immediate optimistic UI update
 		try {
 			switch (friendshipStatus) {
 				case "NOT_FRIENDS":
@@ -94,8 +100,6 @@ const PublicProfilePage = () => {
 			}
 		} catch (error) {
 			console.error("Friend action failed:", error);
-		} finally {
-			setIsButtonLoading(false);
 		}
 	};
 

@@ -44,6 +44,13 @@ const REPORT_REASONS = [
 	"Other",
 ];
 
+// Default moderation config (will be overridden by loaded config)
+const MODERATION_CONFIG = {
+	enabled: false,
+	strictMode: false,
+	autoReport: true
+};
+
 // Loading Skeleton Component
 const LoadingSkeleton = memo(() => (
 	<div className="absolute inset-0 bg-gradient-to-br from-black/40 via-gray-900/30 to-black/40 flex flex-col items-center justify-center">
@@ -363,6 +370,17 @@ const StrangerChatPage = () => {
 	const [aiWarningCount, setAiWarningCount] = useState(0);
 	const [showAIWarning, setShowAIWarning] = useState(false);
 	const [aiWarningMessage, setAiWarningMessage] = useState("");
+	const [aiModerationActive, setAiModerationActive] = useState(false);
+	const [moderationConfig, setModerationConfig] = useState({ enabled: false });
+
+	// Reactions & UI
+	const [reactions, setReactions] = useState([]);
+	const [showReactionPicker, setShowReactionPicker] = useState(false);
+	const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+	const [isVideoMuted, setIsVideoMuted] = useState(false);
+	const [isAudioMuted, setIsAudioMuted] = useState(false);
+	const [onlineCount, setOnlineCount] = useState(0);
+	const [permissionErrorMessage, setPermissionErrorMessage] = useState("");
 
 	// Refs
 	const chatTimerRef = useRef(null);
@@ -1342,12 +1360,10 @@ const StrangerChatPage = () => {
 
 			// Set a fallback timeout in case server doesn't respond
 			reportTimeoutRef.current = setTimeout(() => {
-				if (isMounted) {
-					console.error('❌ Report request timed out - no response from server');
-					toast.error("Report submission timed out, but admins may still review it.");
-					setIsSubmittingReport(false);
-					setIsReportModalOpen(false);
-				}
+				console.error('❌ Report request timed out - no response from server');
+				toast.error("Report submission timed out, but admins may still review it.");
+				setIsSubmittingReport(false);
+				setShowReportModal(false);
 			}, 10000);
 		} else {
 			toast.error("Connection lost. Cannot submit report.");

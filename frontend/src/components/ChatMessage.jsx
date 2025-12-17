@@ -4,7 +4,7 @@ import { useChatStore } from "../store/useChatStore";
 import { useThemeStore } from "../store/useThemeStore";
 import { formatMessageTime } from "../lib/utils";
 import { getMessageStatusInfo, getThemeColors, getReactionBadgeStyle } from "../utils/messageStatus";
-import { Trash2, Download, Play, Pause, Reply, X } from "lucide-react";
+import { Trash2, Download, Play, Pause, Reply, X, Phone, Video } from "lucide-react";
 import MessageStatus from "./MessageStatus";
 import GameInviteMessage from "./chat/GameInviteMessage"; // ✅ Game Invite Component
 import toast from "react-hot-toast";
@@ -28,7 +28,7 @@ const addMessagePulse = (element) => {
 
 
 
-const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
+const ChatMessage = ({ message, onReply, onFloatingReaction, isNewMessage = false }) => {
   const { authUser, onlineUsers } = useAuthStore();
   const { addReaction, removeReaction, deleteMessage, selectedUser } = useChatStore();
   const { theme } = useThemeStore();
@@ -40,6 +40,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [animationClass, setAnimationClass] = useState('');
 
   const longPressTimer = useRef(null);
   const lastTap = useRef(0);
@@ -49,14 +50,6 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
   const messageRef = useRef(null);
 
   const isMyMessage = message.senderId === authUser.id;
-
-  // ✅ Smooth entrance animation
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 50); // Small delay for smooth entrance
-    return () => clearTimeout(timer);
-  }, []);
 
   // Check if receiver is online for message status (moved up to avoid temporal dead zone)
   const isReceiverOnline = selectedUser && onlineUsers.includes(selectedUser.id);
@@ -415,7 +408,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
   // If message is deleted
   if (message.isDeleted) {
     return (
-      <div className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-3`}>
+      <div className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} mb-3 px-3`}>
         <div className="flex items-end max-w-[85%] sm:max-w-[75%] gap-2">
           {!isMyMessage && (
             <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0 opacity-50">
@@ -445,11 +438,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
       <div
         ref={messageRef}
         id={`message-${message.id}`}
-        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'message-with-reactions' : 'mb-3'} relative w-full max-w-full transition-all duration-300 ease-out ${
-          isVisible 
-            ? 'opacity-100 translate-y-0 scale-100' 
-            : 'opacity-0 translate-y-4 scale-95'
-        }`}
+        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'message-with-reactions' : 'mb-3'} relative w-full max-w-full px-3 animate-message-enter`}
       >
         <div
           className="flex items-end gap-2 relative min-w-0"
@@ -541,6 +530,24 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                   });
                 }}
               />
+            ) : message.isCallLog ? (
+              /* ✅ CALL LOG MESSAGE - Centered System Message */
+              <div className="flex justify-center w-full my-2 mb-4">
+                <div className="bg-base-300/50 backdrop-blur-sm px-4 py-1.5 rounded-full text-xs font-medium text-base-content/70 flex items-center gap-2 shadow-sm border border-base-content/5">
+                  {message.callType === 'video' ? <Video size={14} /> : <Phone size={14} />}
+                  <span>
+                    {message.callStatus === 'missed' ? 'Missed call' :
+                      message.callStatus === 'declined' ? 'Call declined' :
+                        message.callStatus === 'busy' ? 'Line busy' : // Added busy status
+                          `Call ${message.callStatus === 'completed' ? 'ended' : 'started'}`}
+                  </span>
+                  {message.callDuration > 0 && (
+                    <span className="opacity-70">
+                      • {Math.floor(message.callDuration / 60)}:{String(message.callDuration % 60).padStart(2, '0')}
+                    </span>
+                  )}
+                </div>
+              </div>
             ) : (
               /* Message Bubble (for text, voice, or image+text) - NO BUBBLE for emoji-only or number-only */
               <div

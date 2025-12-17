@@ -150,17 +150,18 @@ const SignUpPage = () => {
 					</div>
 
 					{/* Particle System */}
-					{[...Array(15)].map((_, i) => (
+					{/* Particle System - Theme Adaptive & Always Moving */}
+					{[...Array(20)].map((_, i) => (
 						<div
 							key={i}
-							className="absolute rounded-full bg-primary/10 animate-float-particle"
+							className="absolute rounded-full bg-base-content/10 animate-float-particle"
 							style={{
 								top: `${Math.random() * 100}%`,
 								left: `${Math.random() * 100}%`,
 								width: `${Math.random() * 4 + 2}px`,
 								height: `${Math.random() * 4 + 2}px`,
-								animationDuration: `${Math.random() * 20 + 15}s`,
-								animationDelay: `${Math.random() * 10}s`,
+								animationDuration: `${Math.random() * 20 + 10}s`,
+								animationDelay: `-${Math.random() * 20}s`,
 							}}
 						/>
 					))}
@@ -174,10 +175,10 @@ const SignUpPage = () => {
 					{/* Logo / Heading with Premium Animation */}
 					<div className="text-center mb-6">
 						<div className="flex flex-col items-center gap-2 group">
-							<div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-secondary/20 flex items-center justify-center group-hover:scale-105 transition-all duration-300 shadow-lg premium-logo-container overflow-hidden">
+							<div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-base-content/20 via-base-content/10 to-base-content/20 flex items-center justify-center group-hover:scale-105 transition-all duration-300 shadow-lg premium-logo-container overflow-hidden">
 								{/* Enhanced Gradient Shine Overlay - Multiple layers for better visibility */}
-								<div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/40 to-transparent premium-shine-animation"></div>
-								<div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-primary/30 to-transparent premium-shine-animation-secondary"></div>
+								<div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-base-100/40 to-transparent premium-shine-animation"></div>
+								<div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-base-content/30 to-transparent premium-shine-animation-secondary"></div>
 
 								{/* Logo with original colors */}
 								<img
@@ -187,16 +188,16 @@ const SignUpPage = () => {
 								/>
 
 								{/* Enhanced inner glow effect */}
-								<div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/70 to-secondary/70 blur-lg opacity-80 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+								<div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-base-content/70 to-base-content/70 blur-lg opacity-80 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
 
 								{/* Medium glow layer */}
-								<div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-primary/50 to-secondary/50 blur-xl opacity-70 group-hover:opacity-90 transition-opacity duration-300 z-0"></div>
+								<div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-base-content/50 to-base-content/50 blur-xl opacity-70 group-hover:opacity-90 transition-opacity duration-300 z-0"></div>
 
 								{/* Outer glow for maximum visibility */}
-								<div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-primary/40 to-secondary/40 blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-300 -z-10"></div>
+								<div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-base-content/40 to-base-content/40 blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-300 -z-10"></div>
 
 								{/* Ultra-wide glow for desktop visibility */}
-								<div className="absolute -inset-6 rounded-full bg-gradient-to-br from-primary/25 to-secondary/25 blur-3xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 -z-20 hidden lg:block"></div>
+								<div className="absolute -inset-6 rounded-full bg-gradient-to-br from-base-content/25 to-base-content/25 blur-3xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 -z-20 hidden lg:block"></div>
 							</div>
 							<h1 className="text-2xl font-bold mt-4 bg-gradient-to-r from-base-content to-base-content/80 bg-clip-text text-transparent">Create Account</h1>
 							<p className="text-base-content/60">

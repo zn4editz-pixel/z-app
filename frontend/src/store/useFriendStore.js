@@ -17,9 +17,9 @@ export const useFriendStore = create((set, get) => ({
     fetchFriendData: async () => {
         const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
         const userId = authUser.id;
-        
+
         if (import.meta.env.DEV) console.log("🔄 Fetching friend data for user:", userId);
-        
+
         // Try cache first for instant load
         const cached = await getCachedFriends(userId);
         if (cached) {
@@ -37,7 +37,7 @@ export const useFriendStore = create((set, get) => ({
         } else {
             set({ isLoading: true });
         }
-        
+
         // Check if we recently fetched (within 30 seconds) - but only skip if we have cached data
         const lastFetch = sessionStorage.getItem('friendDataLastFetch');
         const now = Date.now();
@@ -45,15 +45,15 @@ export const useFriendStore = create((set, get) => ({
             if (import.meta.env.DEV) console.log("⚡ Skipping friend data fetch - recently fetched (using cache)");
             return;
         }
-        
+
         try {
             if (import.meta.env.DEV) console.log("🌐 Making API calls to fetch friend data...");
-            
+
             const [friendsRes, requestsRes] = await Promise.all([
                 axiosInstance.get("/friends/all"),
                 axiosInstance.get("/friends/requests"),
             ]);
-            
+
             if (import.meta.env.DEV) console.log("✅ API responses received:", {
                 friends: friendsRes.data?.length || 0,
                 requests: {
@@ -61,7 +61,7 @@ export const useFriendStore = create((set, get) => ({
                     sent: requestsRes.data?.sent?.length || 0
                 }
             });
-            
+
             // Cache the fresh data
             const freshData = {
                 friends: friendsRes.data || [],
@@ -69,7 +69,7 @@ export const useFriendStore = create((set, get) => ({
                 sent: requestsRes.data?.sent || []
             };
             await cacheFriends(userId, freshData);
-            
+
             // Mark fetch time
             sessionStorage.setItem('friendDataLastFetch', now.toString());
 
@@ -162,9 +162,9 @@ export const useFriendStore = create((set, get) => ({
             // Remove from sent requests and add to friends
             const updatedSent = state.pendingSent.filter(r => getId(r) !== friendData.id);
             const updatedFriends = [...state.friends, friendData];
-            
+
             toast.success(`${friendData.nickname || friendData.username} accepted your friend request! 🎉`);
-            
+
             return {
                 pendingSent: updatedSent,
                 friends: updatedFriends
@@ -216,7 +216,7 @@ export const useFriendStore = create((set, get) => ({
     sendRequest: async (receiverId) => {
         try {
             if (import.meta.env.DEV) console.log("🚀 Sending friend request to:", receiverId);
-            
+
             // Check if already sent to prevent duplicates
             const { pendingSent, friends } = get();
             if (includesId(pendingSent, receiverId) || includesId(friends, receiverId)) {
@@ -231,7 +231,7 @@ export const useFriendStore = create((set, get) => ({
 
             const response = await axiosInstance.post(`/friends/send/${receiverId}`);
             if (import.meta.env.DEV) console.log("✅ Friend request API response:", response.data);
-            
+
             // Clear cache to ensure fresh data on next fetch
             sessionStorage.removeItem('friendDataLastFetch');
             const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
@@ -240,21 +240,21 @@ export const useFriendStore = create((set, get) => ({
                 localStorage.removeItem(cacheKey);
                 sessionStorage.removeItem(cacheKey);
             }
-            
+
             // Fetch fresh data to get complete user details
             await get().fetchFriendData();
-            
+
             toast.success("Friend request sent!");
             if (import.meta.env.DEV) console.log("✅ Friend request sent successfully");
             return true;
         } catch (error) {
             console.error("❌ Send friend request error:", error);
-            
+
             // Revert optimistic update on error
             set((state) => ({
                 pendingSent: filterOutId(state.pendingSent, receiverId)
             }));
-            
+
             const errorMessage = error.response?.data?.message || error.response?.data?.error || "Failed to send friend request";
             toast.error(errorMessage);
             return false;
@@ -265,9 +265,9 @@ export const useFriendStore = create((set, get) => ({
     sendFriendRequest: async (receiverId) => {
         try {
             if (import.meta.env.DEV) console.log("🚀 Sending friend request to:", receiverId);
-            
+
             const result = await get().sendRequest(receiverId);
-            
+
             if (import.meta.env.DEV) console.log("✅ Friend request result:", result);
             return result;
         } catch (error) {
@@ -279,11 +279,11 @@ export const useFriendStore = create((set, get) => ({
     acceptRequest: async (senderId) => {
         try {
             if (import.meta.env.DEV) console.log("🤝 Accepting friend request from:", senderId);
-            
+
             // Find the request using the helper function
             const acceptedUser = get().pendingReceived.find(r => getId(r) === senderId);
             if (import.meta.env.DEV) console.log("👤 Accepted user data:", acceptedUser);
-            
+
             if (!acceptedUser) {
                 if (import.meta.env.DEV) console.error("❌ User not found in pending requests");
                 // Force refresh to get latest data
@@ -291,17 +291,17 @@ export const useFriendStore = create((set, get) => ({
                 toast.error("Request not found. Please try again.");
                 return false;
             }
-            
+
             // Make API call first to ensure backend consistency
             const response = await axiosInstance.post(`/friends/accept/${senderId}`);
             if (import.meta.env.DEV) console.log("✅ API response:", response.data);
-            
+
             // Immediately update state - remove from pending and add to friends
             set((state) => ({
                 friends: [...state.friends, acceptedUser],
                 pendingReceived: state.pendingReceived.filter(r => getId(r) !== senderId)
             }));
-            
+
             // Clear all caches to force fresh data on next fetch
             sessionStorage.removeItem('friendDataLastFetch');
             const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
@@ -310,15 +310,15 @@ export const useFriendStore = create((set, get) => ({
                 localStorage.removeItem(cacheKey);
                 sessionStorage.removeItem(cacheKey);
             }
-            
+
             toast.success("Friend request accepted!");
             if (import.meta.env.DEV) console.log("✅ Friend request accepted and UI updated");
-            
+
             return true;
         } catch (error) {
             console.error("❌ Accept request error:", error.response?.data || error.message);
             toast.error(error.response?.data?.message || "Failed to accept request.");
-            
+
             // Force refresh on error to get correct state
             sessionStorage.removeItem('friendDataLastFetch');
             await get().fetchFriendData();
@@ -368,7 +368,7 @@ export const useFriendStore = create((set, get) => ({
     // Update lastMessage for a friend (called when message is sent/received)
     updateFriendLastMessage: (friendId, messageData) => {
         // Debug logging removed for performance
-        
+
         set((state) => {
             const updatedFriends = state.friends.map(friend => {
                 if (friend.id === friendId) {
@@ -393,13 +393,13 @@ export const useFriendStore = create((set, get) => ({
                             callDuration: messageData.callDuration || null
                         }
                     };
-                    
+
                     // Debug logging removed for performance
                     return updatedFriend;
                 }
                 return friend;
             });
-            
+
             return { friends: updatedFriends };
         });
     },
@@ -407,7 +407,7 @@ export const useFriendStore = create((set, get) => ({
     // ✅ NEW: Update message status for a specific friend's last message
     updateFriendMessageStatus: (friendId, messageId, status, deliveredAt = null, readAt = null) => {
         if (import.meta.env.DEV) console.log('🔄 Updating message status for friend:', friendId, messageId, status);
-        
+
         set((state) => {
             const updatedFriends = state.friends.map(friend => {
                 if (friend.id === friendId && friend.lastMessage && friend.lastMessage.id === messageId) {
@@ -420,7 +420,7 @@ export const useFriendStore = create((set, get) => ({
                             readAt: readAt || friend.lastMessage.readAt
                         }
                     };
-                    
+
                     // Debug logging removed for performance
                     return updatedFriend;
                 }
@@ -442,7 +442,7 @@ export const useFriendStore = create((set, get) => ({
         socket.on("messageDelivered", ({ messageId, deliveredAt }) => {
             console.log('📡 Global: Message delivered', messageId);
             const { friends } = get();
-            
+
             // Find which friend has this message as their last message
             friends.forEach(friend => {
                 if (friend.lastMessage && friend.lastMessage.id === messageId) {
@@ -450,7 +450,7 @@ export const useFriendStore = create((set, get) => ({
                     get().updateFriendMessageStatus(friend.id, messageId, 'delivered', deliveredAt);
                 }
             });
-            
+
             // 🔥 FORCE UPDATE: Trigger re-render for real-time updates
             set({ friends: [...friends] });
         });
@@ -459,7 +459,7 @@ export const useFriendStore = create((set, get) => ({
         socket.on("messagesDelivered", ({ messageIds, deliveredAt }) => {
             console.log('📡 Global: Messages delivered (bulk)', messageIds);
             const { friends } = get();
-            
+
             messageIds.forEach(messageId => {
                 friends.forEach(friend => {
                     if (friend.lastMessage && friend.lastMessage.id === messageId) {
@@ -475,7 +475,7 @@ export const useFriendStore = create((set, get) => ({
             const { friends } = get();
             const authUserId = useAuthStore.getState().authUser?.id;
             const readAt = new Date();
-            
+
             // Update status for messages I sent that were read by this user
             friends.forEach(friend => {
                 if (friend.id === readBy && friend.lastMessage && friend.lastMessage.senderId === authUserId) {
@@ -483,9 +483,26 @@ export const useFriendStore = create((set, get) => ({
                     get().updateFriendMessageStatus(friend.id, friend.lastMessage.id, 'read', null, readAt);
                 }
             });
-            
+
             // 🔥 FORCE UPDATE: Trigger re-render for real-time updates
             set({ friends: [...friends] });
+        });
+
+        // ✅ NEW: Listen for game invites to update sidebar immediately
+        socket.on("game:invite", (inviteData) => {
+            console.log('🎮 Global: Game invite received', inviteData);
+            // inviteData structure: { gameId, inviterId, inviterName, inviterPic }
+
+            const messageData = {
+                id: `game-${Date.now()}`,
+                text: `GAME_INVITE:${inviteData.gameId}`,
+                senderId: inviteData.inviterId,
+                receiverId: useAuthStore.getState().authUser?.id,
+                createdAt: new Date().toISOString(),
+                status: 'sent'
+            };
+
+            get().updateFriendLastMessage(inviteData.inviterId, messageData);
         });
     },
 
@@ -504,7 +521,7 @@ export const useFriendStore = create((set, get) => ({
     clearFriendData: () => {
         // Cleanup listeners first
         get().cleanupRealtimeListeners();
-        
+
         set({
             friends: [],
             pendingReceived: [],

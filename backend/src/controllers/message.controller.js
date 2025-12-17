@@ -58,13 +58,58 @@ export const getUsersForSidebar = async (req, res) => {
       }
     });
 
+    // Attach last message to each friend
+    const friendsWithLastMessage = await Promise.all(friends.map(async (friend) => {
+      const lastMessage = await prisma.message.findFirst({
+        where: {
+          OR: [
+            { senderId: loggedInUserId, receiverId: friend.id },
+            { senderId: friend.id, receiverId: loggedInUserId }
+          ],
+          isDeleted: false
+        },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          senderId: true,
+          receiverId: true,
+          text: true,
+          image: true,
+          voice: true,
+          isCallLog: true,
+          callType: true,
+          callStatus: true,
+          callDuration: true,
+          reactions: true,
+          status: true,
+          createdAt: true,
+          timestamp: true
+        }
+      });
+
+      // Parse reactions if needed
+      let reactions = [];
+      if (lastMessage?.reactions) {
+        if (typeof lastMessage.reactions === 'string') {
+          try { reactions = JSON.parse(lastMessage.reactions); } catch (e) { reactions = []; }
+        } else {
+          reactions = lastMessage.reactions;
+        }
+      }
+
+      return {
+        ...friend,
+        lastMessage: lastMessage ? { ...lastMessage, reactions } : null
+      };
+    }));
+
     // Cache result
     sidebarUsersCache.set(loggedInUserId, {
-      data: friends,
+      data: friendsWithLastMessage,
       timestamp: now
     });
 
-    res.status(200).json(friends);
+    res.status(200).json(friendsWithLastMessage);
   } catch (error) {
     console.error("Error in getUsersForSidebar:", error.message);
     res.status(500).json({ error: "Internal server error" });
@@ -95,7 +140,7 @@ export const getUnreadCounts = async (req, res) => {
       unreadCounts[item.senderId] = item._count.id;
     });
 
-    console.log(`📊 Unread counts for ${myId}:`, unreadCounts);
+    // console.log(`📊 Unread counts for ${myId}:`, unreadCounts);
     res.status(200).json(unreadCounts);
   } catch (error) {
     console.error("Error in getUnreadCounts:", error.message);
@@ -108,7 +153,7 @@ export const getMessages = async (req, res) => {
     const { id: userToChatId } = req.params;
     const myId = req.user.id;
 
-    console.log(`📥 getMessages: Fetching messages between ${myId} and ${userToChatId}`);
+    // console.log(`📥 getMessages: Fetching messages between ${myId} and ${userToChatId}`);
 
     const page = parseInt(req.query.page) || 0;
     const limit = parseInt(req.query.limit) || 50;
@@ -195,7 +240,7 @@ export const getMessages = async (req, res) => {
       };
     });
 
-    console.log(`✅ getMessages: Returning ${messagesWithParsedReactions.length} messages`);
+    // console.log(`✅ getMessages: Returning ${messagesWithParsedReactions.length} messages`);
     res.status(200).json(messagesWithParsedReactions.reverse());
   } catch (error) {
     console.error("❌ Error in getMessages:", error);
@@ -235,6 +280,21 @@ export const createCallLog = async (req, res) => {
       }
     }
 
+    // Emit to sender (so their chat updates instantly)
+    const senderSocketId = getReceiverSocketId(senderId);
+    if (senderSocketId && senderId !== receiverId) {
+      const io = getIO();
+      if (io) {
+        io.to(senderSocketId).emit("newMessage", callLogMessage);
+      }
+    }
+
+    // Clear sidebar cache for both
+    setImmediate(() => {
+      clearFriendsCache(senderId);
+      clearFriendsCache(receiverId);
+    });
+
     res.status(201).json(callLogMessage);
   } catch (error) {
     console.error("Error in createCallLog:", error.message);
@@ -244,7 +304,7 @@ export const createCallLog = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
   const startTime = Date.now();
-  
+
   try {
     const { text, image, voice, voiceDuration, replyTo } = req.body;
     const { id: receiverId } = req.params;
@@ -285,13 +345,13 @@ export const sendMessage = async (req, res) => {
         // Clear cache async
         clearFriendsCache(senderId);
         clearFriendsCache(receiverId);
-        
+
         // AI moderation async (if needed)
         if (text) {
           const prohibitedWords = ['spam', 'fake', 'hate', 'profit', 'stupid', 'idiot'];
           const lowerText = text.toLowerCase();
           const detectedWord = prohibitedWords.find(word => lowerText.includes(word));
-          
+
           if (detectedWord) {
             prisma.report.create({
               data: {
@@ -312,16 +372,16 @@ export const sendMessage = async (req, res) => {
 
       const responseTime = Date.now() - startTime;
       console.log(`⚡ Fast text message sent in ${responseTime}ms`);
-      
+
       return res.status(201).json(newMessage);
     }
 
     // 🔥 MEDIA MESSAGES: Optimized parallel processing
     const parsedVoiceDuration = voiceDuration ? parseInt(voiceDuration) : null;
-    
+
     // Parallel upload processing
     const uploadPromises = [];
-    
+
     if (image) {
       uploadPromises.push(
         cloudinary.uploader.upload(image, {
@@ -335,7 +395,7 @@ export const sendMessage = async (req, res) => {
         })
       );
     }
-    
+
     if (voice) {
       uploadPromises.push(
         cloudinary.uploader.upload(voice, {
@@ -348,7 +408,7 @@ export const sendMessage = async (req, res) => {
     // Wait for uploads
     const uploadResults = await Promise.all(uploadPromises);
     let imageUrl = null, voiceUrl = null;
-    
+
     if (image) imageUrl = uploadResults[0]?.secure_url;
     if (voice) voiceUrl = uploadResults[uploadPromises.length - 1]?.secure_url;
 
@@ -387,9 +447,9 @@ export const sendMessage = async (req, res) => {
 
     const responseTime = Date.now() - startTime;
     console.log(`📤 Media message sent in ${responseTime}ms`);
-    
+
     res.status(201).json(newMessage);
-    
+
   } catch (error) {
     const responseTime = Date.now() - startTime;
     console.error(`❌ Message failed after ${responseTime}ms:`, error.message);

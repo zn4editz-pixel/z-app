@@ -27,8 +27,8 @@ const DashboardOverview = ({ stats, loadingStats, users = [] }) => {
 				<AlertTriangle className="w-16 h-16 text-red-400 mb-4" />
 				<h3 className="text-xl font-bold text-red-400 mb-2">Failed to Load Dashboard</h3>
 				<p className="text-gray-400 mb-4">Unable to fetch dashboard data. Please try again.</p>
-				<button 
-					onClick={() => window.location.reload()} 
+				<button
+					onClick={() => window.location.reload()}
 					className="bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-yellow-300 transition-colors"
 				>
 					Retry
@@ -155,8 +155,8 @@ const DashboardOverview = ({ stats, loadingStats, users = [] }) => {
 								.map(user => (
 									<div key={user.id} className="flex items-center gap-3 p-3 bg-base-200/50 rounded-lg hover:bg-base-200 transition-colors">
 										<div className="relative">
-											<img 
-												src={user.profilePic || '/avatar.png'} 
+											<img
+												src={user.profilePic || '/avatar.png'}
 												alt={user.username}
 												className="w-10 h-10 rounded-full ring-2 ring-success ring-offset-2"
 											/>
@@ -212,8 +212,8 @@ const DashboardOverview = ({ stats, loadingStats, users = [] }) => {
 								.map(user => (
 									<div key={user.id} className="flex items-center gap-3 p-3 bg-base-200/50 rounded-lg hover:bg-base-200 transition-colors">
 										<div className="relative">
-											<img 
-												src={user.profilePic || '/avatar.png'} 
+											<img
+												src={user.profilePic || '/avatar.png'}
 												alt={user.username}
 												className="w-10 h-10 rounded-full"
 											/>
@@ -272,7 +272,7 @@ const ModernAnalyticsChart = ({ users }) => {
 		intervalRef.current = setInterval(() => {
 			const onlineUsers = users?.filter(u => u.isOnline).length || 0;
 			const totalUsers = users?.length || 1;
-			
+
 			setAnalyticsData({
 				userActivity: Math.min(100, (onlineUsers / Math.max(totalUsers * 0.3, 1)) * 100),
 				engagement: Math.min(100, 60 + Math.sin(Date.now() / 2000) * 20 + Math.random() * 15),
@@ -438,6 +438,7 @@ const ModernAnalyticsChart = ({ users }) => {
 // Live System Metrics Chart Component
 const LiveSystemMetricsChart = () => {
 	const intervalRef = useRef(null);
+	const [metricsData, setMetricsData] = useState([]);
 
 	useEffect(() => {
 		// Generate initial data
@@ -507,11 +508,11 @@ const LiveSystemMetricsChart = () => {
 					{/* Grid */}
 					<defs>
 						<pattern id="metricsGrid" width="10" height="10" patternUnits="userSpaceOnUse">
-							<path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.2" opacity="0.2"/>
+							<path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.2" opacity="0.2" />
 						</pattern>
 					</defs>
 					<rect width="100" height="100" fill="url(#metricsGrid)" />
-					
+
 					{/* CPU Line */}
 					<path
 						d={metricsData.map((point, idx) => {
@@ -525,7 +526,7 @@ const LiveSystemMetricsChart = () => {
 						className="transition-all duration-300"
 						style={{ filter: 'drop-shadow(0 0 4px rgb(239, 68, 68))' }}
 					/>
-					
+
 					{/* Memory Line */}
 					<path
 						d={metricsData.map((point, idx) => {
@@ -539,7 +540,7 @@ const LiveSystemMetricsChart = () => {
 						className="transition-all duration-300"
 						style={{ filter: 'drop-shadow(0 0 4px rgb(245, 158, 11))' }}
 					/>
-					
+
 					{/* Network Line */}
 					<path
 						d={metricsData.map((point, idx) => {

@@ -8,22 +8,13 @@ import toast from "react-hot-toast";
 import Sidebar from "../components/Sidebar";
 import NoChatSelected from "../components/NoChatSelected";
 import ChatContainer from "../components/ChatContainer";
-import PrivateCallModal from "../components/PrivateCallModal";
-import IncomingCallModal from "../components/IncomingCallModal";
+import { useCallStore } from "../store/useCallStore";
 
 const HomePage = () => {
   const { selectedUser, restoreSelectedUser } = useChatStore();
   const { socket, authUser } = useAuthStore();
   const { friends, fetchFriendData } = useFriendStore();
 
-  const [callState, setCallState] = useState({
-    isCallActive: false,
-    callType: null,
-    isInitiator: false,
-    otherUser: null,
-  });
-
-  const [incomingCall, setIncomingCall] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
 
   // ✅ ROBUST: Use sessionStorage to detect refresh (set by App.jsx)
@@ -233,77 +224,7 @@ const HomePage = () => {
       };
     }
 
-    const handleIncomingCall = ({ callerInfo, callType, callerId }) => {
-      console.log("📞 Incoming call from:", callerInfo?.nickname || callerId, "Type:", callType);
-      console.log("📞 Full call data:", { callerInfo, callType, callerId });
-
-      // Validate callerInfo
-      if (!callerInfo || !callerInfo.id) {
-        console.error("❌ Invalid caller info received:", callerInfo);
-        toast.error("Invalid call data received");
-        return;
-      }
-
-      // Check if already in a call using the latest state
-      setCallState((prevState) => {
-        console.log("📊 Current call state:", prevState);
-        if (prevState.isCallActive) {
-          console.log("⚠️ Already in a call, rejecting incoming call from:", callerInfo.nickname);
-          socket.emit("private:reject-call", { callerId: callerInfo.id });
-          return prevState; // Don't update state
-        }
-
-        // Not in a call, show incoming call modal
-        console.log("✅ Showing incoming call modal for:", callerInfo.nickname);
-        setIncomingCall({ callerInfo, callType });
-        return prevState;
-      });
-    };
-
-    // 🔥 NEW: Handle call rejection
-    const handleCallRejected = async ({ rejectorId, reason }) => {
-      console.log("🚫 Call rejected by user:", rejectorId, "Reason:", reason);
-      toast.error(`Call ${reason || 'declined'} by user`);
-
-      // Log the rejected outgoing call
-      const { addCallLog } = useChatStore.getState();
-      await addCallLog(rejectorId, callState.callType || 'voice', 0, 'rejected');
-
-      setCallState({
-        isCallActive: false,
-        callType: null,
-        isInitiator: false,
-        otherUser: null,
-      });
-    };
-
-    // 🔥 NEW: Handle call failure
-    const handleCallFailed = async ({ reason }) => {
-      console.log("❌ Call failed:", reason);
-      toast.error(`Call failed: ${reason}`);
-
-      // Log the failed call if we have call state
-      if (callState.otherUser) {
-        const { addCallLog } = useChatStore.getState();
-        await addCallLog(callState.otherUser.id, callState.callType || 'voice', 0, 'failed');
-      }
-
-      setCallState({
-        isCallActive: false,
-        callType: null,
-        isInitiator: false,
-        otherUser: null,
-      });
-    };
-
-    socket.on("private:incoming-call", handleIncomingCall);
-    socket.on("private:call-rejected", handleCallRejected);
-    socket.on("private:call-failed", handleCallFailed);
-
     return () => {
-      socket.off("private:incoming-call", handleIncomingCall);
-      socket.off("private:call-rejected", handleCallRejected);
-      socket.off("private:call-failed", handleCallFailed);
       isSubscribed = false;
       console.log('🧹 HomePage: Cleaned up socket listeners');
     };
@@ -315,7 +236,9 @@ const HomePage = () => {
       return;
     }
 
-    if (callState.isCallActive) {
+    // Check global store
+    const { isCallActive, startCall } = useCallStore.getState();
+    if (isCallActive) {
       toast.error("Already in a call");
       return;
     }
@@ -346,60 +269,8 @@ const HomePage = () => {
       });
     }
 
-    setCallState({
-      isCallActive: true,
-      callType,
-      isInitiator: true,
-      otherUser: selectedUser,
-    });
-  };
-
-  const handleAcceptCall = () => {
-    if (!incomingCall || !socket) return;
-
-    console.log("✅ Accepting call from:", incomingCall.callerInfo.nickname);
-
-    // Immediately notify caller that call was accepted
-    socket.emit("private:call-accepted", {
-      callerId: incomingCall.callerInfo.id,
-      acceptorInfo: {
-        id: authUser.id,
-        nickname: authUser.nickname,
-        profilePic: authUser.profilePic,
-      },
-    });
-
-    setCallState({
-      isCallActive: true,
-      callType: incomingCall.callType,
-      isInitiator: false,
-      otherUser: incomingCall.callerInfo,
-    });
-    setIncomingCall(null);
-  };
-
-  const handleRejectCall = async () => {
-    if (incomingCall && socket) {
-      console.log("🚫 Rejecting call from:", incomingCall.callerInfo.nickname);
-      socket.emit("private:reject-call", {
-        callerId: incomingCall.callerInfo.id,
-        reason: "declined"
-      });
-
-      // 🔥 NEW: Log rejected call
-      const { addCallLog } = useChatStore.getState();
-      await addCallLog(incomingCall.callerInfo.id, incomingCall.callType, 0, 'rejected');
-    }
-    setIncomingCall(null);
-  };
-
-  const handleCloseCall = () => {
-    setCallState({
-      isCallActive: false,
-      callType: null,
-      isInitiator: false,
-      otherUser: null,
-    });
+    // Update global store
+    startCall(selectedUser, callType);
   };
 
   // Mobile detection for full-screen chat
@@ -461,23 +332,6 @@ const HomePage = () => {
         {!isMobileChatMode && <div className="h-0 md:h-0 safe-area-bottom"></div>}
       </div>
 
-      {/* Private Call Modal */}
-      <PrivateCallModal
-        isOpen={callState.isCallActive}
-        onClose={handleCloseCall}
-        callType={callState.callType}
-        isInitiator={callState.isInitiator}
-        otherUser={callState.otherUser}
-      />
-
-      {/* Incoming Call Modal */}
-      <IncomingCallModal
-        isOpen={!!incomingCall}
-        caller={incomingCall?.callerInfo}
-        callType={incomingCall?.callType}
-        onAccept={handleAcceptCall}
-        onReject={handleRejectCall}
-      />
     </div>
   );
 };

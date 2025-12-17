@@ -63,7 +63,7 @@ const ChatContainer = ({ onStartCall }) => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -76,7 +76,7 @@ const ChatContainer = ({ onStartCall }) => {
       const viewportHeight = window.visualViewport?.height || window.innerHeight;
       const windowHeight = window.screen.height;
       const keyboardThreshold = windowHeight * 0.75;
-      
+
       setKeyboardVisible(viewportHeight < keyboardThreshold);
     };
 
@@ -190,10 +190,11 @@ const ChatContainer = ({ onStartCall }) => {
     getMessages?.(selectedUser.id);
 
     // ✅ ENHANCED: Force scroll to bottom after a brief delay to ensure messages are rendered
+    // ✅ ENHANCED: Smooth scroll to bottom after chat switch
     setTimeout(() => {
-      if (scrollContainerRef.current && isInitialLoad.current) {
-        scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-        if (import.meta.env.DEV) console.log('🔄 Force scroll to bottom after chat switch');
+      if (scrollContainerRef.current) {
+        scrollToBottomSmooth('smooth');
+        if (import.meta.env.DEV) console.log('🔄 Smooth scroll to bottom after chat switch');
       }
     }, 100);
 
@@ -217,7 +218,8 @@ const ChatContainer = ({ onStartCall }) => {
   // ✅ INSTANT SCROLL: Use useLayoutEffect to scroll before paint
   useLayoutEffect(() => {
     if (messages.length > 0 && isInitialLoad.current && scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+      // Use smooth scroll for initial load animation as requested
+      scrollToBottomSmooth('smooth');
     }
   }, [messages, selectedUser?.id]);
 
@@ -412,18 +414,16 @@ const ChatContainer = ({ onStartCall }) => {
 
   return (
     <>
-      <div className={`flex-1 flex flex-col h-full w-full ${
-        isMobile ? 'mobile-chat-fullscreen' : ''
-      }`}>
+      <div className={`flex-1 flex flex-col h-full w-full ${isMobile ? 'mobile-chat-fullscreen' : ''
+        }`}>
         <ChatHeader onStartCall={handleStartCall} />
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
           data-chat-container
-          className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent relative ${
-            isMobile && keyboardVisible ? 'chat-container-mobile-keyboard' : ''
-          } ${isMobile ? 'pt-24 mobile-chat-container professional-chat-container' : 'pt-6'}`}
-          style={{ WebkitOverflowScrolling: 'touch', scrollBehavior: 'smooth' }}
+          className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent relative ${isMobile && keyboardVisible ? 'chat-container-mobile-keyboard' : ''
+            } ${isMobile ? 'pt-24 mobile-chat-container professional-chat-container' : 'pt-6'}`}
+          style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {isMessagesLoading ? (
             <MessageSkeleton />
@@ -474,7 +474,7 @@ const ChatContainer = ({ onStartCall }) => {
                     )}
                   </React.Fragment>
                 );
-            })}
+              })}
             </>
           )}
 

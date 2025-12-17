@@ -1,6 +1,4 @@
 import { create } from "zustand";
-import { useAuthStore } from "./useAuthStore";
-import { useChatStore } from "./useChatStore";
 
 export const useGameStore = create((set, get) => ({
     gameState: null, // { board, currentTurn, players, scores, status, winner }

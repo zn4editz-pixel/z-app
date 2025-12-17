@@ -15,7 +15,7 @@ const ChatHeader = ({ onStartCall }) => {
 		const checkMobile = () => {
 			setIsMobile(window.innerWidth <= 768);
 		};
-		
+
 		checkMobile();
 		window.addEventListener('resize', checkMobile);
 		return () => window.removeEventListener('resize', checkMobile);
@@ -30,7 +30,7 @@ const ChatHeader = ({ onStartCall }) => {
 			const viewportHeight = window.visualViewport?.height || window.innerHeight;
 			const windowHeight = window.screen.height;
 			const keyboardThreshold = windowHeight * 0.75; // 75% of screen height
-			
+
 			setKeyboardVisible(viewportHeight < keyboardThreshold);
 		};
 
@@ -56,16 +56,15 @@ const ChatHeader = ({ onStartCall }) => {
 	};
 
 	return (
-		<div className={`${
-			isMobile 
-				? 'fixed top-0 left-0 right-0 z-50 px-4 py-4 bg-base-100/95 backdrop-blur-xl border-t border-t-base-300/30 border-b border-base-300/50 shadow-lg mobile-chat-header-professional' 
+		<div className={`${isMobile
+				? 'fixed top-0 left-0 right-0 z-50 px-4 py-4 bg-base-100/95 backdrop-blur-xl border-t border-t-base-300/30 border-b border-base-300/50 shadow-lg mobile-chat-header-professional'
 				: 'p-4 border-b border-base-300 relative bg-base-100 z-30'
-		} ${isMobile && keyboardVisible ? 'mobile-chat-header-keyboard' : ''}`}>
+			} ${isMobile && keyboardVisible ? 'mobile-chat-header-keyboard' : ''}`}>
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3 flex-1 min-w-0">
 					{/* Back Button - Instagram Style */}
-					<button 
-						onClick={() => setSelectedUser(null)} 
+					<button
+						onClick={() => setSelectedUser(null)}
 						className="w-10 h-10 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation"
 					>
 						<ArrowLeft className="w-5 h-5 text-base-content" />
@@ -97,11 +96,7 @@ const ChatHeader = ({ onStartCall }) => {
 						<p className="text-sm text-base-content/60 font-medium">
 							{isTyping && typingUserId === selectedUser.id ? (
 								<span className="text-primary font-medium flex items-center gap-1">
-									<span className="flex gap-0.5">
-										<span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-										<span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-										<span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-									</span>
+
 									typing...
 								</span>
 							) : isOnline ? (
@@ -116,17 +111,17 @@ const ChatHeader = ({ onStartCall }) => {
 				{/* Header Actions - Professional Style */}
 				<div className="flex items-center gap-1">
 					{/* Video Call Button */}
-					<button 
-						onClick={() => handleStartCall('video')} 
+					<button
+						onClick={() => handleStartCall('video')}
 						className="w-11 h-11 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation group"
 						title="Video Call"
 					>
 						<Video className="w-5 h-5 text-base-content group-hover:text-primary transition-colors" />
 					</button>
-					
+
 					{/* Audio Call Button */}
-					<button 
-						onClick={() => handleStartCall('audio')} 
+					<button
+						onClick={() => handleStartCall('audio')}
 						className="w-11 h-11 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation group"
 						title="Voice Call"
 					>

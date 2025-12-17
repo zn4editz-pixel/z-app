@@ -1,10 +1,10 @@
+/* Import animations - must be first due to CSS @import rules */
+@import './styles/animations.css';
+
 /* Import Tailwind CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import animations after Tailwind */
-@import './styles/animations.css';
 
 /* Prevent horizontal scrolling globally */
 html,
@@ -248,12 +248,14 @@ html {
   }
 
   .instagram-button:hover {
-    transform: translateY(-1px) translateZ(0);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    /* transform: translateY(-1px) translateZ(0); */
+    opacity: 0.95;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   }
 
   .instagram-button:active {
-    transform: translateY(0) scale(0.98) translateZ(0);
+    /* transform: translateY(0) scale(0.98) translateZ(0); */
+    opacity: 0.8;
     transition-duration: 0.1s;
   }
 
@@ -333,8 +335,8 @@ html {
   }
 
   .instagram-card:hover {
-    transform: translateY(-2px) translateZ(0);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    /* transform: translateY(-2px) translateZ(0); */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   }
 
   /* Smooth list animations */
@@ -562,12 +564,13 @@ html {
     }
 
     .professional-button:hover {
-      transform: translateY(-1px) translateZ(0);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      /* transform: translateY(-1px) translateZ(0); */
+      opacity: 0.9;
     }
 
     .professional-button:active {
-      transform: translateY(0) scale(0.98) translateZ(0);
+      /* transform: translateY(0) scale(0.98) translateZ(0); */
+      opacity: 0.7;
       transition-duration: 0.1s;
     }
 
@@ -615,7 +618,7 @@ html {
           rgba(255, 255, 255, 0.8) 60%,
           transparent 70%,
           transparent 100%);
-      animation: premiumShine 2.5s ease-in-out infinite;
+      animation: premiumShine 1.5s ease-in-out infinite;
       animation-delay: 0.5s;
       border-radius: inherit;
       z-index: 30;
@@ -636,8 +639,8 @@ html {
           oklch(var(--s) / 0.6) 55%,
           transparent 65%,
           transparent 100%);
-      animation: premiumShineSecondary 2.5s ease-in-out infinite;
-      animation-delay: 1.8s;
+      animation: premiumShineSecondary 1.5s ease-in-out infinite;
+      animation-delay: 1.2s;
       border-radius: inherit;
       z-index: 25;
       transform: skewX(-15deg);
@@ -1187,4 +1190,24 @@ body.react-loaded {
   position: relative;
   z-index: 10;
   border-radius: 1rem;
+}
+
+/* Simple Message Entry Animation */
+@keyframes message-enter-simple {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-message-enter {
+  animation: message-enter-simple 0.25s ease-out forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }

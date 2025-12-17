@@ -31,7 +31,7 @@ export const loadNonCriticalCSS = () => {
     '/src/styles/responsive.css',
     '/src/styles/mobile.css'
   ];
-  
+
   nonCriticalStyles.forEach(href => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -47,15 +47,17 @@ export const loadNonCriticalCSS = () => {
 // Preload critical resources
 export const preloadCriticalResources = () => {
   const criticalResources = [
-    { href: '/avatar.png', as: 'image' },
-    { href: '/zn4.png', as: 'image' }
+    { href: '/zn4.png', as: 'image', crossorigin: 'anonymous' }
   ];
-  
+
   criticalResources.forEach(resource => {
     const link = document.createElement('link');
     link.rel = 'preload';
     link.href = resource.href;
     link.as = resource.as;
+    if (resource.crossorigin) {
+      link.crossOrigin = resource.crossorigin;
+    }
     document.head.appendChild(link);
   });
 };

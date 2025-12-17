@@ -28,13 +28,8 @@ const Sidebar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [, forceUpdate] = useState({});
 
-  // 🔥 REAL-TIME: Force re-render for live status updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      forceUpdate({});
-    }, 500); // Update every 500ms for real-time status changes
-    return () => clearInterval(interval);
-  }, []);
+
+  // Removed global 500ms forceUpdate interval for performance optimization
 
   // ✅ ENHANCED: Smart message preview with better logic
   const getMessagePreview = (user, unreadCount) => {

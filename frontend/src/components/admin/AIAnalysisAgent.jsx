@@ -1,12 +1,17 @@
 import { useEffect, useState, useRef } from "react";
-import { 
-	Brain, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, 
+import {
+	Brain, TrendingUp, TrendingDown, AlertTriangle, CheckCircle,
 	Zap, Users, Database, Activity, Eye, Sparkles, X, Info
 } from "lucide-react";
 import { axiosInstance } from "../../lib/axios";
 
 const AIAnalysisAgent = () => {
 	const intervalRef = useRef(null);
+	const [isAnalyzing, setIsAnalyzing] = useState(false);
+	const [analysis, setAnalysis] = useState(null);
+	const [reports, setReports] = useState([]);
+	const [seenIssues] = useState(() => new Set());
+	const [selectedIssue, setSelectedIssue] = useState(null);
 
 	useEffect(() => {
 		fetchAnalysis();
@@ -19,17 +24,17 @@ const AIAnalysisAgent = () => {
 		setIsAnalyzing(true);
 		try {
 			const res = await axiosInstance.get("/admin/ai-analysis");
-			
+
 			// Filter unique issues
 			const uniquePositive = filterUniqueInsights(res.data.positiveInsights || [], seenIssues);
 			const uniqueIssues = filterUniqueInsights(res.data.issues || [], seenIssues);
-			
+
 			setAnalysis({
 				...res.data,
 				positiveInsights: uniquePositive,
 				issues: uniqueIssues
 			});
-			
+
 			// Add new report to history
 			if (res.data.report) {
 				setReports(prev => {
@@ -64,9 +69,9 @@ const AIAnalysisAgent = () => {
 		<div className="space-y-6">
 			{/* Issue Detail Modal */}
 			{selectedIssue && (
-				<IssueDetailModal 
-					issue={selectedIssue} 
-					onClose={() => setSelectedIssue(null)} 
+				<IssueDetailModal
+					issue={selectedIssue}
+					onClose={() => setSelectedIssue(null)}
 				/>
 			)}
 
@@ -75,15 +80,15 @@ const AIAnalysisAgent = () => {
 				{/* Lightweight Animated Background */}
 				<div className="absolute inset-0 pointer-events-none overflow-hidden">
 					{/* Simple gradient shimmer */}
-					<div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-500/5 to-transparent" 
+					<div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-500/5 to-transparent"
 						style={{ animation: 'shimmer 3s ease-in-out infinite' }} />
-					
+
 					{/* Minimal glowing orbs (only 2) */}
-					<div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl" 
+					<div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl"
 						style={{ animation: 'pulse 4s ease-in-out infinite' }} />
-					<div className="absolute bottom-0 left-0 w-64 h-64 bg-yellow-600/10 rounded-full blur-3xl" 
+					<div className="absolute bottom-0 left-0 w-64 h-64 bg-yellow-600/10 rounded-full blur-3xl"
 						style={{ animation: 'pulse 4s ease-in-out infinite', animationDelay: '2s' }} />
-					
+
 					{/* Single scanning line */}
 					{isAnalyzing && (
 						<div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-yellow-500 to-transparent"
@@ -161,10 +166,10 @@ const AIAnalysisAgent = () => {
 						</div>
 						<div className="space-y-3">
 							{analysis?.positiveInsights?.map((insight, idx) => (
-								<InsightCard 
-									key={idx} 
-									insight={insight} 
-									type="positive" 
+								<InsightCard
+									key={idx}
+									insight={insight}
+									type="positive"
 									index={idx}
 									onClick={() => setSelectedIssue({ ...insight, type: 'positive' })}
 								/>
@@ -183,10 +188,10 @@ const AIAnalysisAgent = () => {
 						</div>
 						<div className="space-y-3">
 							{analysis?.issues?.map((issue, idx) => (
-								<InsightCard 
-									key={idx} 
-									insight={issue} 
-									type="negative" 
+								<InsightCard
+									key={idx}
+									insight={issue}
+									type="negative"
 									index={idx}
 									onClick={() => setSelectedIssue({ ...issue, type: 'negative' })}
 								/>
@@ -234,14 +239,14 @@ const InsightCard = ({ insight, type, index, onClick }) => {
 	const color = colors[type];
 
 	return (
-		<div 
+		<div
 			onClick={onClick}
 			className={`p-4 rounded-xl border ${color.bg} ${color.border} ${color.hover} transform transition-all hover:scale-105 animate-slide-in cursor-pointer group relative overflow-hidden`}
 			style={{ animationDelay: `${index * 0.1}s` }}
 		>
 			{/* Hover effect */}
 			<div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-			
+
 			<div className="flex items-start gap-3 relative z-10">
 				{type === 'positive' ? (
 					<CheckCircle className={`w-5 h-5 ${color.icon} flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform`} />
@@ -304,7 +309,7 @@ const IssueDetailModal = ({ issue, onClose }) => {
 
 	const getSolutions = (issue) => {
 		// AI-Generated detailed solutions based on issue type
-		
+
 		// High Memory Usage
 		if (issue.title.includes("High Memory") || issue.title.includes("Memory")) {
 			return {
@@ -521,7 +526,7 @@ const IssueDetailModal = ({ issue, onClose }) => {
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-			<div 
+			<div
 				className={`relative max-w-2xl w-full bg-gradient-to-br ${color.bg} border-2 ${color.border} rounded-2xl shadow-2xl overflow-hidden animate-scale-in`}
 				onClick={(e) => e.stopPropagation()}
 			>
@@ -725,7 +730,7 @@ const IssueDetailModal = ({ issue, onClose }) => {
 
 const TimelineReport = ({ report, index }) => {
 	return (
-		<div 
+		<div
 			className="flex items-start gap-4 p-4 bg-black/30 rounded-xl border border-yellow-500/20 hover:border-yellow-500/40 transition-all animate-slide-in"
 			style={{ animationDelay: `${index * 0.05}s` }}
 		>
@@ -746,8 +751,8 @@ const EmptyState = ({ type }) => {
 	return (
 		<div className="text-center py-8 text-white/50">
 			<p className="text-sm">
-				{type === 'positive' 
-					? "AI is analyzing for positive trends..." 
+				{type === 'positive'
+					? "AI is analyzing for positive trends..."
 					: "No issues detected. System running smoothly."}
 			</p>
 		</div>

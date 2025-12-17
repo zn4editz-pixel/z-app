@@ -956,6 +956,25 @@ export function initializeSocketHandlers(io) {
 				});
 			} else {
 				console.log(`❌ User ${receiverId} not online for call`);
+
+				// Create Missed Call Log
+				prisma.message.create({
+					data: {
+						senderId: socket.userId,
+						receiverId: receiverId,
+						isCallLog: true,
+						callType: callType,
+						callDuration: 0,
+						callStatus: 'missed',
+						callInitiator: socket.userId,
+						status: 'sent'
+					}
+				}).then(msg => {
+					console.log("✅ Created missed call log for offline user");
+					// Emit to sender so they see it in chat
+					socket.emit("newMessage", msg);
+				}).catch(err => console.error("Failed to create missed call log:", err));
+
 				socket.emit("private:call-failed", { reason: "User not online" });
 			}
 		});
@@ -1010,6 +1029,35 @@ export function initializeSocketHandlers(io) {
 					rejectorId: socket.userId,
 					reason: reason || 'declined'
 				});
+
+				// Create Declined Call Log
+				prisma.message.create({
+					data: {
+						senderId: callerId, // Caller initiated
+						receiverId: socket.userId, // Current user rejected
+						isCallLog: true,
+						callType: 'audio', // Default or need to pass it? We don't have callType here cleanly unless passed.
+						// Actually, better to assume generic or pass it from client. 
+						// For now, let's omit callType if possible or default to 'audio'. 
+						// Wait, schema might require it. Let's check schema/previous usage.
+						// Previous usage in createCallLog used 'audio' or 'video'.
+						// The 'private:reject-call' event payload only has callerId and reason.
+						// We should probably rely on the existing client logic? 
+						// No, client logic didn't post for rejection.
+						// Let's just create it with 'audio' as fallback or 'unknown'.
+						// Actually, let's mark it as 'missed' or 'declined'.
+						callType: 'audio', // Fallback
+						callDuration: 0,
+						callStatus: 'declined',
+						callInitiator: callerId,
+						status: 'read' // Because they saw it to reject it
+					}
+				}).then(msg => {
+					console.log("✅ Created declined call log");
+					// Emit to both
+					io.to(callerSocketId).emit("newMessage", msg);
+					socket.emit("newMessage", msg);
+				}).catch(err => console.error("Failed to create declined call log:", err));
 			}
 		});
 

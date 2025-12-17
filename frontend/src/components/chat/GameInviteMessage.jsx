@@ -70,7 +70,7 @@ const GameInviteMessage = ({ message, onJoin }) => {
         const opponentScore = opponent?.score || 0;
 
         return (
-            <div className={`relative group max-w-[85%] mb-4 ${isSender ? "ml-auto" : "mr-auto"}`}>
+            <div className={`relative group max-w-[85%] mb-4 ${isSender ? "ml-auto mr-2" : "mr-auto ml-2"}`}>
                 <div
                     className="relative overflow-hidden rounded-2xl border-2 border-primary/50 shadow-xl cursor-pointer hover:scale-[1.02] transition-all duration-300"
                     onClick={() => setGameOpen(true)}
@@ -148,7 +148,7 @@ const GameInviteMessage = ({ message, onJoin }) => {
         const isDraw = gameState?.winner === 'draw';
 
         return (
-            <div className={`relative group max-w-[85%] mb-4 ${isSender ? "ml-auto" : "mr-auto"}`}>
+            <div className={`relative group max-w-[85%] mb-4 ${isSender ? "ml-auto mr-2" : "mr-auto ml-2"}`}>
                 <div
                     className={`relative overflow-hidden rounded-2xl border-2 shadow-xl p-4 ${isWinner ? 'bg-gradient-to-r from-yellow-400 to-amber-500 border-yellow-300' :
                         isDraw ? 'bg-gradient-to-r from-gray-500 to-slate-600 border-gray-400' :
@@ -176,8 +176,8 @@ const GameInviteMessage = ({ message, onJoin }) => {
     // Expired invite
     if (isExpired && !isActiveGame) {
         return (
-            <div className={`relative group max-w-[80%] mb-4 ${isSender ? "ml-auto" : "mr-auto"}`}>
-                <div className="relative overflow-hidden rounded-2xl p-4 bg-base-300 border border-base-content/10 grayscale opacity-60">
+            <div className={`relative group max-w-[85%] mb-4 ${isSender ? "ml-auto mr-2" : "mr-auto ml-2"}`}>
+                <div className="relative overflow-hidden rounded-2xl p-4 bg-base-300 border border-base-content/10 grayscale opacity-60 min-w-[260px]">
                     <div className="flex items-center gap-4">
                         <div className="p-3 rounded-full bg-base-content/10">
                             <AlertCircle size={24} className="text-base-content/50" />
@@ -194,38 +194,39 @@ const GameInviteMessage = ({ message, onJoin }) => {
 
     // Pending invite (default)
     return (
-        <div className={`relative group max-w-[80%] mb-4 ${isSender ? "ml-auto" : "mr-auto"}`}>
+        <div className={`relative group max-w-[85%] mb-4 ${isSender ? "ml-auto mr-2" : "mr-auto ml-2"}`}>
             <div
                 className={`
                   relative overflow-hidden rounded-2xl p-4 
                   border transition-all duration-300
                   bg-gradient-to-br from-indigo-600 to-purple-700 border-indigo-400/30 shadow-[0_0_15px_rgba(99,102,241,0.5)] hover:scale-[1.02] cursor-pointer
+                  min-w-[260px]
                 `}
                 onClick={() => !isSender && handleJoin()}
             >
                 {/* Shine Effect */}
                 <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent z-10 pointer-events-none" />
 
-                <div className="flex items-center gap-4 relative z-20">
-                    <div className="p-3 rounded-full backdrop-blur-sm bg-white/20 animate-pulse">
+                <div className="flex items-center gap-3 sm:gap-4 relative z-20">
+                    <div className="p-3 rounded-full backdrop-blur-sm bg-white/20 animate-pulse flex-shrink-0">
                         <Gamepad2 size={24} className="text-white fill-current" />
                     </div>
 
-                    <div className="flex-1">
-                        <h3 className="font-bold text-lg tracking-wide text-white">
+                    <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-lg tracking-wide text-white whitespace-nowrap overflow-hidden text-ellipsis">
                             Let's Play SOS!
                         </h3>
-                        <p className="text-xs mt-1 text-indigo-100">
+                        <p className="text-xs mt-1 text-indigo-100 truncate">
                             {isSender
-                                ? `Waiting for friend... (${timeLeft}s)`
-                                : `Tap to join • Expires in ${timeLeft}s`
+                                ? `Waiting... (${timeLeft}s)`
+                                : `Tap to join • ${timeLeft}s left`
                             }
                         </p>
                     </div>
 
                     {!isSender && (
                         <button
-                            className="px-4 py-2 bg-white text-indigo-600 rounded-full font-bold text-xs shadow-lg transform active:scale-95 transition-transform"
+                            className="px-3 sm:px-4 py-2 bg-white text-indigo-600 rounded-full font-bold text-xs shadow-lg transform active:scale-95 transition-transform flex-shrink-0 whitespace-nowrap"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 handleJoin();

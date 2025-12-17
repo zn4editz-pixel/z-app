@@ -14,6 +14,7 @@ import Navbar from "./components/Navbar";
 // PermissionHandler removed as per user request to only ask on feature usage
 import ErrorBoundary from "./components/ErrorBoundary";
 import SOSBoard from "./components/game/SOSBoard"; // ✅ Game Board Overlay
+import GlobalCallUI from "./components/GlobalCallUI"; // ✅ Global Call UI Manager
 
 // Lazy load non-critical pages for performance
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
@@ -53,7 +54,7 @@ const App = () => {
 	const fetchFriendData = useFriendStore((state) => state.fetchFriendData);
 	const navigate = useNavigate();
 	const location = useLocation();
-	
+
 	// ✅ CRITICAL FIX: Move all useState hooks to the top to fix React Hooks order
 	const [isMobile, setIsMobile] = useState(false);
 	const { selectedUser } = useChatStore();
@@ -168,7 +169,7 @@ const App = () => {
 	// ✅ FIXED: Pages where Navbar should be hidden
 	const hideNavbarPaths = ["/stranger", "/suspended", "/blocked", "/goodbye"];
 	const shouldShowNavbar = hasCompletedProfile && !hideNavbarPaths.includes(window.location.pathname);
-	
+
 	// Hide navbar on mobile when in chat mode
 	const isMobileChatMode = isMobile && selectedUser && location.pathname === '/';
 	const showNavbarFinal = shouldShowNavbar && !isMobileChatMode;
@@ -350,6 +351,7 @@ const App = () => {
 				},
 			}} />
 			<SOSBoard />
+			<GlobalCallUI />
 		</div>
 	);
 };

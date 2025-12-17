@@ -6,6 +6,7 @@ import { useNotificationStore } from "../store/useNotificationStore";
 import { useFriendStore } from "../store/useFriendStore";
 import { useChatStore } from "../store/useChatStore";
 import { useGameStore } from "../store/useGameStore"; // ✅ Import Game Store
+import { useCallStore } from "../store/useCallStore"; // ✅ Import Call Store
 
 export const useSocketListeners = () => {
     const navigate = useNavigate();
@@ -150,6 +151,41 @@ export const useSocketListeners = () => {
             toast.error("⌛ Game invite expired.", { icon: '⏲️' });
         });
 
+        // 6. CALL LISTENERS 📞
+        socket.on("private:incoming-call", ({ callerInfo, callType, callerId }) => {
+            console.log("📞 Incoming call from:", callerInfo?.nickname);
+            const { isCallActive, setIncomingCall } = useCallStore.getState();
+
+            if (isCallActive) {
+                console.log("⚠️ Already in call, rejecting incoming");
+                socket.emit("private:reject-call", { callerId: callerInfo.id });
+                return;
+            }
+            setIncomingCall({ callerInfo, callType });
+        });
+
+        socket.on("private:call-rejected", ({ reason }) => {
+            toast.error(`Call ${reason || "declined"}`);
+            useCallStore.getState().resetCallState();
+        });
+
+        socket.on("private:call-failed", ({ reason }) => {
+            toast.error(`Call failed: ${reason}`);
+            useCallStore.getState().resetCallState();
+        });
+
+        socket.on("private:call-accepted", ({ acceptorInfo }) => {
+            console.log("✅ Call accepted by:", acceptorInfo?.nickname);
+            toast.success("Call connected!");
+            useCallStore.getState().setCallStatus("connected");
+        });
+
+        socket.on("private:call-ended", () => {
+            console.log("🔚 Call ended");
+            toast("Call ended");
+            useCallStore.getState().resetCallState();
+        });
+
         return () => {
             socket.off('connect', handleConnect);
             socket.off("user-action");
@@ -167,6 +203,13 @@ export const useSocketListeners = () => {
             socket.off("game:end");
             socket.off("game:error");
             socket.off("game:expired");
+
+            // Call Events
+            socket.off("private:incoming-call");
+            socket.off("private:call-rejected");
+            socket.off("private:call-failed");
+            socket.off("private:call-accepted");
+            socket.off("private:call-ended");
         };
     }, [socket, authUser?.id, navigate]);
 };

@@ -391,11 +391,10 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
                 {/* Image Upload Button - Professional */}
                 <button
                   type="button"
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation shadow-sm ${
-                    imagePreview 
-                      ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" 
-                      : "bg-base-200/50 text-base-content/70 hover:bg-base-200 hover:text-base-content"
-                  }`}
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation shadow-sm ${imagePreview
+                    ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
+                    : "bg-base-200/50 text-base-content/70 hover:bg-base-200 hover:text-base-content"
+                    }`}
                   onClick={() => fileInputRef.current?.click()}
                   title="Attach Image"
                 >
@@ -458,11 +457,10 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
             {/* Trigger Button - Professional Style */}
             <button
               type="button"
-              className={`w-9 h-9 rounded-2xl flex items-center justify-center transition-all duration-300 active:scale-95 touch-manipulation ${
-                showAttachmentMenu 
-                  ? 'bg-primary/10 text-primary rotate-180 shadow-sm' 
-                  : 'bg-base-200/50 text-base-content/70 hover:bg-base-200 hover:text-base-content'
-              }`}
+              className={`w-9 h-9 rounded-2xl flex items-center justify-center transition-all duration-300 active:scale-95 touch-manipulation ${showAttachmentMenu
+                ? 'bg-primary/10 text-primary rotate-180 shadow-sm'
+                : 'bg-base-200/50 text-base-content/70 hover:bg-base-200 hover:text-base-content'
+                }`}
               onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
             >
               <ChevronUp size={20} />
@@ -478,12 +476,12 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
             onChange={handleImageChange}
           />
 
-          {/* Text Input Container - Professional Curved Design with Reduced Width */}
-          <div className="flex-1 flex items-center gap-2 bg-base-200/50 backdrop-blur-sm rounded-3xl px-3 py-1.5 min-w-0 border border-base-300/20 shadow-sm hover:shadow-md transition-all duration-200 max-w-md mx-auto">
+          {/* Text Input Container - FULL WIDTH FOR PC */}
+          <div className="flex-1 flex items-center gap-2 bg-base-200/50 backdrop-blur-sm rounded-3xl px-4 py-2 md:px-5 md:py-3 min-w-0 border border-base-300/20 shadow-sm hover:shadow-md transition-all duration-200">
             <input
               ref={inputRef}
               type="text"
-              className="flex-1 bg-transparent outline-none border-none text-base placeholder:text-base-content/50 min-w-0 font-medium"
+              className="flex-1 bg-transparent outline-none border-none text-base md:text-lg placeholder:text-base-content/50 min-w-0 font-medium"
               placeholder="Message..."
               value={text}
               onChange={(e) => handleTyping(e.target.value)}
@@ -493,11 +491,10 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
             {/* Emoji Button - Enhanced */}
             <button
               type="button"
-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 active:scale-95 touch-manipulation flex-shrink-0 ${
-                showEmojiPicker 
-                  ? "bg-primary/10 text-primary shadow-sm" 
-                  : "bg-transparent text-base-content/60 hover:bg-base-300/50 hover:text-base-content"
-              }`}
+              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 active:scale-95 touch-manipulation flex-shrink-0 ${showEmojiPicker
+                ? "bg-primary/10 text-primary shadow-sm"
+                : "bg-transparent text-base-content/60 hover:bg-base-300/50 hover:text-base-content"
+                }`}
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               title="Add emoji"
               aria-label="Add emoji"

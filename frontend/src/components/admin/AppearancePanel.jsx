@@ -9,6 +9,8 @@ import { THEMES } from "../../constants";
 
 const AppearancePanel = () => {
     const { settings, fetchSettings, updateSettings, isLoading } = useSettingsStore();
+    const [localSettings, setLocalSettings] = useState(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         fetchSettings();
