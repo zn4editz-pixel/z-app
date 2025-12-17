@@ -13,8 +13,6 @@ import { getId } from "../utils/idHelper";
 // Admin Notifications List Component
 const AdminNotificationsList = () => {
 	const { notifications, addNotification, clearNotification } = useNotificationStore();
-	const [adminNotifications, setAdminNotifications] = useState([]);
-	const [isLoading, setIsLoading] = useState(true);
 
 	// Load notifications from backend on mount - OPTIMIZED with cache
 	useEffect(() => {
@@ -185,17 +183,7 @@ const AdminNotificationsList = () => {
 };
 
 const DiscoverPage = () => {
-	const [activeTab, setActiveTab] = useState("discover"); // discover, requests, notifications
 	const { viewNotifications, getUnreadAdminCount } = useNotificationStore();
-	const [searchQuery, setSearchQuery] = useState("");
-	const [searchResults, setSearchResults] = useState([]);
-	const [isLoadingSearch, setIsLoadingSearch] = useState(false);
-	const [suggestedUsers, setSuggestedUsers] = useState([]);
-	const [isLoadingSuggested, setIsLoadingSuggested] = useState(true);
-	const [loadingRequestId, setLoadingRequestId] = useState(null);
-	const [recentlyClicked, setRecentlyClicked] = useState(new Set());
-	const [isProcessingRequest, setIsProcessingRequest] = useState(false);
-	const [buttonStates, setButtonStates] = useState(new Map());
 
 
 	const { pendingReceived, acceptRequest, rejectRequest, fetchFriendData, sendFriendRequest, getFriendshipStatus } = useFriendStore();

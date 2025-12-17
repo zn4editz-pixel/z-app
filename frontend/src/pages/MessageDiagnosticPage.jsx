@@ -5,8 +5,6 @@ import { axiosInstance } from '../lib/axios';
 import toast from 'react-hot-toast';
 
 const MessageDiagnosticPage = () => {
-  const [diagnostics, setDiagnostics] = useState({});
-  const [testResults, setTestResults] = useState([]);
   const { authUser, socket } = useAuthStore();
   const { sendMessage, selectedUser } = useChatStore();
 

@@ -22,7 +22,6 @@ const CallModal = () => {
     const iceCandidateQueueRef = useRef([]);
 
     // --- Local State ---
-    const [duration, setDuration] = useState(0);
     const timerRef = useRef(null);
 
     // --- Timer Logic ---

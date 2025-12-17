@@ -3,11 +3,9 @@ import { Camera, Mic, AlertCircle, Settings } from "lucide-react";
 import toast from "react-hot-toast";
 
 const PermissionHandler = () => {
-  const [permissions, setPermissions] = useState({
     camera: null,
     microphone: null,
   });
-  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     let cameraPermission = null;

@@ -253,7 +253,7 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
         </div>
       )}
 
-      <div className="p-2.5 sm:p-4 w-full bg-base-100 border-t border-base-300 sticky bottom-0 z-10" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
+      <div className="px-3 py-2 w-full bg-base-100/95 backdrop-blur-xl border-t border-base-300/30 border-b border-base-300/20 sticky bottom-0 z-10 mobile-message-input-professional" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
         {/* ✅ INSTAGRAM/WHATSAPP STYLE: Enhanced Reply Preview */}
         {replyingTo && (
           <div className="mb-2 sm:mb-3 reply-preview-container animate-slide-down">
@@ -377,25 +377,29 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
 
         <form
           onSubmit={handleSendMessage}
-          className="flex items-center gap-2 relative"
+          className="flex items-center gap-2 relative max-w-full justify-center"
         >
-          {/* ATTACHMENT MENU CONTAINER */}
+          {/* ATTACHMENT MENU CONTAINER - Professional Style */}
           <div className="relative" ref={attachmentMenuRef}>
-            {/* Drop-up Menu */}
+            {/* Drop-up Menu - Enhanced */}
             {showAttachmentMenu && (
               <div className={`
-                absolute bottom-full left-0 mb-2 p-2 bg-base-100 rounded-xl shadow-xl border border-base-200
-                flex flex-col gap-2 min-w-[40px] z-50 transform origin-bottom-left transition-all duration-200
-                ${showAttachmentMenu ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}
+                absolute bottom-full left-0 mb-3 p-3 bg-base-100/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-base-300/30
+                flex flex-col gap-3 min-w-[48px] z-50 transform origin-bottom-left transition-all duration-300 ease-out
+                ${showAttachmentMenu ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-2 pointer-events-none'}
             `}>
-                {/* Image Upload Button */}
+                {/* Image Upload Button - Professional */}
                 <button
                   type="button"
-                  className={`btn btn-circle btn-sm btn-ghost hover:bg-base-200 transition-all ${imagePreview ? "text-emerald-500" : "text-base-content/70"}`}
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation shadow-sm ${
+                    imagePreview 
+                      ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" 
+                      : "bg-base-200/50 text-base-content/70 hover:bg-base-200 hover:text-base-content"
+                  }`}
                   onClick={() => fileInputRef.current?.click()}
                   title="Attach Image"
                 >
-                  <Image size={20} />
+                  <Image size={22} />
                 </button>
 
                 {/* Game Button */}
@@ -451,13 +455,17 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
               </div>
             )}
 
-            {/* Trigger Button - Chevron Up */}
+            {/* Trigger Button - Professional Style */}
             <button
               type="button"
-              className={`flex btn btn-circle btn-sm btn-ghost text-base-content/70 transition-transform duration-200 ${showAttachmentMenu ? 'rotate-180 bg-base-200' : ''}`}
+              className={`w-9 h-9 rounded-2xl flex items-center justify-center transition-all duration-300 active:scale-95 touch-manipulation ${
+                showAttachmentMenu 
+                  ? 'bg-primary/10 text-primary rotate-180 shadow-sm' 
+                  : 'bg-base-200/50 text-base-content/70 hover:bg-base-200 hover:text-base-content'
+              }`}
               onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
             >
-              <ChevronUp size={22} />
+              <ChevronUp size={20} />
             </button>
           </div>
 
@@ -470,23 +478,26 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
             onChange={handleImageChange}
           />
 
-          {/* Text Input Container */}
-          <div className="flex-1 flex items-center gap-2.5 bg-base-200 rounded-full px-4 py-2.5 min-w-0">
+          {/* Text Input Container - Professional Curved Design with Reduced Width */}
+          <div className="flex-1 flex items-center gap-2 bg-base-200/50 backdrop-blur-sm rounded-3xl px-3 py-1.5 min-w-0 border border-base-300/20 shadow-sm hover:shadow-md transition-all duration-200 max-w-md mx-auto">
             <input
               ref={inputRef}
               type="text"
-              className="flex-1 bg-transparent outline-none border-none text-sm sm:text-base placeholder:text-base-content/50 min-w-0"
-              placeholder="Type a message..."
+              className="flex-1 bg-transparent outline-none border-none text-base placeholder:text-base-content/50 min-w-0 font-medium"
+              placeholder="Message..."
               value={text}
               onChange={(e) => handleTyping(e.target.value)}
               autoComplete="off"
             />
 
-            {/* Emoji Button */}
+            {/* Emoji Button - Enhanced */}
             <button
               type="button"
-              className={`w-9 h-9 flex items-center justify-center rounded-full hover:bg-base-300 active:scale-95 transition-all flex-shrink-0
-              ${showEmojiPicker ? "bg-base-300 text-primary" : "bg-base-300/50 text-base-content/70 hover:text-base-content"}`}
+              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 active:scale-95 touch-manipulation flex-shrink-0 ${
+                showEmojiPicker 
+                  ? "bg-primary/10 text-primary shadow-sm" 
+                  : "bg-transparent text-base-content/60 hover:bg-base-300/50 hover:text-base-content"
+              }`}
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               title="Add emoji"
               aria-label="Add emoji"
@@ -496,19 +507,21 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
 
           </div>
 
-          {/* Voice Recorder - Show when no text */}
+          {/* Voice Recorder - Professional Style */}
           {!text.trim() && !imagePreview && (
-            <VoiceRecorder onSendVoice={handleSendVoice} />
+            <div className="flex-shrink-0">
+              <VoiceRecorder onSendVoice={handleSendVoice} />
+            </div>
           )}
 
-          {/* Send Button - ALWAYS ENABLED for rapid messaging */}
+          {/* Send Button - Instagram/WhatsApp Style */}
           {(text.trim() || imagePreview) && (
             <button
               type="submit"
-              className="btn btn-primary btn-circle btn-sm sm:btn-md flex-shrink-0 shadow-lg hover:scale-105 active:scale-95 transition-transform"
+              className="w-9 h-9 bg-primary hover:bg-primary/90 active:bg-primary/80 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 touch-manipulation group"
               aria-label="Send message"
             >
-              <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Send className="w-5 h-5 text-primary-content group-active:scale-90 transition-transform" />
             </button>
           )}
         </form>

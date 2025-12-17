@@ -6,11 +6,6 @@ import {
 import { axiosInstance } from "../../lib/axios";
 
 const AIAnalysisAgent = () => {
-	const [analysis, setAnalysis] = useState(null);
-	const [reports, setReports] = useState([]);
-	const [isAnalyzing, setIsAnalyzing] = useState(true);
-	const [selectedIssue, setSelectedIssue] = useState(null);
-	const [seenIssues, setSeenIssues] = useState(new Set());
 	const intervalRef = useRef(null);
 
 	useEffect(() => {

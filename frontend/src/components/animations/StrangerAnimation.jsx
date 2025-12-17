@@ -10,12 +10,8 @@ const StrangerAnimation = () => {
     // 3: FRIEND (Success Badge)
     // 4: CHAT (Text bubbles)
     // 5: EXIT (Float away)
-    const [stage, setStage] = useState(0);
-    const [chatMessages, setChatMessages] = useState([]);
 
     // Specific characters for the match event
-    const [matchA, setMatchA] = useState(0);
-    const [matchB, setMatchB] = useState(1);
 
     // Cycle the animation
     useEffect(() => {

@@ -47,9 +47,6 @@ const PublicProfilePage = () => {
 	// ✅ 2. Get setSelectedUser from chat store
 	const { setSelectedUser } = useChatStore();
 
-	const [user, setUser] = useState(null);
-	const [isLoading, setIsLoading] = useState(true);
-	const [isButtonLoading, setIsButtonLoading] = useState(false);
 
 	useEffect(() => {
 		if (username.toLowerCase() === authUser?.username.toLowerCase()) {

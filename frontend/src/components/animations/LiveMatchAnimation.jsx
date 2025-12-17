@@ -12,12 +12,12 @@ const CAPTIONS = [
 ];
 
 const LiveMatchAnimation = () => {
-    // 0: Floating, 1: Snapping, 2: Video, 3: Friends, 4: Chat
-    const [step, setStep] = useState(0);
-    const [captionIndex, setCaptionIndex] = useState(0);
+    // State declarations
     const [charIndexA, setCharIndexA] = useState(0);
     const [charIndexB, setCharIndexB] = useState(1);
+    const [step, setStep] = useState(0); // 0: Floating, 1: Snapping, 2: Video, 3: Friends, 4: Chat
     const [messages, setMessages] = useState([]);
+    const [captionIndex, setCaptionIndex] = useState(0);
 
     // Main Animation Cycle
     useEffect(() => {

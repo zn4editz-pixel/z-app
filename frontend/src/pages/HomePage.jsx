@@ -24,6 +24,7 @@ const HomePage = () => {
   });
 
   const [incomingCall, setIncomingCall] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   // ✅ ROBUST: Use sessionStorage to detect refresh (set by App.jsx)
   const isRefresh = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('z_refresh_flag') === 'true';
@@ -401,18 +402,34 @@ const HomePage = () => {
     });
   };
 
+  // Mobile detection for full-screen chat
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Full-screen mobile chat mode
+  const isMobileChatMode = isMobile && selectedUser;
+
   return (
     <div className="fixed inset-0 bg-base-200 overflow-hidden">
       {/* Main container */}
       <div className="h-full w-full flex flex-col overflow-hidden">
-        {/* Spacer for navbar */}
-        <div className="h-14 sm:h-16 flex-shrink-0"></div>
+        {/* Spacer for navbar - hidden in mobile chat mode */}
+        {!isMobileChatMode && <div className="h-14 sm:h-16 flex-shrink-0"></div>}
 
         {/* Chat container - Full screen on mobile, contained on desktop */}
         <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0">
-          <div className="bg-base-100 w-full h-full flex overflow-hidden border-base-300">
-            {/* Sidebar */}
-            <Sidebar />
+          <div className={`bg-base-100 w-full h-full flex overflow-hidden border-base-300 ${isMobileChatMode ? 'fixed inset-0 z-40' : ''
+            }`}>
+            {/* Sidebar - hidden in mobile chat mode */}
+            {!isMobileChatMode && <Sidebar />}
 
             {/* Chat area */}
             {selectedUser ? (
@@ -440,8 +457,8 @@ const HomePage = () => {
           </div>
         </div>
 
-        {/* Bottom padding for mobile safe area */}
-        <div className="h-0 md:h-0 safe-area-bottom"></div>
+        {/* Bottom padding for mobile safe area - hidden in mobile chat mode */}
+        {!isMobileChatMode && <div className="h-0 md:h-0 safe-area-bottom"></div>}
       </div>
 
       {/* Private Call Modal */}

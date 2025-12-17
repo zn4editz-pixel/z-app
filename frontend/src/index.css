@@ -6,6 +6,85 @@
 /* Import animations after Tailwind */
 @import './styles/animations.css';
 
+/* Prevent horizontal scrolling globally */
+html,
+body {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+/* Prevent content from causing horizontal overflow */
+.login-form-container,
+.signup-form-container {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* Hide scrollbars completely */
+.login-form-container,
+.signup-form-container {
+  scrollbar-width: none !important;
+  /* Firefox */
+  -ms-overflow-style: none !important;
+  /* IE and Edge */
+}
+
+.login-form-container::-webkit-scrollbar,
+.signup-form-container::-webkit-scrollbar {
+  display: none !important;
+  /* Chrome, Safari, Opera */
+}
+
+/* Ultra-smooth 60fps scrolling for auth pages */
+.login-form-container,
+.signup-form-container {
+  /* Enable hardware acceleration */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+
+  /* Smooth scrolling with momentum */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+
+  /* Optimize for 60fps performance */
+  will-change: scroll-position;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+
+  /* Reduce scroll jank */
+  overscroll-behavior: contain;
+  -webkit-overscroll-behavior: contain;
+
+  /* Enable GPU compositing */
+  -webkit-perspective: 1000;
+  perspective: 1000;
+
+  /* Smooth transitions */
+  transition: transform 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Smooth scrolling for auth page content */
+.auth-smooth-scroll {
+  /* Enable momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+
+  /* Smooth scroll behavior */
+  scroll-behavior: smooth;
+
+  /* Hardware acceleration */
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+
+  /* Optimize rendering */
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+
+  /* Prevent scroll bounce */
+  overscroll-behavior-y: contain;
+  -webkit-overscroll-behavior-y: contain;
+}
+
 /* Custom Scrollbar Styles */
 @layer utilities {
 
@@ -54,97 +133,136 @@ html {
 
 /* Instagram-style page transitions and mobile fixes */
 @layer base {
+
   /* Fix mobile viewport and scrolling issues */
-  html, body {
+  html,
+  body {
     height: 100%;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
+    background-color: oklch(var(--b1));
   }
-  
+
   /* Fix mobile bottom safe area */
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
-  
-  /* Prevent mobile bounce scrolling */
+
+  /* Prevent mobile bounce scrolling and fix bottom color */
   body {
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
+    background-color: oklch(var(--b1));
+    min-height: 100vh;
+    min-height: 100dvh;
   }
-  
+
   /* Fix mobile address bar color */
   meta[name="theme-color"] {
     content: oklch(var(--b1));
+  }
+
+  /* Prevent mobile browser UI color mismatch */
+  html {
+    background-color: oklch(var(--b1));
+  }
+
+  /* Fix mobile overscroll areas */
+  html::before,
+  html::after,
+  body::before,
+  body::after {
+    content: '';
+    position: fixed;
+    background-color: oklch(var(--b1));
+    z-index: -1;
+  }
+
+  html::before {
+    top: -100vh;
+    left: 0;
+    right: 0;
+    height: 100vh;
+  }
+
+  html::after {
+    bottom: -100vh;
+    left: 0;
+    right: 0;
+    height: 100vh;
   }
 }
 
 /* Instagram-style smooth transitions */
 @layer utilities {
+
   /* Page transition animations */
   .page-transition {
     animation: pageSlideIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   }
-  
+
   .page-transition-out {
     animation: pageSlideOut 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   }
-  
+
   @keyframes pageSlideIn {
     from {
       opacity: 0;
       transform: translateX(20px);
     }
+
     to {
       opacity: 1;
       transform: translateX(0);
     }
   }
-  
+
   @keyframes pageSlideOut {
     from {
       opacity: 1;
       transform: translateX(0);
     }
+
     to {
       opacity: 0;
       transform: translateX(-20px);
     }
   }
-  
+
   /* Touch feedback animations */
   .touch-feedback {
     transition: all 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     transform-origin: center;
   }
-  
+
   .touch-feedback:active {
     transform: scale(0.95);
     opacity: 0.8;
   }
-  
+
   /* Instagram-style button animations */
   .instagram-button {
     transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     transform: translateZ(0);
   }
-  
+
   .instagram-button:hover {
     transform: translateY(-1px) translateZ(0);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
-  
+
   .instagram-button:active {
     transform: translateY(0) scale(0.98) translateZ(0);
     transition-duration: 0.1s;
   }
-  
+
   /* Smooth scroll for all containers */
   .smooth-scroll {
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
   }
-  
+
   /* Fix mobile bottom navigation */
   .mobile-nav-fix {
     background: oklch(var(--b1) / 0.95);
@@ -152,89 +270,97 @@ html {
     -webkit-backdrop-filter: blur(12px);
     border-top: 1px solid oklch(var(--bc) / 0.1);
   }
-  
+
   /* Prevent mobile zoom on input focus */
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     font-size: 16px !important;
   }
-  
+
   @media (max-width: 768px) {
-    input, textarea, select {
+
+    input,
+    textarea,
+    select {
       font-size: 16px !important;
       transform: translateZ(0);
     }
   }
-  
+
   /* Page transition wrapper styles */
   .page-transition-wrapper {
     width: 100%;
     height: 100%;
   }
-  
+
   .page-transition-wrapper.fadeIn {
     animation: fadeIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   }
-  
+
   .page-transition-wrapper.fadeOut {
     animation: fadeOut 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   }
-  
+
   @keyframes fadeIn {
     from {
       opacity: 0;
       transform: translateX(10px);
     }
+
     to {
       opacity: 1;
       transform: translateX(0);
     }
   }
-  
+
   @keyframes fadeOut {
     from {
       opacity: 1;
       transform: translateX(0);
     }
+
     to {
       opacity: 0;
       transform: translateX(-10px);
     }
   }
-  
+
   /* Instagram-style card animations */
   .instagram-card {
     transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     transform: translateZ(0);
   }
-  
+
   .instagram-card:hover {
     transform: translateY(-2px) translateZ(0);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   }
-  
+
   /* Smooth list animations */
   .list-item-enter {
     animation: listItemEnter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   }
-  
+
   @keyframes listItemEnter {
     from {
       opacity: 0;
       transform: translateY(20px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
     }
   }
-  
+
   /* Fix mobile scrolling issues */
   .mobile-scroll-fix {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     scroll-behavior: smooth;
   }
-  
+
   /* Theme-aware mobile bottom bar */
   .mobile-bottom-bar {
     background: oklch(var(--b1) / 0.95);
@@ -243,14 +369,14 @@ html {
     border-top: 1px solid oklch(var(--bc) / 0.08);
     box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
   }
-  
+
   /* Dark theme adjustments */
   [data-theme="dark"] .mobile-bottom-bar {
     background: oklch(var(--b1) / 0.9);
     border-top: 1px solid oklch(var(--bc) / 0.15);
     box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
   }
-  
+
   /* Mobile chat header fixes */
   .mobile-chat-header-keyboard {
     position: sticky !important;
@@ -260,7 +386,15 @@ html {
     -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
-  
+
+  /* Full-screen mobile chat header */
+  .mobile-chat-header-fullscreen {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    border-bottom: 1px solid oklch(var(--bc) / 0.1);
+  }
+
   /* Ensure chat header stays visible on mobile */
   @media (max-width: 768px) {
     .mobile-chat-header-keyboard {
@@ -271,59 +405,669 @@ html {
       width: 100% !important;
       z-index: 50 !important;
     }
-    
+
     /* Adjust chat container when header is fixed */
     .chat-container-mobile-keyboard {
       padding-top: 70px !important;
     }
-    
+
+    /* Full-screen mobile chat experience */
+    .mobile-chat-fullscreen {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      z-index: 40 !important;
+      background: oklch(var(--b1));
+    }
+
+    /* Professional Mobile Chat Header */
+    .mobile-chat-header-professional {
+      background: oklch(var(--b1) / 0.95) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      border-bottom: 1px solid oklch(var(--bc) / 0.06) !important;
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    /* Professional Mobile Message Input */
+    .mobile-message-input-professional {
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      z-index: 45 !important;
+      background: oklch(var(--b1) / 0.95) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      border-top: 1px solid oklch(var(--bc) / 0.06) !important;
+      box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    /* Mobile chat container adjustments for fixed input */
+    .mobile-chat-container {
+      padding-bottom: 85px !important;
+      /* Space for fixed input */
+    }
+
+    /* Professional Touch Responses */
+    .touch-manipulation {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Instagram-style button animations */
+    .instagram-touch {
+      transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      transform: translateZ(0);
+    }
+
+    .instagram-touch:active {
+      transform: scale(0.95) translateZ(0);
+      transition-duration: 0.1s;
+    }
+
+    /* Professional curved containers */
+    .professional-container {
+      border-radius: 24px;
+      background: oklch(var(--b1) / 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid oklch(var(--bc) / 0.08);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Enhanced message bubbles */
+    .message-bubble-professional {
+      border-radius: 20px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Dark theme adjustments */
+    [data-theme="dark"] .mobile-chat-header-professional {
+      background: oklch(var(--b1) / 0.9) !important;
+      border-bottom: 1px solid oklch(var(--bc) / 0.12) !important;
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    [data-theme="dark"] .mobile-message-input-professional {
+      background: oklch(var(--b1) / 0.9) !important;
+      border-top: 1px solid oklch(var(--bc) / 0.12) !important;
+      box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    [data-theme="dark"] .professional-container {
+      background: oklch(var(--b1) / 0.9);
+      border: 1px solid oklch(var(--bc) / 0.15);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Professional Chat Container */
+    .professional-chat-container {
+      background: linear-gradient(180deg, oklch(var(--b1)) 0%, oklch(var(--b1) / 0.98) 100%);
+    }
+
+    /* Enhanced scrollbar for mobile */
+    .professional-chat-container::-webkit-scrollbar {
+      width: 2px;
+    }
+
+    .professional-chat-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .professional-chat-container::-webkit-scrollbar-thumb {
+      background: oklch(var(--bc) / 0.1);
+      border-radius: 2px;
+    }
+
+    /* Smooth message animations */
+    .message-enter {
+      animation: messageSlideIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    @keyframes messageSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* Professional typing indicator */
+    .typing-indicator-professional {
+      background: oklch(var(--b2) / 0.8);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 18px;
+      padding: 12px 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Enhanced button hover states */
+    .professional-button {
+      transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      transform: translateZ(0);
+    }
+
+    .professional-button:hover {
+      transform: translateY(-1px) translateZ(0);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .professional-button:active {
+      transform: translateY(0) scale(0.98) translateZ(0);
+      transition-duration: 0.1s;
+    }
+
+    /* Professional input focus states */
+    .professional-input:focus-within {
+      box-shadow: 0 0 0 2px oklch(var(--p) / 0.2);
+      border-color: oklch(var(--p) / 0.3);
+    }
+
+    /* Smooth page transitions */
+    .page-transition-professional {
+      animation: pageSlideInProfessional 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    @keyframes pageSlideInProfessional {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Premium Logo Gradient Shine Animation - Enhanced for PC visibility */
+    .premium-logo-container {
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Primary shine animation - White light sweep */
+    .premium-shine-animation {
+      position: absolute;
+      top: 0;
+      left: -200%;
+      width: 200%;
+      height: 100%;
+      background: linear-gradient(90deg,
+          transparent 0%,
+          transparent 40%,
+          rgba(255, 255, 255, 0.8) 50%,
+          rgba(255, 255, 255, 1) 55%,
+          rgba(255, 255, 255, 0.8) 60%,
+          transparent 70%,
+          transparent 100%);
+      animation: premiumShine 2.5s ease-in-out infinite;
+      animation-delay: 0.5s;
+      border-radius: inherit;
+      z-index: 30;
+      transform: skewX(-20deg);
+    }
+
+    /* Secondary shine animation - Color sweep */
+    .premium-shine-animation-secondary {
+      position: absolute;
+      top: 0;
+      left: -200%;
+      width: 200%;
+      height: 100%;
+      background: linear-gradient(90deg,
+          transparent 0%,
+          transparent 45%,
+          oklch(var(--p) / 0.6) 50%,
+          oklch(var(--s) / 0.6) 55%,
+          transparent 65%,
+          transparent 100%);
+      animation: premiumShineSecondary 2.5s ease-in-out infinite;
+      animation-delay: 1.8s;
+      border-radius: inherit;
+      z-index: 25;
+      transform: skewX(-15deg);
+    }
+
+    @keyframes premiumShine {
+      0% {
+        left: -200%;
+      }
+
+      50%,
+      100% {
+        left: 100%;
+      }
+    }
+
+    @keyframes premiumShineSecondary {
+      0% {
+        left: -200%;
+      }
+
+      50%,
+      100% {
+        left: 100%;
+      }
+    }
+
+    /* Enhanced hover effect for desktop */
+    @media (min-width: 1024px) {
+      .premium-logo-container:hover {
+        filter: drop-shadow(0 0 20px oklch(var(--p) / 0.4)) drop-shadow(0 0 40px oklch(var(--s) / 0.3));
+      }
+
+      .premium-logo-container::before {
+        content: '';
+        position: absolute;
+        inset: -8px;
+        background: radial-gradient(circle, oklch(var(--p) / 0.3) 0%, oklch(var(--s) / 0.2) 50%, transparent 70%);
+        border-radius: 50%;
+        opacity: 0.6;
+        z-index: -30;
+        animation: pulseGlow 4s ease-in-out infinite;
+      }
+
+      @keyframes pulseGlow {
+
+        0%,
+        100% {
+          opacity: 0.4;
+          transform: scale(1);
+        }
+
+        50% {
+          opacity: 0.8;
+          transform: scale(1.1);
+        }
+      }
+    }
+
+    /* Premium Login Background Animations */
+    @keyframes float-slow {
+
+      0%,
+      100% {
+        transform: translateY(0px) rotate(0deg);
+      }
+
+      50% {
+        transform: translateY(-20px) rotate(2deg);
+      }
+    }
+
+    @keyframes bounce-slow {
+
+      0%,
+      100% {
+        transform: translateY(0px) scale(1);
+        opacity: 0.6;
+      }
+
+      50% {
+        transform: translateY(-10px) scale(1.05);
+        opacity: 0.8;
+      }
+    }
+
+    @keyframes float-particle {
+      0% {
+        transform: translateY(0px) translateX(0px) rotate(0deg);
+        opacity: 0;
+      }
+
+      10% {
+        opacity: 1;
+      }
+
+      90% {
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(-100vh) translateX(20px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    @keyframes pulse-slow {
+
+      0%,
+      100% {
+        opacity: 0.3;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.6;
+        transform: scale(1.05);
+      }
+    }
+
+    .animate-float-slow {
+      animation: float-slow 6s ease-in-out infinite;
+    }
+
+    .animate-bounce-slow {
+      animation: bounce-slow 4s ease-in-out infinite;
+    }
+
+    .animate-float-particle {
+      animation: float-particle linear infinite;
+    }
+
+    .animate-pulse-slow {
+      animation: pulse-slow ease-in-out infinite;
+    }
+
+    /* Premium Chat-Focused Signup Background Animations */
+    @keyframes chat-bubble-left {
+      0% {
+        transform: translateX(-100px) scale(0.8);
+        opacity: 0;
+      }
+
+      20% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+      }
+
+      80% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateX(0) scale(0.95);
+        opacity: 0.7;
+      }
+    }
+
+    @keyframes chat-bubble-right {
+      0% {
+        transform: translateX(100px) scale(0.8);
+        opacity: 0;
+      }
+
+      20% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+      }
+
+      80% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateX(0) scale(0.95);
+        opacity: 0.7;
+      }
+    }
+
+    @keyframes typing-dot {
+
+      0%,
+      60%,
+      100% {
+        transform: translateY(0);
+        opacity: 0.3;
+      }
+
+      30% {
+        transform: translateY(-4px);
+        opacity: 1;
+      }
+    }
+
+    @keyframes message-status {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 0.2;
+      }
+
+      50% {
+        transform: scale(1.2);
+        opacity: 0.6;
+      }
+    }
+
+    @keyframes float-message {
+
+      0%,
+      100% {
+        transform: translateY(0px) rotate(0deg);
+        opacity: 0.15;
+      }
+
+      50% {
+        transform: translateY(-15px) rotate(5deg);
+        opacity: 0.25;
+      }
+    }
+
+    @keyframes typing-indicator {
+
+      0%,
+      100% {
+        opacity: 0.3;
+      }
+
+      50% {
+        opacity: 0.8;
+      }
+    }
+
+    @keyframes message-send {
+      0% {
+        transform: translateX(0) scale(1);
+        opacity: 0;
+      }
+
+      10% {
+        opacity: 0.6;
+      }
+
+      90% {
+        opacity: 0.4;
+      }
+
+      100% {
+        transform: translateX(60px) scale(0.5);
+        opacity: 0;
+      }
+    }
+
+    .animate-chat-bubble-left {
+      animation: chat-bubble-left 6s ease-in-out infinite;
+    }
+
+    .animate-chat-bubble-right {
+      animation: chat-bubble-right 6s ease-in-out infinite;
+    }
+
+    .animate-typing-dot {
+      animation: typing-dot 1.5s ease-in-out infinite;
+    }
+
+    .animate-message-status {
+      animation: message-status 3s ease-in-out infinite;
+    }
+
+    .animate-float-message {
+      animation: float-message 5s ease-in-out infinite;
+    }
+
+    .animate-typing-indicator {
+      animation: typing-indicator 2s ease-in-out infinite;
+    }
+
+    .animate-message-send {
+      animation: message-send linear infinite;
+    }
+
+    /* Smooth Message Entrance Animations */
+    @keyframes messageSlideIn {
+      0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes messageSlideInLeft {
+      0% {
+        opacity: 0;
+        transform: translateX(-20px) scale(0.95);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+    }
+
+    @keyframes messageSlideInRight {
+      0% {
+        opacity: 0;
+        transform: translateX(20px) scale(0.95);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+    }
+
+    /* Message entrance animation classes */
+    .message-enter {
+      animation: messageSlideIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    .message-enter-left {
+      animation: messageSlideInLeft 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    .message-enter-right {
+      animation: messageSlideInRight 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    /* Smooth scroll behavior for chat container */
+    .chat-smooth-scroll {
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Mobile bottom color fix - prevent browser UI color mismatch */
+    @media (max-width: 768px) {
+      html {
+        background-color: oklch(var(--b1)) !important;
+      }
+
+      body {
+        background-color: oklch(var(--b1)) !important;
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+
+      /* Fix mobile browser address bar color */
+      .mobile-viewport-fix {
+        background-color: oklch(var(--b1)) !important;
+        min-height: 100vh !important;
+        min-height: 100dvh !important;
+      }
+
+      /* Ensure all mobile containers match theme */
+      .mobile-chat-fullscreen,
+      .mobile-chat-header-professional,
+      .mobile-message-input-professional {
+        background-color: oklch(var(--b1)) !important;
+      }
+    }
+
+    /* Dark theme mobile fixes */
+    [data-theme="dark"] {
+      @media (max-width: 768px) {
+        html {
+          background-color: oklch(var(--b1)) !important;
+        }
+
+        body {
+          background-color: oklch(var(--b1)) !important;
+        }
+      }
+    }
+
     /* Smooth navbar hide/show transitions */
     .navbar-mobile-hide {
       transform: translateY(-100%);
       transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
-    
+
     .navbar-mobile-show {
       transform: translateY(0);
       transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
-    
+
     /* Mobile chat mode full screen */
     .mobile-chat-fullscreen {
       height: 100vh !important;
-      height: 100dvh !important; /* Dynamic viewport height for mobile */
+      height: 100dvh !important;
+      /* Dynamic viewport height for mobile */
     }
-    
+
     /* Prevent mobile address bar issues */
     .mobile-viewport-fix {
       min-height: 100vh;
       min-height: 100dvh;
     }
   }
-  
+
   /* Simple floating reaction animation */
   @keyframes simpleFloatUp {
     0% {
       opacity: 1;
       transform: translate(-50%, -50%) scale(0.8);
     }
+
     20% {
       opacity: 1;
       transform: translate(-50%, -50%) scale(1.2);
     }
+
     100% {
       opacity: 0;
       transform: translate(-50%, -150%) scale(0.8);
     }
   }
-  
+
   /* Mobile keyboard visible state */
   body.mobile-keyboard-visible {
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
   }
-  
+
   /* Mobile chat optimizations */
   .mobile-chat-optimized {
     -webkit-overflow-scrolling: touch !important;
@@ -331,6 +1075,7 @@ html {
     touch-action: pan-y !important;
   }
 }
+
 html {
   scroll-behavior: smooth;
   /* Don't override background - let inline script handle it */

@@ -11,13 +11,11 @@ import { axiosInstance } from '../../lib/axios';
 import RealWorldMap from './RealWorldMap';
 
 const EnhancedAnalytics = () => {
-    const [analyticsData, setAnalyticsData] = useState({
         locationStats: [],
         realTimeMetrics: {},
         loading: true
     });
 
-    const [timeRange, setTimeRange] = useState('7d'); // 7d, 30d, 90d
 
     // 📊 Mock Data Generator for Country Stats
     const generateMockLocationStats = () => [

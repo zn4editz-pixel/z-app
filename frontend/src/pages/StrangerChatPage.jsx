@@ -324,17 +324,8 @@ const StrangerChatPage = () => {
 	const navigate = useNavigate();
 
 	// Core States
-	const [status, setStatus] = useState("lobby"); // Start in lobby
-	const [hasPermissionError, setHasPermissionError] = useState(false);
-	const [permissionErrorMessage, setPermissionErrorMessage] = useState("");
-	const [tempMessages, setTempMessages] = useState([]);
-	const [currentMessage, setCurrentMessage] = useState("");
-	const [partnerUserId, setPartnerUserId] = useState(null);
-	const [partnerUserData, setPartnerUserData] = useState(null);
-	const [friendStatus, setFriendStatus] = useState("NOT_FRIENDS");
 
 	// Privacy Settings
-	const [privacySettings, setPrivacySettings] = useState({
 		showUsername: true,
 		showProfilePic: true,
 		showVerificationBadge: true,
@@ -342,26 +333,12 @@ const StrangerChatPage = () => {
 	});
 
 	// UI States
-	const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-	const [reportScreenshot, setReportScreenshot] = useState(null);
-	const [isSubmittingReport, setIsSubmittingReport] = useState(false);
-	const [showChatMessages, setShowChatMessages] = useState(false);
-	const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
 
 	// Media States
-	const [isVideoMuted, setIsVideoMuted] = useState(false);
-	const [isAudioMuted, setIsAudioMuted] = useState(false);
-	const [connectionQuality, setConnectionQuality] = useState("good");
-	const [isConnected, setIsConnected] = useState(false);
 
 	// Stats
-	const [chatTime, setChatTime] = useState(0);
-	const [onlineCount, setOnlineCount] = useState(0);
-	const [reactions, setReactions] = useState([]);
 
 	// AI Moderation
-	const [aiModerationActive, setAiModerationActive] = useState(false);
-	const [MODERATION_CONFIG, setModerationConfig] = useState({ enabled: false });
 
 	// Refs
 	const chatTimerRef = useRef(null);
@@ -730,7 +707,6 @@ const StrangerChatPage = () => {
 	}, [partnerUserId, friendStatus, sendFriendRequest, acceptFriendRequest]);
 
 	// Show reaction picker state
-	const [showReactionPicker, setShowReactionPicker] = useState(false);
 
 	// Friend button config based on status
 	const getFriendButtonConfig = useMemo(() => {

@@ -1,4 +1,3 @@
-import React from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useCallback, lazy, Suspense, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
@@ -54,6 +53,10 @@ const App = () => {
 	const fetchFriendData = useFriendStore((state) => state.fetchFriendData);
 	const navigate = useNavigate();
 	const location = useLocation();
+	
+	// ✅ CRITICAL FIX: Move all useState hooks to the top to fix React Hooks order
+	const [isMobile, setIsMobile] = useState(false);
+	const { selectedUser } = useChatStore();
 
 	// ✅ Fetch global settings on mount
 	useEffect(() => {
@@ -165,20 +168,6 @@ const App = () => {
 	// ✅ FIXED: Pages where Navbar should be hidden
 	const hideNavbarPaths = ["/stranger", "/suspended", "/blocked", "/goodbye"];
 	const shouldShowNavbar = hasCompletedProfile && !hideNavbarPaths.includes(window.location.pathname);
-	
-	// ✅ NEW: Mobile chat detection for navbar hiding
-	const [isMobile, setIsMobile] = useState(false);
-	const { selectedUser } = useChatStore();
-	
-	useEffect(() => {
-		const checkMobile = () => {
-			setIsMobile(window.innerWidth <= 768);
-		};
-		
-		checkMobile();
-		window.addEventListener('resize', checkMobile);
-		return () => window.removeEventListener('resize', checkMobile);
-	}, []);
 	
 	// Hide navbar on mobile when in chat mode
 	const isMobileChatMode = isMobile && selectedUser && location.pathname === '/';

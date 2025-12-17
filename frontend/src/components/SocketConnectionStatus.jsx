@@ -6,9 +6,6 @@ import { Wifi, WifiOff, RefreshCw } from "lucide-react";
 const SocketConnectionStatus = () => {
   const { socket } = useAuthStore();
   const { socketConnected } = useChatStore();
-  const [isConnected, setIsConnected] = useState(false);
-  const [showStatus, setShowStatus] = useState(false);
-  const [reconnectAttempts, setReconnectAttempts] = useState(0);
 
   useEffect(() => {
     if (!socket) {

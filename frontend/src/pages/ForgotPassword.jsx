@@ -5,14 +5,6 @@ import toast from "react-hot-toast";
 import { User, Mail, ArrowLeft, Loader, Lock, Clock } from "lucide-react";
 
 const ForgotPassword = () => {
-	const [step, setStep] = useState(1); // 1: username, 2: OTP, 3: new password
-	const [username, setUsername] = useState("");
-	const [otp, setOtp] = useState("");
-	const [password, setPassword] = useState("");
-	const [confirmPassword, setConfirmPassword] = useState("");
-	const [maskedEmail, setMaskedEmail] = useState("");
-	const [isLoading, setIsLoading] = useState(false);
-	const [countdown, setCountdown] = useState(0);
 	const navigate = useNavigate();
 
 	// Countdown timer for OTP expiry

@@ -9,14 +9,14 @@ import ImageCropper from "../components/ImageCropper";
 const SetupProfilePage = () => {
   const navigate = useNavigate();
   const { authUser, setAuthUser } = useAuthStore();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedImg, setSelectedImg] = useState(null);
-  const [showCropper, setShowCropper] = useState(false);
-  const [tempImage, setTempImage] = useState(null);
   const [formData, setFormData] = useState({
     nickname: authUser?.fullName || "",
     bio: "",
   });
+  const [selectedImg, setSelectedImg] = useState(null);
+  const [tempImage, setTempImage] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];

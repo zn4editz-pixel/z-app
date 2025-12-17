@@ -1,60 +1,45 @@
-import { memo, useState, useCallback } from 'react';
-import { getOptimizedAvatar, optimizeImage } from '../utils/imageOptimizer';
+import { useState, useEffect } from 'react';
 
-/**
- * OptimizedImage - A performance-optimized image component
- * Features:
- * - Native lazy loading
- * - Cloudinary optimization
- * - Blur-up loading effect
- * - Fallback handling
- */
-const OptimizedImage = memo(({
-    src,
-    alt = '',
-    className = '',
-    width,
-    height,
-    fallback = '/avatar.png',
-    isAvatar = false,
-    avatarSize = 80,
-    loading = 'lazy',
-    ...props
+const OptimizedImage = ({ 
+  src, 
+  alt, 
+  className = '', 
+  loading = 'lazy',
+  sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
+  ...props 
 }) => {
-    const [hasError, setHasError] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [error, setError] = useState(false);
 
-    const handleError = useCallback(() => {
-        setHasError(true);
-    }, []);
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => setIsLoaded(true);
+    img.onerror = () => setError(true);
+    img.src = src;
+  }, [src]);
 
-    const handleLoad = useCallback(() => {
-        setIsLoaded(true);
-    }, []);
-
-    // Optimize the image URL
-    const optimizedSrc = hasError
-        ? fallback
-        : isAvatar
-            ? getOptimizedAvatar(src, avatarSize)
-            : optimizeImage(src, { width, height });
-
+  if (error) {
     return (
-        <img
-            src={optimizedSrc || fallback}
-            alt={alt}
-            className={`${className} transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-            loading={loading}
-            decoding="async"
-            onError={handleError}
-            onLoad={handleLoad}
-            width={width}
-            height={height}
-            {...props}
-        />
+      <div className={`${className} bg-base-200 flex items-center justify-center`}>
+        <span className="text-base-content/50">Failed to load image</span>
+      </div>
     );
-});
+  }
 
-OptimizedImage.displayName = 'OptimizedImage';
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      loading={loading}
+      sizes={sizes}
+      style={{
+        opacity: isLoaded ? 1 : 0,
+        transition: 'opacity 0.3s ease'
+      }}
+      {...props}
+    />
+  );
+};
 
 export default OptimizedImage;

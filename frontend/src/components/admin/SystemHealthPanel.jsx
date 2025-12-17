@@ -5,10 +5,6 @@ import { axiosInstance } from "../../lib/axios";
 import toast from "react-hot-toast";
 
 const SystemHealthPanel = () => {
-    const [data, setData] = useState([]);
-    const [systemStats, setSystemStats] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [aiSuggestions, setAiSuggestions] = useState([]);
 
     const fetchSystemStats = async () => {
         try {

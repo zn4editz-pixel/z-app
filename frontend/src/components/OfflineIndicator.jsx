@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 
 const OfflineIndicator = () => {
   const isOnline = useOfflineDetection();
-  const [showReconnected, setShowReconnected] = useState(false);
-  const [wasOffline, setWasOffline] = useState(false);
 
   useEffect(() => {
     if (!isOnline) {

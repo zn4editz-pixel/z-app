@@ -13,7 +13,6 @@ import EarthMap3D from './EarthMap3D';
 
 const LiveAnalyticsDashboard = () => {
     // ⚡ Optimized state structure
-    const [data, setData] = useState({
         globalMetrics: { totalCountries: 45, activeTimezones: 18, languagesUsed: 12, internationalChats: 150 },
         countryGrowth: [],
         languageStats: [],
@@ -23,8 +22,6 @@ const LiveAnalyticsDashboard = () => {
         error: null
     });
 
-    const [timeRange, setTimeRange] = useState('7d');
-    const [isLive, setIsLive] = useState(false); // Start paused for better performance
     const intervalRef = useRef(null);
     const mountedRef = useRef(true);
 

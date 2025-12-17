@@ -39,6 +39,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
 
   const longPressTimer = useRef(null);
   const lastTap = useRef(0);
@@ -48,6 +49,14 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
   const messageRef = useRef(null);
 
   const isMyMessage = message.senderId === authUser.id;
+
+  // ✅ Smooth entrance animation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 50); // Small delay for smooth entrance
+    return () => clearTimeout(timer);
+  }, []);
 
   // Check if receiver is online for message status (moved up to avoid temporal dead zone)
   const isReceiverOnline = selectedUser && onlineUsers.includes(selectedUser.id);
@@ -436,7 +445,11 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
       <div
         ref={messageRef}
         id={`message-${message.id}`}
-        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'message-with-reactions' : 'mb-3'} relative w-full max-w-full`}
+        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'message-with-reactions' : 'mb-3'} relative w-full max-w-full transition-all duration-300 ease-out ${
+          isVisible 
+            ? 'opacity-100 translate-y-0 scale-100' 
+            : 'opacity-0 translate-y-4 scale-95'
+        }`}
       >
         <div
           className="flex items-end gap-2 relative min-w-0"
@@ -531,9 +544,9 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
             ) : (
               /* Message Bubble (for text, voice, or image+text) - NO BUBBLE for emoji-only or number-only */
               <div
-                className={(isEmojiOnly || isNumberOnly) ? "" : `relative px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-2xl shadow-sm ${isMyMessage
-                  ? "bg-primary text-primary-content"
-                  : "bg-base-200 text-base-content"
+                className={(isEmojiOnly || isNumberOnly) ? "" : `relative px-4 py-3 text-sm shadow-sm message-bubble-professional ${isMyMessage
+                  ? "bg-gradient-to-br from-primary to-primary/95 text-primary-content rounded-3xl rounded-br-lg"
+                  : "bg-base-200/80 backdrop-blur-sm text-base-content rounded-3xl rounded-bl-lg border border-base-300/20"
                   }`}
                 style={(isEmojiOnly || isNumberOnly) ? {} : {
                   display: 'inline-block',

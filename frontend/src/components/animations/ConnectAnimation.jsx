@@ -7,12 +7,8 @@ const ConnectAnimation = () => {
     // 0: VIDEO_LOCKED (Two cards, video active, chat locked)
     // 1: UNLOCKING (Button clicked, shockwave)
     // 2: CHAT_ACTIVE (Cards slide out, chat slides in)
-    const [stage, setStage] = useState(0);
-    const [messages, setMessages] = useState([]);
 
     // Characters for this cycle
-    const [charA, setCharA] = useState(CHARACTERS[0]);
-    const [charB, setCharB] = useState(CHARACTERS[1]);
 
     const runCycle = async () => {
         // Reset

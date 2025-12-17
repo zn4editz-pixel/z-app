@@ -4,7 +4,6 @@ import { MessageSquare, Heart, Send, MessageCircle, User, Smile, Mail, Bell } fr
 const ICONS = [MessageSquare, Heart, Send, MessageCircle, User, Smile, Mail, Bell];
 
 const ChatBackground = () => {
-    const [icons, setIcons] = useState([]);
 
     useEffect(() => {
         // Generate random icons with random properties

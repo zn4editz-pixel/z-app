@@ -16,11 +16,6 @@ import "../../styles/server-intelligence-fix.css";
 
 const ServerIntelligenceCenter = () => {
 	const { theme } = useThemeStore();
-	const [metrics, setMetrics] = useState(null);
-	const [loading, setLoading] = useState(true);
-	const [history, setHistory] = useState([]);
-	const [showReportModal, setShowReportModal] = useState(false);
-	const [isLive, setIsLive] = useState(true);
 	const intervalRef = useRef(null);
 
 	useEffect(() => {
@@ -900,13 +895,11 @@ const DetailedMetricPanel = memo(({ title, icon: Icon, metrics }) => {
 	);
 });
 const ManualReportModal = memo(({ onClose }) => {
-	const [formData, setFormData] = useState({
 		title: "",
 		description: "",
 		severity: "medium",
 		screenshot: null
 	});
-	const [uploading, setUploading] = useState(false);
 	const fileInputRef = useRef(null);
 
 	const handleSubmit = async (e) => {

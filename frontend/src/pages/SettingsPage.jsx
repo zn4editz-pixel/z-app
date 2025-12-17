@@ -15,27 +15,15 @@ const SettingsPage = () => {
   const { logout, authUser, updateProfile } = useAuthStore();
   const { settings, fetchSettings } = useSettingsStore(); // ✅ Get settings
 
-  const [cameraStatus, setCameraStatus] = useState('not-tested');
-  const [micStatus, setMicStatus] = useState('not-tested');
 
   // Image cropper state
-  const [showCropper, setShowCropper] = useState(false);
-  const [tempImage, setTempImage] = useState(null);
-  const [selectedImg, setSelectedImg] = useState(null); // For display
 
-  const [newProfilePic, setNewProfilePic] = useState(null); // For upload
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Profile editing states
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [profileData, setProfileData] = useState({
     username: '',
     bio: '',
     fullName: ''
   });
-  const [usernameAvailable, setUsernameAvailable] = useState(null);
-  const [checkingUsername, setCheckingUsername] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     if (authUser) {

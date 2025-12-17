@@ -9,7 +9,6 @@ import {
 	EyeOff,
 	Loader2,
 	Lock,
-	MessageSquare,
 	User,
 } from "lucide-react";
 import SnowEffect from "../components/effects/SnowEffect";
@@ -57,45 +56,121 @@ const LoginPage = () => {
 	};
 
 	return (
-		<div className="min-h-[100dvh] bg-base-100 grid lg:grid-cols-2">
+		<div className="min-h-[100dvh] bg-base-100 grid lg:grid-cols-2 lg:h-screen overflow-x-hidden auth-smooth-scroll">
 			{/* Left Side - Form with Scrolling */}
-			<div className="flex flex-col justify-center items-center p-6 sm:p-12 login-form-container relative overflow-y-auto lg:scale-90 lg:origin-center transition-transform max-h-[100dvh]">
+			<div className="flex flex-col justify-center items-center p-6 sm:p-12 login-form-container relative overflow-y-auto max-h-[100dvh] auth-smooth-scroll">
 				{/* ❄️ Seasonal Snow Effect */}
 				{settings?.isSeasonalMode && <SnowEffect />}
-				{/* 💬 Chat Background Animation */}
-				<ChatBackground />
 
+				{/* 🚀 Premium Chat-Themed Background Animation */}
+				<div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
+					{/* Gradient Mesh Background */}
+					<div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-base-100 to-secondary/5" />
 
-				{/* 🌟 Lightweight Background Animation */}
-				<div className="absolute inset-0 bg-base-100/50 -z-10" />
-				<div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] opacity-40 animate-pan-slow pointer-events-none -z-10" />
-				<div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-[80px] animate-pulse-slow pointer-events-none -z-10" />
-				<div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-secondary/5 rounded-full blur-[80px] animate-pulse-slow delay-1000 pointer-events-none -z-10" />
+					{/* Floating Chat Bubbles */}
+					<div className="absolute top-10 left-10 w-16 h-10 bg-primary/10 rounded-full animate-float-slow opacity-60" style={{ animationDelay: '0s' }} />
+					<div className="absolute top-32 right-20 w-12 h-8 bg-secondary/10 rounded-full animate-float-slow opacity-50" style={{ animationDelay: '2s' }} />
+					<div className="absolute bottom-40 left-16 w-20 h-12 bg-accent/10 rounded-full animate-float-slow opacity-40" style={{ animationDelay: '4s' }} />
+					<div className="absolute bottom-20 right-12 w-14 h-9 bg-primary/8 rounded-full animate-float-slow opacity-55" style={{ animationDelay: '1s' }} />
+					<div className="absolute top-1/2 left-8 w-10 h-6 bg-secondary/12 rounded-full animate-float-slow opacity-45" style={{ animationDelay: '3s' }} />
+
+					{/* Animated Connection Lines */}
+					<svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 400 600">
+						<defs>
+							<linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+								<stop offset="0%" stopColor="currentColor" stopOpacity="0" />
+								<stop offset="50%" stopColor="currentColor" stopOpacity="0.3" />
+								<stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+							</linearGradient>
+						</defs>
+						<path
+							d="M50,100 Q200,50 350,150 T300,400 Q150,450 100,300"
+							stroke="url(#lineGradient)"
+							strokeWidth="2"
+							fill="none"
+							className="animate-pulse text-primary"
+							style={{ animationDuration: '4s' }}
+						/>
+						<path
+							d="M100,200 Q250,150 300,300 T200,500"
+							stroke="url(#lineGradient)"
+							strokeWidth="1.5"
+							fill="none"
+							className="animate-pulse text-secondary"
+							style={{ animationDuration: '6s', animationDelay: '2s' }}
+						/>
+					</svg>
+
+					{/* Glowing Orbs */}
+					<div className="absolute top-1/4 right-1/4 w-32 h-32 bg-primary/5 rounded-full blur-2xl animate-pulse-slow" style={{ animationDuration: '8s' }} />
+					<div className="absolute bottom-1/3 left-1/3 w-40 h-40 bg-secondary/4 rounded-full blur-3xl animate-pulse-slow" style={{ animationDuration: '10s', animationDelay: '3s' }} />
+
+					{/* Message Icons */}
+					<div className="absolute top-20 right-1/3 text-primary/20 animate-bounce-slow" style={{ animationDelay: '1s' }}>
+						<svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+							<path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+						</svg>
+					</div>
+					<div className="absolute bottom-1/4 left-1/4 text-secondary/20 animate-bounce-slow" style={{ animationDelay: '3s' }}>
+						<svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+							<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+						</svg>
+					</div>
+					<div className="absolute top-1/3 left-1/5 text-accent/20 animate-bounce-slow" style={{ animationDelay: '5s' }}>
+						<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+							<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+						</svg>
+					</div>
+
+					{/* Particle System */}
+					{[...Array(15)].map((_, i) => (
+						<div
+							key={i}
+							className="absolute rounded-full bg-primary/10 animate-float-particle"
+							style={{
+								top: `${Math.random() * 100}%`,
+								left: `${Math.random() * 100}%`,
+								width: `${Math.random() * 4 + 2}px`,
+								height: `${Math.random() * 4 + 2}px`,
+								animationDuration: `${Math.random() * 20 + 15}s`,
+								animationDelay: `${Math.random() * 10}s`,
+							}}
+						/>
+					))}
+
+					{/* Subtle Grid Pattern */}
+					<div className="absolute inset-0 bg-[linear-gradient(to_right,theme(colors.primary/0.02)_1px,transparent_1px),linear-gradient(to_bottom,theme(colors.primary/0.02)_1px,transparent_1px)] bg-[size:60px_60px] opacity-30" />
+				</div>
 
 				<div className="w-full max-w-md space-y-6 relative z-10">
-					{/* Logo */}
+					{/* Logo with Premium Gradient Shine Animation */}
 					<div className="text-center mb-6">
 						<div className="flex flex-col items-center gap-2 group">
-							<div
-								className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20
-                                transition-colors"
-							>
-								{/* ✅ CSS Mask to make PNG take theme color */}
-								<div
-									className="w-10 h-10 bg-base-content"
-									style={{
-										maskImage: 'url("/z-app-logo.png")',
-										WebkitMaskImage: 'url("/z-app-logo.png")',
-										maskSize: 'contain',
-										WebkitMaskSize: 'contain',
-										maskRepeat: 'no-repeat',
-										WebkitMaskRepeat: 'no-repeat',
-										maskPosition: 'center',
-										WebkitMaskPosition: 'center',
-									}}
+							<div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-secondary/20 flex items-center justify-center group-hover:scale-105 transition-all duration-300 shadow-lg premium-logo-container overflow-hidden">
+								{/* Enhanced Gradient Shine Overlay - Multiple layers for better visibility */}
+								<div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/40 to-transparent premium-shine-animation"></div>
+								<div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-primary/30 to-transparent premium-shine-animation-secondary"></div>
+
+								{/* Logo with original colors */}
+								<img
+									src="/z-app-logo.png"
+									alt="Z App Logo"
+									className="w-12 h-12 relative z-20 object-contain"
 								/>
+
+								{/* Enhanced inner glow effect */}
+								<div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/70 to-secondary/70 blur-lg opacity-80 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+
+								{/* Medium glow layer */}
+								<div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-primary/50 to-secondary/50 blur-xl opacity-70 group-hover:opacity-90 transition-opacity duration-300 z-0"></div>
+
+								{/* Outer glow for maximum visibility */}
+								<div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-primary/40 to-secondary/40 blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-300 -z-10"></div>
+
+								{/* Ultra-wide glow for desktop visibility */}
+								<div className="absolute -inset-6 rounded-full bg-gradient-to-br from-primary/25 to-secondary/25 blur-3xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 -z-20 hidden lg:block"></div>
 							</div>
-							<h1 className="text-2xl font-bold mt-2">Welcome Back</h1>
+							<h1 className="text-2xl font-bold mt-4 bg-gradient-to-r from-base-content to-base-content/80 bg-clip-text text-transparent">Welcome Back</h1>
 							<p className="text-base-content/60">Sign in to your account</p>
 						</div>
 					</div>
@@ -193,8 +268,8 @@ const LoginPage = () => {
 				</div>
 			</div>
 
-			{/* Right Side - Fixed Animation Background */}
-			<div className="hidden lg:block relative overflow-hidden bg-gradient-to-br from-primary/10 to-secondary/10 fixed right-0 top-0 w-1/2 h-[100dvh]">
+			{/* Right Side - Animation Background */}
+			<div className="hidden lg:block relative overflow-hidden bg-gradient-to-br from-primary/10 to-secondary/10 h-full">
 				<AuthImagePattern
 					variant="login"
 					title={"Welcome Back!"}

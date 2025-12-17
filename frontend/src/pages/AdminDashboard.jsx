@@ -25,22 +25,10 @@ const AdminDashboard = () => {
 	const { socket } = useAuthStore();
 
 	// Active Tab State
-	const [activeTab, setActiveTab] = useState("dashboard");
 
 	// Data States
-	const [stats, setStats] = useState(null);
-	const [users, setUsers] = useState([]);
-	const [reports, setReports] = useState([]);
-	const [aiReports, setAIReports] = useState([]);
-	const [aiStats, setAIStats] = useState(null);
-	const [verificationRequests, setVerificationRequests] = useState([]);
 
 	// Loading States
-	const [loadingStats, setLoadingStats] = useState(true);
-	const [loadingUsers, setLoadingUsers] = useState(true);
-	const [loadingReports, setLoadingReports] = useState(true);
-	const [loadingAIReports, setLoadingAIReports] = useState(true);
-	const [loadingVerifications, setLoadingVerifications] = useState(true);
 
 	// Tab Configuration
 	const tabs = [

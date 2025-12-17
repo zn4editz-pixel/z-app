@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { Wifi, WifiOff } from "lucide-react";
 
 const ConnectionStatus = () => {
-	const [isOnline, setIsOnline] = useState(navigator.onLine);
-	const [showStatus, setShowStatus] = useState(false);
 
 	useEffect(() => {
 		const handleOnline = () => {

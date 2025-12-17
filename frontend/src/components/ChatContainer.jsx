@@ -1,6 +1,7 @@
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useEffect, useRef, useState, useLayoutEffect } from "react";
+import React from "react";
 import { Download, Play, Pause } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -10,6 +11,7 @@ import MessageSkeleton from "./skeletons/MessageSkeleton";
 import CallLogMessage from "./CallLogMessage";
 import ChatMessage from "./ChatMessage";
 import { formatMessageTime } from "../lib/utils";
+import { getDateLabel, isDifferentDay } from "../utils/dateUtils";
 
 // ✅ CRITICAL: Import animations for floating reactions
 import "../styles/animations.css";
@@ -51,6 +53,41 @@ const ChatContainer = ({ onStartCall }) => {
 
   // ✅ NEW: Floating reactions system
   const [floatingReactions, setFloatingReactions] = useState([]);
+
+  // ✅ CRITICAL FIX: Move mobile keyboard detection hooks to top
+  const [isMobile, setIsMobile] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  // ✅ Mobile detection effect
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const handleViewportChange = () => {
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      const windowHeight = window.screen.height;
+      const keyboardThreshold = windowHeight * 0.75;
+      
+      setKeyboardVisible(viewportHeight < keyboardThreshold);
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+      return () => window.visualViewport.removeEventListener('resize', handleViewportChange);
+    } else {
+      window.addEventListener('resize', handleViewportChange);
+      return () => window.removeEventListener('resize', handleViewportChange);
+    }
+  }, [isMobile]);
 
   // ✅ SIMPLE: Add window function for manual testing
   useEffect(() => {
@@ -371,89 +408,74 @@ const ChatContainer = ({ onStartCall }) => {
     );
   }
 
-  // Mobile keyboard detection
-  const [isMobile, setIsMobile] = useState(false);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  useEffect(() => {
-    if (!isMobile) return;
-
-    const handleViewportChange = () => {
-      const viewportHeight = window.visualViewport?.height || window.innerHeight;
-      const windowHeight = window.screen.height;
-      const keyboardThreshold = windowHeight * 0.75;
-      
-      setKeyboardVisible(viewportHeight < keyboardThreshold);
-    };
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleViewportChange);
-      return () => window.visualViewport.removeEventListener('resize', handleViewportChange);
-    } else {
-      window.addEventListener('resize', handleViewportChange);
-      return () => window.removeEventListener('resize', handleViewportChange);
-    }
-  }, [isMobile]);
 
   return (
     <>
-      <div className="flex-1 flex flex-col h-full w-full">
+      <div className={`flex-1 flex flex-col h-full w-full ${
+        isMobile ? 'mobile-chat-fullscreen' : ''
+      }`}>
         <ChatHeader onStartCall={handleStartCall} />
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
           data-chat-container
-          className={`flex-1 overflow-y-auto overflow-x-hidden p-2.5 sm:p-4 space-y-2.5 sm:space-y-4 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent relative ${
+          className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent relative ${
             isMobile && keyboardVisible ? 'chat-container-mobile-keyboard' : ''
-          }`}
-          style={{ WebkitOverflowScrolling: 'touch' }}
+          } ${isMobile ? 'pt-24 mobile-chat-container professional-chat-container' : 'pt-6'}`}
+          style={{ WebkitOverflowScrolling: 'touch', scrollBehavior: 'smooth' }}
         >
           {isMessagesLoading ? (
             <MessageSkeleton />
           ) : messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center px-4">
-              <div className="text-6xl mb-4">👋</div>
-              <h3 className="text-lg font-semibold mb-2">No messages yet</h3>
-              <p className="text-sm text-base-content/60">
-                Start the conversation by sending a message!
+            <div className="flex flex-col items-center justify-center h-full text-center px-6">
+              <div className="w-20 h-20 rounded-full bg-base-200/50 flex items-center justify-center mb-6 shadow-sm">
+                <div className="text-4xl">💬</div>
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-base-content">No messages yet</h3>
+              <p className="text-base text-base-content/60 max-w-sm leading-relaxed">
+                Start the conversation by sending a message to {selectedUser?.nickname || selectedUser?.username}!
               </p>
             </div>
           ) : (
-            messages.map((message) => {
-              const mine = message.senderId === authUser?.id;
+            <>
+              {messages.map((message, index) => {
+                const mine = message.senderId === authUser?.id;
+                const previousMessage = index > 0 ? messages[index - 1] : null;
+                const showDateSeparator = index === 0 || (previousMessage && isDifferentDay(message.createdAt, previousMessage.createdAt));
 
-              // Render call log message
-              if (message.messageType === "call" || message.callData || message.isCallLog) {
                 return (
-                  <div
-                    key={message.id || message.id}
-                    className="flex justify-center w-full my-2"
-                  >
-                    <div className="max-w-md w-full">
-                      <CallLogMessage message={message} isOwnMessage={mine} />
-                    </div>
-                  </div>
-                );
-              }
+                  <React.Fragment key={`message-group-${message.id}`}>
+                    {/* Instagram-style Date Separator */}
+                    {showDateSeparator && (
+                      <div className="flex justify-center my-6">
+                        <div className="bg-base-200/50 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm">
+                          <span className="text-sm font-medium text-base-content/70">
+                            {getDateLabel(message.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
 
-              // Use new ChatMessage component with reactions and reply
-              return <ChatMessage
-                key={message.id}
-                message={message}
-                onReply={handleReply}
-                onFloatingReaction={triggerFloatingReaction}
-              />;
-            })
+                    {/* Render call log message */}
+                    {(message.messageType === "call" || message.callData || message.isCallLog) ? (
+                      <div className="flex justify-center w-full my-2">
+                        <div className="max-w-md w-full">
+                          <CallLogMessage message={message} isOwnMessage={mine} />
+                        </div>
+                      </div>
+                    ) : (
+                      // Use new ChatMessage component with reactions and reply
+                      <ChatMessage
+                        message={message}
+                        onReply={handleReply}
+                        onFloatingReaction={triggerFloatingReaction}
+                      />
+                    )}
+                  </React.Fragment>
+                );
+            })}
+            </>
           )}
 
           {/* Typing Indicator - Enhanced Bubble */}

@@ -437,7 +437,6 @@ const ModernAnalyticsChart = ({ users }) => {
 
 // Live System Metrics Chart Component
 const LiveSystemMetricsChart = () => {
-	const [metricsData, setMetricsData] = useState([]);
 	const intervalRef = useRef(null);
 
 	useEffect(() => {

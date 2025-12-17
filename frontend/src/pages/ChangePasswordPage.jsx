@@ -6,21 +6,10 @@ import toast from "react-hot-toast";
 
 const ChangePasswordPage = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: Send OTP, 2: Verify OTP & Change Password
-  const [isLoading, setIsLoading] = useState(false);
-  const [maskedEmail, setMaskedEmail] = useState("");
   
   // Step 1 - OTP Request
-  const [otpSent, setOtpSent] = useState(false);
   
   // Step 2 - Password Change
-  const [otp, setOtp] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSendOTP = async () => {
     setIsLoading(true);

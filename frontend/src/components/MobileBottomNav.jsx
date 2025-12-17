@@ -15,7 +15,6 @@ const MobileBottomNav = () => {
   const { authUser } = useAuthStore();
   const { selectedUser } = useChatStore();
   const { pendingReceived } = useFriendStore();
-  const [isMobile, setIsMobile] = useState(false);
 
   // Detect mobile device
   useEffect(() => {

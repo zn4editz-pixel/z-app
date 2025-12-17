@@ -18,7 +18,6 @@ const Navbar = () => {
 	const { pendingReceived } = useFriendStore();
 	const { getUnreadAdminCount } = useNotificationStore();
 	const location = useLocation();
-	const [isMobile, setIsMobile] = useState(false);
 
 	// Detect mobile device
 	useEffect(() => {

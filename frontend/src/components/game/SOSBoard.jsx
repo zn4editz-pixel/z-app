@@ -9,8 +9,6 @@ const SOSBoard = () => {
     const { authUser } = useAuthStore();
     const { socket } = useAuthStore(); // Or wherever socket is accessible
 
-    const [selectedLetter, setSelectedLetter] = useState('S');
-    const [timeLeft, setTimeLeft] = useState(15);
     const containerRef = useRef(null);
 
     // Timer Logic
@@ -58,7 +56,6 @@ const SOSBoard = () => {
     }, [gameState?.winner, authUser?.id]);
 
     // Auto-close Effect
-    const [closeTimer, setCloseTimer] = useState(10);
 
     useEffect(() => {
         if (gameState?.status === 'finished') {

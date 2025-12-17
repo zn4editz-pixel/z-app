@@ -6,13 +6,11 @@ import { axiosInstance } from "../../lib/axios";
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 const GameAnalyticsPanel = () => {
-    const [stats, setStats] = useState({
         totalGames: 0,
         activePlayers: 0,
         avgDuration: "--",
         topGame: "SOS Classic"
     });
-    const [loading, setLoading] = useState(true);
 
     const fetchGameStats = async () => {
         try {

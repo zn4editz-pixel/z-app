@@ -56,53 +56,81 @@ const ChatHeader = ({ onStartCall }) => {
 	};
 
 	return (
-		<div className={`p-2.5 border-b border-base-300 relative bg-base-100 z-30 ${
-			isMobile && keyboardVisible ? 'mobile-chat-header-keyboard' : ''
-		}`}>
+		<div className={`${
+			isMobile 
+				? 'fixed top-0 left-0 right-0 z-50 px-4 py-4 bg-base-100/95 backdrop-blur-xl border-t border-t-base-300/30 border-b border-base-300/50 shadow-lg mobile-chat-header-professional' 
+				: 'p-4 border-b border-base-300 relative bg-base-100 z-30'
+		} ${isMobile && keyboardVisible ? 'mobile-chat-header-keyboard' : ''}`}>
 			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-3">
-					{/* Back Button */}
-					<button onClick={() => setSelectedUser(null)} className="btn btn-ghost btn-circle btn-sm -ml-1">
-						<ArrowLeft className="size-5" />
+				<div className="flex items-center gap-3 flex-1 min-w-0">
+					{/* Back Button - Instagram Style */}
+					<button 
+						onClick={() => setSelectedUser(null)} 
+						className="w-10 h-10 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation"
+					>
+						<ArrowLeft className="w-5 h-5 text-base-content" />
 					</button>
 
-					{/* Avatar */}
-					<div className="avatar">
-						<div className="size-10 rounded-full relative border border-base-300">
+					{/* Avatar with Online Indicator */}
+					<div className="relative flex-shrink-0">
+						<div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-base-300/30 shadow-sm">
 							<img
 								src={selectedUser.profilePic || "/avatar.png"}
 								alt={selectedUser.username}
-								className="size-full object-cover rounded-full"
+								className="w-full h-full object-cover"
 							/>
 						</div>
+						{/* Online Status Dot */}
+						{isOnline && (
+							<div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-base-100 shadow-sm animate-pulse"></div>
+						)}
 					</div>
 
-					{/* User Info */}
-					<div>
-						<h3 className="font-medium flex items-center gap-1">
-							{selectedUser.nickname || selectedUser.username}
+					{/* User Info - Enhanced */}
+					<div className="flex-1 min-w-0">
+						<div className="flex items-center gap-1.5 mb-1">
+							<h3 className="font-semibold text-lg text-base-content truncate">
+								{selectedUser.nickname || selectedUser.username}
+							</h3>
 							{selectedUser.isVerified && <VerifiedBadge size="xs" />}
-						</h3>
-						<p className="text-sm text-base-content/70">
+						</div>
+						<p className="text-sm text-base-content/60 font-medium">
 							{isTyping && typingUserId === selectedUser.id ? (
-								<span className="text-secondary font-medium animate-pulse">Typing...</span>
+								<span className="text-primary font-medium flex items-center gap-1">
+									<span className="flex gap-0.5">
+										<span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+										<span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+										<span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+									</span>
+									typing...
+								</span>
 							) : isOnline ? (
-								"Online"
+								<span className="text-green-500">Online</span>
 							) : (
-								"Offline"
+								<span className="text-base-content/50">Offline</span>
 							)}
 						</p>
 					</div>
 				</div>
 
-				{/* Header Actions */}
-				<div className="flex items-center gap-2">
-					{/* Calls */}
-					<button onClick={() => handleStartCall('video')} className="btn btn-ghost btn-circle btn-sm">
-						<Video className="size-5" />
+				{/* Header Actions - Professional Style */}
+				<div className="flex items-center gap-1">
+					{/* Video Call Button */}
+					<button 
+						onClick={() => handleStartCall('video')} 
+						className="w-11 h-11 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation group"
+						title="Video Call"
+					>
+						<Video className="w-5 h-5 text-base-content group-hover:text-primary transition-colors" />
 					</button>
-					<button onClick={() => handleStartCall('audio')} className="btn btn-ghost btn-circle btn-sm">
-						<Phone className="size-5" />
+					
+					{/* Audio Call Button */}
+					<button 
+						onClick={() => handleStartCall('audio')} 
+						className="w-11 h-11 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation group"
+						title="Voice Call"
+					>
+						<Phone className="w-5 h-5 text-base-content group-hover:text-primary transition-colors" />
 					</button>
 				</div>
 			</div>

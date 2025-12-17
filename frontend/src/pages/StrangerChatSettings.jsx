@@ -20,10 +20,6 @@ const StrangerChatSettings = () => {
 	const { authUser } = useAuthStore();
 	
 	// Privacy settings state
-	const [showUsername, setShowUsername] = useState(true);
-	const [showProfilePic, setShowProfilePic] = useState(true);
-	const [showVerificationBadge, setShowVerificationBadge] = useState(true);
-	const [allowFriendRequests, setAllowFriendRequests] = useState(true);
 	
 	// Load saved settings from localStorage
 	useEffect(() => {

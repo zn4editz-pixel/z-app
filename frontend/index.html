@@ -31,9 +31,17 @@
   <meta name="revisit-after" content="7 days" />
   <link rel="canonical" href="https://z-app-official.vercel.app/" />
 
-  <!-- Theme Color - Orange -->
-  <meta name="theme-color" content="#FF9933" />
+  <!-- Theme Color - Dynamic based on theme -->
+  <meta name="theme-color" content="#0f0f0f" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0f0f0f" />
   <meta name="msapplication-TileColor" content="#FF9933" />
+  
+  <!-- Mobile viewport and color fixes -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-touch-fullscreen" content="yes" />
 
   <!-- PWA Meta Tags -->
   <link rel="manifest" href="/manifest.json" />
