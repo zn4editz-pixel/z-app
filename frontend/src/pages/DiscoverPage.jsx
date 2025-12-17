@@ -537,7 +537,7 @@ const DiscoverPage = () => {
 							<Bell className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ${activeTab === "notifications" ? "scale-110" : ""}`} />
 							<span>Notifications</span>
 							{notificationCount > 0 && activeTab !== "notifications" && (
-								<span className="absolute top-1 right-1 sm:relative sm:top-0 sm:right-0 badge badge-error badge-xs sm:badge-sm animate-pulse">
+								<span className="absolute top-1 right-1 sm:relative sm:top-0 sm:right-0 badge badge-error badge-xs sm:badge-sm animate-pulse z-50">
 									{notificationCount > 9 ? "9+" : notificationCount}
 								</span>
 							)}

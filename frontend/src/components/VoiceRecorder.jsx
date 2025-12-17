@@ -83,7 +83,7 @@ const VoiceRecorder = ({ onSendVoice, disabled }) => {
         const base64Audio = reader.result;
         await onSendVoice(base64Audio, recordingTime);
         cancelRecording();
-        toast.success("Voice message sent!");
+        // toast.success("Voice message sent!"); // 🔇 Disabled - no toast while sending voice message
       };
     } catch (error) {
       console.error("Error sending voice:", error);
