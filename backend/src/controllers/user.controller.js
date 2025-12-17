@@ -1,4 +1,4 @@
-import prisma from "../lib/prisma.js";
+import prisma from "../lib/db.js";
 
 // ─── Get All Users (Admin Only) ──────────────────────────────
 export const getAllUsers = async (req, res) => {
@@ -167,8 +167,8 @@ export const updateUserProfile = async (req, res) => {
 		// Handle username change if provided
 		if (username && username !== user.username) {
 			// Check if username is available
-			const existingUser = await prisma.user.findUnique({ 
-				where: { username: username.toLowerCase() } 
+			const existingUser = await prisma.user.findUnique({
+				where: { username: username.toLowerCase() }
 			});
 			if (existingUser) {
 				return res.status(400).json({ error: "Username already taken" });
@@ -188,7 +188,7 @@ export const updateUserProfile = async (req, res) => {
 			// Check if user has exceeded weekly limit
 			const changesThisWeek = updateData.usernameChangesThisWeek ?? user.usernameChangesThisWeek;
 			if (changesThisWeek >= 2) {
-				return res.status(400).json({ 
+				return res.status(400).json({
 					error: "You can only change your username 2 times per week",
 					nextChangeDate: new Date(user.weekStartDate.getTime() + (7 * 24 * 60 * 60 * 1000))
 				});
@@ -197,7 +197,7 @@ export const updateUserProfile = async (req, res) => {
 			// Check if 2 days have passed since last change
 			if (user.lastUsernameChange && user.lastUsernameChange > twoDaysAgo) {
 				const nextChangeDate = new Date(user.lastUsernameChange.getTime() + (2 * 24 * 60 * 60 * 1000));
-				return res.status(400).json({ 
+				return res.status(400).json({
 					error: "You must wait 2 days between username changes",
 					nextChangeDate
 				});
@@ -258,11 +258,11 @@ export const checkUsernameAvailability = async (req, res) => {
 		}
 
 		// Check if username exists
-		const existingUser = await prisma.user.findUnique({ 
-			where: { username: username.toLowerCase() } 
+		const existingUser = await prisma.user.findUnique({
+			where: { username: username.toLowerCase() }
 		});
-		
-		res.status(200).json({ 
+
+		res.status(200).json({
 			available: !existingUser,
 			current: false
 		});
@@ -292,7 +292,7 @@ export const getUsernameChangeInfo = async (req, res) => {
 			changesThisWeek = 0;
 		}
 
-		const canChange = changesThisWeek < 2 && 
+		const canChange = changesThisWeek < 2 &&
 			(!user.lastUsernameChange || user.lastUsernameChange < twoDaysAgo);
 
 		let nextChangeDate = null;

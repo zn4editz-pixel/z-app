@@ -6,15 +6,31 @@ import { io } from "socket.io-client";
 import { useFriendStore } from "./useFriendStore.js";
 import { SocketMonitor } from "../utils/socketMonitor.js";
 
-// ✅ --- CORRECTED BASE_URL ---
-// Get the base URL from the environment variable with fallback, defaulting to localhost for dev
-const SOCKET_URL = import.meta.env.MODE === "development"
-	? "http://localhost:5002"
-	: (import.meta.env.VITE_API_BASE_URL || "https://z-app-backend.onrender.com");
+// ✅ PRODUCTION SOCKET URL CONFIGURATION
+const getSocketURL = () => {
+  // Development
+  if (import.meta.env.MODE === "development") {
+    return "http://localhost:5001";
+  }
+  
+  // Production - use environment variable or fallback
+  const apiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+  if (apiUrl) {
+    return apiUrl;
+  }
+  
+  // Fallback to current domain with HTTPS
+  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+  const host = window.location.host;
+  return `${protocol}//${host}`;
+};
 
-// Log the socket URL being used for debugging
-console.log("Socket URL Configured:", SOCKET_URL);
-// ✅ --- END CORRECTION ---
+const SOCKET_URL = getSocketURL();
+
+// Log the socket URL being used for debugging (only in development)
+if (import.meta.env.MODE === "development") {
+  console.log("Socket URL Configured:", SOCKET_URL);
+}
 
 
 export const useAuthStore = create((set, get) => ({

@@ -6,6 +6,7 @@ import { formatMessageTime } from "../lib/utils";
 import { getMessageStatusInfo, getThemeColors, getReactionBadgeStyle } from "../utils/messageStatus";
 import { Trash2, Download, Play, Pause, Reply, X } from "lucide-react";
 import MessageStatus from "./MessageStatus";
+import GameInviteMessage from "./chat/GameInviteMessage"; // ✅ Game Invite Component
 import toast from "react-hot-toast";
 
 const REACTION_EMOJIS = ["❤️", "😂", "👍", "😮", "😢", "🔥"];
@@ -512,11 +513,26 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
                   style={{ opacity: 0, transition: 'opacity 0.3s' }}
                 />
               </div>
+            ) : message.text && message.text.startsWith("GAME_INVITE:") ? (
+              /* ✅ GAME INVITE MESSAGE */
+              <GameInviteMessage
+                message={message}
+                onJoin={(gameId) => {
+                  // Extract Game ID from text "GAME_INVITE:game_123"
+                  const inviteId = message.text.replace("GAME_INVITE:", "");
+                  const { socket, authUser } = useAuthStore.getState();
+                  socket.emit("game:join", {
+                    gameId: inviteId,
+                    myName: authUser.fullName,
+                    myPic: authUser.profilePic
+                  });
+                }}
+              />
             ) : (
               /* Message Bubble (for text, voice, or image+text) - NO BUBBLE for emoji-only or number-only */
               <div
                 className={(isEmojiOnly || isNumberOnly) ? "" : `relative px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-2xl shadow-sm ${isMyMessage
-                  ? "bg-gradient-to-br from-primary to-primary/90 text-primary-content"
+                  ? "bg-primary text-primary-content"
                   : "bg-base-200 text-base-content"
                   }`}
                 style={(isEmojiOnly || isNumberOnly) ? {} : {
@@ -809,158 +825,164 @@ const ChatMessage = ({ message, onReply, onFloatingReaction }) => {
           />
         </div>
 
-      </div>
+      </div >
 
       {/* Long-Press Reaction Picker */}
-      {showReactionPicker && (
-        <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center"
-          onClick={() => setShowReactionPicker(false)}
-        >
+      {
+        showReactionPicker && (
           <div
-            className="bg-base-100 rounded-t-3xl sm:rounded-3xl p-3 sm:p-4 shadow-2xl w-full sm:w-auto"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center"
+            onClick={() => setShowReactionPicker(false)}
           >
-            <div className="flex justify-center gap-2 sm:gap-3 mb-3">
-              {REACTION_EMOJIS.map((emoji) => (
+            <div
+              className="bg-base-100 rounded-t-3xl sm:rounded-3xl p-3 sm:p-4 shadow-2xl w-full sm:w-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-center gap-2 sm:gap-3 mb-3">
+                {REACTION_EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => {
+                      handleReactionSelect(emoji);
+                      setShowReactionPicker(false);
+                    }}
+                    className={`text-2xl sm:text-3xl hover:scale-110 active:scale-95 transition-transform p-2 rounded-full hover:bg-base-200 ${myReaction?.emoji === emoji ? 'scale-110 bg-base-200' : ''
+                      }`}
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+              {isMyMessage && (
                 <button
-                  key={emoji}
                   onClick={() => {
-                    handleReactionSelect(emoji);
+                    handleDelete();
                     setShowReactionPicker(false);
                   }}
-                  className={`text-2xl sm:text-3xl hover:scale-110 active:scale-95 transition-transform p-2 rounded-full hover:bg-base-200 ${myReaction?.emoji === emoji ? 'scale-110 bg-base-200' : ''
-                    }`}
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  className="w-full btn btn-error btn-sm gap-2"
                 >
-                  {emoji}
+                  <Trash2 className="w-4 h-4" />
+                  Delete Message
                 </button>
-              ))}
+              )}
             </div>
-            {isMyMessage && (
-              <button
-                onClick={() => {
-                  handleDelete();
-                  setShowReactionPicker(false);
-                }}
-                className="w-full btn btn-error btn-sm gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete Message
-              </button>
-            )}
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* ✅ ENHANCED: Reactions Detail Modal with User Names and Tap-to-Remove */}
-      {showReactions && (
-        <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center"
-          onClick={() => setShowReactions(false)}
-        >
+      {
+        showReactions && (
           <div
-            className="bg-base-100 rounded-t-2xl sm:rounded-2xl p-3 sm:p-4 max-w-sm w-full shadow-2xl max-h-[70vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center"
+            onClick={() => setShowReactions(false)}
           >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-sm">Reactions</h3>
-              <button onClick={() => setShowReactions(false)} className="btn btn-ghost btn-xs btn-circle">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="space-y-3">
-              {Object.entries(groupedReactions).map(([emoji, userIds]) => (
-                <div key={emoji} className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl flex-shrink-0">{emoji}</span>
-                    <span className="text-xs text-base-content/50">{userIds.length} {userIds.length === 1 ? 'person' : 'people'}</span>
-                  </div>
-                  <div className="space-y-1 ml-6">
-                    {userIds.map((userId, idx) => {
-                      // ✅ FIXED: Get actual user data from reactions array
-                      const reactionData = reactions.find(r =>
-                        (r.userId?.id || r.userId) === (userId?.id || userId) && r.emoji === emoji
-                      );
+            <div
+              className="bg-base-100 rounded-t-2xl sm:rounded-2xl p-3 sm:p-4 max-w-sm w-full shadow-2xl max-h-[70vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-sm">Reactions</h3>
+                <button onClick={() => setShowReactions(false)} className="btn btn-ghost btn-xs btn-circle">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="space-y-3">
+                {Object.entries(groupedReactions).map(([emoji, userIds]) => (
+                  <div key={emoji} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl flex-shrink-0">{emoji}</span>
+                      <span className="text-xs text-base-content/50">{userIds.length} {userIds.length === 1 ? 'person' : 'people'}</span>
+                    </div>
+                    <div className="space-y-1 ml-6">
+                      {userIds.map((userId, idx) => {
+                        // ✅ FIXED: Get actual user data from reactions array
+                        const reactionData = reactions.find(r =>
+                          (r.userId?.id || r.userId) === (userId?.id || userId) && r.emoji === emoji
+                        );
 
-                      const isMyReaction = (userId?.id || userId) === authUser.id;
-                      const userName = isMyReaction
-                        ? "You"
-                        : (reactionData?.user?.fullName || reactionData?.user?.nickname || selectedUser?.fullName || "User");
+                        const isMyReaction = (userId?.id || userId) === authUser.id;
+                        const userName = isMyReaction
+                          ? "You"
+                          : (reactionData?.user?.fullName || reactionData?.user?.nickname || selectedUser?.fullName || "User");
 
-                      return (
-                        <div
-                          key={idx}
-                          className={`flex items-center justify-between py-1.5 px-2 rounded-lg transition-colors ${isMyReaction
-                            ? 'bg-primary/10 hover:bg-primary/20 cursor-pointer'
-                            : 'bg-base-200/50'
-                            }`}
-                          onClick={() => {
-                            if (isMyReaction) {
-                              console.log(`🗑️ Removing my reaction: ${emoji} from modal`);
-                              removeReaction(message.id);
-                              // Add haptic feedback
-                              if (navigator.vibrate) navigator.vibrate(20);
-                              // Close modal if no more reactions
-                              if (Object.keys(groupedReactions).length === 1 && userIds.length === 1) {
-                                setShowReactions(false);
+                        return (
+                          <div
+                            key={idx}
+                            className={`flex items-center justify-between py-1.5 px-2 rounded-lg transition-colors ${isMyReaction
+                              ? 'bg-primary/10 hover:bg-primary/20 cursor-pointer'
+                              : 'bg-base-200/50'
+                              }`}
+                            onClick={() => {
+                              if (isMyReaction) {
+                                console.log(`🗑️ Removing my reaction: ${emoji} from modal`);
+                                removeReaction(message.id);
+                                // Add haptic feedback
+                                if (navigator.vibrate) navigator.vibrate(20);
+                                // Close modal if no more reactions
+                                if (Object.keys(groupedReactions).length === 1 && userIds.length === 1) {
+                                  setShowReactions(false);
+                                }
                               }
-                            }
-                          }}
-                        >
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                              <span className="text-xs font-semibold text-primary">
-                                {userName.charAt(0).toUpperCase()}
-                              </span>
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                                <span className="text-xs font-semibold text-primary">
+                                  {userName.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <span className="text-sm font-medium">{userName}</span>
                             </div>
-                            <span className="text-sm font-medium">{userName}</span>
+                            {isMyReaction && (
+                              <div className="flex items-center gap-1 text-xs text-primary">
+                                <span>Tap to remove</span>
+                                <X className="w-3 h-3" />
+                              </div>
+                            )}
                           </div>
-                          {isMyReaction && (
-                            <div className="flex items-center gap-1 text-xs text-primary">
-                              <span>Tap to remove</span>
-                              <X className="w-3 h-3" />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Image Modal with Save Option */}
-      {showImageModal && message.image && (
-        <div
-          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-          onClick={() => setShowImageModal(false)}
-        >
-          <button
+      {
+        showImageModal && message.image && (
+          <div
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
             onClick={() => setShowImageModal(false)}
-            className="absolute top-4 right-4 btn btn-circle btn-sm bg-base-100/20 border-none text-white"
           >
-            <X className="w-5 h-5" />
-          </button>
-          <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
-            <img
-              src={message.image}
-              className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
-              alt="Full size"
-            />
             <button
-              onClick={() => handleDownloadImage(message.image)}
-              className="absolute bottom-4 right-4 btn btn-primary gap-2"
+              onClick={() => setShowImageModal(false)}
+              className="absolute top-4 right-4 btn btn-circle btn-sm bg-base-100/20 border-none text-white"
             >
-              <Download className="w-4 h-4" />
-              Save Image
+              <X className="w-5 h-5" />
             </button>
+            <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
+              <img
+                src={message.image}
+                className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+                alt="Full size"
+              />
+              <button
+                onClick={() => handleDownloadImage(message.image)}
+                className="absolute bottom-4 right-4 btn btn-primary gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Save Image
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </>
   );
 };

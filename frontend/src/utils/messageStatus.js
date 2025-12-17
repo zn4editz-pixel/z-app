@@ -20,13 +20,13 @@ export const getMessageStatusInfo = (message, isMyMessage, isReceiverOnline, the
   const isRead = message.readAt || message.isRead || status === 'read';
   const isDelivered = message.deliveredAt || message.isDelivered || status === 'delivered' || isRead;
 
-  // 🔵 READ: Blue Double Ticks (Message was viewed)
+  // 🔵 READ: Theme-based Double Ticks (Message was viewed)
   if (isRead) {
     return {
       show: true,
       type: 'double-tick',
-      className: 'text-blue-500',
-      color: '#3B82F6', // Blue color
+      className: 'text-primary', // Theme-based primary color
+      color: themeColors.primary, // Use theme primary color
       animate: 'animate-pulse',
       tooltip: 'Read',
       icon: '✓✓'

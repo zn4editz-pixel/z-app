@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import cloudinary from "../lib/cloudinary.js";
-import prisma from "../lib/prisma.js";
+import prisma from "../lib/db.js";
 import { generateToken } from "../lib/utils.js";
 import sendEmail from "../utils/sendEmail.js";
 import { getLocationData, getClientIP } from "../utils/geoLocation.js";

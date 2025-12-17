@@ -4,7 +4,7 @@ import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "../store/useAuthStore";
 import {
 	Users, AlertTriangle, Shield, TrendingUp,
-	BadgeCheck, FileText, Activity, Brain, Monitor
+	BadgeCheck, FileText, Activity, Brain, Monitor, Gamepad2, Server
 } from "lucide-react";
 import "../styles/admin-dashboard-imports.css";
 import GoldenParticles from "../components/admin/GoldenParticles";
@@ -16,9 +16,10 @@ import AIModerationPanel from "../components/admin/AIModerationPanel";
 import ReportsManagement from "../components/admin/ReportsManagement";
 import VerificationRequests from "../components/admin/VerificationRequests";
 import NotificationsPanel from "../components/admin/NotificationsPanel";
-import ServerIntelligenceCenter from "../components/admin/ServerIntelligenceCenter";
 import AIAnalysisAgent from "../components/admin/AIAnalysisAgent";
 import AppearancePanel from "../components/admin/AppearancePanel";
+import SystemHealthPanel from "../components/admin/SystemHealthPanel";
+import GameAnalyticsPanel from "../components/admin/GameAnalyticsPanel";
 
 const AdminDashboard = () => {
 	const { socket } = useAuthStore();
@@ -44,8 +45,9 @@ const AdminDashboard = () => {
 	// Tab Configuration
 	const tabs = [
 		{ id: "dashboard", label: "Dashboard", icon: TrendingUp },
+		{ id: "system-health", label: "System Health & AI", icon: Server },
+		{ id: "game-analytics", label: "Game Analytics", icon: Gamepad2 },
 		{ id: "appearance", label: "Appearance", icon: Monitor }, // New Tab
-		{ id: "server-intelligence", label: "Server Intelligence", icon: Activity },
 		{ id: "ai-analysis", label: "AI Analysis", icon: Brain },
 		{ id: "users", label: "Users", icon: Users },
 		{ id: "ai-moderation", label: "AI Moderation", icon: Shield },
@@ -53,7 +55,6 @@ const AdminDashboard = () => {
 		{ id: "verifications", label: "Verifications", icon: BadgeCheck },
 		{ id: "notifications", label: "Notifications", icon: FileText },
 	];
-
 
 
 	// Fetch Data
@@ -113,14 +114,32 @@ const AdminDashboard = () => {
 			} : null);
 		};
 
+		// 🔥 NEW: Real-time report updates
+		const handleNewReport = (report) => {
+			console.log(`📡 Admin: New report received`, report);
+			setReports(prev => [report, ...prev]);
+			toast(`🚨 New Report: ${report.reason || 'User report'}`, { icon: '⚠️' });
+		};
+
+		// 🔥 NEW: Real-time verification request
+		const handleNewVerification = (request) => {
+			console.log(`📡 Admin: New verification request`, request);
+			setVerificationRequests(prev => [request, ...prev]);
+			toast('📋 New verification request received!');
+		};
+
 		socket.on("admin:userOnline", handleUserOnline);
 		socket.on("admin:userOffline", handleUserOffline);
-		socket.on("getOnlineUsers", handleOnlineUsers); // Sync with global online users
+		socket.on("getOnlineUsers", handleOnlineUsers);
+		socket.on("admin:newReport", handleNewReport);
+		socket.on("admin:newVerification", handleNewVerification);
 
 		return () => {
 			socket.off("admin:userOnline", handleUserOnline);
 			socket.off("admin:userOffline", handleUserOffline);
 			socket.off("getOnlineUsers", handleOnlineUsers);
+			socket.off("admin:newReport", handleNewReport);
+			socket.off("admin:newVerification", handleNewVerification);
 		};
 	}, [socket]);
 
@@ -466,8 +485,6 @@ const AdminDashboard = () => {
 		switch (activeTab) {
 			case "dashboard":
 				return <DashboardOverview stats={stats} loadingStats={loadingStats} users={users} />;
-			case "server-intelligence":
-				return <ServerIntelligenceCenter />;
 			case "appearance":
 				return <AppearancePanel />;
 			case "ai-analysis":
@@ -514,6 +531,10 @@ const AdminDashboard = () => {
 				);
 			case "notifications":
 				return <NotificationsPanel onSendNotification={handleSendNotification} />;
+			case "system-health":
+				return <SystemHealthPanel />;
+			case "game-analytics":
+				return <GameAnalyticsPanel />;
 			default:
 				return <DashboardOverview stats={stats} loadingStats={loadingStats} users={users} />;
 		}
@@ -571,22 +592,22 @@ const AdminDashboard = () => {
 					</p>
 				</div>
 
-				{/* Tab Navigation */}
-				<div className="bg-base-100/80 backdrop-blur-sm rounded-2xl shadow-xl p-2 mb-6 sm:mb-8 overflow-x-auto border border-base-300">
-					<div className="flex gap-1 sm:gap-2 min-w-max sm:min-w-0">
+				{/* Tab Navigation - Clean minimal design */}
+				<div className="bg-base-100/60 backdrop-blur-sm rounded-xl shadow-lg p-1.5 mb-6 overflow-x-auto border border-base-300/50">
+					<div className="flex gap-1 min-w-max">
 						{tabs.map((tab) => {
 							const Icon = tab.icon;
 							return (
 								<button
 									key={tab.id}
 									onClick={() => setActiveTab(tab.id)}
-									className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium ${activeTab === tab.id
-										? "bg-gradient-to-r from-warning/20 via-base-content/10 to-warning/20 text-base-content shadow-lg scale-105 border border-warning/30"
-										: "hover:bg-base-200 text-base-content/70 hover:text-base-content hover:scale-102"
+									className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all duration-200 whitespace-nowrap text-xs font-medium ${activeTab === tab.id
+										? "bg-primary/15 text-primary border border-primary/30"
+										: "hover:bg-base-200/80 text-base-content/60 hover:text-base-content"
 										}`}
 								>
-									<Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-									<span className="text-xs sm:text-sm">{tab.label}</span>
+									<Icon className="w-3.5 h-3.5 flex-shrink-0" />
+									<span className="hidden sm:inline">{tab.label}</span>
 								</button>
 							);
 						})}

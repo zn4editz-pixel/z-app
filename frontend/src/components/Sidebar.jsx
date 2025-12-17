@@ -5,7 +5,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useFriendStore } from "../store/useFriendStore";
 import { useThemeStore } from "../store/useThemeStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
-import { Search, X, Video, Check } from "lucide-react";
+import { Search, X, Video, Check, Gamepad2, Clock } from "lucide-react";
 import VerifiedBadge from "./VerifiedBadge";
 import { useNotificationStore } from "../store/useNotificationStore";
 import { getMessageStatusInfo, getThemeColors } from "../utils/messageStatus";
@@ -104,6 +104,31 @@ const Sidebar = () => {
     }
     if (lastMsg.voice) {
       return { text: isFromMe ? "You sent a voice message" : "Sent a voice message", icon: "🎤", bold: false, muted: false };
+    }
+
+    // Handle Game Invites - Special Styling
+    if (lastMsg.text && lastMsg.text.startsWith("GAME_INVITE:")) {
+      const msgTime = new Date(lastMsg.createdAt || lastMsg.timestamp).getTime();
+      const timeDiff = Date.now() - msgTime;
+      const isExpired = timeDiff > 20000; // 20 seconds expiration
+
+      if (isExpired) {
+        return {
+          text: "Game Expired",
+          icon: <Clock size={14} className="text-base-content/60" />,
+          bold: false,
+          muted: true,
+          shining: false
+        };
+      }
+
+      return {
+        text: "Let's Play!",
+        icon: <Gamepad2 size={14} className="text-indigo-500" />,
+        bold: true,
+        muted: false,
+        shining: true // Special flag for gradient effect
+      };
     }
 
     // ✅ FIXED: Regular text message with proper status sync
@@ -402,7 +427,9 @@ const Sidebar = () => {
                                   preview.icon
                                 )
                               )}
-                              <span className="truncate">{preview.text}</span>
+                              <span className={`truncate ${preview.shining ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-transparent bg-clip-text font-bold animate-pulse' : ''}`}>
+                                {preview.text}
+                              </span>
                             </div>
                           );
                         })()}
@@ -412,10 +439,10 @@ const Sidebar = () => {
                       {unread > 0 && (
                         <div className="flex-shrink-0">
                           <div className="relative">
-                            <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] sm:min-w-[24px] sm:h-[24px] px-1.5 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white rounded-full text-[10px] sm:text-xs font-bold shadow-lg border-2 border-white dark:border-gray-800 transform transition-transform duration-200 hover:scale-110">
+                            <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] sm:min-w-[24px] sm:h-[24px] px-1.5 bg-primary text-primary-content rounded-full text-[10px] sm:text-xs font-bold shadow-lg border-2 border-base-100 transform transition-transform duration-200 hover:scale-110">
                               {unread > 9 ? "9+" : unread}
                             </span>
-                            <span className="absolute inset-0 rounded-full bg-blue-500 animate-pulse opacity-30"></span>
+                            <span className="absolute inset-0 rounded-full bg-primary animate-pulse opacity-30"></span>
                           </div>
                         </div>
                       )}
@@ -555,7 +582,7 @@ const Sidebar = () => {
                         {/* Professional Unread Badge */}
                         {unread > 0 && (
                           <div className="flex-shrink-0">
-                            <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] sm:min-w-[26px] sm:h-[26px] px-1.5 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white rounded-full text-[10px] sm:text-xs font-bold shadow-lg border-2 border-white dark:border-gray-800 transform transition-transform duration-200 hover:scale-110">
+                            <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] sm:min-w-[26px] sm:h-[26px] px-1.5 bg-primary text-primary-content rounded-full text-[10px] sm:text-xs font-bold shadow-lg border-2 border-base-100 transform transition-transform duration-200 hover:scale-110">
                               {unread > 9 ? "9+" : unread}
                             </span>
                           </div>

@@ -20,14 +20,38 @@ router.get('/ping', (req, res) => {
 	res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Basic info at /
-router.get('/', (req, res) => {
-	res.json({
-		status: 'healthy',
-		service: 'z-app-backend',
-		version: '2.0.0',
-		environment: process.env.NODE_ENV || 'development'
-	});
+// Comprehensive health check
+router.get('/', async (req, res) => {
+	try {
+		// Test database connection
+		const { ConnectionMonitor } = await import('../lib/db.js');
+		const dbHealth = await ConnectionMonitor.checkHealth();
+		
+		const healthStatus = {
+			status: dbHealth.database === 'healthy' ? 'healthy' : 'degraded',
+			service: 'z-app-backend',
+			version: '2.0.0',
+			environment: process.env.NODE_ENV || 'development',
+			timestamp: new Date().toISOString(),
+			checks: {
+				database: dbHealth.database,
+				memory: process.memoryUsage(),
+				uptime: process.uptime()
+			}
+		};
+
+		const statusCode = healthStatus.status === 'healthy' ? 200 : 503;
+		res.status(statusCode).json(healthStatus);
+	} catch (error) {
+		res.status(503).json({
+			status: 'unhealthy',
+			service: 'z-app-backend',
+			version: '2.0.0',
+			environment: process.env.NODE_ENV || 'development',
+			timestamp: new Date().toISOString(),
+			error: error.message
+		});
+	}
 });
 
 // Protected admin endpoints

@@ -5,11 +5,14 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useNotificationStore } from "../store/useNotificationStore";
 import { useFriendStore } from "../store/useFriendStore";
 import { useChatStore } from "../store/useChatStore";
+import { useGameStore } from "../store/useGameStore"; // ✅ Import Game Store
 
 export const useSocketListeners = () => {
     const navigate = useNavigate();
     const { authUser, socket, setAuthUser, checkAuth } = useAuthStore();
     const { addPendingReceived, fetchFriendData } = useFriendStore();
+    // Use Game Store actions
+    const { initGame, updateGame, setGameOpen } = useGameStore();
 
     useEffect(() => {
         if (!socket || !authUser?.id) return;
@@ -57,10 +60,8 @@ export const useSocketListeners = () => {
 
         // 2. Global Message Listener (for Notifications & "Missed" Messages)
         socket.on("message-received", ({ sender, text }) => {
-            // Only notify if not already in chat with this user
             const { selectedUser } = useChatStore.getState();
             if (selectedUser?.id !== sender?.id) {
-                // Add to notifications
                 useNotificationStore.getState().addNotification({
                     type: 'message',
                     title: sender?.name || "New Message",
@@ -70,7 +71,6 @@ export const useSocketListeners = () => {
                     createdAt: new Date().toISOString(),
                     id: `msg-${Date.now()}`
                 });
-
                 toast(`${sender?.name || 'Someone'}: ${text}`, { icon: '💬' });
             }
         });
@@ -93,7 +93,7 @@ export const useSocketListeners = () => {
         // 4. Verification & Admin
         socket.on("verification-approved", () => {
             toast.success("Verification Approved! ✅");
-            checkAuth(); // Refresh user data
+            checkAuth();
         });
 
         socket.on("verification-rejected", ({ reason }) => {
@@ -103,6 +103,40 @@ export const useSocketListeners = () => {
 
         socket.on("admin-notification", (note) => {
             toast(note.message, { icon: '📢' });
+        });
+
+        // 5. SOS GAME LISTENERS 🎮
+        socket.on("game:invite", (data) => {
+            toast(`🎮 ${data.senderName} invited you to play SOS! Check chat.`, { icon: '🕹️' });
+            // Optionally auto-open chat with sender? For now just notify.
+        });
+
+        socket.on("game:start", ({ game }) => {
+            console.log("🎮 Game Started:", game);
+            initGame(game);
+            toast.success("Game Started!");
+        });
+
+        socket.on("game:update", ({ game, lastMove }) => {
+            console.log("🎮 Game Update:", game);
+            console.log("📏 Lines in update:", game?.lines);
+            updateGame(game);
+        });
+
+        socket.on("game:end", ({ winner, game }) => {
+            updateGame(game);
+            const winnerName = game.players[winner]?.name || "Draw";
+            if (winner === authUser.id) toast.success("🏆 YOU WON!");
+            else if (winner === 'draw') toast("🤝 It's a Draw!");
+            else toast("💀 You Lost!", { icon: '💔' });
+        });
+
+        socket.on("game:error", ({ message }) => {
+            toast.error(message);
+        });
+
+        socket.on("game:expired", () => {
+            toast.error("⌛ Game invite expired.", { icon: '⏲️' });
         });
 
         return () => {
@@ -115,7 +149,13 @@ export const useSocketListeners = () => {
             socket.off("verification-approved");
             socket.off("verification-rejected");
             socket.off("admin-notification");
-        };
 
+            socket.off("game:invite");
+            socket.off("game:start");
+            socket.off("game:update");
+            socket.off("game:end");
+            socket.off("game:error");
+            socket.off("game:expired");
+        };
     }, [socket, authUser?.id, navigate]);
 };

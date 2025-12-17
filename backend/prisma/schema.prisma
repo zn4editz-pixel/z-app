@@ -1,4 +1,4 @@
-// Simplified Prisma Schema for SQLite - Local Development
+// Development Prisma Schema for SQLite (Production uses PostgreSQL)
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,19 +15,19 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Basic Info
-  fullName  String
-  email     String   @unique
-  username  String   @unique
-  nickname  String?
-  bio       String?
-  password  String
+  fullName   String
+  email      String  @unique
+  username   String  @unique
+  nickname   String?
+  bio        String?
+  password   String
   profilePic String?
 
   // Profile Status
   hasCompletedProfile Boolean @default(false)
-  isVerified         Boolean @default(false)
-  isBlocked          Boolean @default(false)
-  isSuspended        Boolean @default(false)
+  isVerified          Boolean @default(false)
+  isBlocked           Boolean @default(false)
+  isSuspended         Boolean @default(false)
 
   // Location Data
   country     String?
@@ -43,9 +43,9 @@ model User {
   lastSeen DateTime?
 
   // Verification Request
-  verificationStatus    String   @default("none") // none, pending, approved, rejected
-  verificationReason    String?
-  verificationIdProof   String?
+  verificationStatus      String    @default("none") // none, pending, approved, rejected
+  verificationReason      String?
+  verificationIdProof     String?
   verificationRequestedAt DateTime?
   verificationReviewedAt  DateTime?
   verificationReviewedBy  String?
@@ -67,19 +67,19 @@ model User {
   pendingEmail          String?
 
   // Username Change Tracking
-  lastUsernameChange       DateTime?
-  usernameChangesThisWeek  Int      @default(0)
-  weekStartDate            DateTime?
+  lastUsernameChange      DateTime?
+  usernameChangesThisWeek Int       @default(0)
+  weekStartDate           DateTime?
 
   // Password Change
   passwordChangeOTP        String?
   passwordChangeOTPExpires DateTime?
 
   // Relations
-  sentMessages     Message[]       @relation("SentMessages")
-  receivedMessages Message[]       @relation("ReceivedMessages")
-  sentReports      Report[]        @relation("ReportSender")
-  receivedReports  Report[]        @relation("ReportedUser")
+  sentMessages           Message[]       @relation("SentMessages")
+  receivedMessages       Message[]       @relation("ReceivedMessages")
+  sentReports            Report[]        @relation("ReportSender")
+  receivedReports        Report[]        @relation("ReportedUser")
   sentFriendRequests     FriendRequest[] @relation("FriendRequestSender")
   receivedFriendRequests FriendRequest[] @relation("FriendRequestReceiver")
 }
@@ -90,9 +90,9 @@ model Message {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  text      String?
-  image     String?
-  voice     String?
+  text          String?
+  image         String?
+  voice         String?
   voiceDuration Int?
 
   senderId   String
@@ -102,23 +102,23 @@ model Message {
   receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
 
   // Message status
-  status        String   @default("sent") // sent, delivered, read
-  deliveredAt   DateTime?
-  readAt        DateTime?
+  status      String    @default("sent") // sent, delivered, read
+  deliveredAt DateTime?
+  readAt      DateTime?
 
   // Call logs
-  isCallLog      Boolean @default(false)
-  callType       String? // voice, video
-  callDuration   Int?
-  callStatus     String? // completed, missed, rejected
-  callInitiator  String?
+  isCallLog     Boolean @default(false)
+  callType      String? // voice, video
+  callDuration  Int?
+  callStatus    String? // completed, missed, rejected
+  callInitiator String?
 
   // Reply To
   replyToId String?
-  isDeleted Boolean @default(false)
+  isDeleted Boolean   @default(false)
   deletedAt DateTime?
-  
-  // Message Reactions (JSON field for SQLite)
+
+  // Message Reactions (String field for SQLite, JSON for PostgreSQL)
   reactions String? @default("[]") // JSON string storing reactions array
 }
 
@@ -130,7 +130,7 @@ model FriendRequest {
 
   senderId   String
   receiverId String
-  status     String   @default("pending") // pending, accepted, rejected
+  status     String @default("pending") // pending, accepted, rejected
 
   sender   User @relation("FriendRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
   receiver User @relation("FriendRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
@@ -144,13 +144,13 @@ model Report {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  reporterId String
+  reporterId     String
   reportedUserId String
-  reason     String
-  description String?
-  status     String   @default("pending") // pending, reviewed, resolved, dismissed
-  screenshot String?
-  
+  reason         String
+  description    String?
+  status         String  @default("pending") // pending, reviewed, resolved, dismissed
+  screenshot     String?
+
   // AI Analysis (simplified)
   isAIDetected Boolean @default(false)
   aiCategory   String?
@@ -158,7 +158,7 @@ model Report {
   severity     String?
   category     String?
   actionTaken  String?
-  
+
   reviewedBy String?
   reviewedAt DateTime?
   adminNotes String?
@@ -172,9 +172,23 @@ model AdminNotification {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
 
-  type      String   // report, verification, user_action
-  title     String
-  message   String
-  isRead    Boolean  @default(false)
-  link      String?
+  type    String // report, verification, user_action
+  title   String
+  message String
+  isRead  Boolean @default(false)
+  link    String?
+}
+
+// ─── System Settings Model ─────────────────────────────────────────────
+model SystemSettings {
+  id              String   @id @default("default_settings")
+  loginAnimation  String   @default("orbit")
+  signupAnimation String   @default("stranger")
+  isSeasonalMode  Boolean  @default(false)
+  seasonalTheme   String?
+  defaultTheme    String   @default("dark")
+  allowedThemes   String   @default("all")
+
+  updatedBy       String?
+  updatedAt       DateTime @updatedAt
 }

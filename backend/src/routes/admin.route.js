@@ -21,7 +21,9 @@ import {
 	markNotificationRead,
 	deleteNotification,
 	submitManualReport,
-	getManualReports
+	getManualReports,
+	getSystemStats,
+	getGameStats
 } from "../controllers/admin.controller.js";
 
 import {
@@ -45,7 +47,10 @@ const router = express.Router();
 router.use(protectRoute, isAdmin);
 
 // --- Dashboard Statistics ---
+// --- Dashboard Statistics ---
 router.get("/stats", getAdminStats);
+router.get("/stats/system", getSystemStats);
+router.get("/stats/game", getGameStats);
 
 // --- User Management ---
 router.get("/users", getAllUsers);

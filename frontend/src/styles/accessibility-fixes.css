@@ -4,28 +4,33 @@
 
 /* Base text - ensure minimum 4.5:1 contrast ratio */
 body {
-  color: oklch(0.95 0 0); /* Near white for dark mode */
+  color: oklch(0.95 0 0);
+  /* Near white for dark mode */
 }
 
 /* Muted text - improve from 60% to 70% opacity for better contrast */
 .text-base-content\/60,
 [class*="text-base-content/60"] {
-  opacity: 0.75 !important; /* Improved from 0.6 to 0.75 for better contrast */
+  opacity: 0.75 !important;
+  /* Improved from 0.6 to 0.75 for better contrast */
 }
 
 .text-base-content\/70,
 [class*="text-base-content/70"] {
-  opacity: 0.8 !important; /* Improved from 0.7 to 0.8 */
+  opacity: 0.8 !important;
+  /* Improved from 0.7 to 0.8 */
 }
 
 .text-base-content\/40,
 [class*="text-base-content/40"] {
-  opacity: 0.65 !important; /* Improved from 0.4 to 0.65 for minimum readability */
+  opacity: 0.65 !important;
+  /* Improved from 0.4 to 0.65 for minimum readability */
 }
 
 /* Button text - ensure high contrast */
 .btn {
-  font-weight: 500; /* Slightly bolder for better readability */
+  font-weight: 500;
+  /* Slightly bolder for better readability */
 }
 
 /* Link text - use theme primary color */
@@ -34,12 +39,14 @@ a {
 }
 
 a:hover {
-  color: oklch(0.8 0.15 250); /* Even brighter on hover */
+  color: oklch(0.8 0.15 250);
+  /* Even brighter on hover */
 }
 
 /* Placeholder text - improve contrast */
 ::placeholder {
-  opacity: 0.65 !important; /* Improved from typical 0.5 */
+  opacity: 0.65 !important;
+  /* Improved from typical 0.5 */
   color: currentColor;
 }
 
@@ -47,24 +54,28 @@ a:hover {
 input,
 textarea,
 select {
-  color: oklch(0.95 0 0); /* Near white for dark backgrounds */
+  color: oklch(0.95 0 0);
+  /* Near white for dark backgrounds */
 }
 
 /* Disabled state - maintain minimum contrast */
 :disabled,
 [disabled] {
-  opacity: 0.6 !important; /* Improved from typical 0.5 */
+  opacity: 0.6 !important;
+  /* Improved from typical 0.5 */
 }
 
 /* Badge text - ensure readability */
 .badge {
-  font-weight: 600; /* Bolder for small text */
+  font-weight: 600;
+  /* Bolder for small text */
 }
 
 /* Small text - increase weight for readability */
 .text-xs,
 .text-sm {
-  font-weight: 500; /* Slightly bolder for small sizes */
+  font-weight: 500;
+  /* Slightly bolder for small sizes */
 }
 
 /* Focus indicators - high contrast for accessibility */
@@ -88,7 +99,7 @@ select:focus-visible {
   body {
     color: #ffffff;
   }
-  
+
   .text-base-content\/60,
   .text-base-content\/70,
   .text-base-content\/40 {
@@ -114,27 +125,33 @@ a:not(.btn):not([class*="btn-"]) {
 
 /* Improve contrast for status indicators */
 .bg-success {
-  background-color: oklch(0.65 0.15 145) !important; /* Brighter green */
+  background-color: oklch(0.65 0.15 145) !important;
+  /* Brighter green */
 }
 
 .bg-error {
-  background-color: oklch(0.6 0.2 25) !important; /* Brighter red */
+  background-color: oklch(0.6 0.2 25) !important;
+  /* Brighter red */
 }
 
 .bg-warning {
-  background-color: oklch(0.7 0.15 75) !important; /* Brighter yellow */
+  background-color: oklch(0.7 0.15 75) !important;
+  /* Brighter yellow */
 }
 
 .text-success {
-  color: oklch(0.7 0.15 145) !important; /* Brighter green text */
+  color: oklch(0.7 0.15 145) !important;
+  /* Brighter green text */
 }
 
 .text-error {
-  color: oklch(0.65 0.2 25) !important; /* Brighter red text */
+  color: oklch(0.65 0.2 25) !important;
+  /* Brighter red text */
 }
 
 .text-warning {
-  color: oklch(0.75 0.15 75) !important; /* Brighter yellow text */
+  color: oklch(0.75 0.15 75) !important;
+  /* Brighter yellow text */
 }
 
 /* Ensure primary color uses theme primary */
@@ -142,9 +159,8 @@ a:not(.btn):not([class*="btn-"]) {
   color: hsl(var(--p)) !important;
 }
 
-.bg-primary {
-  background-color: oklch(0.55 0.2 250) !important; /* Darker blue for white text */
-}
+/* bg-primary now uses DaisyUI theme color - DO NOT OVERRIDE */
+/* .bg-primary color is controlled by the theme system */
 
 /* Improve contrast for secondary elements */
 .text-secondary {

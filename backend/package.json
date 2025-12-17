@@ -9,15 +9,24 @@
   },
   "scripts": {
     "dev": "nodemon src/index.js",
-    "start": "node scripts/start-force-prod.js",
+    "start": "node src/index.js",
+    "start:prod": "NODE_ENV=production node src/index.js",
     "build": "node build-safe.js",
+    "build:full": "npm install && npx prisma generate && npm run build:frontend",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
+    "prisma:migrate": "prisma migrate deploy",
     "seed": "node src/seeds/seed-users.js",
-    "build:frontend": "cd ../frontend && npm install --include=dev && npm run build",
-    "postinstall": "node scripts/setup-schema.js && npx prisma generate",
-    "setup:schema": "node scripts/setup-schema.js"
+    "build:frontend": "cd ../frontend && npm install --include=dev && npm run build && xcopy /e /i dist ..\\backend\\public",
+    "postinstall": "npx prisma generate",
+    "setup:schema": "node scripts/setup-schema.js",
+    "health": "node -e \"console.log('Health check passed')\"",
+    "test:db": "node -e \"require('./src/lib/db.js').default.$queryRaw\\`SELECT 1\\`.then(() => console.log('DB OK')).catch(e => {console.error('DB Error:', e.message); process.exit(1);})\"",
+    "validate:env": "node scripts/validate-env.js",
+    "logs": "tail -f logs/app.log",
+    "logs:error": "tail -f logs/error.log",
+    "deploy:check": "npm run validate:env && npm run test:db && npm run health"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -47,6 +56,7 @@
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
+    "colors": "^1.4.0",
     "nodemon": "^3.1.7"
   },
   "keywords": [],

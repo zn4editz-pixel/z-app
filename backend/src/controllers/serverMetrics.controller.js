@@ -1,5 +1,5 @@
 import os from "os";
-import prisma from "../lib/prisma.js";
+import prisma from "../lib/db.js";
 import { redisClient } from "../lib/redis.js";
 import { monitorStats } from "../middleware/activityMonitor.js";
 

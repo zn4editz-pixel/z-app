@@ -218,8 +218,12 @@ const LobbyView = memo(({ onStart, isConnecting }) => (
 			{/* Logo/Icon */}
 			<div className="relative mx-auto w-32 h-32">
 				<div className="absolute inset-0 bg-primary/20 rounded-full animate-pulse"></div>
-				<div className="absolute inset-0 flex items-center justify-center">
-					<Sparkles className="w-16 h-16 text-primary" />
+				<div className="absolute inset-0 flex items-center justify-center p-4">
+					<img
+						src="/z-logo.png"
+						alt="Logo"
+						className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+					/>
 				</div>
 				<div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
 					LIVE
@@ -681,8 +685,46 @@ const StrangerChatPage = () => {
 		}
 	}, [partnerUserId, getFriendshipStatus]);
 
+	// Handle Add Friend
+	const handleAddFriend = useCallback(async () => {
+		if (!partnerUserId) {
+			toast.error("No partner to add");
+			return;
+		}
+		try {
+			if (friendStatus === "NOT_FRIENDS") {
+				await sendFriendRequest(partnerUserId);
+				setFriendStatus("REQUEST_SENT");
+				toast.success("Friend request sent! 🎉");
+			} else if (friendStatus === "REQUEST_RECEIVED") {
+				await acceptFriendRequest(partnerUserId);
+				setFriendStatus("FRIENDS");
+				toast.success("You are now friends! 🤝");
+			}
+		} catch (error) {
+			console.error("Friend request error:", error);
+			toast.error(error.message || "Failed to send request");
+		}
+	}, [partnerUserId, friendStatus, sendFriendRequest, acceptFriendRequest]);
 
-	// Optimize video element for performance
+	// Show reaction picker state
+	const [showReactionPicker, setShowReactionPicker] = useState(false);
+
+	// Friend button config based on status
+	const getFriendButtonConfig = useMemo(() => {
+		switch (friendStatus) {
+			case "FRIENDS":
+				return { text: "Friends", icon: UserCheck, disabled: true };
+			case "REQUEST_SENT":
+				return { text: "Pending", icon: Clock, disabled: true };
+			case "REQUEST_RECEIVED":
+				return { text: "Accept", icon: UserCheck, disabled: false };
+			default:
+				return { text: "Add Friend", icon: UserPlus, disabled: false };
+		}
+	}, [friendStatus]);
+
+
 	const optimizeVideoElement = useCallback(() => {
 		if (localVideoRef.current) {
 			localVideoRef.current.style.willChange = 'transform';
@@ -1049,37 +1091,6 @@ const StrangerChatPage = () => {
 		toast("🔄 Finding new match...", { icon: "⏭️" });
 	}, [status, socket, closeConnection, addMessage, authUser]);
 
-	const handleAddFriend = useCallback(async () => {
-		if (status !== "connected" || !partnerUserId) {
-			toast.error("Partner information not available");
-			return;
-		}
-
-		try {
-			let success = false;
-			if (friendStatus === "NOT_FRIENDS") {
-				success = await sendFriendRequest(partnerUserId);
-				if (success) {
-					toast.success("📨 Friend request sent!");
-				}
-			} else if (friendStatus === "REQUEST_RECEIVED") {
-				success = await acceptFriendRequest(partnerUserId);
-				if (success) {
-					toast.success("🎉 Friend request accepted!");
-				}
-			}
-
-			// Force refresh friend data after action
-			if (success) {
-				setTimeout(() => {
-					fetchFriendData();
-				}, 500);
-			}
-		} catch (error) {
-			console.error("Friend request error:", error);
-			toast.error("Failed to process friend request");
-		}
-	}, [status, partnerUserId, friendStatus, sendFriendRequest, acceptFriendRequest, fetchFriendData]);
 
 	// --- AI VIDEO MODERATION LOOP (Fixed) ---
 	useEffect(() => {
@@ -1366,46 +1377,6 @@ const StrangerChatPage = () => {
 		}
 	}, []);
 
-	// Get friend button config
-	const getFriendButtonConfig = useMemo(() => {
-		switch (friendStatus) {
-			case "NOT_FRIENDS":
-				return {
-					text: "Add Friend",
-					icon: UserPlus,
-					className: "btn-primary",
-					disabled: false
-				};
-			case "REQUEST_SENT":
-				return {
-					text: "Request Sent",
-					icon: Clock,
-					className: "btn-outline btn-primary",
-					disabled: true
-				};
-			case "REQUEST_RECEIVED":
-				return {
-					text: "Accept Request",
-					icon: UserCheck,
-					className: "btn-success",
-					disabled: false
-				};
-			case "FRIENDS":
-				return {
-					text: "Friends",
-					icon: UserCheck,
-					className: "btn-outline btn-success",
-					disabled: true
-				};
-			default:
-				return {
-					text: "Add Friend",
-					icon: UserPlus,
-					className: "btn-primary",
-					disabled: true
-				};
-		}
-	}, [friendStatus]);
 
 	return (
 		<div className="fixed w-full h-[100dvh] flex flex-col bg-gradient-to-br from-base-300 via-base-200 to-base-300 overflow-hidden">
@@ -1647,62 +1618,91 @@ const StrangerChatPage = () => {
 					</div>
 				)}
 
-				{/* Reaction Buttons - Scroller on mobile */}
+				{/* Reaction Emoji Picker - Drop-up Animation */}
 				{status === "connected" && (
-					<div className="absolute bottom-24 sm:bottom-32 left-0 right-0 z-30 px-4">
-						<div className="flex justify-center">
-							<div className="flex gap-2 sm:gap-2 bg-black/20 backdrop-blur-md rounded-full px-3 py-1.5 border border-white/10 overflow-x-auto no-scrollbar max-w-full">
+					<div className="absolute bottom-28 sm:bottom-36 right-4 z-40">
+						{/* Emoji Picker Drop-up */}
+						<div className={`absolute bottom-full right-0 mb-2 transition-all duration-300 origin-bottom-right ${showReactionPicker ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}>
+							<div className="flex gap-2 bg-base-100/95 backdrop-blur-md rounded-2xl px-3 py-2 border border-base-300 shadow-xl">
 								{['❤️', '👍', '😂', '🎉', '😊', '🔥'].map((emoji) => (
 									<button
 										key={emoji}
-										onClick={() => sendReaction(emoji)}
-										className="w-8 h-8 sm:w-10 sm:h-10 flex shrink-0 items-center justify-center rounded-full hover:bg-white/20 active:scale-90 transition-all duration-200"
+										onClick={() => {
+											sendReaction(emoji);
+											setShowReactionPicker(false);
+										}}
+										className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary/20 active:scale-90 transition-all duration-200"
 									>
-										<span className="text-xl sm:text-2xl">{emoji}</span>
+										<span className="text-2xl">{emoji}</span>
 									</button>
 								))}
 							</div>
 						</div>
+						{/* Toggle Button */}
+						<button
+							onClick={() => setShowReactionPicker(!showReactionPicker)}
+							className={`btn btn-circle btn-md backdrop-blur-md shadow-lg transition-all duration-300 ${showReactionPicker ? 'bg-primary text-primary-content' : 'bg-white/10 border border-white/20 text-white hover:bg-white/20'}`}
+						>
+							<span className="text-xl">{showReactionPicker ? '✕' : '😊'}</span>
+						</button>
 					</div>
 				)}
 
-				{/* Bottom Control Bar - Responsive Buttons */}
+				{/* Bottom Control Bar - Professional Glass Design */}
 				<div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none pb-safe">
-					<div className="flex items-center justify-center gap-2 sm:gap-4 p-3 sm:p-4 pb-4 sm:pb-6 pointer-events-auto w-full max-w-lg mx-auto">
-						{/* Skip Button */}
+					<div className="flex items-center justify-center gap-3 sm:gap-4 p-4 sm:p-5 pb-5 sm:pb-7 pointer-events-auto w-full max-w-xl mx-auto">
+						{/* Skip/Next Button - Glass Outline */}
 						<button
 							onClick={handleSkip}
 							disabled={status === "initializing"}
-							className={`btn btn-md sm:btn-lg flex-1 gap-2 border-none shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 font-semibold ${status === "waiting"
-								? "bg-gray-800 text-white hover:bg-gray-700"
-								: "bg-primary text-primary-content hover:bg-primary-focus"
+							className={`btn btn-md sm:btn-lg flex-1 gap-2 shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 font-semibold backdrop-blur-md border-2 ${status === "waiting"
+								? "bg-white/5 border-white/30 text-white hover:bg-white/15 hover:border-white/50"
+								: "bg-primary/10 border-primary/50 text-primary hover:bg-primary/20 hover:border-primary"
 								}`}
 						>
 							<SkipForward className="w-4 h-4 sm:w-5 sm:h-5" />
 							<span className="font-bold text-sm sm:text-base">
-								{status === "connected" ? "Skip" : status === "waiting" ? "Searching..." : "Start"}
+								{status === "connected" ? "Next" : status === "waiting" ? "Searching..." : "Start"}
 							</span>
 						</button>
 
-						{/* Add Friend - Conditional */}
-						{status === "connected" && partnerUserId && privacySettings.allowFriendRequests && partnerUserData?.allowFriendRequests && (
+						{/* Add Friend Button - Always show when connected */}
+						{status === "connected" && (
 							<button
 								onClick={handleAddFriend}
-								disabled={getFriendButtonConfig.disabled}
-								className={`btn btn-md sm:btn-lg aspect-square sm:aspect-auto sm:px-6 ${getFriendButtonConfig.className} shadow-lg active:scale-95`}
-								title={getFriendButtonConfig.text}
+								disabled={getFriendButtonConfig?.disabled || !partnerUserId}
+								className={`btn btn-md sm:btn-lg gap-2 backdrop-blur-md border-2 shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 ${getFriendButtonConfig?.disabled
+									? "bg-success/10 border-success/50 text-success cursor-not-allowed"
+									: "bg-secondary/10 border-secondary/50 text-secondary hover:bg-secondary/20 hover:border-secondary"
+									}`}
+								title={getFriendButtonConfig?.text || "Add Friend"}
 							>
-								<getFriendButtonConfig.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+								{getFriendButtonConfig?.icon ? (
+									<getFriendButtonConfig.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+								) : (
+									<UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+								)}
 								<span className="hidden sm:inline font-semibold">
-									{getFriendButtonConfig.text}
+									{getFriendButtonConfig?.text || "Add Friend"}
 								</span>
 							</button>
 						)}
 
-						{/* Leave Button */}
+						{/* Report Button - Subtle */}
+						{status === "connected" && (
+							<button
+								onClick={() => setIsReportModalOpen(true)}
+								className="btn btn-md sm:btn-lg btn-circle backdrop-blur-md bg-white/5 border-2 border-white/20 text-white/70 hover:bg-error/10 hover:border-error/50 hover:text-error shadow-lg transition-all duration-300 active:scale-95"
+								title="Report User"
+							>
+								<Flag className="w-4 h-4 sm:w-5 sm:h-5" />
+							</button>
+						)}
+
+						{/* Leave Button - Glass Outline Error */}
 						<button
 							onClick={() => navigate("/")}
-							className="btn btn-md sm:btn-lg flex-1 btn-outline btn-error gap-2 shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 bg-black/20 backdrop-blur-sm"
+							className="btn btn-md sm:btn-lg flex-1 gap-2 backdrop-blur-md bg-error/10 border-2 border-error/50 text-error hover:bg-error/20 hover:border-error shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95"
 						>
 							<PhoneOff className="w-4 h-4 sm:w-5 sm:h-5" />
 							<span className="font-semibold text-sm sm:text-base">Leave</span>

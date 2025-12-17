@@ -398,14 +398,55 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
                   <Image size={20} />
                 </button>
 
-                {/* Dummy Game Button (Placeholder) */}
+                {/* Game Button */}
                 <button
                   type="button"
-                  className="btn btn-circle btn-sm btn-ghost hover:bg-base-200 transition-all text-base-content/70"
-                  onClick={() => toast.success("Games coming soon!")}
-                  title="Play Games (Coming Soon)"
+                  className="btn btn-circle btn-sm btn-ghost hover:bg-base-200 transition-all text-indigo-500"
+                  onClick={() => {
+                    if (!socket || !selectedUser) return;
+
+                    // 1. Send special text message for persistence (So it shows in history)
+                    // We use a prefix "GAME_INVITE:" followed by a unique ID we generate here or backend?
+                    // Actually backend generates ID. 
+                    // Let's just emit the invite event, and let the backend insert the system message? 
+                    // NO, my backend game:invite handler just Nofities. It doesn't insert a message into DB.
+                    // So I should send a message manually OR update backend to insert it.
+                    // Plan: Client sends "GAME_INVITE:PENDING" message text.
+                    // But wait, my implementation plan said "Shiny Invite".
+
+                    // Better approach: 
+                    // 1. Emit `game:invite` to backend.
+                    // 2. Backend creates game. 
+                    // 3. User (Frontend) sends a message "GAME_INVITE:<GameID>" AFTER receiving game:invite confirmation?
+                    //    OR simplified: Frontend just sends a message "GAME_INVITE:PENDING". 
+                    //    When clicked, it emits "game:create".
+
+                    // Let's go with: Emit `game:invite` event first. 
+                    // But the chat bubble needs to be in the message history.
+                    // So I will send a message with text = "GAME_INVITE:new"
+                    // And when rendering, if it says "new", we treat it as an active invite.
+
+                    // We generate a deterministic ID here so both message and backend agree
+                    const gameId = `game_${Date.now()}_${selectedUser.id}`;
+
+                    socket.emit("game:invite", {
+                      receiverId: selectedUser.id,
+                      senderName: useAuthStore.getState().authUser.fullName,
+                      senderPic: useAuthStore.getState().authUser.profilePic, // ✅ Pass Profile Pic
+                      gameId: gameId // ✅ Pass explicit ID
+                    });
+
+                    // Send the visual message with SAME ID
+                    sendMessage({
+                      text: `GAME_INVITE:${gameId}`,
+                    });
+
+                    setShowAttachmentMenu(false);
+                    toast.success("Game invite sent!");
+                  }}
+                  title="Play SOS Game"
                 >
-                  <Gamepad2 size={20} />
+                  <Gamepad2 size={24} />
                 </button>
               </div>
             )}

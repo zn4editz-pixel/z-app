@@ -1,12 +1,12 @@
 import jwt from "jsonwebtoken";
-import prisma from "../lib/prisma.js";
+import prisma from "../lib/db.js";
 
 // 🔐 Middleware to protect routes
 export const protectRoute = async (req, res, next) => {
   try {
     // Check both cookie and Authorization header for token (mobile compatibility)
     let token = req.cookies?.jwt;
-    
+
     // If no cookie, check Authorization header
     if (!token && req.headers.authorization) {
       const authHeader = req.headers.authorization;
@@ -43,7 +43,7 @@ export const protectRoute = async (req, res, next) => {
         // Don't select password
       }
     });
-    
+
     if (!user) {
       return res.status(401).json({ error: "Unauthorized: User not found in database" });
     }
@@ -80,15 +80,15 @@ export const isAdmin = async (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized: No user data in request" });
     }
-    
+
     // Check if user email matches admin email
     const isAdminUser = req.user.email === process.env.ADMIN_EMAIL;
-    
+
     if (!isAdminUser) {
       console.log(`❌ Admin access denied for user: ${req.user.email}`);
       return res.status(403).json({ error: "Access denied: Admins only" });
     }
-    
+
     console.log(`✅ Admin access granted for: ${req.user.email}`);
     next();
   } catch (err) {

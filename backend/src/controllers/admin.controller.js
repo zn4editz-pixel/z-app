@@ -1,4 +1,4 @@
-import prisma from "../lib/prisma.js";
+import prisma from "../lib/db.js";
 import { emitToUser } from "../lib/socketHandlers.js";
 import {
 	sendVerificationApprovedEmail,
@@ -517,5 +517,66 @@ export const getManualReports = async (req, res) => {
 	} catch (err) {
 		console.error("Get manual reports error:", err);
 		res.status(500).json({ error: "Failed to fetch manual reports" });
+	}
+};
+export const getSystemStats = async (req, res) => {
+	try {
+		const { default: os } = await import("os");
+
+		// Check DB latency
+		const start = Date.now();
+		await prisma.$queryRaw`SELECT 1`;
+		const dbLatency = Date.now() - start;
+
+		const totalMem = os.totalmem();
+		const freeMem = os.freemem();
+		const memoryUsage = Math.round(((totalMem - freeMem) / totalMem) * 100);
+
+		const stats = {
+			uptime: os.uptime(),
+			loadAvg: os.loadavg(),
+			totalMem,
+			freeMem,
+			memoryUsage, // Percentage
+			platform: os.platform(),
+			cpuCount: os.cpus().length,
+			dbStatus: "connected",
+			dbLatency: dbLatency
+		};
+		res.status(200).json(stats);
+	} catch (err) {
+		console.error("System stats error:", err);
+		res.status(500).json({ error: "Failed to fetch system stats", dbStatus: "disconnected" });
+	}
+};
+
+export const getGameStats = async (req, res) => {
+	try {
+		const { gameManager } = await import("../lib/gameManager.js");
+
+		const activeGames = gameManager.games.size;
+		let totalPlayers = 0;
+		let waitingGames = 0;
+		let playingGames = 0;
+
+		for (const game of gameManager.games.values()) {
+			totalPlayers += game.playerIds.length;
+			if (game.status === 'waiting') waitingGames++;
+			if (game.status === 'playing') playingGames++;
+		}
+
+		// Fetch persisted game stats only if you have a Game model
+		// For now, we return active in-memory stats
+		const stats = {
+			activeGames,
+			totalPlayers,
+			waitingGames,
+			playingGames
+		};
+
+		res.status(200).json(stats);
+	} catch (err) {
+		console.error("Game stats error:", err);
+		res.status(500).json({ error: "Failed to fetch game stats" });
 	}
 };

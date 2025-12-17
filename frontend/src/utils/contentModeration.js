@@ -1,39 +1,38 @@
 // Content Moderation Utility
 // Uses client-side AI to detect inappropriate content
-import * as tf from '@tensorflow/tfjs';
-import * as nsfwjs from 'nsfwjs';
+// TensorFlow and NSFWJS are loaded dynamically to reduce initial bundle size
 
+let tf = null;
+let nsfwjs = null;
 let nsfwModel = null;
 let isModelLoading = false;
 let modelLoadError = null;
 
+// Dynamically load TensorFlow and NSFWJS
+const loadDependencies = async () => {
+  if (!tf) {
+    tf = await import('@tensorflow/tfjs');
+  }
+  if (!nsfwjs) {
+    nsfwjs = await import('nsfwjs');
+  }
+  return { tf, nsfwjs };
+};
+
 // Initialize NSFW model (lazy loading)
 export const initNSFWModel = async () => {
-  if (nsfwModel) {
-    if (import.meta.env.DEV) console.log('✅ NSFW model already loaded');
-    return nsfwModel;
-  }
-
-  if (isModelLoading) {
-    if (import.meta.env.DEV) console.log('⏳ NSFW model is loading...');
-    return null;
-  }
+  if (nsfwModel) return nsfwModel;
+  if (isModelLoading) return null;
 
   isModelLoading = true;
-  if (import.meta.env.DEV) console.log('🔄 Loading NSFW detection model...');
 
   try {
-    // Ensure TensorFlow.js backend is ready
-    await tf.ready();
-    if (import.meta.env.DEV) console.log('✅ TensorFlow.js backend ready:', tf.getBackend());
-
-    // Load NSFW model
-    nsfwModel = await nsfwjs.load();
-    if (import.meta.env.DEV) console.log('✅ NSFW detection model loaded successfully');
+    const { tf: tfModule, nsfwjs: nsfwModule } = await loadDependencies();
+    await tfModule.ready();
+    nsfwModel = await nsfwModule.load();
     modelLoadError = null;
     return nsfwModel;
   } catch (error) {
-    if (import.meta.env.DEV) console.error('❌ Failed to load NSFW model:', error);
     modelLoadError = error.message;
     return null;
   } finally {
@@ -44,100 +43,92 @@ export const initNSFWModel = async () => {
 // Analyze video frame for inappropriate content
 export const analyzeFrame = async (videoElement) => {
   try {
-    // Validate input
     if (!videoElement) {
       return { safe: true, confidence: 0, error: 'No video element provided' };
     }
 
     // Initialize model if not loaded
     if (!nsfwModel && !isModelLoading) {
-      if (import.meta.env.DEV) console.log('🔄 Model not loaded, initializing...');
       await initNSFWModel();
     }
 
-    // Wait for model to be ready with timeout
+    // Wait for model with timeout
     let waitTime = 0;
-    const maxWaitTime = 10000; // 10 seconds max wait
-    while (isModelLoading && waitTime < maxWaitTime) {
+    while (isModelLoading && waitTime < 10000) {
       await new Promise(resolve => setTimeout(resolve, 100));
       waitTime += 100;
     }
 
-    if (isModelLoading) {
-      if (import.meta.env.DEV) console.warn('⚠️ Model loading timeout');
-      return { safe: true, confidence: 0, error: 'Model loading timeout' };
-    }
-
     if (!nsfwModel) {
-      if (import.meta.env.DEV) console.warn('⚠️ NSFW model not available:', modelLoadError);
       return { safe: true, confidence: 0, error: modelLoadError || 'Model not available' };
     }
 
     // Check if video is ready
-    if (videoElement.readyState < 2) {
-      if (import.meta.env.DEV) console.log('⏳ Video not ready yet');
+    if (videoElement.readyState < 2 || videoElement.videoWidth === 0) {
       return { safe: true, confidence: 0, videoNotReady: true };
     }
 
-    // Check video dimensions
-    if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
-      if (import.meta.env.DEV) console.log('⚠️ Video has no dimensions');
-      return { safe: true, confidence: 0, error: 'Video has no dimensions' };
-    }
-
-    if (import.meta.env.DEV) console.log('🔍 Analyzing frame...');
     const predictions = await nsfwModel.classify(videoElement);
 
-    // Always log predictions for debugging
-    if (import.meta.env.DEV) console.log('📊 AI Predictions:', predictions.map(p =>
-      `${p.className}: ${(p.probability * 100).toFixed(1)}%`
-    ).join(', '));
-
-    // Log video element state
-    if (import.meta.env.DEV) console.log('📹 Video state:', {
-      width: videoElement.videoWidth,
-      height: videoElement.videoHeight,
-      readyState: videoElement.readyState,
-      paused: videoElement.paused
-    });
-
-    // Categories: Neutral, Drawing, Hentai, Porn, Sexy
-    // ✅ FIX: More sensitive detection for better nude content detection
-    // Stricter "Zero Tolerance" Logic
-    const inappropriate = predictions.filter(p =>
-      ['Hentai', 'Porn'].includes(p.className) && p.probability > 0.50 // 50%+ for explicit content
-    );
-
-    // "Doubtful" / Sensitive content with lower threshold as requested
-    const suspicious = predictions.filter(p =>
-      p.className === 'Sexy' && p.probability > 0.40 // >40% is enough to trigger "doubtful"
-    );
-
-    const isInappropriate = inappropriate.length > 0;
-    const isSuspicious = suspicious.length > 0;
-
-    let violationType = null;
-    if (isInappropriate) violationType = 'explicit';
-    else if (isSuspicious) violationType = 'doubtful';
-
-    const result = {
-      safe: !isInappropriate && !isSuspicious,
-      inappropriate: isInappropriate,
-      suspicious: isSuspicious,
-      violationType,
-      predictions,
-      highestRisk: predictions.reduce((max, p) =>
-        p.probability > max.probability ? p : max
-      ),
+    // Find specific categories
+    const getProbability = (className) => {
+      const pred = predictions.find(p => p.className === className);
+      return pred ? pred.probability : 0;
     };
 
-    if (!result.safe) {
-      if (import.meta.env.DEV) console.warn('⚠️ UNSAFE CONTENT DETECTED:', result.highestRisk);
+    const pornProb = getProbability('Porn');
+    const hentaiProb = getProbability('Hentai');
+    const sexyProb = getProbability('Sexy');
+    const neutralProb = getProbability('Neutral');
+    const drawingProb = getProbability('Drawing');
+
+    // ✅ STRICT LOGIC: Only flag ACTUAL explicit content
+    // Porn or Hentai above 70% = EXPLICIT (auto-report + disconnect)
+    const isExplicit = pornProb > 0.70 || hentaiProb > 0.70;
+
+    // Porn or Hentai between 50-70% = DOUBTFUL (blur + warn, report to admin for review)
+    const isDoubtful = !isExplicit && (pornProb > 0.50 || hentaiProb > 0.50);
+
+    // Sexy content above 80% ONLY if Neutral/Drawing is low = SUSPICIOUS (just warn)
+    const isSuspicious = !isExplicit && !isDoubtful &&
+      sexyProb > 0.80 && neutralProb < 0.30 && drawingProb < 0.30;
+
+    // Determine action
+    let action = 'none';
+    let category = 'safe';
+    let confidence = 0;
+
+    if (isExplicit) {
+      action = 'report_disconnect'; // Auto-report and disconnect
+      category = pornProb > hentaiProb ? 'Pornography' : 'Hentai/Explicit Animation';
+      confidence = Math.max(pornProb, hentaiProb);
+    } else if (isDoubtful) {
+      action = 'blur_warn'; // Blur video, warn user, send to admin for review
+      category = 'Potentially Explicit (Review Required)';
+      confidence = Math.max(pornProb, hentaiProb);
+    } else if (isSuspicious) {
+      action = 'warn_only'; // Just show warning toast, no blur, no report
+      category = 'Suggestive Content';
+      confidence = sexyProb;
     }
+
+    const result = {
+      safe: !isExplicit && !isDoubtful,
+      explicit: isExplicit,
+      doubtful: isDoubtful,
+      suspicious: isSuspicious,
+      action,
+      category,
+      confidence,
+      predictions,
+      shouldReport: isExplicit || isDoubtful, // Only these go to admin
+      shouldDisconnect: isExplicit, // Only explicit auto-disconnects
+      shouldBlur: isExplicit || isDoubtful, // Blur for explicit and doubtful
+      shouldWarn: isExplicit || isDoubtful || isSuspicious // Warn for all unsafe
+    };
 
     return result;
   } catch (error) {
-    if (import.meta.env.DEV) console.error('❌ Frame analysis error:', error);
     return { safe: true, confidence: 0, error: error.message };
   }
 };
@@ -148,13 +139,10 @@ export const captureVideoFrame = (videoElement) => {
     const canvas = document.createElement('canvas');
     canvas.width = videoElement.videoWidth;
     canvas.height = videoElement.videoHeight;
-
     const ctx = canvas.getContext('2d');
     ctx.drawImage(videoElement, 0, 0);
-
     return canvas.toDataURL('image/jpeg', 0.8);
   } catch (error) {
-    if (import.meta.env.DEV) console.error('Frame capture error:', error);
     return null;
   }
 };
@@ -162,30 +150,40 @@ export const captureVideoFrame = (videoElement) => {
 // Auto-moderation configuration
 export const MODERATION_CONFIG = {
   enabled: true,
+  silentMode: true, // ✅ No toasts/warnings shown to users
   checkInterval: 5000, // Check every 5 seconds
-  silentReportThreshold: 0.50, // 50% confidence - silent report to admin for review (no user action)
-  confidenceThreshold: 0.70, // 70% confidence to flag and warn user
-  autoReportThreshold: 0.85, // 85% confidence to auto-report and disconnect (high confidence only)
-  maxViolations: 3, // Auto-disconnect after 3 violations at 70%+ confidence
+  // Thresholds
+  explicitThreshold: 0.70, // 70%+ = explicit (disconnect + report)
+  doubtfulThreshold: 0.50, // 50-70% = doubtful (blur + report for review)
+  suspiciousThreshold: 0.80, // 80%+ sexy = suspicious (warn only)
+  maxViolations: 2, // Disconnect after 2 explicit violations
 };
 
 // Format AI analysis for report
 export const formatAIReport = (analysis) => {
-  const { highestRisk, predictions } = analysis;
+  const { category, confidence, predictions, action } = analysis;
 
-  let reason = 'Inappropriate Content Detected';
-  let description = `AI detected potentially inappropriate content:\n\n`;
+  let reason = 'AI Content Moderation Alert';
+  let description = '';
 
-  if (highestRisk) {
-    description += `Primary Detection: ${highestRisk.className} (${(highestRisk.probability * 100).toFixed(1)}% confidence)\n\n`;
+  if (analysis.explicit) {
+    reason = 'Explicit Content Detected';
+    description = `🚨 EXPLICIT CONTENT DETECTED\n\nCategory: ${category}\nConfidence: ${(confidence * 100).toFixed(1)}%\nAction Taken: Auto-disconnect and Report\n\n`;
+  } else if (analysis.doubtful) {
+    reason = 'Potentially Explicit Content (Review Required)';
+    description = `⚠️ DOUBTFUL CONTENT - NEEDS REVIEW\n\nCategory: ${category}\nConfidence: ${(confidence * 100).toFixed(1)}%\nAction Taken: Blur + Warning\n\n`;
   }
 
-  description += 'Full Analysis:\n';
-  predictions.forEach(p => {
-    description += `- ${p.className}: ${(p.probability * 100).toFixed(1)}%\n`;
-  });
+  if (predictions) {
+    description += 'AI Analysis:\n';
+    predictions.forEach(p => {
+      const bar = '█'.repeat(Math.round(p.probability * 10));
+      description += `${p.className}: ${bar} ${(p.probability * 100).toFixed(1)}%\n`;
+    });
+  }
 
-  description += '\n⚠️ This report was automatically generated by AI content moderation.';
+  description += '\n⚠️ This report was automatically generated by AI moderation.';
 
   return { reason, description };
 };
+

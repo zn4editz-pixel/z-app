@@ -1,14 +1,28 @@
-// SIMPLE DATABASE CONNECTION
+// PRODUCTION DATABASE CONNECTION
 import { PrismaClient } from '@prisma/client';
 
-// Prisma configuration
+// Validate database URL
+if (!process.env.DATABASE_URL) {
+  console.error('❌ DATABASE_URL environment variable is required');
+  process.exit(1);
+}
+
+// Prisma configuration with production optimizations
 const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
   datasources: {
     db: {
-      url: process.env.DATABASE_URL || "file:./dev.db",
+      url: process.env.DATABASE_URL,
     },
   },
+  // Production optimizations
+  ...(process.env.NODE_ENV === 'production' && {
+    connectionLimit: 10,
+    pool: {
+      timeout: 20,
+      idleTimeout: 300,
+    },
+  }),
 });
 
 // Simple in-memory cache

@@ -29,6 +29,17 @@ export const useChatStore = create((set, get) => ({
     lastDebugEvent: null,
     setLastDebugEvent: (evt) => set({ lastDebugEvent: evt }),
 
+    // Fetch unread counts on app init
+    fetchUnreadCounts: async () => {
+        try {
+            const res = await axiosInstance.get("/messages/unread-counts");
+            console.log("📊 Loaded unread counts:", res.data);
+            set({ unreadCounts: res.data || {} });
+        } catch (error) {
+            console.error("Failed to fetch unread counts:", error);
+        }
+    },
+
     getMessages: async (userId) => {
         const { selectedUser } = get();
 

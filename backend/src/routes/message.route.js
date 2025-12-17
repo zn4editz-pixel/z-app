@@ -1,21 +1,23 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { messageLimiter, uploadLimiter } from "../middleware/security.js";
-import { 
-  getMessages, 
-  getUsersForSidebar, 
-  sendMessage, 
-  clearChat, 
-  markMessagesAsRead, 
+import {
+  getMessages,
+  getUsersForSidebar,
+  sendMessage,
+  clearChat,
+  markMessagesAsRead,
   createCallLog,
   addReaction,
   removeReaction,
-  deleteMessage
+  deleteMessage,
+  getUnreadCounts
 } from "../controllers/message.controller.js";
 
 const router = express.Router();
 
 router.get("/users", protectRoute, getUsersForSidebar);
+router.get("/unread-counts", protectRoute, getUnreadCounts);
 router.get("/:id", protectRoute, getMessages);
 
 router.post("/send/:id", protectRoute, messageLimiter, sendMessage);

@@ -24,7 +24,7 @@ import healthRoutes from './routes/health.route.js';
 // Import middleware
 import { activityMonitor } from './middleware/activityMonitor.js';
 
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PORT || 5001;
 const app = express();
 
 const startServer = async () => {
@@ -64,9 +64,32 @@ const startServer = async () => {
     },
   }));
 
-  // CORS
+  // CORS - Production ready configuration
+  const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    process.env.CLIENT_URL,
+    "http://localhost:5173", // Development
+    "http://localhost:3000", // Development
+    "http://127.0.0.1:5173", // Development
+  ].filter(Boolean);
+
   app.use(cors({
-    origin: ["https://z-app-official.vercel.app", "http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", process.env.FRONTEND_URL].filter(Boolean),
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, etc.)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // In production, be strict about origins
+      if (process.env.NODE_ENV === 'production') {
+        return callback(new Error('Not allowed by CORS'));
+      }
+      
+      // In development, allow all origins
+      return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
@@ -86,13 +109,18 @@ const startServer = async () => {
   app.use('/api/admin', adminRoutes);
   app.use('/api/settings', settingsRoutes);
 
-  // Socket.IO
+  // Socket.IO - Production ready configuration
   const io = new Server(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || "http://localhost:5173",
+      origin: allowedOrigins,
       credentials: true
     },
-    transports: ['websocket', 'polling']
+    transports: ['websocket', 'polling'],
+    // Production optimizations
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    upgradeTimeout: 30000,
+    maxHttpBufferSize: 1e6, // 1MB
   });
 
   // Initialize Socket Handlers
@@ -103,10 +131,35 @@ const startServer = async () => {
     console.error('⚠️ Failed to initialize socket handlers:', error);
   }
 
-  // Error Handler
-  app.use((err, req, res, next) => {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+  // Production Error Handler with Logging
+  app.use(async (err, req, res, next) => {
+    // Import logger dynamically to avoid circular dependencies
+    const { logger } = await import('./lib/logger.js');
+    
+    // Log the error with context
+    logger.error('Server Error', err, {
+      method: req.method,
+      url: req.url,
+      userAgent: req.get('User-Agent'),
+      ip: req.ip,
+      userId: req.user?.id
+    });
+    
+    // Don't leak error details in production
+    if (process.env.NODE_ENV === 'production') {
+      res.status(500).json({ 
+        error: 'Internal server error',
+        timestamp: new Date().toISOString(),
+        requestId: req.id || Date.now()
+      });
+    } else {
+      res.status(500).json({ 
+        error: 'Internal server error',
+        details: err.message,
+        stack: err.stack,
+        timestamp: new Date().toISOString()
+      });
+    }
   });
 
   // 404 Handler
@@ -117,6 +170,7 @@ const startServer = async () => {
   // Start Server
   server.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`Checking restart trigger...`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 

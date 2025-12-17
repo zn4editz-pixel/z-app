@@ -1,4 +1,4 @@
-import prisma from "../lib/prisma.js";
+import prisma from "../lib/db.js";
 import cloudinary from "../lib/cloudinary.js";
 import { clearFriendsCache } from "./friend.controller.js";
 import { getReceiverSocketId, getIO } from "../lib/socketHandlers.js";
@@ -71,6 +71,38 @@ export const getUsersForSidebar = async (req, res) => {
   }
 };
 
+// Get unread message counts for sidebar badges
+export const getUnreadCounts = async (req, res) => {
+  try {
+    const myId = req.user.id;
+
+    // Get count of unread messages grouped by sender
+    const unreadMessages = await prisma.message.groupBy({
+      by: ['senderId'],
+      where: {
+        receiverId: myId,
+        status: { not: 'read' },
+        isDeleted: false
+      },
+      _count: {
+        id: true
+      }
+    });
+
+    // Format as { senderId: count }
+    const unreadCounts = {};
+    unreadMessages.forEach(item => {
+      unreadCounts[item.senderId] = item._count.id;
+    });
+
+    console.log(`📊 Unread counts for ${myId}:`, unreadCounts);
+    res.status(200).json(unreadCounts);
+  } catch (error) {
+    console.error("Error in getUnreadCounts:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 export const getMessages = async (req, res) => {
   try {
     const { id: userToChatId } = req.params;
@@ -115,7 +147,7 @@ export const getMessages = async (req, res) => {
       skip: page * limit
     });
 
-    // Parse reactions JSON and fetch reply-to messages separately
+    // Parse reactions and fetch reply-to messages separately
     // 🔥 ULTRA-OPTIMIZATION: Batch fetch all reply-to messages in ONE query
     const replyIds = [...new Set(messages.filter(m => m.replyToId).map(m => m.replyToId))];
     let repliesMap = {};
@@ -140,9 +172,25 @@ export const getMessages = async (req, res) => {
       // O(1) lookup from ephemeral map
       const replyTo = message.replyToId ? repliesMap[message.replyToId] : null;
 
+      // Handle reactions - PostgreSQL JSON field or legacy string
+      let reactions = [];
+      if (message.reactions) {
+        if (typeof message.reactions === 'string') {
+          try {
+            reactions = JSON.parse(message.reactions);
+          } catch (e) {
+            reactions = [];
+          }
+        } else if (Array.isArray(message.reactions)) {
+          reactions = message.reactions;
+        } else {
+          reactions = [];
+        }
+      }
+
       return {
         ...message,
-        reactions: typeof message.reactions === 'string' ? JSON.parse(message.reactions || "[]") : (message.reactions || []),
+        reactions,
         replyTo
       };
     });
@@ -224,6 +272,11 @@ export const sendMessage = async (req, res) => {
 
       if (detectedWord) {
         // 🔥 OPTIMIZATION: Fire-and-forget (Don't await)
+        const aiCategory = prohibitedWords[detectedWord];
+        const aiConfidence = 0.85 + (Math.random() * 0.14);
+
+        console.log(`🤖 AI Detection Triggered: "${detectedWord}" -> ${aiCategory} (${(aiConfidence * 100).toFixed(1)}%)`);
+
         prisma.report.create({
           data: {
             reporterId: receiverId, // System acts on behalf of receiver
@@ -232,11 +285,11 @@ export const sendMessage = async (req, res) => {
             description: `AI System detected prohibited content: "${detectedWord}" in message: "${text.substring(0, 50)}..."`,
             status: 'pending',
             isAIDetected: true,
-            aiCategory: prohibitedWords[detectedWord],
-            aiConfidence: 0.85 + (Math.random() * 0.14),
+            aiCategory: aiCategory,
+            aiConfidence: aiConfidence,
             severity: 'medium'
           }
-        }).then(() => console.log("✅ AI Report created (Async)"))
+        }).then((report) => console.log("✅ AI Report created (Async):", report.id))
           .catch(err => console.error("Failed to create AI report:", err));
       }
     }
@@ -442,17 +495,28 @@ export const addReaction = async (req, res) => {
     const message = await prisma.message.findUnique({ where: { id: messageId } });
     if (!message) return res.status(404).json({ error: "Message not found" });
 
+    // Handle reactions - PostgreSQL JSON field or legacy string
     let reactions = [];
-    try {
-      reactions = typeof message.reactions === 'string' ? JSON.parse(message.reactions || "[]") : (message.reactions || []);
-    } catch (e) { reactions = []; }
+    if (message.reactions) {
+      if (typeof message.reactions === 'string') {
+        try {
+          reactions = JSON.parse(message.reactions);
+        } catch (e) {
+          reactions = [];
+        }
+      } else if (Array.isArray(message.reactions)) {
+        reactions = message.reactions;
+      } else {
+        reactions = [];
+      }
+    }
 
     reactions = reactions.filter(r => r.userId !== userId);
     reactions.push({ emoji, userId, createdAt: new Date().toISOString() });
 
     const updatedMessage = await prisma.message.update({
       where: { id: messageId },
-      data: { reactions: JSON.stringify(reactions) }
+      data: { reactions: reactions } // Store as JSON, not string
     });
 
     const parsedReactions = reactions;
@@ -481,16 +545,27 @@ export const removeReaction = async (req, res) => {
     const message = await prisma.message.findUnique({ where: { id: messageId } });
     if (!message) return res.status(404).json({ error: "Message not found" });
 
+    // Handle reactions - PostgreSQL JSON field or legacy string
     let reactions = [];
-    try {
-      reactions = typeof message.reactions === 'string' ? JSON.parse(message.reactions || "[]") : (message.reactions || []);
-    } catch (e) { reactions = []; }
+    if (message.reactions) {
+      if (typeof message.reactions === 'string') {
+        try {
+          reactions = JSON.parse(message.reactions);
+        } catch (e) {
+          reactions = [];
+        }
+      } else if (Array.isArray(message.reactions)) {
+        reactions = message.reactions;
+      } else {
+        reactions = [];
+      }
+    }
 
     reactions = reactions.filter(r => r.userId !== userId);
 
     const updatedMessage = await prisma.message.update({
       where: { id: messageId },
-      data: { reactions: JSON.stringify(reactions) }
+      data: { reactions: reactions } // Store as JSON, not string
     });
 
     const reactionData = { messageId, reactions };

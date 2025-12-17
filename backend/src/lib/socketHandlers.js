@@ -366,10 +366,33 @@ export function initializeSocketHandlers(io) {
 
 			try {
 				const { reporterId, reportedUserId, reason, description, screenshot, category, isAIDetected } = payload;
+				let finalScreenshotUrl = null;
 
 				if (!reporterId || !reportedUserId || !reason) {
 					console.error("❌ Invalid report data:", payload);
 					return;
+				}
+
+				// Upload evidence to Cloudinary if present
+				if (screenshot && screenshot.startsWith('data:image')) {
+					try {
+						const { default: cloudinary } = await import("./cloudinary.js");
+						const uploadRes = await cloudinary.uploader.upload(screenshot, {
+							folder: "stranger-chat-reports",
+							resource_type: "image"
+						});
+						finalScreenshotUrl = uploadRes.secure_url;
+						console.log(`☁️ Evidence uploaded to Cloudinary: ${finalScreenshotUrl}`);
+					} catch (uploadError) {
+						console.error("❌ Cloudinary upload failed:", uploadError);
+						// Fallback: Store base64 if small enough, or skip
+						// For now, we'll try to store just a placeholder or the base64 if user really wants, 
+						// but typically base64 is too big for TEXT columns. 
+						// We will set it to null to avoid DB crash if upload fails.
+						finalScreenshotUrl = null;
+					}
+				} else {
+					finalScreenshotUrl = screenshot; // Assume it's already a URL if not data URI
 				}
 
 				// Create report in database
@@ -379,7 +402,7 @@ export function initializeSocketHandlers(io) {
 						reportedUserId,
 						reason,
 						description,
-						screenshot,
+						screenshot: finalScreenshotUrl,
 						category: category || 'stranger_chat',
 						isAIDetected: isAIDetected || false,
 						status: 'pending'
@@ -401,13 +424,12 @@ export function initializeSocketHandlers(io) {
 				// Acknowledge success to reporter
 				socket.emit("stranger:report_success", { reportId: report.id });
 
-				// Notify admins via socket if they are online
-				// (Assuming admin room exists, or just broadcast to admins - simplified here)
-				// io.emit("admin:new_report", report); 
+				// 🔥 Notify admins via socket for real-time dashboard updates
+				io.emit("admin:newReport", report);
 
 			} catch (error) {
 				console.error("❌ Failed to process report:", error);
-				socket.emit("stranger:report_error", { message: "Failed to save report" });
+				socket.emit("stranger:report_error", { message: "Failed to save report: " + error.message });
 			}
 		});
 
@@ -584,6 +606,131 @@ export function initializeSocketHandlers(io) {
 			}
 		});
 
+		// === SOS GAME EVENTS ===
+		socket.on("game:invite", (data) => {
+			const { receiverId } = data;
+			const senderId = socket.userId;
+			const senderName = data.senderName || "Unknown";
+			const senderPic = data.senderPic || null;
+
+			// Use provided gameId or generate one
+			const gameId = data.gameId || `game_${Date.now()}_${senderId}_${receiverId}`;
+
+			// Create game in memory
+			import("./gameManager.js").then(({ gameManager }) => {
+				const onExpire = (expiredGameId) => {
+					console.log(`⌛ Game ${expiredGameId} expired due to timeout.`);
+					const receiverSocketId = getReceiverSocketId(receiverId);
+					const senderSocketId = getReceiverSocketId(senderId);
+
+					if (senderSocketId) io.to(senderSocketId).emit("game:expired", { gameId: expiredGameId });
+					if (receiverSocketId) io.to(receiverSocketId).emit("game:expired", { gameId: expiredGameId });
+				};
+
+				const onTurnTimeout = (gameId) => {
+					console.log(`⏱️ Turn timeout for game ${gameId}`);
+					const game = gameManager.switchTurn(gameId);
+					if (game) {
+						const publicGame = gameManager.getPublicState(game.id);
+						// Broadcast update
+						game.playerIds.forEach(pid => {
+							const sockId = getReceiverSocketId(pid);
+							if (sockId) {
+								if (game.status === 'finished') {
+									io.to(sockId).emit("game:end", { winner: game.winner, game: publicGame });
+								} else {
+									io.to(sockId).emit("game:update", {
+										game: publicGame,
+										message: "Turn timed out! Switching turns."
+									});
+								}
+							}
+						});
+					}
+				};
+
+				const game = gameManager.createGame(gameId, senderId, senderName, senderPic, onExpire, onTurnTimeout);
+
+				// Notify receiver
+				const receiverSocketId = getReceiverSocketId(receiverId);
+				if (receiverSocketId) {
+					io.to(receiverSocketId).emit("game:invite", {
+						gameId,
+						senderId,
+						senderName,
+						senderPic,
+						inviteId: data.inviteId
+					});
+					console.log(`🎮 Game Invite sent from ${senderId} to ${receiverId} (GameID: ${gameId})`);
+				}
+			}).catch(err => {
+				console.error("❌ Error in game:invite handler:", err);
+				socket.emit("game:error", { message: "Internal server error creating game." });
+			});
+		});
+
+		// ✅ RE-ADDED MISSING HANDLERS
+		socket.on("game:join", async ({ gameId, myName, myPic }) => {
+			console.log(`🎮 game:join request from ${socket.userId} for game ${gameId}`);
+			try {
+				// Dynamic import to avoid circular dependencies if any
+				const { gameManager } = await import("./gameManager.js");
+
+				const result = await gameManager.joinGame(gameId, socket.userId, myName, myPic);
+
+				if (result.error) {
+					console.error(`❌ Join failed: ${result.error}`);
+					socket.emit("game:error", { message: result.error });
+					return;
+				}
+
+				const game = result.game;
+				const publicGame = gameManager.getPublicState(game.id);
+
+				console.log(`✅ Game Joined! Players: ${JSON.stringify(game.playerIds)}`);
+
+				// Notify both players
+				game.playerIds.forEach(pid => {
+					const sockId = getReceiverSocketId(pid);
+					console.log(`📤 Sending game:start to Player ${pid} (Socket: ${sockId})`);
+					if (sockId) {
+						io.to(sockId).emit("game:start", { game: publicGame });
+					} else {
+						console.warn(`⚠️ Socket not found for player ${pid}`);
+					}
+				});
+			} catch (error) {
+				console.error("❌ Error in game:join:", error);
+				socket.emit("game:error", { message: error.message });
+			}
+		});
+
+		socket.on("game:move", async ({ gameId, row, col, letter }) => {
+			try {
+				const { gameManager } = await import("./gameManager.js");
+				const result = gameManager.makeMove(gameId, socket.userId, row, col, letter);
+
+				if (result) {
+					const game = gameManager.getGame(gameId);
+					const publicGame = gameManager.getPublicState(gameId);
+					console.log("📏 Backend - Lines to send:", publicGame?.lines);
+					// Broadcast update/end
+					game.playerIds.forEach(pid => {
+						const sockId = getReceiverSocketId(pid);
+						if (sockId) {
+							if (game.status === 'finished') {
+								io.to(sockId).emit("game:end", { winner: game.winner, game: publicGame });
+							} else {
+								io.to(sockId).emit("game:update", { game: publicGame, lastMove: { row, col, letter, playerId: socket.userId } });
+							}
+						}
+					});
+				}
+			} catch (error) {
+				console.error("❌ Error in game:move:", error);
+			}
+		});
+
 		socket.on("stopTyping", (data) => {
 			try {
 				if (!data) return;
@@ -675,12 +822,20 @@ export function initializeSocketHandlers(io) {
 					return;
 				}
 
-				// Get current reactions and update
+				// Get current reactions and update - PostgreSQL JSON field
 				let reactions = [];
-				try {
-					reactions = message.reactions ? JSON.parse(message.reactions) : [];
-				} catch (error) {
-					reactions = [];
+				if (message.reactions) {
+					if (typeof message.reactions === 'string') {
+						try {
+							reactions = JSON.parse(message.reactions);
+						} catch (error) {
+							reactions = [];
+						}
+					} else if (Array.isArray(message.reactions)) {
+						reactions = message.reactions;
+					} else {
+						reactions = [];
+					}
 				}
 
 				// Remove existing reaction from this user
@@ -693,10 +848,10 @@ export function initializeSocketHandlers(io) {
 					createdAt: new Date().toISOString()
 				});
 
-				// Update in database
+				// Update in database - store as JSON
 				await prisma.message.update({
 					where: { id: messageId },
-					data: { reactions: JSON.stringify(reactions) }
+					data: { reactions: reactions }
 				});
 
 				// ✅ INSTANT: Notify receiver immediately via socket
@@ -910,6 +1065,16 @@ export function initializeSocketHandlers(io) {
 			}
 		});
 
+
+		// ✅ Explicitly register user if handshake misses it
+		socket.on("register-user", (userId) => {
+			if (userId) {
+				userSocketMap[userId] = socket.id;
+				io.emit("getOnlineUsers", Object.keys(userSocketMap));
+				console.log(`✅ User registered explicitly: ${userId} -> ${socket.id}`);
+			}
+		});
+
 		// Handle disconnect
 		socket.on("disconnect", (reason) => {
 			console.log(`🔌 Socket disconnected: ${socket.id}, reason: ${reason}`);
@@ -919,6 +1084,37 @@ export function initializeSocketHandlers(io) {
 			const partnerSocket = cleanupMatch(socket, io);
 			if (partnerSocket) {
 				partnerSocket.emit("stranger:disconnected");
+			}
+
+			// Clean up SOS Game (Forfeit)
+			if (disconnectedUserId) {
+				import("./gameManager.js").then(({ gameManager }) => {
+					const activeGame = gameManager.findGameByPlayerId(disconnectedUserId);
+					if (activeGame) {
+						console.log(`🎮 User ${disconnectedUserId} disconnected during active game ${activeGame.id}. Forfeiting...`);
+
+						// Determine winner (the other player)
+						const winnerId = activeGame.playerIds.find(pid => pid !== disconnectedUserId);
+
+						if (winnerId) {
+							activeGame.status = 'finished';
+							activeGame.winner = winnerId;
+
+							const remainingSocketId = getReceiverSocketId(winnerId);
+							if (remainingSocketId) {
+								const publicGame = gameManager.getPublicState(activeGame.id);
+								io.to(remainingSocketId).emit("game:end", {
+									winner: winnerId,
+									game: publicGame,
+									reason: "opponent_disconnected"
+								});
+								console.log(`🏆 Game ${activeGame.id} awarded to ${winnerId} due to disconnect.`);
+							}
+						}
+						// Clear game timer
+						if (activeGame.turnTimer) clearTimeout(activeGame.turnTimer);
+					}
+				}).catch(err => console.error("Error handling game disconnect:", err));
 			}
 
 			// Clean up private chat

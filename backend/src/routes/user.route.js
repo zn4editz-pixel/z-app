@@ -20,7 +20,7 @@ import {
 } from "../controllers/admin.controller.js";
 
 import { protectRoute, isAdmin } from "../middleware/protectRoute.js";
-import prisma from "../lib/prisma.js";
+import prisma from "../lib/db.js";
 
 const router = express.Router();
 
@@ -65,7 +65,7 @@ router.post("/request-verification", async (req, res) => {
 		const user = await prisma.user.findUnique({
 			where: { id: userId }
 		});
-		
+
 		if (!user) {
 			console.log(`❌ User ${userId} not found`);
 			return res.status(404).json({ message: "User not found" });
@@ -90,7 +90,7 @@ router.post("/request-verification", async (req, res) => {
 				verificationRequestedAt: new Date(),
 			}
 		});
-		
+
 		console.log(`✅ Verification request saved for user ${userId} (${user.username})`);
 
 		res.status(200).json({ message: "Verification request submitted successfully" });

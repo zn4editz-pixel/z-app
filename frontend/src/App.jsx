@@ -13,6 +13,7 @@ import SetupProfilePage from "./pages/SetupProfilePage";
 import Navbar from "./components/Navbar";
 // PermissionHandler removed as per user request to only ask on feature usage
 import ErrorBoundary from "./components/ErrorBoundary";
+import SOSBoard from "./components/game/SOSBoard"; // ✅ Game Board Overlay
 
 // Lazy load non-critical pages for performance
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
@@ -100,6 +101,7 @@ const App = () => {
 	useEffect(() => {
 		if (authUser?.id) {
 			fetchFriendData();
+			useChatStore.getState().fetchUnreadCounts(); // 🔥 Load unread counts on init
 		}
 	}, [authUser?.id, fetchFriendData]);
 
@@ -329,6 +331,7 @@ const App = () => {
 					maxWidth: '500px',
 				},
 			}} />
+			<SOSBoard />
 		</div>
 	);
 };
