@@ -3,6 +3,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 import { useFriendStore } from "../store/useFriendStore";
 import { useNotificationStore } from "../store/useNotificationStore";
+import { useEffect, useState } from "react";
 import {
 	LayoutDashboard,
 	Settings,
@@ -12,10 +13,30 @@ import {
 
 const Navbar = () => {
 	const { authUser } = useAuthStore();
+	const { selectedUser } = useChatStore();
 	const isAdmin = authUser?.isAdmin;
 	const { pendingReceived } = useFriendStore();
 	const { getUnreadAdminCount } = useNotificationStore();
 	const location = useLocation();
+	const [isMobile, setIsMobile] = useState(false);
+
+	// Detect mobile device
+	useEffect(() => {
+		const checkMobile = () => {
+			setIsMobile(window.innerWidth <= 768);
+		};
+		
+		checkMobile();
+		window.addEventListener('resize', checkMobile);
+		return () => window.removeEventListener('resize', checkMobile);
+	}, []);
+
+	// Hide navbar on mobile when in chat mode (only for mobile users)
+	const shouldHideOnMobile = isMobile && selectedUser && location.pathname === '/';
+	
+	if (shouldHideOnMobile) {
+		return null;
+	}
 
 	// Calculate total Social Hub updates (only unread)
 	const unreadAdminCount = getUnreadAdminCount();

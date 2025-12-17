@@ -53,6 +53,7 @@ const App = () => {
 	const addPendingReceived = useFriendStore((state) => state.addPendingReceived);
 	const fetchFriendData = useFriendStore((state) => state.fetchFriendData);
 	const navigate = useNavigate();
+	const location = useLocation();
 
 	// ✅ Fetch global settings on mount
 	useEffect(() => {
@@ -164,12 +165,30 @@ const App = () => {
 	// ✅ FIXED: Pages where Navbar should be hidden
 	const hideNavbarPaths = ["/stranger", "/suspended", "/blocked", "/goodbye"];
 	const shouldShowNavbar = hasCompletedProfile && !hideNavbarPaths.includes(window.location.pathname);
+	
+	// ✅ NEW: Mobile chat detection for navbar hiding
+	const [isMobile, setIsMobile] = useState(false);
+	const { selectedUser } = useChatStore();
+	
+	useEffect(() => {
+		const checkMobile = () => {
+			setIsMobile(window.innerWidth <= 768);
+		};
+		
+		checkMobile();
+		window.addEventListener('resize', checkMobile);
+		return () => window.removeEventListener('resize', checkMobile);
+	}, []);
+	
+	// Hide navbar on mobile when in chat mode
+	const isMobileChatMode = isMobile && selectedUser && location.pathname === '/';
+	const showNavbarFinal = shouldShowNavbar && !isMobileChatMode;
 
 	return (
-		<div data-theme={effectiveTheme} className={`min-h-screen bg-base-100 ${shouldShowNavbar ? "pt-14 md:pt-16" : ""}`}>
+		<div data-theme={effectiveTheme} className={`min-h-screen bg-base-100 ${showNavbarFinal ? "pt-14 md:pt-16" : ""}`}>
 			<ErrorBoundary>
 				{/* PermissionHandler removed - permissions requested on feature usage only */}
-				{shouldShowNavbar && <Navbar />}
+				{showNavbarFinal && <Navbar />}
 			</ErrorBoundary>
 
 			<Suspense fallback={<LoadingScreen />}>

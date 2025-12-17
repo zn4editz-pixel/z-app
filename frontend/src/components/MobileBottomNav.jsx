@@ -1,6 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { useFriendStore } from "../store/useFriendStore";
+import { useChatStore } from "../store/useChatStore";
+import { useEffect, useState } from "react";
 import {
   Home,
   Users,
@@ -11,10 +13,24 @@ import {
 const MobileBottomNav = () => {
   const location = useLocation();
   const { authUser } = useAuthStore();
+  const { selectedUser } = useChatStore();
   const { pendingReceived } = useFriendStore();
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Don't show on auth pages or stranger chat page
-  if (!authUser || !authUser.hasCompletedProfile || location.pathname === "/stranger") return null;
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Don't show on auth pages, stranger chat page, or when in mobile chat mode
+  const isMobileChatMode = isMobile && selectedUser && location.pathname === '/';
+  if (!authUser || !authUser.hasCompletedProfile || location.pathname === "/stranger" || isMobileChatMode) return null;
 
   const isActive = (path) => location.pathname === path;
 

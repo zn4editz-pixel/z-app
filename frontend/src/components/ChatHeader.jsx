@@ -2,10 +2,48 @@ import { Phone, Video, ArrowLeft } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 import VerifiedBadge from "./VerifiedBadge";
+import { useEffect, useState } from "react";
 
 const ChatHeader = ({ onStartCall }) => {
 	const { selectedUser, setSelectedUser, isTyping, typingUserId } = useChatStore();
 	const { onlineUsers } = useAuthStore();
+	const [isMobile, setIsMobile] = useState(false);
+	const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+	// Detect mobile device
+	useEffect(() => {
+		const checkMobile = () => {
+			setIsMobile(window.innerWidth <= 768);
+		};
+		
+		checkMobile();
+		window.addEventListener('resize', checkMobile);
+		return () => window.removeEventListener('resize', checkMobile);
+	}, []);
+
+	// Handle mobile keyboard visibility
+	useEffect(() => {
+		if (!isMobile) return;
+
+		const handleViewportChange = () => {
+			// Detect keyboard by viewport height change
+			const viewportHeight = window.visualViewport?.height || window.innerHeight;
+			const windowHeight = window.screen.height;
+			const keyboardThreshold = windowHeight * 0.75; // 75% of screen height
+			
+			setKeyboardVisible(viewportHeight < keyboardThreshold);
+		};
+
+		// Listen to visual viewport changes (better than resize for keyboard detection)
+		if (window.visualViewport) {
+			window.visualViewport.addEventListener('resize', handleViewportChange);
+			return () => window.visualViewport.removeEventListener('resize', handleViewportChange);
+		} else {
+			// Fallback for older browsers
+			window.addEventListener('resize', handleViewportChange);
+			return () => window.removeEventListener('resize', handleViewportChange);
+		}
+	}, [isMobile]);
 
 	if (!selectedUser) return null;
 
@@ -18,7 +56,9 @@ const ChatHeader = ({ onStartCall }) => {
 	};
 
 	return (
-		<div className="p-2.5 border-b border-base-300 relative">
+		<div className={`p-2.5 border-b border-base-300 relative bg-base-100 z-30 ${
+			isMobile && keyboardVisible ? 'mobile-chat-header-keyboard' : ''
+		}`}>
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					{/* Back Button */}
