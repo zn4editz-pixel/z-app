@@ -377,7 +377,7 @@ const StrangerChatPage = () => {
 	const isScanningRef = useRef(false);
 	const violationsRef = useRef(0);
 
-	// Optimized WebRTC Configuration for faster connections
+	// Enhanced 4K WebRTC Configuration for ultra-low latency and high quality
 	const rtcConfig = useMemo(() => ({
 		iceServers: [
 			{ urls: "stun:stun.l.google.com:19302" },
@@ -385,11 +385,16 @@ const StrangerChatPage = () => {
 			{ urls: "stun:stun2.l.google.com:19302" },
 			{ urls: "stun:stun3.l.google.com:19302" },
 			{ urls: "stun:stun4.l.google.com:19302" },
+			{ urls: "stun:stun.services.mozilla.com" },
+			{ urls: "stun:stun.stunprotocol.org:3478" },
+			{ urls: "stun:stun.ekiga.net" },
+			{ urls: "stun:stun.ideasip.com" }
 		],
-		iceCandidatePoolSize: 10,
+		iceCandidatePoolSize: 20,
 		bundlePolicy: 'max-bundle',
 		rtcpMuxPolicy: 'require',
-		iceTransportPolicy: 'all'
+		iceTransportPolicy: 'all',
+		sdpSemantics: 'unified-plan'
 	}), []);
 
 	// Ultra-optimized message handler with batching
@@ -402,10 +407,27 @@ const StrangerChatPage = () => {
 		});
 	}, []);
 
-	// Enhanced WebRTC Connection
+	// Enhanced WebRTC Connection with 4K codec preferences
 	const createPeerConnection = useCallback(() => {
-		console.log("🚀 Creating optimized peer connection");
+		console.log("🚀 Creating 4K-optimized peer connection");
 		const pc = new RTCPeerConnection(rtcConfig);
+
+		// Set codec preferences for better quality
+		const transceivers = pc.getTransceivers();
+		transceivers.forEach(transceiver => {
+			if (transceiver.sender && transceiver.sender.track && transceiver.sender.track.kind === 'video') {
+				const params = transceiver.sender.getParameters();
+				// Prefer H.264 for better quality and compatibility
+				if (params.codecs) {
+					params.codecs = params.codecs.sort((a, b) => {
+						if (a.mimeType.includes('H264')) return -1;
+						if (b.mimeType.includes('H264')) return 1;
+						return 0;
+					});
+					transceiver.sender.setParameters(params);
+				}
+			}
+		});
 
 		pc.onicecandidate = (e) => {
 			if (e.candidate && socket) {
@@ -746,20 +768,14 @@ const StrangerChatPage = () => {
 				throw new Error("Your browser doesn't support camera access");
 			}
 
-			// Optimized media constraints with fallback logic
+			// Enhanced 4K media constraints with adaptive quality
 			const getMediaStream = async () => {
+				// Import video quality optimizer
+				const { getOptimalVideoConstraints, getOptimalAudioConstraints } = await import('../utils/videoQualityOptimizer.js');
+				
 				const constraints = {
-					video: {
-						width: { ideal: 640 },
-						height: { ideal: 480 },
-						facingMode: "user",
-						frameRate: { ideal: 24, max: 30 }
-					},
-					audio: {
-						echoCancellation: true,
-						noiseSuppression: true,
-						autoGainControl: true
-					}
+					video: getOptimalVideoConstraints(),
+					audio: getOptimalAudioConstraints()
 				};
 
 				try {

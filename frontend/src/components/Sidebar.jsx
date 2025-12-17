@@ -438,14 +438,10 @@ const Sidebar = () => {
                       {/* Professional Unread Badge - Fixed Layering */}
                       {unread > 0 && (
                         <div className="flex-shrink-0 relative z-10">
-                          <div className="relative">
-                            {/* Pulsing background effect */}
-                            <span className="absolute inset-0 rounded-full bg-primary animate-pulse opacity-30 scale-110"></span>
-                            {/* Main badge */}
-                            <span className="notification-badge relative inline-flex items-center justify-center min-w-[20px] h-[20px] sm:min-w-[24px] sm:h-[24px] px-1.5 bg-primary text-primary-content rounded-full text-[10px] sm:text-xs font-bold shadow-lg border-2 border-base-100 transform transition-transform duration-200 hover:scale-110">
-                              {unread > 9 ? "9+" : unread}
-                            </span>
-                          </div>
+                          {/* Simple Instagram-style badge */}
+                          <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-red-500 text-white rounded-full text-[10px] font-medium">
+                            {unread > 9 ? "9+" : unread}
+                          </span>
                         </div>
                       )}
                     </button>
@@ -584,14 +580,10 @@ const Sidebar = () => {
                         {/* Professional Unread Badge - Fixed Layering */}
                         {unread > 0 && (
                           <div className="flex-shrink-0 relative z-10">
-                            <div className="relative">
-                              {/* Pulsing background effect */}
-                              <span className="absolute inset-0 rounded-full bg-primary animate-pulse opacity-30 scale-110"></span>
-                              {/* Main badge */}
-                              <span className="notification-badge relative inline-flex items-center justify-center min-w-[22px] h-[22px] sm:min-w-[26px] sm:h-[26px] px-1.5 bg-primary text-primary-content rounded-full text-[10px] sm:text-xs font-bold shadow-lg border-2 border-base-100 transform transition-transform duration-200 hover:scale-110">
-                                {unread > 9 ? "9+" : unread}
-                              </span>
-                            </div>
+                            {/* Simple Instagram-style badge */}
+                            <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-red-500 text-white rounded-full text-[10px] font-medium">
+                              {unread > 9 ? "9+" : unread}
+                            </span>
                           </div>
                         )}
 

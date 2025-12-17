@@ -213,17 +213,12 @@ const PrivateCallModal = ({
   const initializeMedia = useCallback(async () => {
     try {
       console.log(`🎤 Initializing media for ${callType} call`);
+      // Enhanced 4K constraints with adaptive quality
+      const { getOptimalVideoConstraints, getOptimalAudioConstraints } = await import('../utils/videoQualityOptimizer.js');
+      
       const constraints = {
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-        video: callType === "video" ? {
-          width: { ideal: 640, max: 1280 },
-          height: { ideal: 480, max: 720 },
-          facingMode: "user"
-        } : false,
+        audio: getOptimalAudioConstraints(),
+        video: callType === "video" ? getOptimalVideoConstraints() : false,
       };
 
       console.log("📹 Requesting media with constraints:", constraints);
