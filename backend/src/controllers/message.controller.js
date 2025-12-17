@@ -243,6 +243,8 @@ export const createCallLog = async (req, res) => {
 };
 
 export const sendMessage = async (req, res) => {
+  const startTime = Date.now();
+  
   try {
     const { text, image, voice, voiceDuration, replyTo } = req.body;
     const { id: receiverId } = req.params;
@@ -252,119 +254,105 @@ export const sendMessage = async (req, res) => {
       return res.status(400).json({ error: "Message cannot be empty" });
     }
 
-    // Parse voiceDuration if it exists to ensure integer type
-    const parsedVoiceDuration = voiceDuration ? parseInt(voiceDuration) : null;
+    // 🚀 SPEED OPTIMIZATION: Respond immediately for text-only messages
+    if (text && !image && !voice) {
+      // Create message immediately
+      const newMessage = await prisma.message.create({
+        data: {
+          senderId,
+          receiverId,
+          text: text.trim(),
+          replyToId: replyTo || null
+        }
+      });
 
-    // --- AI MODERATION SYSTEM (NON-BLOCKING) ---
-    if (text) {
-      const prohibitedWords = {
-        'spam': 'Spam Content',
-        'fake': 'Scam/Fake',
-        'hate': 'Hate Speech',
-        'profit': 'Solicitation',
-        'stupid': 'Harassment',
-        'idiot': 'Harassment',
-        'badword': 'Inappropriate Language'
+      // Prepare optimized message data
+      const messageData = {
+        ...newMessage,
+        senderName: req.user?.fullName,
+        senderAvatar: req.user?.profilePic
       };
 
-      const lowerText = text.toLowerCase();
-      const detectedWord = Object.keys(prohibitedWords).find(word => lowerText.includes(word));
-
-      if (detectedWord) {
-        // 🔥 OPTIMIZATION: Fire-and-forget (Don't await)
-        const aiCategory = prohibitedWords[detectedWord];
-        const aiConfidence = 0.85 + (Math.random() * 0.14);
-
-        console.log(`🤖 AI Detection Triggered: "${detectedWord}" -> ${aiCategory} (${(aiConfidence * 100).toFixed(1)}%)`);
-
-        prisma.report.create({
-          data: {
-            reporterId: receiverId, // System acts on behalf of receiver
-            reportedUserId: senderId,
-            reason: prohibitedWords[detectedWord],
-            description: `AI System detected prohibited content: "${detectedWord}" in message: "${text.substring(0, 50)}..."`,
-            status: 'pending',
-            isAIDetected: true,
-            aiCategory: aiCategory,
-            aiConfidence: aiConfidence,
-            severity: 'medium'
-          }
-        }).then((report) => console.log("✅ AI Report created (Async):", report.id))
-          .catch(err => console.error("Failed to create AI report:", err));
+      // 🔥 INSTANT SOCKET EMIT (Non-blocking)
+      const receiverSocketId = getReceiverSocketId(receiverId);
+      if (receiverSocketId) {
+        const io = getIO();
+        io?.to(receiverSocketId).emit("newMessage", messageData);
       }
+
+      // 🔥 ASYNC OPERATIONS (Fire-and-forget)
+      setImmediate(() => {
+        // Clear cache async
+        clearFriendsCache(senderId);
+        clearFriendsCache(receiverId);
+        
+        // AI moderation async (if needed)
+        if (text) {
+          const prohibitedWords = ['spam', 'fake', 'hate', 'profit', 'stupid', 'idiot'];
+          const lowerText = text.toLowerCase();
+          const detectedWord = prohibitedWords.find(word => lowerText.includes(word));
+          
+          if (detectedWord) {
+            prisma.report.create({
+              data: {
+                reporterId: receiverId,
+                reportedUserId: senderId,
+                reason: 'AI Detection',
+                description: `AI detected: "${detectedWord}"`,
+                status: 'pending',
+                isAIDetected: true,
+                aiCategory: 'Auto-flagged',
+                aiConfidence: 0.9,
+                severity: 'medium'
+              }
+            }).catch(err => console.error("AI report failed:", err));
+          }
+        }
+      });
+
+      const responseTime = Date.now() - startTime;
+      console.log(`⚡ Fast text message sent in ${responseTime}ms`);
+      
+      return res.status(201).json(newMessage);
     }
-    // ---------------------------
 
-    // Debug payload size
-    console.log(`📨 message.send payload: text=${text?.length || 0} chars, image=${image ? (image.length / 1024).toFixed(2) + 'KB' : 'null'}, voice=${voice ? (voice.length / 1024).toFixed(2) + 'KB' : 'null'}`);
-
-    // Process uploads
+    // 🔥 MEDIA MESSAGES: Optimized parallel processing
+    const parsedVoiceDuration = voiceDuration ? parseInt(voiceDuration) : null;
+    
+    // Parallel upload processing
     const uploadPromises = [];
-
+    
     if (image) {
       uploadPromises.push(
         cloudinary.uploader.upload(image, {
           folder: "chat_images",
           resource_type: "image",
           format: 'webp',
-          quality: 'auto:good'
+          quality: 'auto:low', // Faster upload
+          transformation: [
+            { width: 800, height: 600, crop: 'limit' } // Reduce size
+          ]
         })
       );
-    } else {
-      uploadPromises.push(Promise.resolve(null));
     }
-
+    
     if (voice) {
       uploadPromises.push(
-        (async () => {
-          try {
-            console.log('🎙️ Uploading voice as video...');
-            return await cloudinary.uploader.upload(voice, {
-              folder: "chat_voices",
-              resource_type: "video"
-            });
-          } catch (err1) {
-            console.warn('⚠️ Voice/Video upload failed, retrying as auto:', err1.message);
-            try {
-              return await cloudinary.uploader.upload(voice, {
-                folder: "chat_voices",
-                resource_type: "auto"
-              });
-            } catch (err2) {
-              console.warn('⚠️ Voice/Auto upload failed, retrying as raw:', err2.message);
-              return await cloudinary.uploader.upload(voice, {
-                folder: "chat_voices",
-                resource_type: "raw"
-              });
-            }
-          }
-        })()
+        cloudinary.uploader.upload(voice, {
+          folder: "chat_voices",
+          resource_type: "auto"
+        })
       );
-    } else {
-      uploadPromises.push(Promise.resolve(null));
     }
 
-    let imageUpload = null;
-    let voiceUpload = null;
+    // Wait for uploads
+    const uploadResults = await Promise.all(uploadPromises);
+    let imageUrl = null, voiceUrl = null;
+    
+    if (image) imageUrl = uploadResults[0]?.secure_url;
+    if (voice) voiceUrl = uploadResults[uploadPromises.length - 1]?.secure_url;
 
-    try {
-      const results = await Promise.all(uploadPromises);
-      imageUpload = results[0];
-      voiceUpload = results[1];
-      console.log('✅ Media upload successful');
-    } catch (uploadError) {
-      console.error('❌ Cloudinary Upload Failed:', uploadError);
-      return res.status(500).json({
-        error: "Media upload failed",
-        details: uploadError.message,
-        hint: "Check Cloudinary configuration"
-      });
-    }
-
-    const imageUrl = imageUpload?.secure_url || null;
-    const voiceUrl = voiceUpload?.secure_url || null;
-
-    // Create message
+    // Create message with media
     const newMessage = await prisma.message.create({
       data: {
         senderId,
@@ -377,41 +365,35 @@ export const sendMessage = async (req, res) => {
       }
     });
 
-    // Clear friends cache (Sync Map operation, fast)
-    clearFriendsCache(senderId);
-    clearFriendsCache(receiverId);
-
-    // 🔥 OPTIMIZATION: Use req.user instead of fetching again
-    // protectRoute already populated req.user with fullName and profilePic
-    const sender = req.user;
-
     // Prepare message data
     const messageData = {
       ...newMessage,
-      senderName: sender?.fullName,
-      senderAvatar: sender?.profilePic
+      senderName: req.user?.fullName,
+      senderAvatar: req.user?.profilePic
     };
 
-    // 🔥 REAL-TIME: Emit new message to receiver (Using Shared Socket)
-    console.log(`📤 Message sent to DB. Emitting to receiver ${receiverId}...`);
+    // Emit to receiver
     const receiverSocketId = getReceiverSocketId(receiverId);
-
     if (receiverSocketId) {
       const io = getIO();
-      if (io) {
-        io.to(receiverSocketId).emit("newMessage", messageData);
-        console.log(`✅ Socket sent to ${receiverSocketId}`);
-      } else {
-        console.log(`❌ IO Instance is null, cannot emit!`);
-      }
-    } else {
-      console.log(`⚠️ Receiver ${receiverId} not online (no socket found)`);
+      io?.to(receiverSocketId).emit("newMessage", messageData);
     }
 
+    // Async cleanup
+    setImmediate(() => {
+      clearFriendsCache(senderId);
+      clearFriendsCache(receiverId);
+    });
+
+    const responseTime = Date.now() - startTime;
+    console.log(`📤 Media message sent in ${responseTime}ms`);
+    
     res.status(201).json(newMessage);
+    
   } catch (error) {
-    console.error("❌ Error in sendMessage:", error);
-    res.status(500).json({ error: "Internal server error", details: error.message });
+    const responseTime = Date.now() - startTime;
+    console.error(`❌ Message failed after ${responseTime}ms:`, error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 

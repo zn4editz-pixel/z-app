@@ -118,13 +118,14 @@ export const useChatStore = create((set, get) => ({
 
     sendMessage: async (messageData) => {
         const { selectedUser, messages } = get();
-        const { authUser, socket } = useAuthStore.getState();
+        const { authUser } = useAuthStore.getState();
 
         if (!selectedUser) return;
 
         const tempId = `temp-${Date.now()}-${Math.random()}`;
+        const timestamp = new Date().toISOString();
 
-        // 🚀 ULTRA-FAST: Show message as 'sent' immediately for instant UI feedback
+        // ⚡ INSTANT: Create optimistic message
         const optimisticMessage = {
             id: tempId,
             senderId: authUser.id,
@@ -133,67 +134,61 @@ export const useChatStore = create((set, get) => ({
             image: messageData.image || null,
             voice: messageData.voice || null,
             voiceDuration: messageData.voiceDuration || null,
-            replyTo: messageData.replyTo || null,
-            status: 'sending', // ⏳ WAITING: Show clock icon first
-            createdAt: new Date().toISOString(),
+            replyToId: messageData.replyTo || null,
+            status: 'sent', // ⚡ Show as sent immediately for speed
+            createdAt: timestamp,
             reactions: [],
-            tempId: tempId
+            tempId: tempId,
+            senderName: authUser.fullName,
+            senderAvatar: authUser.profilePic
         };
 
-        // 🚀 INSTANT: Update UI immediately
-        const updatedMessages = [...messages, optimisticMessage];
-        set({ messages: updatedMessages });
+        // ⚡ INSTANT: Update UI with zero delay
+        set(state => ({ 
+            messages: [...state.messages, optimisticMessage] 
+        }));
 
-        // 🚀 INSTANT: Update friend's last message immediately
-        useFriendStore.getState().updateFriendLastMessage(selectedUser.id, optimisticMessage);
+        // ⚡ INSTANT: Update sidebar (async, non-blocking)
+        setTimeout(() => {
+            try {
+                useFriendStore.getState().updateFriendLastMessage(selectedUser.id, optimisticMessage);
+            } catch (e) {
+                console.warn('Sidebar update failed:', e);
+            }
+        }, 0);
 
-        // 🔥 FORCE UPDATE: Trigger sidebar re-render
-        const friendStore = useFriendStore.getState();
-        useFriendStore.setState({ friends: [...friendStore.friends] });
+        // ⚡ FIRE-AND-FORGET: Send to server (no await, no blocking)
+        axiosInstance.post(`/messages/send/${selectedUser.id}`, messageData)
+            .then(res => {
+                // ✅ Success: Replace temp message with server response
+                const serverMessage = {
+                    ...res.data,
+                    reactions: Array.isArray(res.data.reactions) ? res.data.reactions : []
+                };
+                
+                set(state => ({
+                    messages: state.messages.map(m =>
+                        m.tempId === tempId ? serverMessage : m
+                    )
+                }));
+            })
+            .catch(error => {
+                console.error('❌ Send failed:', error);
+                // ❌ Failure: Mark message as failed
+                set(state => ({
+                    messages: state.messages.map(m =>
+                        m.tempId === tempId ? { ...m, status: 'failed' } : m
+                    )
+                }));
+                
+                // Show error toast (non-blocking)
+                setTimeout(() => {
+                    toast.error("Message failed to send");
+                }, 100);
+            });
 
-        // 🔥 ULTRA-OPTIMIZED: Send via socket with no timeout delays
-        // 🔥 ULTRA-OPTIMIZED: Always use API for reliability (Socket is for updates only)
-        sendViaAPI();
-
-        /*      
-                // OLD LOGIC: Socket emission (Disabled as backend uses API primarily)
-                if (socket && socket.connected) {
-                     // ... 
-                } 
-        */
-
-        function sendViaAPI() {
-            axiosInstance.post(`/messages/send/${selectedUser.id}`, messageData)
-                .then(res => {
-                    console.log('✅ Message sent successfully via API:', res.data);
-                    const currentUser = get().selectedUser;
-                    if (currentUser?.id === selectedUser.id && res.data?.id) {
-                        const serverMessage = res.data;
-
-                        // Message sent successfully, no additional processing needed
-
-                        const normalizedMessage = {
-                            ...serverMessage,
-                            reactions: Array.isArray(serverMessage.reactions) ? serverMessage.reactions : []
-                        };
-
-                        set(state => ({
-                            messages: state.messages.map(m =>
-                                m.tempId === tempId ? normalizedMessage : m
-                            )
-                        }));
-                    }
-                })
-                .catch(error => {
-                    console.error('❌ Send failed:', error);
-                    set(state => ({
-                        messages: state.messages.map(m =>
-                            m.tempId === tempId ? { ...m, status: 'failed' } : m
-                        )
-                    }));
-                    toast.error("Failed to send message");
-                });
-        }
+        // ⚡ RETURN IMMEDIATELY (no waiting for server response)
+        return Promise.resolve(optimisticMessage);
     },
 
     subscribeToMessages: () => {

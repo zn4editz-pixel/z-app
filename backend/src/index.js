@@ -117,18 +117,26 @@ const startServer = async () => {
   app.use('/api/admin', adminRoutes);
   app.use('/api/settings', settingsRoutes);
 
-  // Socket.IO - Production ready configuration
+  // Socket.IO - Ultra-fast production configuration
   const io = new Server(server, {
     cors: {
       origin: allowedOrigins,
       credentials: true
     },
     transports: ['websocket', 'polling'],
-    // Production optimizations
-    pingTimeout: 60000,
-    pingInterval: 25000,
-    upgradeTimeout: 30000,
-    maxHttpBufferSize: 1e6, // 1MB
+    // ⚡ SPEED OPTIMIZATIONS
+    pingTimeout: 20000,     // Reduced from 60s to 20s
+    pingInterval: 10000,    // Reduced from 25s to 10s  
+    upgradeTimeout: 10000,  // Reduced from 30s to 10s
+    maxHttpBufferSize: 5e5, // Reduced from 1MB to 500KB
+    // Additional speed optimizations
+    allowEIO3: true,
+    compression: false,     // Disable compression for speed
+    httpCompression: false, // Disable HTTP compression
+    perMessageDeflate: false, // Disable per-message compression
+    // Connection optimizations
+    connectTimeout: 5000,   // 5 second connection timeout
+    serveClient: false,     // Don't serve client files
   });
 
   // Initialize Socket Handlers

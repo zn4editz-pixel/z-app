@@ -16,8 +16,41 @@ import { protectRoute } from '../middleware/auth.middleware.js';
 const router = express.Router();
 
 // Public health check endpoint
-router.get('/ping', (req, res) => {
-	res.json({ status: 'ok', timestamp: new Date().toISOString() });
+router.get('/ping', async (req, res) => {
+	try {
+		// Test database connection
+		const { ConnectionMonitor } = await import('../lib/db.js');
+		const dbHealth = await ConnectionMonitor.checkHealth();
+		
+		res.json({ 
+			status: 'ok', 
+			timestamp: new Date().toISOString(),
+			database: dbHealth.database || 'unknown'
+		});
+	} catch (error) {
+		res.json({ 
+			status: 'ok', 
+			timestamp: new Date().toISOString(),
+			database: 'error',
+			error: error.message
+		});
+	}
+});
+
+// Environment diagnostics endpoint
+router.get('/env', (req, res) => {
+	const envCheck = {
+		NODE_ENV: process.env.NODE_ENV || 'not set',
+		PORT: process.env.PORT || 'not set',
+		DATABASE_URL: process.env.DATABASE_URL ? 'set' : 'not set',
+		JWT_SECRET: process.env.JWT_SECRET ? 'set' : 'not set',
+		CLIENT_URL: process.env.CLIENT_URL || 'not set',
+		FRONTEND_URL: process.env.FRONTEND_URL || 'not set',
+		RENDER: process.env.RENDER || 'not set',
+		timestamp: new Date().toISOString()
+	};
+	
+	res.json(envCheck);
 });
 
 // Comprehensive health check
