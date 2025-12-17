@@ -2,49 +2,57 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      // Fix JSX runtime issues
+      jsxRuntime: 'automatic',
+      jsxImportSource: 'react',
+      // Ensure proper JSX handling
+      include: "**/*.{jsx,tsx}",
+    })
+  ],
   esbuild: {
-    drop: ['console', 'debugger'], // Remove console.* and debugger in production
+    // Don't drop console in production for debugging
+    drop: process.env.NODE_ENV === 'production' ? ['debugger'] : [],
+    jsx: 'automatic',
+    jsxFactory: 'React.createElement',
+    jsxFragment: 'React.Fragment',
   },
   build: {
     outDir: "dist",
     sourcemap: false,
-    chunkSizeWarningLimit: 1000, // Increase warning limit to 1MB
+    chunkSizeWarningLimit: 1000,
+    // Fix module resolution
     rollupOptions: {
+      external: [],
       output: {
-        manualChunks: (id) => {
-          // Split node_modules into smaller chunks
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'react-vendor';
-            }
-            if (id.includes('framer-motion') || id.includes('gsap')) {
-              return 'animations';
-            }
-            if (id.includes('socket.io') || id.includes('axios')) {
-              return 'network';
-            }
-            if (id.includes('lucide-react') || id.includes('react-hot-toast')) {
-              return 'ui-components';
-            }
-            if (id.includes('zustand') || id.includes('react-router')) {
-              return 'state-routing';
-            }
-            return 'vendor';
-          }
-          
-          // Split large application modules
-          if (id.includes('/src/pages/')) {
-            return 'pages';
-          }
-          if (id.includes('/src/components/')) {
-            return 'components';
-          }
-          if (id.includes('/src/store/')) {
-            return 'stores';
-          }
-        }
+        // Simpler chunking to avoid MIME type issues
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'router': ['react-router-dom'],
+          'ui': ['lucide-react', 'react-hot-toast'],
+          'state': ['zustand'],
+          'network': ['axios', 'socket.io-client']
+        },
+        // Ensure proper file extensions
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
+    },
+    // Fix module format
+    target: 'esnext',
+    minify: 'esbuild',
+  },
+  // Fix module resolution
+  resolve: {
+    alias: {
+      '@': '/src'
     }
   },
+  // Fix server configuration
+  server: {
+    port: 5173,
+    host: true
+  }
 });

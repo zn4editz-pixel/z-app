@@ -1,3 +1,4 @@
+import React from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useCallback, lazy, Suspense, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
