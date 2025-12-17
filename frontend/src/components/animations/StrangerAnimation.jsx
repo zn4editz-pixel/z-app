@@ -11,7 +11,11 @@ const StrangerAnimation = () => {
     // 4: CHAT (Text bubbles)
     // 5: EXIT (Float away)
 
-    // Specific characters for the match event
+    // State management
+    const [stage, setStage] = useState(0);
+    const [matchA, setMatchA] = useState(0);
+    const [matchB, setMatchB] = useState(1);
+    const [chatMessages, setChatMessages] = useState([]);
 
     // Cycle the animation
     useEffect(() => {
