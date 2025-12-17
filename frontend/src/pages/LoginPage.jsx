@@ -192,6 +192,7 @@ const LoginPage = () => {
 									className={`input input-bordered w-full pl-10`}
 									placeholder="Email or Username" // Updated placeholder
 									value={formData.emailOrUsername} // Updated value
+									autoComplete="username"
 									onChange={(e) =>
 										setFormData({ ...formData, emailOrUsername: e.target.value })
 									}
@@ -213,6 +214,7 @@ const LoginPage = () => {
 									className={`input input-bordered w-full pl-10`}
 									placeholder="Password"
 									value={formData.password}
+									autoComplete="current-password"
 									onChange={(e) =>
 										setFormData({ ...formData, password: e.target.value })
 									}

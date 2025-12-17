@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
-import { 
-	ArrowLeft, 
-	Eye, 
-	EyeOff, 
-	User, 
-	UserX, 
-	Shield, 
+import {
+	ArrowLeft,
+	Eye,
+	EyeOff,
+	User,
+	UserX,
+	Shield,
 	Settings,
 	Video,
 	MessageCircle,
@@ -18,9 +18,13 @@ import toast from "react-hot-toast";
 const StrangerChatSettings = () => {
 	const navigate = useNavigate();
 	const { authUser } = useAuthStore();
-	
+
 	// Privacy settings state
-	
+	const [showUsername, setShowUsername] = useState(true);
+	const [showProfilePic, setShowProfilePic] = useState(true);
+	const [showVerificationBadge, setShowVerificationBadge] = useState(true);
+	const [allowFriendRequests, setAllowFriendRequests] = useState(true);
+
 	// Load saved settings from localStorage
 	useEffect(() => {
 		const savedSettings = localStorage.getItem('strangerChatSettings');
@@ -32,7 +36,7 @@ const StrangerChatSettings = () => {
 			setAllowFriendRequests(settings.allowFriendRequests ?? true);
 		}
 	}, []);
-	
+
 	// Save settings to localStorage
 	const saveSettings = () => {
 		const settings = {
@@ -44,13 +48,13 @@ const StrangerChatSettings = () => {
 		localStorage.setItem('strangerChatSettings', JSON.stringify(settings));
 		toast.success("Privacy settings saved!");
 	};
-	
+
 	// Start stranger chat with current settings
 	const startStrangerChat = () => {
 		saveSettings();
 		navigate("/stranger");
 	};
-	
+
 	// Get display name based on settings
 	const getDisplayName = () => {
 		if (showUsername) {
@@ -58,13 +62,13 @@ const StrangerChatSettings = () => {
 		}
 		return "Stranger";
 	};
-	
+
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-base-200 to-base-300 p-4">
 			<div className="max-w-2xl mx-auto">
 				{/* Header */}
 				<div className="flex items-center gap-4 mb-8">
-					<button 
+					<button
 						onClick={() => navigate("/")}
 						className="btn btn-circle btn-outline"
 					>
@@ -75,7 +79,7 @@ const StrangerChatSettings = () => {
 						<p className="text-base-content/70">Choose what strangers can see about you</p>
 					</div>
 				</div>
-				
+
 				{/* Preview Card */}
 				<div className="card bg-base-100 shadow-xl mb-8">
 					<div className="card-body">
@@ -83,12 +87,12 @@ const StrangerChatSettings = () => {
 							<Eye className="w-5 h-5" />
 							Preview: How you'll appear to strangers
 						</h2>
-						
+
 						<div className="flex items-center gap-4 p-4 bg-base-200 rounded-lg">
 							<div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary">
 								{showProfilePic ? (
-									<img 
-										src={authUser?.profilePic || "/avatar.png"} 
+									<img
+										src={authUser?.profilePic || "/avatar.png"}
 										alt="Profile"
 										className="w-full h-full object-cover"
 									/>
@@ -109,7 +113,7 @@ const StrangerChatSettings = () => {
 						</div>
 					</div>
 				</div>
-				
+
 				{/* Privacy Settings */}
 				<div className="card bg-base-100 shadow-xl mb-8">
 					<div className="card-body">
@@ -117,7 +121,7 @@ const StrangerChatSettings = () => {
 							<Shield className="w-5 h-5" />
 							Privacy Settings
 						</h2>
-						
+
 						<div className="space-y-6">
 							{/* Username Visibility */}
 							<div className="flex items-center justify-between p-4 bg-base-200 rounded-lg">
@@ -130,14 +134,14 @@ const StrangerChatSettings = () => {
 										</p>
 									</div>
 								</div>
-								<input 
-									type="checkbox" 
-									className="toggle toggle-primary" 
+								<input
+									type="checkbox"
+									className="toggle toggle-primary"
 									checked={showUsername}
 									onChange={(e) => setShowUsername(e.target.checked)}
 								/>
 							</div>
-							
+
 							{/* Profile Picture Visibility */}
 							<div className="flex items-center justify-between p-4 bg-base-200 rounded-lg">
 								<div className="flex items-center gap-3">
@@ -149,14 +153,14 @@ const StrangerChatSettings = () => {
 										</p>
 									</div>
 								</div>
-								<input 
-									type="checkbox" 
-									className="toggle toggle-primary" 
+								<input
+									type="checkbox"
+									className="toggle toggle-primary"
 									checked={showProfilePic}
 									onChange={(e) => setShowProfilePic(e.target.checked)}
 								/>
 							</div>
-							
+
 							{/* Verification Badge */}
 							{authUser?.isVerified && (
 								<div className="flex items-center justify-between p-4 bg-base-200 rounded-lg">
@@ -169,15 +173,15 @@ const StrangerChatSettings = () => {
 											</p>
 										</div>
 									</div>
-									<input 
-										type="checkbox" 
-										className="toggle toggle-success" 
+									<input
+										type="checkbox"
+										className="toggle toggle-success"
 										checked={showVerificationBadge}
 										onChange={(e) => setShowVerificationBadge(e.target.checked)}
 									/>
 								</div>
 							)}
-							
+
 							{/* Friend Requests */}
 							<div className="flex items-center justify-between p-4 bg-base-200 rounded-lg">
 								<div className="flex items-center gap-3">
@@ -189,9 +193,9 @@ const StrangerChatSettings = () => {
 										</p>
 									</div>
 								</div>
-								<input 
-									type="checkbox" 
-									className="toggle toggle-secondary" 
+								<input
+									type="checkbox"
+									className="toggle toggle-secondary"
 									checked={allowFriendRequests}
 									onChange={(e) => setAllowFriendRequests(e.target.checked)}
 								/>
@@ -199,7 +203,7 @@ const StrangerChatSettings = () => {
 						</div>
 					</div>
 				</div>
-				
+
 				{/* Privacy Tips */}
 				<div className="alert alert-info mb-8">
 					<Shield className="w-5 h-5" />
@@ -213,17 +217,17 @@ const StrangerChatSettings = () => {
 						</div>
 					</div>
 				</div>
-				
+
 				{/* Action Buttons */}
 				<div className="flex gap-4">
-					<button 
+					<button
 						onClick={saveSettings}
 						className="btn btn-outline flex-1"
 					>
 						<Settings className="w-4 h-4" />
 						Save Settings
 					</button>
-					<button 
+					<button
 						onClick={startStrangerChat}
 						className="btn btn-primary flex-1"
 					>

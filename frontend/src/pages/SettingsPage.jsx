@@ -17,13 +17,28 @@ const SettingsPage = () => {
 
 
   // Image cropper state
-
+  const [showCropper, setShowCropper] = useState(false);
+  const [tempImage, setTempImage] = useState(null);
+  const [selectedImg, setSelectedImg] = useState(null);
+  const [newProfilePic, setNewProfilePic] = useState(null);
 
   // Profile editing states
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState(null);
+  const [profileData, setProfileData] = useState({
     username: '',
     bio: '',
     fullName: ''
   });
+
+  // Permission states
+  const [cameraStatus, setCameraStatus] = useState('not-tested');
+  const [micStatus, setMicStatus] = useState('not-tested');
+
+  // Modal states
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
     if (authUser) {

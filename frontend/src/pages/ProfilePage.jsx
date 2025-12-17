@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 
 const ProfilePage = () => {
   const { authUser, checkAuth } = useAuthStore();
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   return (
     <>

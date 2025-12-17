@@ -24,6 +24,8 @@ const Sidebar = () => {
 
   // State declarations
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
+  const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [, forceUpdate] = useState({});
 
   // 🔥 REAL-TIME: Force re-render for live status updates

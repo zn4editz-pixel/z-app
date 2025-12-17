@@ -324,8 +324,13 @@ const StrangerChatPage = () => {
 	const navigate = useNavigate();
 
 	// Core States
+	const [status, setStatus] = useState("lobby");
+	const [partnerUserId, setPartnerUserId] = useState(null);
+	const [partnerUserData, setPartnerUserData] = useState(null);
+	const [friendStatus, setFriendStatus] = useState("NOT_FRIENDS");
 
 	// Privacy Settings
+	const [privacySettings, setPrivacySettings] = useState({
 		showUsername: true,
 		showProfilePic: true,
 		showVerificationBadge: true,
@@ -333,12 +338,31 @@ const StrangerChatPage = () => {
 	});
 
 	// UI States
+	const [tempMessages, setTempMessages] = useState([]);
+	const [chatInput, setChatInput] = useState("");
+	const [currentMessage, setCurrentMessage] = useState(""); // For stranger chat message input
+	const [showChat, setShowChat] = useState(false);
+	const [showChatMessages, setShowChatMessages] = useState(false); // Toggle chat visibility
+	const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+	const [showReportModal, setShowReportModal] = useState(false);
+	const [reportScreenshot, setReportScreenshot] = useState(null);
+	const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+	const [hasPermissionError, setHasPermissionError] = useState(false);
 
 	// Media States
+	const [isVideoEnabled, setIsVideoEnabled] = useState(true);
+	const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+	const [isConnected, setIsConnected] = useState(false);
+	const [connectionQuality, setConnectionQuality] = useState("good");
 
 	// Stats
+	const [chatTime, setChatTime] = useState(0);
+	const [skipsLeft, setSkipsLeft] = useState(5);
 
 	// AI Moderation
+	const [aiWarningCount, setAiWarningCount] = useState(0);
+	const [showAIWarning, setShowAIWarning] = useState(false);
+	const [aiWarningMessage, setAiWarningMessage] = useState("");
 
 	// Refs
 	const chatTimerRef = useRef(null);
@@ -748,7 +772,7 @@ const StrangerChatPage = () => {
 			const getMediaStream = async () => {
 				// Import video quality optimizer
 				const { getOptimalVideoConstraints, getOptimalAudioConstraints } = await import('../utils/videoQualityOptimizer.js');
-				
+
 				const constraints = {
 					video: getOptimalVideoConstraints(),
 					audio: getOptimalAudioConstraints()

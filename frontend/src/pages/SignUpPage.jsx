@@ -223,6 +223,7 @@ const SignUpPage = () => {
 										className="input input-bordered w-full pl-10"
 										placeholder="Full Name"
 										value={formData.fullName}
+										autoComplete="name"
 										onChange={(e) =>
 											setFormData({ ...formData, fullName: e.target.value })
 										}
@@ -244,6 +245,7 @@ const SignUpPage = () => {
 										className="input input-bordered w-full pl-10"
 										placeholder="username"
 										value={formData.username}
+										autoComplete="username"
 										onChange={(e) =>
 											setFormData({ ...formData, username: e.target.value })
 										}
@@ -266,6 +268,7 @@ const SignUpPage = () => {
 									className="input input-bordered w-full pl-10"
 									placeholder="example@gmail.com"
 									value={formData.email}
+									autoComplete="email"
 									onChange={(e) =>
 										setFormData({ ...formData, email: e.target.value })
 									}
@@ -287,6 +290,7 @@ const SignUpPage = () => {
 									className="input input-bordered w-full pl-10"
 									placeholder="Password"
 									value={formData.password}
+									autoComplete="new-password"
 									onChange={(e) =>
 										setFormData({ ...formData, password: e.target.value })
 									}

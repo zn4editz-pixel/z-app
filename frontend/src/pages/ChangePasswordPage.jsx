@@ -6,10 +6,21 @@ import toast from "react-hot-toast";
 
 const ChangePasswordPage = () => {
   const navigate = useNavigate();
-  
+
   // Step 1 - OTP Request
-  
+  const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [maskedEmail, setMaskedEmail] = useState("");
+
   // Step 2 - Password Change
+  const [otp, setOtp] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSendOTP = async () => {
     setIsLoading(true);
@@ -108,7 +119,7 @@ const ChangePasswordPage = () => {
                 {/* Animated background shimmer */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
                               translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                
+
                 {isLoading ? (
                   <>
                     <span className="loading loading-spinner loading-sm relative z-10"></span>
@@ -147,6 +158,7 @@ const ChangePasswordPage = () => {
                   onChange={(e) => setOtp(e.target.value)}
                   placeholder="Enter 6-digit code"
                   maxLength={6}
+                  autoComplete="one-time-code"
                 />
               </div>
 
@@ -162,6 +174,7 @@ const ChangePasswordPage = () => {
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="Enter current password"
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
@@ -189,6 +202,7 @@ const ChangePasswordPage = () => {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Min 6 characters"
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
@@ -216,6 +230,7 @@ const ChangePasswordPage = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm new password"
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
@@ -246,7 +261,7 @@ const ChangePasswordPage = () => {
                 {/* Animated background shimmer */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
                               translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                
+
                 {isLoading ? (
                   <>
                     <span className="loading loading-spinner loading-sm relative z-10"></span>

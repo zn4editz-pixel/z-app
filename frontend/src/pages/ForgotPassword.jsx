@@ -7,6 +7,18 @@ import { User, Mail, ArrowLeft, Loader, Lock, Clock } from "lucide-react";
 const ForgotPassword = () => {
 	const navigate = useNavigate();
 
+	// Form state
+	const [step, setStep] = useState(1);
+	const [username, setUsername] = useState("");
+	const [otp, setOtp] = useState("");
+	const [password, setPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
+
+	// UI state
+	const [isLoading, setIsLoading] = useState(false);
+	const [maskedEmail, setMaskedEmail] = useState("");
+	const [countdown, setCountdown] = useState(0);
+
 	// Countdown timer for OTP expiry
 	useEffect(() => {
 		if (countdown > 0) {
@@ -36,7 +48,7 @@ const ForgotPassword = () => {
 	// Step 2: Verify OTP
 	const handleVerifyOTP = async (e) => {
 		e.preventDefault();
-		
+
 		if (countdown === 0) {
 			toast.error("OTP expired! Please request a new one.");
 			return;
@@ -92,7 +104,7 @@ const ForgotPassword = () => {
 		} catch (error) {
 			const errorMsg = error.response?.data?.message || "Failed to send OTP";
 			const errorCode = error.response?.data?.error;
-			
+
 			if (errorCode === "EMAIL_NOT_CONFIGURED") {
 				toast.error("Email service is not set up. Please contact support.");
 			} else if (errorCode === "EMAIL_AUTH_FAILED") {
@@ -157,6 +169,7 @@ const ForgotPassword = () => {
 									onChange={(e) => setUsername(e.target.value)}
 									required
 									autoFocus
+									autoComplete="username"
 								/>
 							</div>
 
@@ -210,6 +223,7 @@ const ForgotPassword = () => {
 									required
 									autoFocus
 									disabled={countdown === 0}
+									autoComplete="one-time-code"
 								/>
 								<label className="label">
 									<span className="label-text-alt">Enter the 6-digit code from your email</span>
@@ -264,6 +278,7 @@ const ForgotPassword = () => {
 									onChange={(e) => setPassword(e.target.value)}
 									required
 									autoFocus
+									autoComplete="new-password"
 								/>
 								<label className="label">
 									<span className="label-text-alt">Minimum 6 characters</span>
@@ -281,6 +296,7 @@ const ForgotPassword = () => {
 									value={confirmPassword}
 									onChange={(e) => setConfirmPassword(e.target.value)}
 									required
+									autoComplete="new-password"
 								/>
 							</div>
 

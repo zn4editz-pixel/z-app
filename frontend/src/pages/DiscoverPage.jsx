@@ -13,6 +13,8 @@ import { getId } from "../utils/idHelper";
 // Admin Notifications List Component
 const AdminNotificationsList = () => {
 	const { notifications, addNotification, clearNotification } = useNotificationStore();
+	const [isLoading, setIsLoading] = useState(true);
+	const [adminNotifications, setAdminNotifications] = useState([]);
 
 	// Load notifications from backend on mount - OPTIMIZED with cache
 	useEffect(() => {
@@ -185,6 +187,23 @@ const AdminNotificationsList = () => {
 const DiscoverPage = () => {
 	const { viewNotifications, getUnreadAdminCount } = useNotificationStore();
 
+	// Tab State
+	const [activeTab, setActiveTab] = useState("discover");
+
+	// Suggested Users State
+	const [suggestedUsers, setSuggestedUsers] = useState([]);
+	const [isLoadingSuggested, setIsLoadingSuggested] = useState(true);
+
+	// Search State
+	const [searchQuery, setSearchQuery] = useState("");
+	const [searchResults, setSearchResults] = useState([]);
+	const [isLoadingSearch, setIsLoadingSearch] = useState(false);
+
+	// Request Processing State
+	const [loadingRequestId, setLoadingRequestId] = useState(null);
+	const [isProcessingRequest, setIsProcessingRequest] = useState(false);
+	const [recentlyClicked, setRecentlyClicked] = useState(new Set());
+	const [buttonStates, setButtonStates] = useState(new Map());
 
 	const { pendingReceived, acceptRequest, rejectRequest, fetchFriendData, sendFriendRequest, getFriendshipStatus } = useFriendStore();
 	const { authUser } = useAuthStore();
@@ -493,8 +512,8 @@ const DiscoverPage = () => {
 						<button
 							onClick={() => setActiveTab("discover")}
 							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-all duration-300 text-xs sm:text-base relative ${activeTab === "discover"
-									? "text-base-content scale-105"
-									: "text-base-content/60 hover:text-base-content hover:bg-base-200/50"
+								? "text-base-content scale-105"
+								: "text-base-content/60 hover:text-base-content hover:bg-base-200/50"
 								}`}
 						>
 							<Search className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ${activeTab === "discover" ? "scale-110" : ""}`} />
@@ -503,8 +522,8 @@ const DiscoverPage = () => {
 						<button
 							onClick={() => setActiveTab("requests")}
 							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-all duration-300 relative text-xs sm:text-base ${activeTab === "requests"
-									? "text-base-content scale-105"
-									: "text-base-content/60 hover:text-base-content hover:bg-base-200/50"
+								? "text-base-content scale-105"
+								: "text-base-content/60 hover:text-base-content hover:bg-base-200/50"
 								}`}
 						>
 							<UserCheck className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ${activeTab === "requests" ? "scale-110" : ""}`} />
@@ -518,8 +537,8 @@ const DiscoverPage = () => {
 						<button
 							onClick={() => setActiveTab("notifications")}
 							className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-all duration-300 relative text-xs sm:text-base ${activeTab === "notifications"
-									? "text-base-content scale-105"
-									: "text-base-content/60 hover:text-base-content hover:bg-base-200/50"
+								? "text-base-content scale-105"
+								: "text-base-content/60 hover:text-base-content hover:bg-base-200/50"
 								}`}
 						>
 							<Bell className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ${activeTab === "notifications" ? "scale-110" : ""}`} />
@@ -745,8 +764,8 @@ const DiscoverPage = () => {
 								{/* Verification Status */}
 								{authUser?.verificationRequest?.status && authUser.verificationRequest.status !== "none" && (
 									<div className={`alert text-sm sm:text-base ${authUser.verificationRequest.status === "pending" ? "alert-warning" :
-											authUser.verificationRequest.status === "approved" ? "alert-success" :
-												"alert-error"
+										authUser.verificationRequest.status === "approved" ? "alert-success" :
+											"alert-error"
 										}`}>
 										<BadgeCheck className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
 										<div className="flex-1 min-w-0">
