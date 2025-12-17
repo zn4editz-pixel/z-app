@@ -438,7 +438,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction, isNewMessage = fals
       <div
         ref={messageRef}
         id={`message-${message.id}`}
-        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'message-with-reactions' : 'mb-3'} relative w-full max-w-full px-3 ${isMyMessage ? 'animate-message-sent' : 'animate-message-enter'}`}
+        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? 'message-with-reactions' : 'mb-3'} relative w-full max-w-full px-3 ${message.tempId ? 'animate-message-optimistic' : (isMyMessage ? 'animate-message-sent' : 'animate-message-enter')} message-no-flicker message-container-stable message-scroll-item`}
       >
         <div
           className="flex items-end gap-2 relative min-w-0"
@@ -458,7 +458,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction, isNewMessage = fals
           )}
 
           <div
-            className="message-bubble-container relative max-w-full"
+            className="message-bubble-container relative max-w-full message-bubble-hover"
             style={{
               WebkitTapHighlightColor: 'transparent',
               transform: `translateX(${swipeOffset}px)`,
@@ -551,7 +551,7 @@ const ChatMessage = ({ message, onReply, onFloatingReaction, isNewMessage = fals
             ) : (
               /* Message Bubble (for text, voice, or image+text) - NO BUBBLE for emoji-only or number-only */
               <div
-                className={(isEmojiOnly || isNumberOnly) ? "" : `relative px-4 py-3 text-sm shadow-sm message-bubble-professional ${isMyMessage
+                className={(isEmojiOnly || isNumberOnly) ? "" : `relative px-4 py-3 text-sm shadow-sm message-bubble-professional message-bubble-instagram message-bubble-instant ${isMyMessage
                   ? "bg-gradient-to-br from-primary to-primary/95 text-primary-content rounded-3xl rounded-br-lg"
                   : "bg-base-200/80 backdrop-blur-sm text-base-content rounded-3xl rounded-bl-lg border border-base-300/20"
                   }`}

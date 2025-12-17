@@ -1189,28 +1189,41 @@ body.react-loaded {
 
 /* Simple Message Entry Animation */
 /* Smooth message appearance animation */
-@keyframes message-appear {
+/* ===== INSTAGRAM-STYLE MESSAGE ANIMATIONS ===== */
+
+/* INSTANT message slide-in from bottom (like Instagram/WhatsApp) */
+@keyframes instagram-message-enter {
   0% {
-    opacity: 0;
-    transform: translateY(8px);
+    opacity: 0.85;
+    transform: translateY(6px) scale(0.99);
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
-/* Smooth message appearance animations */
+/* INSTANT message slide-in for sent messages (ultra fast) */
+@keyframes instagram-message-sent {
+  0% {
+    opacity: 0.9;
+    transform: translateY(4px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Instagram-style INSTANT message animations - NO FLICKER */
 .animate-message-enter {
-  animation: message-appear 0.2s ease-out forwards;
-  opacity: 0;
-  transform: translateY(8px);
+  animation: instagram-message-enter 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  opacity: 0.85; /* Start with high opacity to prevent flicker */
 }
 
 .animate-message-sent {
-  animation: message-appear 0.15s ease-out forwards;
-  opacity: 0;
-  transform: translateY(8px);
+  animation: instagram-message-sent 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  opacity: 0.9; /* Start with very high opacity for sent messages */
 }
 
 /* Prevent layout shifts in chat container */
@@ -1222,4 +1235,31 @@ body.react-loaded {
 .message-bubble-container {
   transition: none !important;
   transform: translateZ(0);
+}
+/* ULTRA-FAST animation for optimistic messages (sent messages) */
+@keyframes ultra-fast-sent {
+  0% {
+    opacity: 0.95;
+    transform: translateY(2px) scale(0.998);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-message-optimistic {
+  animation: ultra-fast-sent 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  opacity: 0.95;
+}
+
+/* Prevent any layout shift during message animation */
+.message-container-stable {
+  contain: layout style;
+  will-change: transform, opacity;
+}
+
+/* Smooth message bubble appearance */
+.message-bubble-instant {
+  animation: professional-message-fade 0.1s ease-out forwards;
 }
