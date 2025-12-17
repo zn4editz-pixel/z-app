@@ -58,8 +58,8 @@ const LoginPage = () => {
 
 	return (
 		<div className="min-h-[100dvh] bg-base-100 grid lg:grid-cols-2">
-			{/* Left Side - Form */}
-			<div className="flex flex-col justify-center items-center p-6 sm:p-12 login-form-container relative overflow-hidden lg:scale-90 lg:origin-center transition-transform">
+			{/* Left Side - Form with Scrolling */}
+			<div className="flex flex-col justify-center items-center p-6 sm:p-12 login-form-container relative overflow-y-auto lg:scale-90 lg:origin-center transition-transform max-h-[100dvh]">
 				{/* ❄️ Seasonal Snow Effect */}
 				{settings?.isSeasonalMode && <SnowEffect />}
 				{/* 💬 Chat Background Animation */}
@@ -193,15 +193,17 @@ const LoginPage = () => {
 				</div>
 			</div>
 
-			{/* Right Side - Image/Pattern */}
-			<AuthImagePattern
-				variant="login"
-				title={"Welcome Back!"}
-				subtitle={
-					"Sign in to continue your conversations and catch up with your messages."
-				}
-				animationType={settings?.loginAnimation} // Pass dynamic animation
-			/>
+			{/* Right Side - Fixed Animation Background */}
+			<div className="hidden lg:block relative overflow-hidden bg-gradient-to-br from-primary/10 to-secondary/10 fixed right-0 top-0 w-1/2 h-[100dvh]">
+				<AuthImagePattern
+					variant="login"
+					title={"Welcome Back!"}
+					subtitle={
+						"Sign in to continue your conversations and catch up with your messages."
+					}
+					animationType={settings?.loginAnimation} // Pass dynamic animation
+				/>
+			</div>
 		</div>
 	);
 };

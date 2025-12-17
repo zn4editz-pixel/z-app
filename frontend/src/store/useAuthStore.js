@@ -132,10 +132,9 @@ export const useAuthStore = create((set, get) => ({
 		} catch (error) {
 			console.log("Auth check failed:", error.response?.status, error.response?.data?.message || error.message);
 
-			// Clear auth for any auth failure (401) or user not found errors
-			if (error.response?.status === 401 || error.response?.status === 404 ||
-				error.message?.includes("User not found") || error.message?.includes("Invalid user")) {
-				console.log("🧹 Auth failed - clearing old authentication data");
+			// Only clear auth for specific auth failures, not network errors
+			if (error.response?.status === 401 && error.response?.data?.message?.includes("Invalid token")) {
+				console.log("🧹 Invalid token - clearing authentication data");
 				set({ authUser: null });
 				localStorage.removeItem("authUser");
 				localStorage.removeItem("token");
@@ -144,8 +143,8 @@ export const useAuthStore = create((set, get) => ({
 				useFriendStore.getState().clearFriendData();
 				toast.error("Please log in again - your session has expired");
 			} else {
-				// For network errors, keep the user logged in (offline support)
-				console.log("Network error during auth check, keeping user logged in");
+				// For network errors or other issues, keep the user logged in (offline support)
+				console.log("Network error or temporary issue during auth check, keeping user logged in");
 				const cachedUser = localStorage.getItem("authUser");
 				if (cachedUser) {
 					try {
@@ -156,17 +155,21 @@ export const useAuthStore = create((set, get) => ({
 							localStorage.removeItem("authUser");
 							localStorage.removeItem("token");
 							delete axiosInstance.defaults.headers.common['Authorization'];
-							set({ authUser: null, isCheckingAuth: false }); // Stop loading
+							set({ authUser: null, isCheckingAuth: false });
 							return;
 						}
-						// Trust cache ONLY if network fails
+						// Trust cache for network errors
 						set({ authUser: parsedUser, isCheckingAuth: false });
+						console.log("✅ Using cached user data due to network error");
 					} catch (e) {
 						console.error("Failed to parse cached user:", e);
 						localStorage.removeItem("authUser");
 						localStorage.removeItem("token");
 						set({ authUser: null });
 					}
+				} else {
+					// No cached user and network error - just stop loading
+					set({ isCheckingAuth: false });
 				}
 			}
 		} finally {

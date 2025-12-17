@@ -81,9 +81,9 @@ const SignUpPage = () => {
 	};
 
 	return (
-		<div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-base-100 grid lg:grid-cols-2 touch-none overscroll-none">
-			{/* Left Side */}
-			<div className="flex flex-col justify-center items-center p-6 sm:p-8 login-form-container relative overflow-hidden">
+		<div className="min-h-[100dvh] bg-base-100 grid lg:grid-cols-2">
+			{/* Left Side - Form with Scrolling */}
+			<div className="flex flex-col justify-center items-center p-6 sm:p-8 login-form-container relative overflow-y-auto max-h-[100dvh]">
 
 				{/* 💫 Text-Colored Particles Background */}
 				<div className="absolute inset-0 overflow-hidden -z-20 pointer-events-none">
@@ -267,8 +267,8 @@ const SignUpPage = () => {
 				</div>
 			</div>
 
-			{/* Right Side - Image (Hidden on Mobile) */}
-			<div className="hidden lg:block">
+			{/* Right Side - Fixed Animation Background */}
+			<div className="hidden lg:block relative overflow-hidden bg-gradient-to-br from-primary/10 to-secondary/10 fixed right-0 top-0 w-1/2 h-[100dvh]">
 				<AuthImagePattern
 					variant="signup"
 					title="Join our community"

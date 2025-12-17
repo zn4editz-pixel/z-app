@@ -197,7 +197,7 @@ const SOSBoard = () => {
                         </div>
                     )}
 
-                    <div className="relative grid grid-cols-5 gap-0.5 w-full max-w-[160px] sm:max-w-[200px] md:max-w-[220px] aspect-square">
+                    <div className="relative grid grid-cols-5 gap-0.5 w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] aspect-square mx-auto">
                         {/* Neon Lines SVG Overlay */}
                         {gameState.lines && gameState.lines.length > 0 && (
                             <svg
@@ -248,9 +248,10 @@ const SOSBoard = () => {
                                     onClick={() => handleCellClick(rIndex, cIndex)}
                                     disabled={!!cell || !isMyTurn || gameState.status !== 'playing'}
                                     className={`
-                                        rounded-lg sm:rounded-xl 
-                                        text-xl sm:text-2xl lg:text-3xl font-black 
+                                        rounded-md sm:rounded-lg md:rounded-xl 
+                                        text-lg sm:text-xl md:text-2xl lg:text-3xl font-black 
                                         flex items-center justify-center transition-all duration-200 aspect-square shadow-sm
+                                        min-h-[48px] sm:min-h-[56px] md:min-h-[64px]
                                         ${getCellColor(rIndex, cIndex)}
                                         ${(!cell && isMyTurn) ? "hover:scale-95 cursor-pointer ring-2 ring-primary/20" : ""}
                                     `}
