@@ -1,6 +1,4 @@
 import daisyui from "daisyui";
-// Force Rebuild: Theme Config Update
-
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -11,12 +9,7 @@ export default {
   plugins: [daisyui],
   daisyui: {
     themes: [
-      {
-        ...require("daisyui/src/theming/themes")["light"],
-        // "base-100": "#ffffff", // Use default
-        // "base-content": "#1f2937", // Standard dark grey, not blue
-
-      },
+      "light",
       "dark",
       "bumblebee",
       "synthwave",

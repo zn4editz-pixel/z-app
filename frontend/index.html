@@ -48,10 +48,10 @@
   <meta property="og:title" content="Z-APP | Connect Instantly - Real-time Chat & Video Calling" />
   <meta property="og:description"
     content="🚀 Modern real-time chat with HD video calls, voice messaging, and instant messaging. Connect with friends securely. Free to use! ✨" />
-  <meta property="og:image" content="https://z-app-official.vercel.app/z-app-preview-simple.svg" />
+  <meta property="og:image" content="https://z-app-official.vercel.app/z-app-preview.html" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Z-APP - Modern real-time chat application with video calling" />
+  <meta property="og:image:alt" content="Z-APP - Modern real-time chat application with video calling featuring the official Z-APP logo" />
   <meta property="og:site_name" content="Z-APP" />
   <meta property="og:locale" content="en_US" />
 
@@ -61,8 +61,8 @@
   <meta name="twitter:title" content="Z-APP | Connect Instantly - Real-time Chat & Video Calling" />
   <meta name="twitter:description"
     content="🚀 Modern real-time chat with HD video calls, voice messaging, and instant messaging. Free to use! ✨" />
-  <meta name="twitter:image" content="https://z-app-official.vercel.app/z-app-preview-simple.svg" />
-  <meta name="twitter:image:alt" content="Z-APP - Modern real-time chat application with video calling" />
+  <meta name="twitter:image" content="https://z-app-official.vercel.app/z-app-preview.html" />
+  <meta name="twitter:image:alt" content="Z-APP - Modern real-time chat application with video calling featuring the official Z-APP logo" />
   <meta name="twitter:creator" content="@ZApp" />
 
   <!-- ✅ SEO: Structured Data (JSON-LD) - Non-blocking -->
@@ -85,80 +85,155 @@
 
   <!-- ✅ PERFORMANCE: Preload main script for faster execution -->
   <link rel="modulepreload" href="/src/main.jsx" />
+  <script>
+    // CRITICAL: Apply theme IMMEDIATELY before any CSS loads to prevent flash
+    (function() {
+      try {
+        const theme = localStorage.getItem('chat-theme') || 'dark';
+        
+        // Define theme colors - more comprehensive list
+        const lightThemes = ['light', 'cupcake', 'bumblebee', 'emerald', 'corporate', 'retro', 'valentine', 'garden', 'lofi', 'pastel', 'fantasy', 'wireframe', 'cmyk', 'autumn', 'acid', 'lemonade', 'winter'];
+        const isLightTheme = lightThemes.includes(theme);
+        
+        // Apply background color immediately with higher specificity
+        const bgColor = isLightTheme ? '#f8fafc' : '#0f0f0f';
+        const textColor = isLightTheme ? '#0f172a' : '#f8fafc';
+        
+        // Set theme attribute first
+        document.documentElement.setAttribute('data-theme', theme);
+        
+        // Apply styles with maximum priority
+        const style = document.createElement('style');
+        style.textContent = `
+          html, body {
+            background-color: ${bgColor} !important;
+            color: ${textColor} !important;
+            transition: none !important;
+          }
+          #root {
+            background-color: ${bgColor} !important;
+            color: ${textColor} !important;
+          }
+        `;
+        document.head.insertBefore(style, document.head.firstChild);
+        
+        // Also set inline styles as backup
+        document.documentElement.style.setProperty('background-color', bgColor, 'important');
+        document.documentElement.style.setProperty('color', textColor, 'important');
+        
+        // Set CSS custom properties for later use
+        document.documentElement.style.setProperty('--initial-bg', bgColor);
+        document.documentElement.style.setProperty('--initial-text', textColor);
+        
+        // SECURITY: Disable console in production
+        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+          // Override console methods in production
+          const noop = function() {};
+          const methods = ['log', 'debug', 'info', 'warn', 'error', 'assert', 'dir', 'dirxml', 
+                          'group', 'groupEnd', 'time', 'timeEnd', 'count', 'trace', 'profile', 'profileEnd'];
+          
+          methods.forEach(function(method) {
+            console[method] = noop;
+          });
+          
+          // Prevent console from being re-enabled
+          Object.defineProperty(window, 'console', {
+            value: console,
+            writable: false,
+            configurable: false
+          });
+        }
+        
+      } catch (e) {
+        // Fallback to dark theme
+        const style = document.createElement('style');
+        style.textContent = `
+          html, body, #root {
+            background-color: #0f0f0f !important;
+            color: #f8fafc !important;
+            transition: none !important;
+          }
+        `;
+        document.head.insertBefore(style, document.head.firstChild);
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+
   <style>
-    /* Prevent white flash - set body background to theme color immediately */
-    html,
+    /* Prevent white flash - use CSS variables set by script */
+    html {
+      margin: 0;
+      padding: 0;
+      background-color: var(--initial-bg, #0f0f0f) !important;
+      color: var(--initial-text, #f8fafc) !important;
+      min-height: 100svh;
+      min-height: 100vh;
+      overflow-x: hidden;
+      max-width: 100vw;
+      /* Prevent any flash during load */
+      transition: none !important;
+    }
+
     body {
       margin: 0;
       padding: 0;
-      background-color: #000000;
-      /* Dark theme default */
-      /* Use svh (small viewport height) for better mobile support */
+      background-color: var(--initial-bg, #0f0f0f) !important;
+      color: var(--initial-text, #f8fafc) !important;
       min-height: 100svh;
       min-height: 100vh;
-      /* Fallback */
-      /* Prevent horizontal overflow */
       overflow-x: hidden;
       max-width: 100vw;
+      /* Prevent any flash during load */
+      transition: none !important;
     }
 
-    /* Light theme background - applied immediately via inline script */
-    html[data-theme="light"],
-    html[data-theme="light"] body {
-      background-color: #f3f4f6;
-      /* Light gray instead of white */
-    }
-
-    /* Ensure root container also gets theme background */
+    /* Ensure root container inherits theme background */
     #root {
-      background-color: inherit;
-    }
-
-    /* Root container should fill viewport */
-    #root {
+      background-color: inherit !important;
+      color: inherit !important;
       min-height: 100svh;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      /* Prevent horizontal overflow */
       overflow-x: hidden;
       max-width: 100vw;
     }
 
     /* Fix for mobile viewport - use svh for smallest viewport */
     @supports (min-height: 100svh) {
-
-      html,
-      body,
-      #root {
+      html, body, #root {
         min-height: 100svh;
       }
     }
 
     /* Ensure proper sizing on very small screens */
     @media (max-width: 375px) {
-
-      html,
-      body {
+      html, body {
         font-size: 14px;
       }
     }
+
+    /* Loading state - hide content until React loads to prevent flash */
+    #root:empty::before {
+      content: '';
+      display: block;
+      width: 100%;
+      height: 100vh;
+      background-color: inherit;
+    }
+
+    /* Prevent flash during theme transitions */
+    html, body {
+      transition: background-color 0ms !important;
+    }
+
+    /* Only enable smooth transitions after initial load */
+    html.react-loaded, 
+    html.react-loaded body {
+      transition: background-color 200ms ease !important;
+    }
   </style>
-
-  <script>
-    // Minimal inline script - apply theme immediately to prevent flash
-    try {
-      const t = localStorage.getItem('chat-theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', t);
-
-      // Fallback for very first load or if script is slow
-      if (t === 'light' || t === 'cupcake' || t === 'bumblebee' || t === 'emerald' || t === 'corporate' || t === 'synthwave') {
-        // It's a light theme, change background to avoid black flash
-        document.documentElement.style.setProperty('background-color', '#f3f4f6');
-        document.body.style.setProperty('background-color', '#f3f4f6');
-      }
-    } catch (e) { }
-  </script>
 </head>
 
 <body>

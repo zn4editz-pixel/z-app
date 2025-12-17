@@ -27,10 +27,11 @@ const getSocketURL = () => {
 
 const SOCKET_URL = getSocketURL();
 
+// Import secure logger
+import logger from "../utils/secureLogger.js";
+
 // Log the socket URL being used for debugging (only in development)
-if (import.meta.env.MODE === "development") {
-  console.log("Socket URL Configured:", SOCKET_URL);
-}
+logger.debug("Socket URL Configured:", SOCKET_URL);
 
 
 export const useAuthStore = create((set, get) => ({

@@ -10,11 +10,11 @@
   ],
   "headers": [
     {
-      "source": "/assets/(.*\\.js)$",
+      "source": "/assets/(.*\\.(js|mjs|jsx))$",
       "headers": [
         {
           "key": "Content-Type",
-          "value": "application/javascript"
+          "value": "application/javascript; charset=utf-8"
         },
         {
           "key": "Cache-Control",
@@ -23,11 +23,11 @@
       ]
     },
     {
-      "source": "/assets/(.*\\.jsx)$",
+      "source": "/(.*\\.(js|mjs|jsx))$",
       "headers": [
         {
           "key": "Content-Type",
-          "value": "application/javascript"
+          "value": "application/javascript; charset=utf-8"
         }
       ]
     },

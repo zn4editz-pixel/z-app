@@ -1,4 +1,6 @@
 // Temporary debug page to check environment variables
+import CountryFlagTest from '../components/CountryFlagTest';
+
 const DebugPage = () => {
   return (
     <div className="min-h-screen bg-base-200 p-8">
@@ -69,6 +71,11 @@ const DebugPage = () => {
             </span>
           </div>
         </div>
+      </div>
+      
+      {/* Country Flag Test Section */}
+      <div className="max-w-2xl mx-auto mt-8">
+        <CountryFlagTest />
       </div>
     </div>
   );

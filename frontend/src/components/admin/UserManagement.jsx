@@ -184,7 +184,12 @@ const UserManagement = ({
 												<span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
 												{user.country && (
 													<div className="flex items-center gap-1">
-														<CountryFlag countryCode={user.countryCode} size="sm" />
+														<CountryFlag 
+															countryCode={user.countryCode} 
+															size="sm" 
+															showName={false}
+															countryName={user.country}
+														/>
 														<span>{user.country}</span>
 													</div>
 												)}

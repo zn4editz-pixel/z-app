@@ -68,7 +68,11 @@ const App = () => {
 
 	// ✅ Sync theme to HTML tag (Critical for background color on mobile overscroll)
 	useEffect(() => {
-		document.documentElement.setAttribute("data-theme", effectiveTheme);
+		// Only update if theme actually changed to prevent flash
+		const currentTheme = document.documentElement.getAttribute("data-theme");
+		if (currentTheme !== effectiveTheme) {
+			document.documentElement.setAttribute("data-theme", effectiveTheme);
+		}
 	}, [effectiveTheme]);
 
 

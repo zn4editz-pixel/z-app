@@ -1,9 +1,10 @@
-/* Theme System - Force Refresh */
-@import './styles/animations.css';
-
+/* Import Tailwind CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Import animations after Tailwind */
+@import './styles/animations.css';
 
 /* Custom Scrollbar Styles */
 @layer utilities {
@@ -49,13 +50,13 @@
 /* Native smooth scrolling - works on all devices */
 html {
   scroll-behavior: smooth;
-  @apply bg-base-100;
+  /* Don't override background - let inline script handle it */
   min-height: 100%;
 }
 
 /* Better text rendering */
 body {
-  @apply bg-base-100 text-base-content;
+  /* Don't override background/text - let inline script handle it to prevent flash */
   min-height: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -64,6 +65,15 @@ body {
   /* Ensure body can scroll */
   overflow-x: hidden;
   overflow-y: auto;
+}
+
+/* Apply theme colors after React loads to avoid flash */
+html.react-loaded {
+  @apply bg-base-100 text-base-content;
+}
+
+body.react-loaded {
+  @apply bg-base-100 text-base-content;
 }
 
 /* Enable touch scrolling for all scrollable containers */

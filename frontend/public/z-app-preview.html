@@ -97,6 +97,14 @@
                 0 0 0 1px rgba(255, 255, 255, 0.1),
                 inset 0 1px 0 rgba(255, 255, 255, 0.2);
             position: relative;
+            padding: 20px;
+        }
+        
+        .logo-text {
+            font-size: 72px;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
         
         .logo::before {
@@ -113,12 +121,11 @@
             opacity: 0.6;
         }
         
-        .logo-text {
-            font-size: 80px;
-            font-weight: 900;
-            color: white;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-            letter-spacing: -2px;
+        .logo-img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.5));
         }
         
         /* Title with Gradient */
@@ -260,7 +267,7 @@
     <!-- Main Content -->
     <div class="preview-container">
         <div class="logo">
-            <div class="logo-text">Z</div>
+            <img src="z-logo.png" class="logo-img" alt="Z-APP Logo">
         </div>
         <div class="title">Z-APP</div>
         <div class="subtitle">Connect Instantly - Real-time Chat & Video Calling</div>

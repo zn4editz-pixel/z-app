@@ -12,8 +12,8 @@ export default defineConfig({
     })
   ],
   esbuild: {
-    // Don't drop console in production for debugging
-    drop: process.env.NODE_ENV === 'production' ? ['debugger'] : [],
+    // Drop console logs and debugger in production for security
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
     jsx: 'automatic',
     jsxFactory: 'React.createElement',
     jsxFragment: 'React.Fragment',
@@ -22,10 +22,14 @@ export default defineConfig({
     outDir: "dist",
     sourcemap: false,
     chunkSizeWarningLimit: 1000,
-    // Fix module resolution
+    // Fix module resolution and MIME types
     rollupOptions: {
       external: [],
       output: {
+        // Ensure all JS files have .js extension (not .jsx)
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
         // Simpler chunking to avoid MIME type issues
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
@@ -33,16 +37,14 @@ export default defineConfig({
           'ui': ['lucide-react', 'react-hot-toast'],
           'state': ['zustand'],
           'network': ['axios', 'socket.io-client']
-        },
-        // Ensure proper file extensions
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
+        }
       }
     },
-    // Fix module format
+    // Ensure proper module format
     target: 'esnext',
     minify: 'esbuild',
+    // Force proper file extensions
+    assetsInlineLimit: 0,
   },
   // Fix module resolution
   resolve: {
