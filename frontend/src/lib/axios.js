@@ -13,6 +13,11 @@ const getApiBaseUrl = () => {
     return apiUrl;
   }
   
+  // Hardcoded fallback for Render backend
+  if (window.location.hostname.includes('vercel.app')) {
+    return "https://z-app-backend.onrender.com";
+  }
+  
   // Fallback to current domain
   const protocol = window.location.protocol;
   const host = window.location.host;

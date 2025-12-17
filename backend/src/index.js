@@ -68,26 +68,34 @@ const startServer = async () => {
   const allowedOrigins = [
     process.env.FRONTEND_URL,
     process.env.CLIENT_URL,
+    "https://z-app-official.vercel.app", // Hardcoded fallback for Vercel
     "http://localhost:5173", // Development
     "http://localhost:3000", // Development
     "http://127.0.0.1:5173", // Development
   ].filter(Boolean);
 
+  console.log('🔗 Allowed CORS origins:', allowedOrigins);
+
   app.use(cors({
     origin: (origin, callback) => {
+      console.log('🌐 CORS request from origin:', origin);
+      
       // Allow requests with no origin (mobile apps, etc.)
       if (!origin) return callback(null, true);
       
       if (allowedOrigins.includes(origin)) {
+        console.log('✅ CORS allowed for:', origin);
         return callback(null, true);
       }
       
-      // In production, be strict about origins
+      // In production, be strict about origins but log the rejection
       if (process.env.NODE_ENV === 'production') {
+        console.log('❌ CORS rejected for:', origin);
         return callback(new Error('Not allowed by CORS'));
       }
       
       // In development, allow all origins
+      console.log('🔓 CORS allowed (development mode)');
       return callback(null, true);
     },
     credentials: true,
