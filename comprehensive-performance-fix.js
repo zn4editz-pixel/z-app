@@ -774,8 +774,10 @@ async function runOptimizations() {
     // Package optimization
     optimizePackageJson();
   } catch (error) {
+    console.error('❌ Optimization failed:', error);
     process.exit(1);
   }
 }
-can you// Run optimizations
+
+// Run optimizations
 runOptimizations();
