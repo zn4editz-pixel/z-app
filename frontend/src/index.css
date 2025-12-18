@@ -1,3 +1,6 @@
+/* Import chat improvements */
+@import './styles/chat-improvements.css';
+
 /* Import animations - must be first due to CSS @import rules */
 @import './styles/animations.css';
 
@@ -283,6 +286,15 @@ html {
       font-size: 16px !important;
       transform: translateZ(0);
     }
+  }
+
+  /* FORCE REMOVE INPUT FOCUS RING */
+  input:focus,
+  input:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: transparent !important;
+    ring: 0 !important;
   }
 
   /* Page transition wrapper styles */
@@ -1029,9 +1041,8 @@ html {
 
     /* Mobile chat mode full screen */
     .mobile-chat-fullscreen {
-      height: 100vh !important;
-      height: 100dvh !important;
-      /* Dynamic viewport height for mobile */
+      height: 100% !important;
+      /* Dynamic viewport height for mobile handled by browser with interactive-widget */
     }
 
     /* Prevent mobile address bar issues */
@@ -1207,10 +1218,12 @@ body.react-loaded {
   transition: none !important;
   transform: translateZ(0);
 }
+
 /* No animations - instant message appearance */
 .message-container-stable {
   contain: layout style;
 }
+
 /* ===== INSTAGRAM-STYLE REPLY ENHANCEMENTS ===== */
 
 /* Instagram-style highlight flash for replied messages */
@@ -1220,21 +1233,25 @@ body.react-loaded {
     transform: scale(1);
     box-shadow: none;
   }
+
   15% {
     background-color: hsl(var(--p) / 0.15);
     transform: scale(1.02);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   }
+
   30% {
     background-color: hsl(var(--p) / 0.25);
     transform: scale(1.01);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
   }
+
   60% {
     background-color: hsl(var(--p) / 0.12);
     transform: scale(1.005);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   }
+
   100% {
     background-color: transparent;
     transform: scale(1);
@@ -1286,11 +1303,12 @@ body.react-loaded {
     padding: 0.75rem;
     margin-bottom: 0.5rem;
   }
-  
+
   .instagram-reply-preview .pl-3 {
     padding-left: 0.75rem;
   }
 }
+
 /* ===== WORKING REPLY HIGHLIGHT EFFECT ===== */
 .message-highlight {
   background-color: rgba(59, 130, 246, 0.15) !important;

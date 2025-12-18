@@ -52,11 +52,10 @@ const ChatHeader = ({ onStartCall }) => {
   };
   return (
     <div
-      className={`${
-        isMobile
-          ? "fixed top-0 left-0 right-0 z-50 px-4 py-4 bg-base-100/95 backdrop-blur-xl border-t border-t-base-300/30 border-b border-base-300/50 shadow-lg mobile-chat-header-professional"
-          : "p-4 border-b border-base-300 relative bg-base-100 z-30"
-      } ${isMobile && keyboardVisible ? "mobile-chat-header-keyboard" : ""}`}
+      className={`${isMobile
+          ? "fixed top-0 left-0 right-0 z-50 px-3 py-1.5 bg-base-100/95 backdrop-blur-xl border-t border-t-base-300/30 border-b border-base-300/50 shadow-sm mobile-chat-header-professional"
+          : "px-4 py-2 border-b border-base-300 relative bg-base-100 z-30"
+        } ${isMobile && keyboardVisible ? "mobile-chat-header-keyboard" : ""}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -69,7 +68,7 @@ const ChatHeader = ({ onStartCall }) => {
           </button>
           {/* Avatar with Online Indicator */}
           <div className="relative flex-shrink-0">
-            <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-base-300/30 shadow-sm">
+            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-base-300/30 shadow-sm">
               <img
                 src={selectedUser.profilePic || "/avatar.png"}
                 alt={selectedUser.username}
@@ -107,7 +106,7 @@ const ChatHeader = ({ onStartCall }) => {
           {/* Video Call Button */}
           <button
             onClick={() => handleStartCall("video")}
-            className="w-11 h-11 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation group"
+            className="w-8 h-8 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation group"
             title="Video Call"
           >
             <Video className="w-5 h-5 text-base-content group-hover:text-primary transition-colors" />
@@ -115,7 +114,7 @@ const ChatHeader = ({ onStartCall }) => {
           {/* Audio Call Button */}
           <button
             onClick={() => handleStartCall("audio")}
-            className="w-11 h-11 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation group"
+            className="w-8 h-8 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation group"
             title="Voice Call"
           >
             <Phone className="w-5 h-5 text-base-content group-hover:text-primary transition-colors" />

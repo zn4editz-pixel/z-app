@@ -7,6 +7,7 @@ import { useFriendStore } from "./useFriendStore";
 export const useChatStore = create((set, get) => ({
   // --- Existing Chat State ---
   messages: [],
+  hasMoreMessages: true,
   selectedUser: null,
   isMessagesLoading: false,
   unreadCounts: {},
@@ -34,6 +35,34 @@ export const useChatStore = create((set, get) => ({
       const res = await axiosInstance.get("/messages/unread-counts");
       set({ unreadCounts: res.data || {} });
     } catch (error) {}
+  },
+
+  loadMoreMessages: async (userId) => {
+    const { messages } = get();
+    if (messages.length === 0) return;
+    
+    try {
+      const oldestMessage = messages[0];
+      const response = await axiosInstance.get(`/messages/${userId}`, {
+        params: {
+          before: oldestMessage.createdAt,
+          limit: 50
+        }
+      });
+      
+      const olderMessages = response.data;
+      if (olderMessages.length > 0) {
+        set((state) => ({
+          messages: [...olderMessages, ...state.messages],
+          hasMoreMessages: olderMessages.length === 50
+        }));
+      } else {
+        set({ hasMoreMessages: false });
+      }
+    } catch (error) {
+      console.error("Failed to load more messages:", error);
+      set({ hasMoreMessages: false });
+    }
   },
 
   getMessages: async (userId) => {

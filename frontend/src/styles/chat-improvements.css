@@ -1,0 +1,522 @@
+/* ===== CHAT UI IMPROVEMENTS ===== */
+
+/* 1. REDUCED CHAT BAR HEIGHT - Instagram/WhatsApp Style */
+.mobile-message-input-professional {
+  padding: 8px 12px !important; /* Reduced from 12px 16px */
+  min-height: 60px !important; /* Reduced from 80px */
+}
+
+.mobile-message-input-professional .flex {
+  gap: 8px !important; /* Reduced gap */
+}
+
+/* Reduced input container height */
+.mobile-message-input-professional input {
+  padding: 8px 12px !important; /* Reduced padding */
+  min-height: 36px !important; /* Reduced height */
+  font-size: 15px !important; /* Slightly smaller font */
+}
+
+/* 2. REDUCED TOP BAR HEIGHT - Professional Mobile Header */
+.mobile-chat-header-professional {
+  padding: 8px 12px !important; /* Reduced from 12px 16px */
+  min-height: 56px !important; /* Reduced from 70px */
+}
+
+.mobile-chat-header-professional .flex {
+  gap: 8px !important; /* Reduced gap */
+}
+
+/* Smaller avatar in header */
+.mobile-chat-header-professional .w-10 {
+  width: 36px !important;
+  height: 36px !important;
+}
+
+/* 3. INSTAGRAM-LEVEL SCROLLING & INFINITE LOADING */
+.professional-chat-container {
+  scroll-behavior: smooth !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+  
+  /* Enhanced scrolling performance */
+  will-change: scroll-position;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Infinite scroll loading indicator */
+.infinite-scroll-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.3s ease;
+}
+
+.infinite-scroll-loader.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.infinite-scroll-loader .loading-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.infinite-scroll-loader .loading-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: oklch(var(--bc) / 0.3);
+  animation: loading-bounce 1.4s ease-in-out infinite;
+}
+
+.infinite-scroll-loader .loading-dot:nth-child(1) { animation-delay: 0s; }
+.infinite-scroll-loader .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.infinite-scroll-loader .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes loading-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+
+/* 4. FIX BLUE RECTANGLE WHILE TYPING */
+/* Remove all focus outlines and blue rectangles */
+.mobile-message-input-professional input:focus,
+.mobile-message-input-professional input:focus-visible,
+.mobile-message-input-professional input:active {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+/* Remove webkit autofill styling */
+.mobile-message-input-professional input:-webkit-autofill,
+.mobile-message-input-professional input:-webkit-autofill:hover,
+.mobile-message-input-professional input:-webkit-autofill:focus,
+.mobile-message-input-professional input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px transparent inset !important;
+  -webkit-text-fill-color: inherit !important;
+  background: transparent !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* 5. IMPROVED TRANSITIONS - Smooth & Professional */
+.message-bubble-professional {
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.chat-message-container {
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Smooth message input transitions */
+.mobile-message-input-professional {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+/* Smooth header transitions */
+.mobile-chat-header-professional {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+/* 6. FASTER CHAT LOADING - Optimize Initial Load */
+.chat-container-optimized {
+  contain: layout style paint;
+  content-visibility: auto;
+}
+
+.message-optimized {
+  contain: layout style;
+  will-change: auto;
+}
+
+/* Preload optimization */
+.chat-preload {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* 7. MOBILE REACTION EMOJIS - Long Press Fix */
+.message-bubble-container {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  
+  /* Enhanced touch handling */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Long press reaction picker - Mobile Optimized */
+.reaction-picker-mobile {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: oklch(var(--b1) / 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px 24px 0 0;
+  padding: 20px;
+  z-index: 9999;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.reaction-picker-mobile.visible {
+  transform: translateY(0);
+}
+
+.reaction-picker-mobile .reaction-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.reaction-picker-mobile .reaction-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: oklch(var(--b2));
+  font-size: 24px;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.reaction-picker-mobile .reaction-button:active {
+  transform: scale(0.9);
+  background: oklch(var(--p) / 0.1);
+}
+
+/* Enhanced haptic feedback */
+.haptic-feedback {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.haptic-feedback:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+/* 8. SMOOTH MESSAGE ANIMATIONS - Instagram Style */
+@keyframes message-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.message-enter-animation {
+  animation: message-slide-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* 9. OPTIMIZED SCROLL PERFORMANCE */
+.chat-scroll-optimized {
+  /* Enable hardware acceleration */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  
+  /* Optimize for performance */
+  will-change: scroll-position;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  
+  /* Reduce scroll jank */
+  overscroll-behavior: contain;
+  -webkit-overscroll-behavior: contain;
+}
+
+/* 10. MOBILE KEYBOARD HANDLING */
+@media (max-width: 768px) {
+  /* Adjust chat container when keyboard is visible */
+  .mobile-chat-container.keyboard-visible {
+    padding-bottom: 60px !important; /* Reduced space */
+  }
+  
+  /* Optimize input for mobile keyboard */
+  .mobile-message-input-professional.keyboard-visible {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+  }
+  
+  /* Prevent zoom on input focus */
+  .mobile-message-input-professional input {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+}
+
+/* 11. ENHANCED TOUCH INTERACTIONS */
+.touch-optimized {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* Long press detection improvement */
+.long-press-target {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 12. PROFESSIONAL LOADING STATES */
+.chat-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.chat-loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid oklch(var(--bc) / 0.1);
+  border-top: 2px solid oklch(var(--p));
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 13. IMPROVED MESSAGE STATUS INDICATORS */
+.message-status-optimized {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.message-status-optimized.read {
+  opacity: 0.8;
+  color: oklch(var(--su));
+}
+
+/* 14. ENHANCED REPLY SYSTEM */
+.reply-preview-optimized {
+  background: oklch(var(--b2) / 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-left: 3px solid oklch(var(--p));
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.reply-preview-optimized:active {
+  transform: scale(0.98);
+  background: oklch(var(--b2) / 0.7);
+}
+
+/* 15. OPTIMIZED EMOJI REACTIONS */
+.reaction-badge-optimized {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: oklch(var(--b1));
+  border: 1px solid oklch(var(--bc) / 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.reaction-badge-optimized:active {
+  transform: scale(0.95);
+}
+
+.reaction-badge-optimized.my-reaction {
+  background: oklch(var(--p) / 0.1);
+  border-color: oklch(var(--p) / 0.3);
+  color: oklch(var(--p));
+}
+
+/* 16. SMOOTH TYPING INDICATOR */
+.typing-indicator-optimized {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: oklch(var(--b2) / 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 18px;
+  margin: 8px 0;
+  animation: typing-slide-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes typing-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.typing-dots-optimized {
+  display: flex;
+  gap: 3px;
+}
+
+.typing-dot-optimized {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: oklch(var(--bc) / 0.5);
+  animation: typing-bounce-optimized 1.4s ease-in-out infinite;
+}
+
+.typing-dot-optimized:nth-child(1) { animation-delay: 0s; }
+.typing-dot-optimized:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot-optimized:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-bounce-optimized {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* 17. PERFORMANCE OPTIMIZATIONS */
+.chat-performance-optimized {
+  /* Enable GPU acceleration */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  
+  /* Optimize rendering */
+  will-change: auto;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  
+  /* Contain layout changes */
+  contain: layout style paint;
+}
+
+/* 18. MOBILE VIEWPORT FIXES */
+@media (max-width: 768px) {
+  /* Fix mobile viewport issues */
+  .mobile-chat-fullscreen {
+    height: 100vh !important;
+    height: 100dvh !important;
+    overflow: hidden;
+  }
+  
+  /* Optimize for mobile performance */
+  .mobile-optimized {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+}
+
+/* 19. ENHANCED VISUAL FEEDBACK */
+.visual-feedback-optimized {
+  position: relative;
+  overflow: hidden;
+}
+
+.visual-feedback-optimized::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+  pointer-events: none;
+}
+
+.visual-feedback-optimized:active::after {
+  width: 100px;
+  height: 100px;
+}
+
+/* 20. ACCESSIBILITY IMPROVEMENTS */
+.accessibility-optimized {
+  /* Ensure proper focus indicators */
+  outline: none;
+  position: relative;
+}
+
+.accessibility-optimized:focus-visible::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 2px solid oklch(var(--p));
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .message-bubble-professional {
+    border: 1px solid oklch(var(--bc) / 0.3);
+  }
+  
+  .reaction-badge-optimized {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .message-enter-animation,
+  .typing-slide-in,
+  .chat-performance-optimized {
+    animation: none !important;
+    transition: none !important;
+  }
+}

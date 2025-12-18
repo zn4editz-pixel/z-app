@@ -12,7 +12,8 @@
   <link rel="apple-touch-icon" href="/z-fav.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/z-fav.png" />
   <link rel="shortcut icon" href="/z-fav.png" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
 
   <!-- Google Search Console Verification -->
   <!-- REPLACE WITH YOUR VERIFICATION CODE FROM GOOGLE SEARCH CONSOLE -->
@@ -36,7 +37,7 @@
   <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0f0f0f" />
   <meta name="msapplication-TileColor" content="#FF9933" />
-  
+
   <!-- Mobile viewport and color fixes -->
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="format-detection" content="telephone=no" />
@@ -56,10 +57,11 @@
   <meta property="og:title" content="Z-APP | Connect Instantly - Real-time Chat & Video Calling" />
   <meta property="og:description"
     content="🚀 Modern real-time chat with HD video calls, voice messaging, and instant messaging. Connect with friends securely. Free to use! ✨" />
-  <meta property="og:image" content="https://z-app-official.vercel.app/z-app-preview.html" />
+  <meta property="og:image" content="https://z-app-official.vercel.app/z-app-logo.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Z-APP - Modern real-time chat application with video calling featuring the official Z-APP logo" />
+  <meta property="og:image:alt"
+    content="Z-APP - Modern real-time chat application with video calling featuring the official Z-APP logo" />
   <meta property="og:site_name" content="Z-APP" />
   <meta property="og:locale" content="en_US" />
 
@@ -69,8 +71,9 @@
   <meta name="twitter:title" content="Z-APP | Connect Instantly - Real-time Chat & Video Calling" />
   <meta name="twitter:description"
     content="🚀 Modern real-time chat with HD video calls, voice messaging, and instant messaging. Free to use! ✨" />
-  <meta name="twitter:image" content="https://z-app-official.vercel.app/z-app-preview.html" />
-  <meta name="twitter:image:alt" content="Z-APP - Modern real-time chat application with video calling featuring the official Z-APP logo" />
+  <meta name="twitter:image" content="https://z-app-official.vercel.app/z-app-logo.png" />
+  <meta name="twitter:image:alt"
+    content="Z-APP - Modern real-time chat application with video calling featuring the official Z-APP logo" />
   <meta name="twitter:creator" content="@ZApp" />
 
   <!-- ✅ SEO: Structured Data (JSON-LD) - Non-blocking -->
@@ -95,21 +98,21 @@
   <link rel="modulepreload" href="/src/main.jsx" />
   <script>
     // CRITICAL: Apply theme IMMEDIATELY before any CSS loads to prevent flash
-    (function() {
+    (function () {
       try {
         const theme = localStorage.getItem('chat-theme') || 'dark';
-        
+
         // Define theme colors - more comprehensive list
         const lightThemes = ['light', 'cupcake', 'bumblebee', 'emerald', 'corporate', 'retro', 'valentine', 'garden', 'lofi', 'pastel', 'fantasy', 'wireframe', 'cmyk', 'autumn', 'acid', 'lemonade', 'winter'];
         const isLightTheme = lightThemes.includes(theme);
-        
+
         // Apply background color immediately with higher specificity
         const bgColor = isLightTheme ? '#f8fafc' : '#0f0f0f';
         const textColor = isLightTheme ? '#0f172a' : '#f8fafc';
-        
+
         // Set theme attribute first
         document.documentElement.setAttribute('data-theme', theme);
-        
+
         // Apply styles with maximum priority
         const style = document.createElement('style');
         style.textContent = `
@@ -124,26 +127,26 @@
           }
         `;
         document.head.insertBefore(style, document.head.firstChild);
-        
+
         // Also set inline styles as backup
         document.documentElement.style.setProperty('background-color', bgColor, 'important');
         document.documentElement.style.setProperty('color', textColor, 'important');
-        
+
         // Set CSS custom properties for later use
         document.documentElement.style.setProperty('--initial-bg', bgColor);
         document.documentElement.style.setProperty('--initial-text', textColor);
-        
+
         // SECURITY: Disable console in production
         if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
           // Override console methods in production
-          const noop = function() {};
-          const methods = ['log', 'debug', 'info', 'warn', 'error', 'assert', 'dir', 'dirxml', 
-                          'group', 'groupEnd', 'time', 'timeEnd', 'count', 'trace', 'profile', 'profileEnd'];
-          
-          methods.forEach(function(method) {
+          const noop = function () { };
+          const methods = ['log', 'debug', 'info', 'warn', 'error', 'assert', 'dir', 'dirxml',
+            'group', 'groupEnd', 'time', 'timeEnd', 'count', 'trace', 'profile', 'profileEnd'];
+
+          methods.forEach(function (method) {
             console[method] = noop;
           });
-          
+
           // Prevent console from being re-enabled
           Object.defineProperty(window, 'console', {
             value: console,
@@ -151,7 +154,7 @@
             configurable: false
           });
         }
-        
+
       } catch (e) {
         // Fallback to dark theme
         const style = document.createElement('style');
@@ -210,14 +213,19 @@
 
     /* Fix for mobile viewport - use svh for smallest viewport */
     @supports (min-height: 100svh) {
-      html, body, #root {
+
+      html,
+      body,
+      #root {
         min-height: 100svh;
       }
     }
 
     /* Ensure proper sizing on very small screens */
     @media (max-width: 375px) {
-      html, body {
+
+      html,
+      body {
         font-size: 14px;
       }
     }
@@ -232,12 +240,13 @@
     }
 
     /* Prevent flash during theme transitions */
-    html, body {
+    html,
+    body {
       transition: background-color 0ms !important;
     }
 
     /* Only enable smooth transitions after initial load */
-    html.react-loaded, 
+    html.react-loaded,
     html.react-loaded body {
       transition: background-color 200ms ease !important;
     }
