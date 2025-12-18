@@ -58,7 +58,7 @@ export const getAllUsers = async (req, res) => {
       orderBy: { createdAt: "desc" },
       select: {
         id: true, fullName: true, email: true, username: true, profilePic: true,
-        isOnline: true, isVerified: true, role: true, status: true, createdAt: true,
+        isOnline: true, isVerified: true, isBlocked: true, isSuspended: true, suspensionReason: true, createdAt: true,
         receivedReports: { select: { id: true } }
       },
     });
@@ -73,6 +73,7 @@ export const getAllUsers = async (req, res) => {
     const formattedUsers = users.map((user) => ({
       ...user,
       isOnline: onlineUserIds.includes(String(user.id)) || user.isOnline,
+      status: user.isBlocked ? 'banned' : (user.isSuspended ? 'suspended' : 'active'), // Derived status for frontend
       reportCount: user.receivedReports.length,
     }));
     res.status(200).json(formattedUsers);
@@ -81,15 +82,32 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-const updateUserStatus = async (userId, status, banReason = null) => {
+const updateUserStatus = async (userId, status, reason = null) => {
+  const data = {};
+  if (status === 'active') {
+    data.isSuspended = false;
+    data.isBlocked = false;
+    data.suspensionReason = null;
+    data.suspensionEndTime = null;
+  } else if (status === 'suspended') {
+    data.isSuspended = true;
+    data.suspensionReason = reason;
+    // Default suspension 24h if not specified? Or just indefinite until unsuspended.
+    // Schema has suspensionEndTime. Let's leave it null for indefinite or handle elsewhere.
+  } else if (status === 'banned') {
+    data.isBlocked = true;
+    data.suspensionReason = reason; // Use suspensionReason for ban reason too if widely used
+  }
+
   const updatedUser = await prisma.user.update({
     where: { id: userId },
-    data: { status, banReason: status === 'active' ? null : banReason },
+    data: data,
   });
+
   // Notify via email
   if (status !== 'active') {
     const action = status === 'banned' ? 'Playing Account Banned' : 'Account Suspended';
-    sendAccountSuspendedEmail(updatedUser.email, updatedUser.fullName, action, banReason);
+    sendAccountSuspendedEmail(updatedUser.email, updatedUser.fullName, action, reason);
   }
   // Force disconnect
   try {
@@ -262,7 +280,7 @@ export const getReports = async (req, res) => {
       orderBy: { createdAt: 'desc' },
       include: {
         reporter: { select: { id: true, username: true, email: true } },
-        reportedUser: { select: { id: true, username: true, email: true, profilePic: true, status: true } }
+        reportedUser: { select: { id: true, username: true, email: true, profilePic: true, isBlocked: true, isSuspended: true } }
       }
     });
     res.status(200).json(reports);
