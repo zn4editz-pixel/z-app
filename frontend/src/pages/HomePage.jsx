@@ -228,7 +228,7 @@ const HomePage = () => {
             {!isMobileChatMode && <Sidebar />}
             {/* Chat area */}
             {selectedUser ? (
-              <ChatContainer onStartCall={handleStartCall} />
+              <div className="chat-slide-transition"><ChatContainer onStartCall={handleStartCall} />
             ) : isRestoringChat ? (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">

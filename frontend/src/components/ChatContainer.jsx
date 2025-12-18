@@ -163,7 +163,7 @@ const EnhancedChatContainer = ({ onStartCall }) => {
     }
   }, []);
 
-  // Initialize chat
+  // Initialize chat with Instagram-style transition
   useEffect(() => {
     if (!selectedUser?.id) return;
 
@@ -177,30 +177,35 @@ const EnhancedChatContainer = ({ onStartCall }) => {
     // Load initial messages
     getMessages?.(selectedUser.id);
 
-    // Smooth scroll to bottom after brief delay
-    setTimeout(() => {
-      if (scrollContainerRef.current) {
-        scrollToBottomSmooth("auto");
-      }
-    }, 100);
+    // Instagram-style instant scroll to bottom - NO ANIMATION
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
 
     return () => {
       // Cleanup handled by store
     };
   }, [selectedUser?.id, getMessages]);
 
-  // Enhanced scroll management
+  // Enhanced scroll management - Instagram style
   const scrollToBottomSmooth = useCallback((behavior = "smooth") => {
     if (!scrollContainerRef.current) return;
     
     const container = scrollContainerRef.current;
+    
+    // For initial load, always use instant scroll
+    if (isInitialLoad.current) {
+      container.scrollTop = container.scrollHeight;
+      return;
+    }
+    
     container.scrollTo({
       top: container.scrollHeight,
       behavior: behavior,
     });
   }, []);
 
-  // Handle new messages with smart scrolling
+  // Handle new messages with smart scrolling - Instagram style
   useEffect(() => {
     if (!bottomRef.current || !scrollContainerRef.current) return;
     
@@ -228,16 +233,36 @@ const EnhancedChatContainer = ({ onStartCall }) => {
           }
         }
       } else if (isInitialLoad.current) {
-        // Initial load - instant scroll
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-        }
+        // Instagram-style: INSTANT scroll to bottom - multiple attempts for reliability
+        const instantScroll = () => {
+          if (scrollContainerRef.current) {
+            const container = scrollContainerRef.current;
+            container.scrollTop = container.scrollHeight;
+          }
+        };
+        
+        // Immediate scroll
+        instantScroll();
+        
+        // Additional attempts to ensure it works
+        setTimeout(instantScroll, 0);
+        setTimeout(instantScroll, 10);
+        setTimeout(instantScroll, 50);
+        
         isInitialLoad.current = false;
       }
       
       previousMessagesLength.current = messages.length;
     }
   }, [messages.length, authUser?.id, scrollToBottomSmooth]);
+
+  // Instagram-style instant scroll on initial load - before paint
+  useLayoutEffect(() => {
+    if (messages.length > 0 && isInitialLoad.current && scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      container.scrollTop = container.scrollHeight;
+    }
+  }, [messages]);
 
   // Handle typing indicator scroll
   useEffect(() => {
@@ -259,13 +284,15 @@ const EnhancedChatContainer = ({ onStartCall }) => {
   const scrollToBottom = useCallback((smooth = true) => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
-      if (smooth) {
+      
+      // Instagram-style: Always instant scroll for initial load
+      if (isInitialLoad.current || !smooth) {
+        container.scrollTop = container.scrollHeight;
+      } else {
         container.scrollTo({
           top: container.scrollHeight,
           behavior: "smooth",
         });
-      } else {
-        container.scrollTop = container.scrollHeight;
       }
       setShowNewMessageButton(false);
       setNewMessageCount(0);
@@ -293,7 +320,7 @@ const EnhancedChatContainer = ({ onStartCall }) => {
   }
 
   return (
-    <div className={`flex-1 flex flex-col h-full w-full chat-performance-optimized ${
+    <div className={`flex-1 flex flex-col h-full w-full chat-performance-optimized chat-container-enter ${
       isMobile ? "mobile-chat-fullscreen" : ""
     }`}>
       <ChatHeader onStartCall={handleStartCall} />
@@ -302,11 +329,11 @@ const EnhancedChatContainer = ({ onStartCall }) => {
         ref={scrollContainerRef}
         onScroll={handleScroll}
         data-chat-container
-        className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent relative chat-scroll-optimized ${
+        className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent relative chat-scroll-optimized instant-scroll ${
           isMobile 
             ? `pt-24 mobile-chat-container professional-chat-container ${keyboardVisible ? 'keyboard-visible' : ''}` 
             : "pt-6"
-        }`}
+        } ${isInitialLoad.current ? 'chat-initial-load' : ''}`}
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         {/* Instagram-style loading more indicator */}

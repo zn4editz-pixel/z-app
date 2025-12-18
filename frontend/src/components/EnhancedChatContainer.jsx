@@ -178,11 +178,10 @@ const EnhancedChatContainer = ({ onStartCall }) => {
     getMessages?.(selectedUser.id);
 
     // Smooth scroll to bottom after brief delay
-    setTimeout(() => {
-      if (scrollContainerRef.current) {
-        scrollToBottomSmooth("auto");
-      }
-    }, 100);
+    // Instagram-style instant scroll to bottom - NO ANIMATION
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
 
     return () => {
       // Cleanup handled by store
@@ -293,7 +292,7 @@ const EnhancedChatContainer = ({ onStartCall }) => {
   }
 
   return (
-    <div className={`flex-1 flex flex-col h-full w-full chat-performance-optimized ${
+    <div className={`flex-1 flex flex-col h-full w-full chat-performance-optimized chat-container-enter ${
       isMobile ? "mobile-chat-fullscreen" : ""
     }`}>
       <ChatHeader onStartCall={handleStartCall} />
@@ -302,7 +301,7 @@ const EnhancedChatContainer = ({ onStartCall }) => {
         ref={scrollContainerRef}
         onScroll={handleScroll}
         data-chat-container
-        className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent relative chat-scroll-optimized ${
+        className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent relative chat-scroll-optimized instant-scroll ${
           isMobile 
             ? `pt-24 mobile-chat-container professional-chat-container ${keyboardVisible ? 'keyboard-visible' : ''}` 
             : "pt-6"
