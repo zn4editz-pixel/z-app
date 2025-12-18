@@ -12,13 +12,11 @@ import {
 	checkUsernameAvailability,
 	getUsernameChangeInfo,
 } from "../controllers/user.controller.js";
-
 import {
 	getUserNotifications,
 	markNotificationRead,
 	deleteNotification,
 } from "../controllers/admin.controller.js";
-
 import { protectRoute, isAdmin } from "../middleware/protectRoute.js";
 import prisma from "../lib/db.js";
 
@@ -53,34 +51,21 @@ router.post("/request-verification", async (req, res) => {
 	try {
 		const { reason, idProof } = req.body;
 		const userId = req.user.id;
-
-		console.log(`📝 Verification request from user ${userId}`);
-		console.log(`   Reason: ${reason}`);
-		console.log(`   ID Proof provided: ${!!idProof}`);
-
 		if (!reason || !idProof) {
 			return res.status(400).json({ message: "Reason and ID proof are required" });
 		}
-
 		const user = await prisma.user.findUnique({
 			where: { id: userId }
 		});
-
 		if (!user) {
-			console.log(`❌ User ${userId} not found`);
 			return res.status(404).json({ message: "User not found" });
 		}
-
 		if (user.isVerified) {
-			console.log(`⚠️ User ${userId} is already verified`);
 			return res.status(400).json({ message: "You are already verified" });
 		}
-
 		if (user.verificationStatus === "pending") {
-			console.log(`⚠️ User ${userId} already has a pending request`);
 			return res.status(400).json({ message: "You already have a pending verification request" });
 		}
-
 		await prisma.user.update({
 			where: { id: userId },
 			data: {
@@ -90,12 +75,8 @@ router.post("/request-verification", async (req, res) => {
 				verificationRequestedAt: new Date(),
 			}
 		});
-
-		console.log(`✅ Verification request saved for user ${userId} (${user.username})`);
-
 		res.status(200).json({ message: "Verification request submitted successfully" });
 	} catch (error) {
-		console.error("❌ Verification request error:", error);
 		res.status(500).json({ message: "Internal server error" });
 	}
 });

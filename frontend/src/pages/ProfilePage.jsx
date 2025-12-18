@@ -4,11 +4,9 @@ import { User, BadgeCheck, Mail, Calendar, MapPin, Shield } from "lucide-react";
 import VerifiedBadge from "../components/VerifiedBadge";
 import VerificationRequestModal from "../components/VerificationRequestModal";
 import { Link } from "react-router-dom";
-
 const ProfilePage = () => {
   const { authUser, checkAuth } = useAuthStore();
   const [showVerificationModal, setShowVerificationModal] = useState(false);
-
   return (
     <>
       <div className="min-h-screen bg-base-200">
@@ -23,7 +21,6 @@ const ProfilePage = () => {
                 Your profile information
               </p>
             </div>
-
             {/* Avatar section (Read-Only) */}
             <div className="flex flex-col items-center gap-3 sm:gap-4">
               <div className="relative">
@@ -34,7 +31,10 @@ const ProfilePage = () => {
                 />
               </div>
               <div className="text-center">
-                <Link to="/settings" className="btn btn-sm btn-outline btn-primary gap-2">
+                <Link
+                  to="/settings"
+                  className="btn btn-sm btn-outline btn-primary gap-2"
+                >
                   Edit Profile
                 </Link>
                 <p className="text-xs text-base-content/50 mt-2">
@@ -42,7 +42,6 @@ const ProfilePage = () => {
                 </p>
               </div>
             </div>
-
             <div className="space-y-4 sm:space-y-6">
               {/* Bio Display */}
               {authUser?.bio ? (
@@ -56,44 +55,47 @@ const ProfilePage = () => {
                   No bio yet
                 </div>
               )}
-
               {/* Read-Only Details Grid */}
               <div className="grid gap-4">
-
                 {/* Full Name */}
                 <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
                   <div className="flex items-center gap-3">
                     <User className="w-5 h-5 text-base-content/60" />
                     <div>
                       <p className="text-xs text-base-content/60">Full Name</p>
-                      <p className="font-medium text-sm sm:text-base">{authUser?.fullName}</p>
+                      <p className="font-medium text-sm sm:text-base">
+                        {authUser?.fullName}
+                      </p>
                     </div>
                   </div>
                 </div>
-
                 {/* Email */}
                 <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
                   <div className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-base-content/60" />
                     <div>
-                      <p className="text-xs text-base-content/60">Email Address</p>
+                      <p className="text-xs text-base-content/60">
+                        Email Address
+                      </p>
                       {/* obscure email slightly for privacy in read-only view? optional */}
-                      <p className="font-medium text-sm sm:text-base break-all">{authUser?.email}</p>
+                      <p className="font-medium text-sm sm:text-base break-all">
+                        {authUser?.email}
+                      </p>
                     </div>
                   </div>
                 </div>
-
                 {/* Username */}
                 <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
                   <div className="flex items-center gap-3">
                     <Shield className="w-5 h-5 text-base-content/60" />
                     <div>
                       <p className="text-xs text-base-content/60">Username</p>
-                      <p className="font-medium text-sm sm:text-base">@{authUser?.username}</p>
+                      <p className="font-medium text-sm sm:text-base">
+                        @{authUser?.username}
+                      </p>
                     </div>
                   </div>
                 </div>
-
                 {/* Location (if available) */}
                 {/* Location (Visible only to Admins) */}
                 {authUser?.isAdmin && (authUser?.country || authUser?.city) && (
@@ -103,25 +105,28 @@ const ProfilePage = () => {
                       <div>
                         <p className="text-xs text-base-content/60">Location</p>
                         <p className="font-medium text-sm sm:text-base">
-                          {authUser?.city ? `${authUser.city}, ` : ''}{authUser?.country}
+                          {authUser?.city ? `${authUser.city}, ` : ""}
+                          {authUser?.country}
                         </p>
                       </div>
                     </div>
                   </div>
                 )}
-
               </div>
             </div>
-
             <div className="bg-base-200 rounded-lg sm:rounded-xl p-4 sm:p-6">
-              <h2 className="text-base sm:text-lg font-medium mb-3 sm:mb-4">Account Information</h2>
+              <h2 className="text-base sm:text-lg font-medium mb-3 sm:mb-4">
+                Account Information
+              </h2>
               <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
                 <div className="flex items-center justify-between py-2 border-b border-base-300">
                   <span className="text-base-content/70 flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     Member Since
                   </span>
-                  <span className="font-medium">{authUser?.createdAt?.split("T")[0]}</span>
+                  <span className="font-medium">
+                    {authUser?.createdAt?.split("T")[0]}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-base-300">
                   <span className="text-base-content/70">Account Status</span>
@@ -135,7 +140,9 @@ const ProfilePage = () => {
                       Verified
                     </span>
                   ) : authUser?.verificationRequest?.status === "pending" ? (
-                    <span className="badge badge-warning badge-sm">Pending Review</span>
+                    <span className="badge badge-warning badge-sm">
+                      Pending Review
+                    </span>
                   ) : (
                     <button
                       onClick={() => setShowVerificationModal(true)}
@@ -150,7 +157,6 @@ const ProfilePage = () => {
             </div>
           </div>
         </div>
-
         {/* Verification Request Modal */}
         <VerificationRequestModal
           isOpen={showVerificationModal}
@@ -165,5 +171,4 @@ const ProfilePage = () => {
     </>
   );
 };
-
 export default ProfilePage;

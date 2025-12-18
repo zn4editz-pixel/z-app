@@ -1,8 +1,6 @@
-import { useState } from 'react';
-
+import { useState } from "react";
 const LazyImage = ({ src, alt, className, ...props }) => {
   const [loaded, setLoaded] = useState(false);
-
   return (
     <div className={`relative ${className}`}>
       {!loaded && (
@@ -11,7 +9,7 @@ const LazyImage = ({ src, alt, className, ...props }) => {
       <img
         src={src}
         alt={alt}
-        className={`${className} transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        className={`${className} transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
         onLoad={() => setLoaded(true)}
         loading="lazy"
         {...props}
@@ -19,5 +17,4 @@ const LazyImage = ({ src, alt, className, ...props }) => {
     </div>
   );
 };
-
 export default LazyImage;

@@ -1,5 +1,4 @@
 import { BadgeCheck } from "lucide-react";
-
 const VerifiedBadge = ({ size = "sm", className = "" }) => {
   const sizeClasses = {
     xs: "w-3 h-3",
@@ -8,7 +7,6 @@ const VerifiedBadge = ({ size = "sm", className = "" }) => {
     lg: "w-6 h-6",
     xl: "w-8 h-8",
   };
-
   return (
     <BadgeCheck
       className={`${sizeClasses[size]} text-warning fill-warning/20 flex-shrink-0 ${className}`}
@@ -16,5 +14,4 @@ const VerifiedBadge = ({ size = "sm", className = "" }) => {
     />
   );
 };
-
 export default VerifiedBadge;

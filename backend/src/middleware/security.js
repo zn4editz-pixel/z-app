@@ -12,7 +12,6 @@ const useRedis = (process.env.REDIS_URL || process.env.REDIS_HOST) && redisClien
 // Create Redis store configuration
 const createRedisStore = (prefix) => {
 	if (!useRedis) return undefined;
-	
 	try {
 		return new RedisStore({
 			client: redisClient,
@@ -20,7 +19,6 @@ const createRedisStore = (prefix) => {
 			sendCommand: (...args) => redisClient.call(...args),
 		});
 	} catch (error) {
-		console.error(`Failed to create Redis store for ${prefix}:`, error.message);
 		return undefined;
 	}
 };
@@ -89,8 +87,6 @@ export const reportLimiter = rateLimit({
 // ============================================
 // REDIS STATUS
 // ============================================
-console.log(`🔐 Rate Limiting: ${useRedis ? "Redis (Distributed)" : "Memory (Single Server)"}`);
-
 // ============================================
 // NOTES FOR SCALING TO 500K+ USERS:
 // ============================================

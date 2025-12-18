@@ -67,7 +67,6 @@ export const getSystemHealth = async (req, res) => {
 			timestamp: new Date().toISOString()
 		});
 	} catch (error) {
-		console.error('Health check error:', error);
 		res.status(500).json({ error: 'Failed to fetch system health' });
 	}
 };
@@ -76,7 +75,6 @@ export const getSystemHealth = async (req, res) => {
 export const getProcessInfo = async (req, res) => {
 	try {
 		const memUsage = process.memoryUsage();
-
 		res.json({
 			pid: process.pid,
 			memory: {
@@ -126,7 +124,6 @@ export const getWebRTCStats = async (req, res) => {
 	try {
 		const { userSocketMap } = await import('../lib/socketHandlers.js');
 		const activeConnections = Object.keys(userSocketMap).length;
-
 		// Get active video calls (you can enhance this based on your call tracking)
 		const activeCalls = 0; // Implement based on your call tracking system
 
@@ -145,19 +142,16 @@ export const getWebRTCStats = async (req, res) => {
 export const emergencyAction = async (req, res) => {
 	try {
 		const { action } = req.body;
-
 		switch (action) {
 			case 'clearCache':
 				// Clear any in-memory caches
 				global.gc && global.gc();
 				res.json({ message: 'Cache cleared' });
 				break;
-
 			case 'maintenanceMode':
 				// Implement maintenance mode
 				res.json({ message: 'Maintenance mode enabled' });
 				break;
-
 			default:
 				res.status(400).json({ error: 'Unknown action' });
 		}
@@ -165,7 +159,6 @@ export const emergencyAction = async (req, res) => {
 		res.status(500).json({ error: 'Action failed' });
 	}
 };
-
 
 // Get Socket.io stats
 export const getSocketStats = async (req, res) => {
@@ -196,7 +189,6 @@ export const getSocketStats = async (req, res) => {
 			timestamp: new Date().toISOString()
 		});
 	} catch (error) {
-		console.error('Socket stats error:', error);
 		res.status(500).json({ error: 'Failed to fetch socket stats' });
 	}
 };
@@ -238,7 +230,6 @@ export const getRedisStats = async (req, res) => {
 			timestamp: new Date().toISOString()
 		});
 	} catch (error) {
-		console.error('Redis stats error:', error);
 		res.status(500).json({ error: 'Failed to fetch Redis stats' });
 	}
 };
@@ -250,7 +241,6 @@ export const getAPIStats = async (req, res) => {
 		const avgResponseTime = Math.floor(Math.random() * 200) + 50;
 		const requestsPerSecond = Math.floor(Math.random() * 50) + 10;
 		const errorRate = (Math.random() * 2).toFixed(2);
-
 		const slowEndpoints = [
 			{ path: '/api/messages', avgTime: 245, method: 'GET' },
 			{ path: '/api/users/search', avgTime: 189, method: 'POST' },
@@ -265,7 +255,6 @@ export const getAPIStats = async (req, res) => {
 			timestamp: new Date().toISOString()
 		});
 	} catch (error) {
-		console.error('API stats error:', error);
 		res.status(500).json({ error: 'Failed to fetch API stats' });
 	}
 };
@@ -290,7 +279,6 @@ export const getNetworkStats = async (req, res) => {
 			timestamp: new Date().toISOString()
 		});
 	} catch (error) {
-		console.error('Network stats error:', error);
 		res.status(500).json({ error: 'Failed to fetch network stats' });
 	}
 };
@@ -299,7 +287,6 @@ export const getNetworkStats = async (req, res) => {
 export const getLogs = async (req, res) => {
 	try {
 		const limit = parseInt(req.query.limit) || 50;
-
 		// Simulated logs - implement real log streaming in production
 		const logs = [
 			{ timestamp: new Date().toISOString(), level: 'info', message: 'Server started successfully' },
@@ -314,7 +301,6 @@ export const getLogs = async (req, res) => {
 			timestamp: new Date().toISOString()
 		});
 	} catch (error) {
-		console.error('Logs error:', error);
 		res.status(500).json({ error: 'Failed to fetch logs' });
 	}
 };
@@ -323,7 +309,6 @@ export const getLogs = async (req, res) => {
 export const executeAction = async (req, res) => {
 	try {
 		const { action } = req.body;
-
 		switch (action) {
 			case 'clear-cache':
 			case 'clear-redis':
@@ -334,38 +319,30 @@ export const executeAction = async (req, res) => {
 					res.json({ success: false, message: 'Redis not available' });
 				}
 				break;
-
 			case 'restart-backend':
 				res.json({ success: true, message: 'Backend restart initiated (requires manual restart)' });
 				// In production, implement graceful restart
 				break;
-
 			case 'maintenance-mode':
 				res.json({ success: true, message: 'Maintenance mode enabled' });
 				break;
-
 			case 'optimize-db':
 				// Run database optimization
 				await prisma.$executeRaw`VACUUM ANALYZE`;
 				res.json({ success: true, message: 'Database optimization completed' });
 				break;
-
 			case 'rebuild-indexes':
 				res.json({ success: true, message: 'Index rebuild initiated' });
 				break;
-
 			case 'kill-heavy-processes':
 				res.json({ success: true, message: 'Heavy processes terminated' });
 				break;
-
 			case 'enable-caching':
 				res.json({ success: true, message: 'Response caching enabled' });
 				break;
-
 			case 'optimize-queries':
 				res.json({ success: true, message: 'Query optimization applied' });
 				break;
-
 			case 'flush-expired':
 				if (redisClient) {
 					// Redis automatically handles expired keys
@@ -374,12 +351,10 @@ export const executeAction = async (req, res) => {
 					res.json({ success: false, message: 'Redis not available' });
 				}
 				break;
-
 			default:
 				res.status(400).json({ success: false, error: 'Unknown action' });
 		}
 	} catch (error) {
-		console.error('Action execution error:', error);
 		res.status(500).json({ success: false, error: 'Action failed: ' + error.message });
 	}
 };

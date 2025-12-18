@@ -25,13 +25,11 @@ import {
 	getSystemStats,
 	getGameStats
 } from "../controllers/admin.controller.js";
-
 import {
 	getServerMetrics,
 	getMetricsHistory,
 	clearMetricsHistory
 } from "../controllers/serverMetrics.controller.js";
-
 import {
 	getAIAnalysis,
 	getAnalysisHistory,
@@ -46,7 +44,6 @@ const router = express.Router();
 // 🛡️ Protect all routes and require admin
 router.use(protectRoute, isAdmin);
 
-// --- Dashboard Statistics ---
 // --- Dashboard Statistics ---
 router.get("/stats", getAdminStats);
 router.get("/stats/system", getSystemStats);

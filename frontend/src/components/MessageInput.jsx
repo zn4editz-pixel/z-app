@@ -4,14 +4,9 @@ import { useAuthStore } from "../store/useAuthStore";
 import { Image, Send, X, Smile, ChevronUp, Gamepad2 } from "lucide-react"; // ✅ Imported Gamepad2
 import toast from "react-hot-toast";
 import VoiceRecorder from "./VoiceRecorder";
-
 // ... (rest of imports and component setup)
-
 // ... inside the menu render ...
-
 // ... inside the menu render ...
-
-
 const MessageInput = ({ replyingTo, onCancelReply }) => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
@@ -26,17 +21,30 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
   const [isTyping, setIsTyping] = useState(false); // ✅ Fix: Add state for isTyping
   const { sendMessage, selectedUser } = useChatStore();
   const { socket } = useAuthStore();
-
-  const emojis = ["😊", "😂", "❤️", "👍", "🎉", "🔥", "😍", "🤔", "👏", "🙌", "💯", "✨"];
-
+  const emojis = [
+    "😊",
+    "😂",
+    "❤️",
+    "👍",
+    "🎉",
+    "🔥",
+    "😍",
+    "🤔",
+    "👏",
+    "🙌",
+    "💯",
+    "✨",
+  ];
   // Handle outside click for attachment menu
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (attachmentMenuRef.current && !attachmentMenuRef.current.contains(event.target)) {
+      if (
+        attachmentMenuRef.current &&
+        !attachmentMenuRef.current.contains(event.target)
+      ) {
         setShowAttachmentMenu(false);
       }
     };
-
     if (showAttachmentMenu) {
       document.addEventListener("mousedown", handleClickOutside);
     }
@@ -44,50 +52,41 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showAttachmentMenu]);
-
   // Handle typing indicator
   // Emit typing event - THROTTLED to once every 2 seconds
   const lastTyped = useRef(0);
-
   const handleTyping = (value) => {
     setText(value);
-
     if (!socket) {
-      console.error("❌ MessageInput: Socket is missing!");
       return;
     }
     if (!selectedUser) {
-      console.error("❌ MessageInput: SelectedUser is missing!");
       return;
     }
-
     const now = Date.now();
     if (now - lastTyped.current > 2000) {
-      console.log(`⌨️ UI: Emitting 'typing' to ${selectedUser.id}`);
       const { authUser } = useAuthStore.getState();
       socket.emit("typing", {
         receiverId: selectedUser.id,
-        senderId: authUser?.id // ✅ Fallback if socket.userId missing
+        senderId: authUser?.id, // ✅ Fallback if socket.userId missing
       });
       lastTyped.current = now;
       setIsTyping(true); // Set typing state to true
     }
-
     // Stop typing after 3 seconds of inactivity
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      if (isTyping) { // Only send stopTyping if we were actually typing
-        console.log("🛑 UI: Auto-sending stopTyping due to inactivity");
+      if (isTyping) {
+        // Only send stopTyping if we were actually typing
         const { authUser } = useAuthStore.getState();
         socket.emit("stopTyping", {
           receiverId: selectedUser.id,
-          senderId: authUser?.id // ✅ Fallback
+          senderId: authUser?.id, // ✅ Fallback
         });
         setIsTyping(false);
       }
     }, 3000);
   };
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -99,7 +98,6 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
       }
     };
   }, [socket, selectedUser]);
-
   // ✅ INSTAGRAM/WHATSAPP: Auto-focus input when replying
   useEffect(() => {
     if (replyingTo && inputRef.current) {
@@ -109,14 +107,12 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
       }, 100);
     }
   }, [replyingTo]);
-
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file || !file.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
     }
-
     const reader = new FileReader();
     reader.onloadend = () => {
       // Directly set image preview without cropping
@@ -125,60 +121,47 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
     };
     reader.readAsDataURL(file);
   };
-
   const handleImagePreviewClick = () => {
     setTempImage(imagePreview);
     setShowImagePreview(true);
   };
-
   const handlePreviewClose = () => {
     setShowImagePreview(false);
     setTempImage(null);
   };
-
   const removeImage = () => {
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
-
   const handleSendMessage = (e) => {
     e.preventDefault();
-
     // ✅ INSTANT: Check and return immediately if empty
     if (!text.trim() && !imagePreview) return;
-
     // Stop typing indicator immediately
     if (socket && selectedUser) {
       socket.emit("stopTyping", { receiverId: selectedUser.id });
     }
-
     // Store values before clearing
     const messageText = text.trim();
     const messageImage = imagePreview;
     const messageReplyTo = replyingTo?.id || null;
-
     // ✅ INSTANT: Clear form IMMEDIATELY (no await, no delay)
     setText("");
     setImagePreview(null);
     setShowEmojiPicker(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (onCancelReply) onCancelReply();
-
     // ✅ INSTANT: Focus back to input for rapid messaging
     if (inputRef.current) {
       inputRef.current.focus();
     }
-
     // ✅ INSTANT: Send in background (fire and forget - NO WAITING)
     sendMessage({
       text: messageText,
       image: messageImage,
       replyTo: messageReplyTo,
-    }).catch(error => {
-      console.error("Send failed:", error);
-    });
+    }).catch((error) => {});
   };
-
   const handleSendVoice = async (audioData, duration) => {
     try {
       await sendMessage({
@@ -187,17 +170,17 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
       });
       // toast.success("Voice message sent!"); // 🔇 Disabled by user request
     } catch (error) {
-      console.error("Failed to send voice:", error);
-      const errorMsg = error.response?.data?.details || error.response?.data?.error || "Failed to send voice message";
+      const errorMsg =
+        error.response?.data?.details ||
+        error.response?.data?.error ||
+        "Failed to send voice message";
       toast.error(`Error: ${errorMsg}`);
     }
   };
-
   const addEmoji = (emoji) => {
     setText((prev) => prev + emoji);
     setShowEmojiPicker(false);
   };
-
   return (
     <>
       {/* Image Preview Modal */}
@@ -214,12 +197,11 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
           >
             <X className="w-6 h-6" />
           </button>
-
           {/* Save button - top right, below close button */}
           <button
             onClick={() => {
               // Create download link
-              const link = document.createElement('a');
+              const link = document.createElement("a");
               link.href = tempImage;
               link.download = `image-${Date.now()}.png`;
               document.body.appendChild(link);
@@ -228,12 +210,21 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
             }}
             className="absolute top-20 right-4 sm:top-24 sm:right-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium transition-all z-10 backdrop-blur-sm shadow-lg flex items-center gap-2 text-sm"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
             <span className="hidden sm:inline">Save</span>
           </button>
-
           {/* Image container - centered */}
           <div
             className="relative max-w-full max-h-full"
@@ -245,15 +236,16 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
               className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
             />
           </div>
-
           {/* Optional: Tap anywhere to close hint */}
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm opacity-60 pointer-events-none">
             Tap anywhere to close
           </div>
         </div>
       )}
-
-      <div className="px-3 py-2 w-full bg-base-100/95 backdrop-blur-xl border-t border-base-300/30 border-b border-base-300/20 sticky bottom-0 z-10 mobile-message-input-professional" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
+      <div
+        className="px-3 py-2 w-full bg-base-100/95 backdrop-blur-xl border-t border-base-300/30 border-b border-base-300/20 sticky bottom-0 z-10 mobile-message-input-professional"
+        style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
+      >
         {/* ✅ INSTAGRAM/WHATSAPP STYLE: Enhanced Reply Preview */}
         {replyingTo && (
           <div className="mb-2 sm:mb-3 reply-preview-container animate-slide-down">
@@ -261,44 +253,52 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
               className="flex items-start gap-3 p-3 bg-gradient-to-r from-base-200/80 to-base-200/60 rounded-2xl border border-base-300/50 shadow-sm backdrop-blur-sm cursor-pointer hover:bg-gradient-to-r hover:from-base-200/90 hover:to-base-200/70 transition-all duration-200 active:scale-[0.98]"
               onClick={() => {
                 // ✅ INSTAGRAM-STYLE: Jump to original message with enhanced highlight
-                
                 // Add haptic feedback
                 if (navigator.vibrate) navigator.vibrate(30);
-                
-                const replyElement = document.getElementById(`message-${replyingTo.id}`);
+                const replyElement = document.getElementById(
+                  `message-${replyingTo.id}`,
+                );
                 if (replyElement) {
                   // Smooth scroll to the message
-                  replyElement.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center',
-                    inline: 'nearest'
+                  replyElement.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                    inline: "nearest",
                   });
-                  
                   // Instagram-style highlight effect
                   // Simple working highlight
-                  replyElement.classList.add('message-highlight');
+                  replyElement.classList.add("message-highlight");
                   setTimeout(() => {
-                    replyElement.classList.remove('message-highlight');
-                    replyElement.classList.add('message-highlight-fade');
+                    replyElement.classList.remove("message-highlight");
+                    replyElement.classList.add("message-highlight-fade");
                     setTimeout(() => {
-                      replyElement.classList.remove('message-highlight-fade');
+                      replyElement.classList.remove("message-highlight-fade");
                     }, 500);
                   }, 1500);
                 } else {
                   toast.error("Message not found in current chat", {
                     icon: "📍",
-                    duration: 2000
+                    duration: 2000,
                   });
                 }
               }}
             >
               {/* Reply Icon */}
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
-                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                <svg
+                  className="w-4 h-4 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                  />
                 </svg>
               </div>
-
               {/* Reply Content */}
               <div className="flex-1 min-w-0">
                 {/* Header */}
@@ -307,13 +307,14 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
                     Replying to
                   </span>
                   <span className="text-xs font-medium text-base-content/80">
-                    {replyingTo.senderId === selectedUser?.id ? selectedUser.fullName || selectedUser.nickname || "User" : "You"}
+                    {replyingTo.senderId === selectedUser?.id
+                      ? selectedUser.fullName || selectedUser.nickname || "User"
+                      : "You"}
                   </span>
                   <span className="text-xs text-base-content/50 ml-auto">
                     Tap to view
                   </span>
                 </div>
-
                 {/* Message Preview */}
                 <div className="flex items-center gap-2">
                   {/* Message Type Icon */}
@@ -327,19 +328,20 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
                       <span className="text-xs">🎤</span>
                     </div>
                   )}
-
                   {/* Message Text */}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-base-content/70 truncate leading-tight">
-                      {replyingTo.text && replyingTo.text.trim() ? replyingTo.text :
-                        (replyingTo.image ? "📷 Photo" :
-                          replyingTo.voice ? "🎤 Voice message" :
-                            "Message")}
+                      {replyingTo.text && replyingTo.text.trim()
+                        ? replyingTo.text
+                        : replyingTo.image
+                          ? "📷 Photo"
+                          : replyingTo.voice
+                            ? "🎤 Voice message"
+                            : "Message"}
                     </p>
                   </div>
                 </div>
               </div>
-
               {/* Cancel Button */}
               <button
                 onClick={onCancelReply}
@@ -352,7 +354,6 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
             </div>
           </div>
         )}
-
         {imagePreview && (
           <div className="mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-base-200 rounded-xl">
             <div className="relative">
@@ -373,12 +374,15 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
               </button>
             </div>
             <div className="flex-1">
-              <span className="text-sm text-base-content/70">Image ready to send</span>
-              <p className="text-xs text-base-content/50 mt-1">Click image to preview</p>
+              <span className="text-sm text-base-content/70">
+                Image ready to send
+              </span>
+              <p className="text-xs text-base-content/50 mt-1">
+                Click image to preview
+              </p>
             </div>
           </div>
         )}
-
         {/* Emoji Picker */}
         {showEmojiPicker && (
           <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-base-200 rounded-xl shadow-lg">
@@ -397,7 +401,6 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
             </div>
           </div>
         )}
-
         <form
           onSubmit={handleSendMessage}
           className="flex items-center gap-2 relative max-w-full justify-center"
@@ -406,67 +409,62 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
           <div className="relative" ref={attachmentMenuRef}>
             {/* Drop-up Menu - Enhanced */}
             {showAttachmentMenu && (
-              <div className={`
+              <div
+                className={`
                 absolute bottom-full left-0 mb-3 p-3 bg-base-100/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-base-300/30
                 flex flex-col gap-3 min-w-[48px] z-50 transform origin-bottom-left transition-all duration-300 ease-out
-                ${showAttachmentMenu ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-2 pointer-events-none'}
-            `}>
+                ${showAttachmentMenu ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-2 pointer-events-none"}
+            `}
+              >
                 {/* Image Upload Button - Professional */}
                 <button
                   type="button"
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation shadow-sm ${imagePreview
-                    ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
-                    : "bg-base-200/50 text-base-content/70 hover:bg-base-200 hover:text-base-content"
-                    }`}
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation shadow-sm ${
+                    imagePreview
+                      ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
+                      : "bg-base-200/50 text-base-content/70 hover:bg-base-200 hover:text-base-content"
+                  }`}
                   onClick={() => fileInputRef.current?.click()}
                   title="Attach Image"
                 >
                   <Image size={22} />
                 </button>
-
                 {/* Game Button */}
                 <button
                   type="button"
                   className="btn btn-circle btn-sm btn-ghost hover:bg-base-200 transition-all text-indigo-500"
                   onClick={() => {
                     if (!socket || !selectedUser) return;
-
                     // 1. Send special text message for persistence (So it shows in history)
                     // We use a prefix "GAME_INVITE:" followed by a unique ID we generate here or backend?
-                    // Actually backend generates ID. 
-                    // Let's just emit the invite event, and let the backend insert the system message? 
+                    // Actually backend generates ID.
+                    // Let's just emit the invite event, and let the backend insert the system message?
                     // NO, my backend game:invite handler just Nofities. It doesn't insert a message into DB.
                     // So I should send a message manually OR update backend to insert it.
                     // Plan: Client sends "GAME_INVITE:PENDING" message text.
                     // But wait, my implementation plan said "Shiny Invite".
-
-                    // Better approach: 
+                    // Better approach:
                     // 1. Emit `game:invite` to backend.
-                    // 2. Backend creates game. 
+                    // 2. Backend creates game.
                     // 3. User (Frontend) sends a message "GAME_INVITE:<GameID>" AFTER receiving game:invite confirmation?
-                    //    OR simplified: Frontend just sends a message "GAME_INVITE:PENDING". 
+                    //    OR simplified: Frontend just sends a message "GAME_INVITE:PENDING".
                     //    When clicked, it emits "game:create".
-
-                    // Let's go with: Emit `game:invite` event first. 
+                    // Let's go with: Emit `game:invite` event first.
                     // But the chat bubble needs to be in the message history.
                     // So I will send a message with text = "GAME_INVITE:new"
                     // And when rendering, if it says "new", we treat it as an active invite.
-
                     // We generate a deterministic ID here so both message and backend agree
                     const gameId = `game_${Date.now()}_${selectedUser.id}`;
-
                     socket.emit("game:invite", {
                       receiverId: selectedUser.id,
                       senderName: useAuthStore.getState().authUser.fullName,
                       senderPic: useAuthStore.getState().authUser.profilePic, // ✅ Pass Profile Pic
-                      gameId: gameId // ✅ Pass explicit ID
+                      gameId: gameId, // ✅ Pass explicit ID
                     });
-
                     // Send the visual message with SAME ID
                     sendMessage({
                       text: `GAME_INVITE:${gameId}`,
                     });
-
                     setShowAttachmentMenu(false);
                     toast.success("Game invite sent!");
                   }}
@@ -476,20 +474,19 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
                 </button>
               </div>
             )}
-
             {/* Trigger Button - Professional Style */}
             <button
               type="button"
-              className={`w-9 h-9 rounded-2xl flex items-center justify-center transition-all duration-300 active:scale-95 touch-manipulation ${showAttachmentMenu
-                ? 'bg-primary/10 text-primary rotate-180 shadow-sm'
-                : 'bg-base-200/50 text-base-content/70 hover:bg-base-200 hover:text-base-content'
-                }`}
+              className={`w-9 h-9 rounded-2xl flex items-center justify-center transition-all duration-300 active:scale-95 touch-manipulation ${
+                showAttachmentMenu
+                  ? "bg-primary/10 text-primary rotate-180 shadow-sm"
+                  : "bg-base-200/50 text-base-content/70 hover:bg-base-200 hover:text-base-content"
+              }`}
               onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
             >
               <ChevronUp size={20} />
             </button>
           </div>
-
           {/* Hidden File Input */}
           <input
             type="file"
@@ -498,7 +495,6 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
             ref={fileInputRef}
             onChange={handleImageChange}
           />
-
           {/* Text Input Container - FULL WIDTH FOR PC */}
           <div className="flex-1 flex items-center gap-2 bg-base-200/50 backdrop-blur-sm rounded-3xl px-4 py-2 md:px-5 md:py-3 min-w-0 border border-base-300/20 shadow-sm hover:shadow-md transition-all duration-200">
             <input
@@ -510,30 +506,27 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
               onChange={(e) => handleTyping(e.target.value)}
               autoComplete="off"
             />
-
             {/* Emoji Button - Enhanced */}
             <button
               type="button"
-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 active:scale-95 touch-manipulation flex-shrink-0 ${showEmojiPicker
-                ? "bg-primary/10 text-primary shadow-sm"
-                : "bg-transparent text-base-content/60 hover:bg-base-300/50 hover:text-base-content"
-                }`}
+              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 active:scale-95 touch-manipulation flex-shrink-0 ${
+                showEmojiPicker
+                  ? "bg-primary/10 text-primary shadow-sm"
+                  : "bg-transparent text-base-content/60 hover:bg-base-300/50 hover:text-base-content"
+              }`}
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               title="Add emoji"
               aria-label="Add emoji"
             >
               <Smile className="w-5 h-5" />
             </button>
-
           </div>
-
           {/* Voice Recorder - Professional Style */}
           {!text.trim() && !imagePreview && (
             <div className="flex-shrink-0">
               <VoiceRecorder onSendVoice={handleSendVoice} />
             </div>
           )}
-
           {/* Send Button - Instagram/WhatsApp Style */}
           {(text.trim() || imagePreview) && (
             <button
@@ -549,5 +542,4 @@ const MessageInput = ({ replyingTo, onCancelReply }) => {
     </>
   );
 };
-
 export default MessageInput;

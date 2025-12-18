@@ -1,9 +1,9 @@
 // This is the content for the NEW file:
 // backend/routes/friend.routes.js
-
 import express from "express";
 import { protectRoute } from "../middleware/protectRoute.js";
 // import { friendRequestLimiter } from "../middleware/security.js"; // Commented out - not available in simple setup
+
 import {
 	sendFriendRequest,
 	acceptFriendRequest,

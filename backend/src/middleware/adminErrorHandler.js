@@ -1,164 +1,1 @@
-/**
- * Enhanced error handler specifically for admin operations
- * Provides detailed error logging and user-friendly error messages
- */
-
-export const adminErrorHandler = (operation) => {
-    return async (req, res, next) => {
-        try {
-            await operation(req, res, next);
-        } catch (error) {
-            console.error(`❌ Admin Operation Error [${req.method} ${req.path}]:`, {
-                error: error.message,
-                code: error.code,
-                meta: error.meta,
-                userId: req.params.userId,
-                adminId: req.user?.id,
-                timestamp: new Date().toISOString()
-            });
-
-            // Handle specific Prisma errors
-            let statusCode = 500;
-            let errorMessage = "Internal server error";
-            let errorCode = "UNKNOWN_ERROR";
-
-            if (error.code) {
-                switch (error.code) {
-                    case 'P2002':
-                        statusCode = 409;
-                        errorMessage = "Unique constraint violation";
-                        errorCode = "DUPLICATE_ENTRY";
-                        break;
-                    case 'P2003':
-                        statusCode = 400;
-                        errorMessage = "Foreign key constraint violation";
-                        errorCode = "CONSTRAINT_VIOLATION";
-                        break;
-                    case 'P2025':
-                        statusCode = 404;
-                        errorMessage = "Record not found";
-                        errorCode = "NOT_FOUND";
-                        break;
-                    case 'P2014':
-                        statusCode = 400;
-                        errorMessage = "Invalid relation";
-                        errorCode = "INVALID_RELATION";
-                        break;
-                    case 'P2034':
-                        statusCode = 409;
-                        errorMessage = "Transaction conflict";
-                        errorCode = "TRANSACTION_CONFLICT";
-                        break;
-                    default:
-                        errorMessage = `Database error: ${error.code}`;
-                        errorCode = error.code;
-                }
-            } else if (error.message) {
-                // Handle other types of errors
-                if (error.message.includes('timeout')) {
-                    statusCode = 408;
-                    errorMessage = "Operation timeout";
-                    errorCode = "TIMEOUT";
-                } else if (error.message.includes('connection')) {
-                    statusCode = 503;
-                    errorMessage = "Database connection error";
-                    errorCode = "CONNECTION_ERROR";
-                } else if (error.message.includes('validation')) {
-                    statusCode = 400;
-                    errorMessage = "Validation error";
-                    errorCode = "VALIDATION_ERROR";
-                }
-            }
-
-            res.status(statusCode).json({
-                success: false,
-                error: errorMessage,
-                code: errorCode,
-                details: process.env.NODE_ENV === 'development' ? error.message : undefined,
-                timestamp: new Date().toISOString()
-            });
-        }
-    };
-};
-
-/**
- * Validation middleware for admin operations
- */
-export const validateAdminRequest = (requiredFields = []) => {
-    return (req, res, next) => {
-        // Check if user is admin (you might have different logic)
-        if (!req.user || !req.user.isAdmin) {
-            return res.status(403).json({
-                success: false,
-                error: "Admin access required",
-                code: "FORBIDDEN"
-            });
-        }
-
-        // Validate required fields
-        const missingFields = [];
-        
-        // Check params
-        requiredFields.forEach(field => {
-            if (field.startsWith('params.')) {
-                const paramName = field.replace('params.', '');
-                if (!req.params[paramName]) {
-                    missingFields.push(field);
-                }
-            } else if (field.startsWith('body.')) {
-                const bodyField = field.replace('body.', '');
-                if (!req.body[bodyField]) {
-                    missingFields.push(field);
-                }
-            }
-        });
-
-        if (missingFields.length > 0) {
-            return res.status(400).json({
-                success: false,
-                error: "Missing required fields",
-                code: "VALIDATION_ERROR",
-                missingFields
-            });
-        }
-
-        next();
-    };
-};
-
-/**
- * Rate limiting for admin operations
- */
-export const adminRateLimit = (maxRequests = 100, windowMs = 60000) => {
-    const requests = new Map();
-    
-    return (req, res, next) => {
-        const adminId = req.user?.id;
-        if (!adminId) return next();
-
-        const now = Date.now();
-        const windowStart = now - windowMs;
-        
-        // Clean old requests
-        if (requests.has(adminId)) {
-            const userRequests = requests.get(adminId).filter(time => time > windowStart);
-            requests.set(adminId, userRequests);
-        } else {
-            requests.set(adminId, []);
-        }
-
-        const userRequests = requests.get(adminId);
-        
-        if (userRequests.length >= maxRequests) {
-            return res.status(429).json({
-                success: false,
-                error: "Too many admin requests",
-                code: "RATE_LIMIT_EXCEEDED",
-                retryAfter: Math.ceil(windowMs / 1000)
-            });
-        }
-
-        userRequests.push(now);
-        next();
-    };
-};
+/** * Enhanced error handler specifically for admin operations * Provides detailed error logging and user-friendly error messages */export const adminErrorHandler = (operation) => {    return async (req, res, next) => {        try {            await operation(req, res, next);        } catch (error) {            // Handle specific Prisma errors            let statusCode = 500;            let errorMessage = "Internal server error";            let errorCode = "UNKNOWN_ERROR";            if (error.code) {                switch (error.code) {                    case 'P2002':                        statusCode = 409;                        errorMessage = "Unique constraint violation";                        errorCode = "DUPLICATE_ENTRY";                        break;                    case 'P2003':                        statusCode = 400;                        errorMessage = "Foreign key constraint violation";                        errorCode = "CONSTRAINT_VIOLATION";                        break;                    case 'P2025':                        statusCode = 404;                        errorMessage = "Record not found";                        errorCode = "NOT_FOUND";                        break;                    case 'P2014':                        statusCode = 400;                        errorMessage = "Invalid relation";                        errorCode = "INVALID_RELATION";                        break;                    case 'P2034':                        statusCode = 409;                        errorMessage = "Transaction conflict";                        errorCode = "TRANSACTION_CONFLICT";                        break;                    default:                        errorMessage = `Database error: ${error.code}`;                        errorCode = error.code;                }            } else if (error.message) {                // Handle other types of errors                if (error.message.includes('timeout')) {                    statusCode = 408;                    errorMessage = "Operation timeout";                    errorCode = "TIMEOUT";                } else if (error.message.includes('connection')) {                    statusCode = 503;                    errorMessage = "Database connection error";                    errorCode = "CONNECTION_ERROR";                } else if (error.message.includes('validation')) {                    statusCode = 400;                    errorMessage = "Validation error";                    errorCode = "VALIDATION_ERROR";                }            }            res.status(statusCode).json({                success: false,                error: errorMessage,                code: errorCode,                details: process.env.NODE_ENV === 'development' ? error.message : undefined,                timestamp: new Date().toISOString()            });        }    };};/** * Validation middleware for admin operations */export const validateAdminRequest = (requiredFields = []) => {    return (req, res, next) => {        // Check if user is admin (you might have different logic)        if (!req.user || !req.user.isAdmin) {            return res.status(403).json({                success: false,                error: "Admin access required",                code: "FORBIDDEN"            });        }        // Validate required fields        const missingFields = [];        // Check params        requiredFields.forEach(field => {            if (field.startsWith('params.')) {                const paramName = field.replace('params.', '');                if (!req.params[paramName]) {                    missingFields.push(field);                }            } else if (field.startsWith('body.')) {                const bodyField = field.replace('body.', '');                if (!req.body[bodyField]) {                    missingFields.push(field);                }            }        });        if (missingFields.length > 0) {            return res.status(400).json({                success: false,                error: "Missing required fields",                code: "VALIDATION_ERROR",                missingFields            });        }        next();    };};/** * Rate limiting for admin operations */export const adminRateLimit = (maxRequests = 100, windowMs = 60000) => {    const requests = new Map();    return (req, res, next) => {        const adminId = req.user?.id;        if (!adminId) return next();        const now = Date.now();        const windowStart = now - windowMs;        // Clean old requests        if (requests.has(adminId)) {            const userRequests = requests.get(adminId).filter(time => time > windowStart);            requests.set(adminId, userRequests);        } else {            requests.set(adminId, []);        }        const userRequests = requests.get(adminId);        if (userRequests.length >= maxRequests) {            return res.status(429).json({                success: false,                error: "Too many admin requests",                code: "RATE_LIMIT_EXCEEDED",                retryAfter: Math.ceil(windowMs / 1000)            });        }        userRequests.push(now);        next();    };};

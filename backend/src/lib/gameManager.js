@@ -1,240 +1,1 @@
-export class GameManager {
-    constructor() {
-        this.games = new Map(); // gameId -> gameState
-    }
-
-    createGame(gameId, player1Id, player1Name, player1Pic, onExpire, onTurnTimeout) {
-        const game = {
-            id: gameId,
-            players: {
-                [player1Id]: { id: player1Id, name: player1Name, profilePic: player1Pic, score: 0, symbol: 'S' },
-            },
-            playerIds: [player1Id],
-            board: Array(5).fill(null).map(() => Array(5).fill(null)),
-            lines: [], // Store formed SOS lines { start: {r,c}, end: {r,c}, playerId }
-            currentTurn: player1Id,
-            status: 'waiting',
-            winner: null,
-            lastMove: null,
-            turnExpiresAt: null,
-            turnTimer: null,
-            onTurnTimeout: onTurnTimeout, // Callback for when turn expires
-            timer: setTimeout(() => {
-                if (this.games.has(gameId) && this.games.get(gameId).status === 'waiting') {
-                    this.games.delete(gameId);
-                    if (onExpire) onExpire(gameId);
-                }
-            }, 20000) // 20 seconds invite expiration
-        };
-        this.games.set(gameId, game);
-        return game;
-    }
-
-    resetTurnTimer(game) {
-        if (game.turnTimer) clearTimeout(game.turnTimer);
-
-        // 15 seconds per turn
-        const duration = 15000;
-        game.turnExpiresAt = Date.now() + duration;
-
-        game.turnTimer = setTimeout(() => {
-            if (this.games.has(game.id) && game.status === 'playing') {
-                if (game.onTurnTimeout) game.onTurnTimeout(game.id);
-                else this.switchTurn(game.id); // Fallback internal switch
-            }
-        }, duration);
-    }
-
-    switchTurn(gameId) {
-        const game = this.games.get(gameId);
-        if (!game || game.status !== 'playing') return null;
-
-        // Switch turn
-        const nextPlayerIndex = (game.playerIds.indexOf(game.currentTurn) + 1) % 2;
-        game.currentTurn = game.playerIds[nextPlayerIndex];
-
-        // Check for draw if board is full (unlikely on timeout but possible)
-        if (this.isBoardFull(game.board)) {
-            this.endGame(game);
-        } else {
-            this.resetTurnTimer(game);
-        }
-
-        return game;
-    }
-
-    joinGame(gameId, player2Id, player2Name, player2Pic) {
-        const game = this.games.get(gameId);
-        if (!game) return { error: "Game not found or expired" };
-        if (game.playerIds.length >= 2) return { error: "Game full" };
-        if (game.playerIds.includes(player2Id)) return { error: "Already joined" };
-
-        // Clear invite expiration timer
-        if (game.timer) clearTimeout(game.timer);
-
-        game.players[player2Id] = { id: player2Id, name: player2Name, profilePic: player2Pic, score: 0, symbol: 'O' };
-        game.playerIds.push(player2Id);
-        game.status = 'playing';
-
-        // START TURN TIMER
-        this.resetTurnTimer(game);
-
-        return { game };
-    }
-
-    makeMove(gameId, playerId, row, col, letter) { // letter = 'S' or 'O'
-        const game = this.games.get(gameId);
-        if (!game) return { error: "Game not found" };
-        if (game.status !== 'playing') return { error: "Game not active" };
-        if (game.currentTurn !== playerId) return { error: "Not your turn" };
-        if (game.board[row][col] !== null) return { error: "Cell occupied" };
-
-        // Place move
-        game.board[row][col] = letter;
-        game.lastMove = { row, col, letter, playerId };
-
-        // Check for SOS
-        const { points, newLines } = this.checkSOS(game.board, row, col, letter);
-
-        if (points > 0) {
-            game.players[playerId].score += points;
-            // Add new lines to game state
-            newLines.forEach(line => {
-                game.lines.push({ ...line, playerId });
-            });
-
-            // If scored, gets another turn. Reset timer for same player.
-            if (this.isBoardFull(game.board)) {
-                this.endGame(game);
-            } else {
-                this.resetTurnTimer(game);
-            }
-        } else {
-            // Switch turn
-            const nextPlayerIndex = (game.playerIds.indexOf(playerId) + 1) % 2;
-            game.currentTurn = game.playerIds[nextPlayerIndex];
-
-            // Check draw condition if board full but no points or just end
-            if (this.isBoardFull(game.board)) {
-                this.endGame(game);
-            } else {
-                this.resetTurnTimer(game);
-            }
-        }
-
-        return { game, pointsScored: points, newLines };
-    }
-
-    checkSOS(board, r, c, letter) {
-        let points = 0;
-        const newLines = [];
-        const directions = [
-            [-1, -1], [-1, 0], [-1, 1],
-            [0, -1], [0, 1],
-            [1, -1], [1, 0], [1, 1]
-        ];
-
-        if (letter === 'S') {
-            // Look for 'O' then 'S'
-            for (const [dr, dc] of directions) {
-                if (this.getCell(board, r + dr, c + dc) === 'O' &&
-                    this.getCell(board, r + dr * 2, c + dc * 2) === 'S') {
-                    points++;
-                    newLines.push({
-                        start: { r: r, c: c },
-                        end: { r: r + dr * 2, c: c + dc * 2 }
-                    });
-                }
-            }
-        } else if (letter === 'O') {
-            // Look for 'S' on both sides (S-O-S)
-            // Only need to check half the directions (opposites)
-            const checkDirs = [
-                [0, 1], // Horizontal
-                [1, 0], // Vertical
-                [1, 1], // Diagonal \
-                [1, -1] // Diagonal /
-            ];
-
-            for (const [dr, dc] of checkDirs) {
-                if (this.getCell(board, r - dr, c - dc) === 'S' &&
-                    this.getCell(board, r + dr, c + dc) === 'S') {
-                    points++;
-                    newLines.push({
-                        start: { r: r - dr, c: c - dc },
-                        end: { r: r + dr, c: c + dc }
-                    });
-                }
-            }
-        }
-        return { points, newLines };
-    }
-
-    getCell(board, r, c) {
-        if (r < 0 || r >= 5 || c < 0 || c >= 5) return null;
-        return board[r][c];
-    }
-
-    isBoardFull(board) {
-        return board.every(row => row.every(cell => cell !== null));
-    }
-
-    endGame(game) {
-        game.status = 'finished';
-        const p1 = game.playerIds[0];
-        const p2 = game.playerIds[1];
-
-        if (game.players[p1].score > game.players[p2].score) {
-            game.winner = p1;
-        } else if (game.players[p2].score > game.players[p1].score) {
-            game.winner = p2;
-        } else {
-            game.winner = 'draw';
-        }
-
-        // Auto-expire game from memory after 60 seconds
-        setTimeout(() => {
-            if (this.games.has(game.id)) {
-                this.games.delete(game.id);
-            }
-        }, 60000);
-    }
-
-    getGame(gameId) {
-        return this.games.get(gameId);
-    }
-
-    getPublicState(gameId) {
-        const game = this.games.get(gameId);
-        if (!game) return null;
-
-        // Return only serializable data
-        return {
-            id: game.id,
-            players: game.players,
-            playerIds: game.playerIds,
-            board: game.board,
-            currentTurn: game.currentTurn,
-            status: game.status,
-            winner: game.winner,
-            lastMove: game.lastMove,
-            turnExpiresAt: game.turnExpiresAt,
-            lines: game.lines // Include lines in public state
-        };
-    }
-
-    findGameByPlayerId(playerId) {
-        for (const game of this.games.values()) {
-            if (game.playerIds.includes(playerId) && (game.status === 'playing' || game.status === 'waiting')) {
-                return game;
-            }
-        }
-        return null;
-    }
-
-    removeGame(gameId) {
-        this.games.delete(gameId);
-    }
-}
-
-export const gameManager = new GameManager();
+export class GameManager {    constructor() {        this.games = new Map(); // gameId -> gameState    }    createGame(gameId, player1Id, player1Name, player1Pic, onExpire, onTurnTimeout) {        const game = {            id: gameId,            players: {                [player1Id]: { id: player1Id, name: player1Name, profilePic: player1Pic, score: 0, symbol: 'S' },            },            playerIds: [player1Id],            board: Array(5).fill(null).map(() => Array(5).fill(null)),            lines: [], // Store formed SOS lines { start: {r,c}, end: {r,c}, playerId }            currentTurn: player1Id,            status: 'waiting',            winner: null,            lastMove: null,            turnExpiresAt: null,            turnTimer: null,            onTurnTimeout: onTurnTimeout, // Callback for when turn expires            timer: setTimeout(() => {                if (this.games.has(gameId) && this.games.get(gameId).status === 'waiting') {                    this.games.delete(gameId);                    if (onExpire) onExpire(gameId);                }            }, 20000) // 20 seconds invite expiration        };        this.games.set(gameId, game);        return game;    }    resetTurnTimer(game) {        if (game.turnTimer) clearTimeout(game.turnTimer);        // 15 seconds per turn        const duration = 15000;        game.turnExpiresAt = Date.now() + duration;        game.turnTimer = setTimeout(() => {            if (this.games.has(game.id) && game.status === 'playing') {                if (game.onTurnTimeout) game.onTurnTimeout(game.id);                else this.switchTurn(game.id); // Fallback internal switch            }        }, duration);    }    switchTurn(gameId) {        const game = this.games.get(gameId);        if (!game || game.status !== 'playing') return null;        // Switch turn        const nextPlayerIndex = (game.playerIds.indexOf(game.currentTurn) + 1) % 2;        game.currentTurn = game.playerIds[nextPlayerIndex];        // Check for draw if board is full (unlikely on timeout but possible)        if (this.isBoardFull(game.board)) {            this.endGame(game);        } else {            this.resetTurnTimer(game);        }        return game;    }    joinGame(gameId, player2Id, player2Name, player2Pic) {        const game = this.games.get(gameId);        if (!game) return { error: "Game not found or expired" };        if (game.playerIds.length >= 2) return { error: "Game full" };        if (game.playerIds.includes(player2Id)) return { error: "Already joined" };        // Clear invite expiration timer        if (game.timer) clearTimeout(game.timer);        game.players[player2Id] = { id: player2Id, name: player2Name, profilePic: player2Pic, score: 0, symbol: 'O' };        game.playerIds.push(player2Id);        game.status = 'playing';        // START TURN TIMER        this.resetTurnTimer(game);        return { game };    }    makeMove(gameId, playerId, row, col, letter) { // letter = 'S' or 'O'        const game = this.games.get(gameId);        if (!game) return { error: "Game not found" };        if (game.status !== 'playing') return { error: "Game not active" };        if (game.currentTurn !== playerId) return { error: "Not your turn" };        if (game.board[row][col] !== null) return { error: "Cell occupied" };        // Place move        game.board[row][col] = letter;        game.lastMove = { row, col, letter, playerId };        // Check for SOS        const { points, newLines } = this.checkSOS(game.board, row, col, letter);        if (points > 0) {            game.players[playerId].score += points;            // Add new lines to game state            newLines.forEach(line => {                game.lines.push({ ...line, playerId });            });            // If scored, gets another turn. Reset timer for same player.            if (this.isBoardFull(game.board)) {                this.endGame(game);            } else {                this.resetTurnTimer(game);            }        } else {            // Switch turn            const nextPlayerIndex = (game.playerIds.indexOf(playerId) + 1) % 2;            game.currentTurn = game.playerIds[nextPlayerIndex];            // Check draw condition if board full but no points or just end            if (this.isBoardFull(game.board)) {                this.endGame(game);            } else {                this.resetTurnTimer(game);            }        }        return { game, pointsScored: points, newLines };    }    checkSOS(board, r, c, letter) {        let points = 0;        const newLines = [];        const directions = [            [-1, -1], [-1, 0], [-1, 1],            [0, -1], [0, 1],            [1, -1], [1, 0], [1, 1]        ];        if (letter === 'S') {            // Look for 'O' then 'S'            for (const [dr, dc] of directions) {                if (this.getCell(board, r + dr, c + dc) === 'O' &&                    this.getCell(board, r + dr * 2, c + dc * 2) === 'S') {                    points++;                    newLines.push({                        start: { r: r, c: c },                        end: { r: r + dr * 2, c: c + dc * 2 }                    });                }            }        } else if (letter === 'O') {            // Look for 'S' on both sides (S-O-S)            // Only need to check half the directions (opposites)            const checkDirs = [                [0, 1], // Horizontal                [1, 0], // Vertical                [1, 1], // Diagonal \                [1, -1] // Diagonal /            ];            for (const [dr, dc] of checkDirs) {                if (this.getCell(board, r - dr, c - dc) === 'S' &&                    this.getCell(board, r + dr, c + dc) === 'S') {                    points++;                    newLines.push({                        start: { r: r - dr, c: c - dc },                        end: { r: r + dr, c: c + dc }                    });                }            }        }        return { points, newLines };    }    getCell(board, r, c) {        if (r < 0 || r >= 5 || c < 0 || c >= 5) return null;        return board[r][c];    }    isBoardFull(board) {        return board.every(row => row.every(cell => cell !== null));    }    endGame(game) {        game.status = 'finished';        const p1 = game.playerIds[0];        const p2 = game.playerIds[1];        if (game.players[p1].score > game.players[p2].score) {            game.winner = p1;        } else if (game.players[p2].score > game.players[p1].score) {            game.winner = p2;        } else {            game.winner = 'draw';        }        // Auto-expire game from memory after 60 seconds        setTimeout(() => {            if (this.games.has(game.id)) {                this.games.delete(game.id);            }        }, 60000);    }    getGame(gameId) {        return this.games.get(gameId);    }    getPublicState(gameId) {        const game = this.games.get(gameId);        if (!game) return null;        // Return only serializable data        return {            id: game.id,            players: game.players,            playerIds: game.playerIds,            board: game.board,            currentTurn: game.currentTurn,            status: game.status,            winner: game.winner,            lastMove: game.lastMove,            turnExpiresAt: game.turnExpiresAt,            lines: game.lines // Include lines in public state        };    }    findGameByPlayerId(playerId) {        for (const game of this.games.values()) {            if (game.playerIds.includes(playerId) && (game.status === 'playing' || game.status === 'waiting')) {                return game;            }        }        return null;    }    removeGame(gameId) {        this.games.delete(gameId);    }}export const gameManager = new GameManager();

@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Video, PhoneOff, Mic, MicOff, VideoOff as VideoOffIcon, Maximize2, Minimize2, Loader2 } from "lucide-react";
+import {
+  Video,
+  PhoneOff,
+  Mic,
+  MicOff,
+  VideoOff as VideoOffIcon,
+  Maximize2,
+  Minimize2,
+  Loader2,
+} from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import toast from "react-hot-toast";
 import {
@@ -7,7 +16,7 @@ import {
   analyzeFrame,
   captureVideoFrame,
   MODERATION_CONFIG,
-  formatAIReport
+  formatAIReport,
 } from "../utils/contentModeration";
 import "../styles/call-modal.css";
 
@@ -17,7 +26,7 @@ const PrivateCallModal = ({
   callType,
   isInitiator,
   otherUser,
-  onCallEnd
+  onCallEnd,
 }) => {
   const { socket, authUser } = useAuthStore();
   const [callStatus, setCallStatus] = useState("connecting"); // connecting, ringing, active, ended
@@ -41,27 +50,23 @@ const PrivateCallModal = ({
   const callTimerRef = useRef(null);
   const hasInitializedRef = useRef(false);
   const pendingOfferRef = useRef(null);
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   const endCall = useCallback(async () => {
-    console.log("🔚 Ending call...");
     stopCallTimer();
-
     // Save call duration before cleanup
     const finalDuration = callDuration;
 
     // Stop all local media tracks
     if (localStreamRef.current) {
-      console.log("🛑 Stopping local media tracks");
       localStreamRef.current.getTracks().forEach((track) => {
         track.stop();
-        console.log(`Stopped ${track.kind} track`);
       });
       localStreamRef.current = null;
     }
 
     // Close peer connection
     if (peerConnectionRef.current) {
-      console.log("🔌 Closing peer connection");
       peerConnectionRef.current.close();
       peerConnectionRef.current = null;
     }
@@ -73,7 +78,6 @@ const PrivateCallModal = ({
 
     // Notify other user
     if (socket && otherUser) {
-      console.log("📤 Notifying other user of call end");
       socket.emit("private:end-call", { targetUserId: otherUser.id });
     }
 
@@ -84,26 +88,21 @@ const PrivateCallModal = ({
         await axiosInstance.post("/messages/call-log", {
           receiverId: otherUser.id,
           callType: callType,
-          duration: finalDuration
+          duration: finalDuration,
         });
-        console.log(`✅ Call log created: ${callType} call, ${finalDuration}s`);
-      } catch (error) {
-        console.error("Failed to create call log:", error);
-      }
+      } catch (error) {}
     }
 
     setCallStatus("ended");
-    if (onCallEnd && typeof onCallEnd === 'function') {
+    if (onCallEnd && typeof onCallEnd === "function") {
       onCallEnd(finalDuration);
     }
     setTimeout(() => {
-      console.log("✅ Call cleanup complete, closing modal");
       onClose();
     }, 500);
   }, [socket, otherUser, onClose, onCallEnd, callDuration, callType]);
 
   const createPeerConnection = useCallback(() => {
-    console.log(`Creating peer connection for ${callType} call`);
     const pc = new RTCPeerConnection({
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
@@ -114,7 +113,6 @@ const PrivateCallModal = ({
 
     pc.onicecandidate = (e) => {
       if (e.candidate && socket) {
-        console.log("Sending ICE candidate");
         socket.emit("private:ice-candidate", {
           targetUserId: otherUser.id,
           candidate: e.candidate,
@@ -123,73 +121,60 @@ const PrivateCallModal = ({
     };
 
     pc.ontrack = (e) => {
-      console.log("🎉 Received remote track!", e.track.kind, "readyState:", e.track.readyState);
       if (e.streams && e.streams[0]) {
-        console.log("📺 Remote stream has", e.streams[0].getTracks().length, "tracks:",
-          e.streams[0].getTracks().map(t => `${t.kind} (${t.readyState})`));
         remoteStreamRef.current = e.streams[0];
-
         // Set remote stream to appropriate element
         if (callType === "video" && remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = e.streams[0];
           // Ensure autoplay works
-          remoteVideoRef.current.play().then(() => {
-            console.log("✅ Remote video stream playing");
-          }).catch(err => {
-            console.error("❌ Error playing remote video:", err);
-            // Try to play again after user interaction
-            setTimeout(() => {
-              remoteVideoRef.current?.play().catch(e => console.error("Retry failed:", e));
-            }, 1000);
-          });
+          remoteVideoRef.current
+            .play()
+            .then(() => {})
+            .catch((err) => {
+              // Try to play again after user interaction
+              setTimeout(() => {
+                remoteVideoRef.current?.play().catch((e) => {});
+              }, 1000);
+            });
         } else if (callType === "audio" && remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = e.streams[0];
-          remoteAudioRef.current.play().then(() => {
-            console.log("✅ Remote audio stream playing");
-          }).catch(err => {
-            console.error("❌ Error playing remote audio:", err);
-            // Try to play again
-            setTimeout(() => {
-              remoteAudioRef.current?.play().catch(e => console.error("Retry failed:", e));
-            }, 1000);
-          });
+          remoteAudioRef.current
+            .play()
+            .then(() => {})
+            .catch((err) => {
+              // Try to play again
+              setTimeout(() => {
+                remoteAudioRef.current?.play().catch((e) => {});
+              }, 1000);
+            });
         }
-
-        console.log("✅ Setting call status to ACTIVE and starting timer");
         setCallStatus("active");
         startCallTimer();
         toast.success("Call connected!");
-      } else {
-        console.warn("⚠️ ontrack fired but no streams available");
       }
     };
 
-    const [isReconnecting, setIsReconnecting] = useState(false);
-
-    // ... (refs remain the same)
-
-    // ... (createPeerConnection modifications)
     pc.onconnectionstatechange = () => {
-      console.log("🔗 Connection state changed:", pc.connectionState);
       if (pc.connectionState === "connected") {
-        console.log("✅ WebRTC connection established!");
         setIsReconnecting(false);
       } else if (pc.connectionState === "failed") {
-        console.error("❌ Connection failed");
         setIsReconnecting(true);
         toast.error("Connection unstable, trying to recover...");
-        // internal recovery logic would go here
       } else if (pc.connectionState === "disconnected") {
-        console.log("⚠️ Connection disconnected");
         setIsReconnecting(true);
       }
     };
 
     pc.oniceconnectionstatechange = () => {
-      console.log("🧊 ICE connection state:", pc.iceConnectionState);
-      if (pc.iceConnectionState === "disconnected" || pc.iceConnectionState === "failed") {
+      if (
+        pc.iceConnectionState === "disconnected" ||
+        pc.iceConnectionState === "failed"
+      ) {
         setIsReconnecting(true);
-      } else if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+      } else if (
+        pc.iceConnectionState === "connected" ||
+        pc.iceConnectionState === "completed"
+      ) {
         setIsReconnecting(false);
       }
     };
@@ -197,19 +182,14 @@ const PrivateCallModal = ({
     // Add local tracks to peer connection
     if (localStreamRef.current) {
       const tracks = localStreamRef.current.getTracks();
-      console.log(`Adding ${tracks.length} local tracks to peer connection:`,
-        tracks.map(t => `${t.kind} (enabled: ${t.enabled})`));
       tracks.forEach((track) => {
         const sender = pc.addTrack(track, localStreamRef.current);
-        console.log(`✅ Added ${track.kind} track, sender:`, sender);
       });
-    } else {
-      console.warn("⚠️ No local stream available when creating peer connection");
     }
 
     peerConnectionRef.current = pc;
     return pc;
-  }, [socket, otherUser, onClose]);
+  }, [socket, otherUser, onClose, callType]); // added callType to dependencies
 
   const startCallTimer = () => {
     callTimerRef.current = setInterval(() => {
@@ -226,54 +206,41 @@ const PrivateCallModal = ({
 
   const initializeMedia = useCallback(async () => {
     try {
-      console.log(`🎤 Initializing media for ${callType} call`);
       // Enhanced 4K constraints with adaptive quality
-      const { getOptimalVideoConstraints, getOptimalAudioConstraints } = await import('../utils/videoQualityOptimizer.js');
-
+      const { getOptimalVideoConstraints, getOptimalAudioConstraints } =
+        await import("../utils/videoQualityOptimizer.js");
       const constraints = {
         audio: getOptimalAudioConstraints(),
         video: callType === "video" ? getOptimalVideoConstraints() : false,
       };
 
-      console.log("📹 Requesting media with constraints:", constraints);
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       localStreamRef.current = stream;
-
-      console.log(`✅ Got local stream with ${stream.getTracks().length} tracks:`,
-        stream.getTracks().map(t => `${t.kind} (enabled: ${t.enabled}, label: ${t.label})`));
 
       if (localVideoRef.current && callType === "video") {
         localVideoRef.current.srcObject = stream;
         localVideoRef.current.muted = true; // Mute local video to prevent echo
-        console.log("✅ Local video element set and muted");
       }
-
       return stream;
     } catch (error) {
-      console.error("❌ Error accessing media:", error);
-      toast.error(`Could not access ${callType === "video" ? "camera/microphone" : "microphone"}`);
+      toast.error(
+        `Could not access ${callType === "video" ? "camera/microphone" : "microphone"}`,
+      );
       onClose();
       return null;
     }
   }, [callType, onClose]);
 
   const startCall = useCallback(async () => {
-    console.log("📞 Starting call as initiator");
     const stream = await initializeMedia();
     if (!stream) {
-      console.error("❌ Failed to get media stream");
       return;
     }
 
-    console.log("✅ Media stream obtained, creating peer connection");
     const pc = createPeerConnection();
-
-    console.log("📝 Creating offer");
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    console.log("✅ Local description set");
 
-    console.log("📤 Sending initiate-call signal");
     socket.emit("private:initiate-call", {
       receiverId: otherUser.id,
       callerInfo: {
@@ -285,114 +252,89 @@ const PrivateCallModal = ({
     });
 
     setCallStatus("ringing");
-    console.log("⏳ Call status set to ringing, waiting for receiver to accept");
-
     // Store offer to send later when receiver accepts
     pendingOfferRef.current = { receiverId: otherUser.id, sdp: offer };
-  }, [initializeMedia, createPeerConnection, socket, otherUser, authUser, callType]);
+  }, [
+    initializeMedia,
+    createPeerConnection,
+    socket,
+    otherUser,
+    authUser,
+    callType,
+  ]);
 
   const answerCall = useCallback(async () => {
-    console.log("Answering call - initializing media");
     const stream = await initializeMedia();
     if (!stream) return;
-
-    console.log("Media initialized, waiting for offer");
     setCallStatus("connecting");
     // Don't create peer connection yet - wait for offer
   }, [initializeMedia]);
 
-  const handleOffer = useCallback(async (sdp) => {
-    console.log("📥 Received offer from caller, creating peer connection");
+  const handleOffer = useCallback(
+    async (sdp) => {
+      // Make sure we have local stream first
+      if (!localStreamRef.current) {
+        const stream = await initializeMedia();
+        if (!stream) {
+          toast.error("Failed to access camera/microphone");
+          endCall();
+          return;
+        }
+      }
 
-    // Make sure we have local stream first
-    if (!localStreamRef.current) {
-      console.log("⚠️ No local stream, initializing media first");
-      const stream = await initializeMedia();
-      if (!stream) {
-        console.error("❌ Failed to initialize media");
-        toast.error("Failed to access camera/microphone");
+      const pc = createPeerConnection();
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        socket.emit("private:answer", {
+          callerId: otherUser.id,
+          sdp: answer,
+        });
+
+        // Process queued ICE candidates
+        iceCandidateQueueRef.current.forEach((candidate) => {
+          pc.addIceCandidate(new RTCIceCandidate(candidate)).catch((err) => {});
+        });
+        iceCandidateQueueRef.current = [];
+      } catch (error) {
+        toast.error("Failed to establish connection");
         endCall();
+      }
+    },
+    [createPeerConnection, socket, otherUser, initializeMedia, endCall],
+  );
+
+  const handleAnswer = useCallback(
+    async (sdp) => {
+      const pc = peerConnectionRef.current;
+      if (!pc) {
         return;
       }
-    }
 
-    console.log("✅ Local stream ready, creating peer connection");
-    const pc = createPeerConnection();
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(sdp));
 
-    try {
-      console.log("📝 Setting remote description (offer)");
-      await pc.setRemoteDescription(new RTCSessionDescription(sdp));
-      console.log("✅ Remote description set");
-
-      console.log("📝 Creating answer");
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      console.log("✅ Local description (answer) set");
-
-      console.log("📤 Sending answer back to caller");
-      socket.emit("private:answer", {
-        callerId: otherUser.id,
-        sdp: answer,
-      });
-
-      console.log("✅ Answer sent, waiting for ICE candidates and tracks");
-
-      // Process queued ICE candidates
-      console.log(`🧊 Processing ${iceCandidateQueueRef.current.length} queued ICE candidates`);
-      iceCandidateQueueRef.current.forEach((candidate) => {
-        pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(err => {
-          console.error("Error adding ICE candidate:", err);
+        // Process queued ICE candidates
+        iceCandidateQueueRef.current.forEach((candidate) => {
+          pc.addIceCandidate(new RTCIceCandidate(candidate)).catch((err) => {});
         });
-      });
-      iceCandidateQueueRef.current = [];
-    } catch (error) {
-      console.error("❌ Error handling offer:", error);
-      toast.error("Failed to establish connection");
-      endCall();
-    }
-  }, [createPeerConnection, socket, otherUser, initializeMedia, endCall]);
-
-  const handleAnswer = useCallback(async (sdp) => {
-    console.log("📥 Received answer from receiver");
-    const pc = peerConnectionRef.current;
-    if (!pc) {
-      console.error("❌ No peer connection found when handling answer");
-      return;
-    }
-
-    try {
-      console.log("📝 Setting remote description (answer)");
-      await pc.setRemoteDescription(new RTCSessionDescription(sdp));
-      console.log("✅ Remote description set successfully");
-
-      // Process queued ICE candidates
-      console.log(`🧊 Processing ${iceCandidateQueueRef.current.length} queued ICE candidates`);
-      iceCandidateQueueRef.current.forEach((candidate) => {
-        pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(err => {
-          console.error("Error adding ICE candidate:", err);
-        });
-      });
-      iceCandidateQueueRef.current = [];
-
-      console.log("✅ Answer processed, waiting for tracks...");
-    } catch (error) {
-      console.error("❌ Error handling answer:", error);
-      toast.error("Failed to establish connection");
-      endCall();
-    }
-  }, [endCall]);
+        iceCandidateQueueRef.current = [];
+      } catch (error) {
+        toast.error("Failed to establish connection");
+        endCall();
+      }
+    },
+    [endCall],
+  );
 
   const handleIceCandidate = useCallback((candidate) => {
-    console.log("🧊 Received ICE candidate");
     const pc = peerConnectionRef.current;
     if (!pc || !pc.remoteDescription) {
-      console.log("⏳ Queueing ICE candidate (no remote description yet)");
       iceCandidateQueueRef.current.push(candidate);
     } else {
-      console.log("✅ Adding ICE candidate immediately");
-      pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(err => {
-        console.error("❌ Error adding ICE candidate:", err);
-      });
+      pc.addIceCandidate(new RTCIceCandidate(candidate)).catch((err) => {});
     }
   }, []);
 
@@ -416,20 +358,14 @@ const PrivateCallModal = ({
     }
   };
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-
-
-
   useEffect(() => {
     if (!isOpen || !socket || !otherUser) return;
 
     // Prevent multiple initializations
     if (hasInitializedRef.current) {
-      console.log("⚠️ Already initialized, skipping");
       return;
     }
+
     hasInitializedRef.current = true;
 
     if (isInitiator) {
@@ -440,17 +376,17 @@ const PrivateCallModal = ({
 
     const handleOfferEvent = ({ sdp }) => handleOffer(sdp);
     const handleAnswerEvent = ({ sdp }) => handleAnswer(sdp);
-    const handleIceCandidateEvent = ({ candidate }) => handleIceCandidate(candidate);
+    const handleIceCandidateEvent = ({ candidate }) =>
+      handleIceCandidate(candidate);
+
     const handleCallAccepted = () => {
       if (isInitiator && pendingOfferRef.current) {
-        console.log("✅ Call accepted by receiver, sending offer now");
         socket.emit("private:offer", pendingOfferRef.current);
-        console.log("📤 Offer sent to receiver");
         pendingOfferRef.current = null;
       }
     };
+
     const handleCallEnded = () => {
-      console.log("Call ended by other user");
       toast("Call ended", { icon: "📞" });
       // Close modal immediately
       stopCallTimer();
@@ -465,22 +401,16 @@ const PrivateCallModal = ({
       setCallStatus("ended");
       onClose();
     };
-    const handleCallRejected = (data) => {
-      console.log("🚫 Received call-rejected event:", data, "isInitiator:", isInitiator);
 
+    const handleCallRejected = (data) => {
       // Only handle rejection if we're the initiator (caller)
       if (!isInitiator) {
-        console.log("⚠️ Ignoring call-rejected event (not initiator)");
         return;
       }
-
       // Verify this rejection is for our call
       if (data.rejectorId && data.rejectorId !== otherUser?.id) {
-        console.log("⚠️ Rejection from different user, ignoring");
         return;
       }
-
-      console.log("❌ Call rejected by other user");
       toast.error("Call declined");
       endCall(); // Use endCall to ensure proper cleanup
     };
@@ -502,12 +432,10 @@ const PrivateCallModal = ({
 
       // Clean up pending offer
       pendingOfferRef.current = null;
-
       stopCallTimer();
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach((track) => track.stop());
       }
-
       // Reset initialization flag
       hasInitializedRef.current = false;
     };
@@ -528,26 +456,39 @@ const PrivateCallModal = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white/20">
-              <img src={otherUser?.profilePic || "/avatar.png"} alt={otherUser?.nickname} className="w-full h-full object-cover" />
+              <img
+                src={otherUser?.profilePic || "/avatar.png"}
+                alt={otherUser?.nickname}
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
               <h3 className="font-semibold text-white text-sm">
                 {otherUser?.nickname || otherUser?.username}
               </h3>
               <p className="text-xs text-white/70">
-                {callStatus === "active" ? formatDuration(callDuration) : callStatus === "connecting" ? "Connecting..." : "Ringing..."}
+                {callStatus === "active"
+                  ? formatDuration(callDuration)
+                  : callStatus === "connecting"
+                    ? "Connecting..."
+                    : "Ringing..."}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-xs text-white/70 capitalize font-medium">{callType} Call</span>
+            <span className="text-xs text-white/70 capitalize font-medium">
+              {callType} Call
+            </span>
           </div>
         </div>
       </div>
 
       {/* Main Video Area - True Full Screen */}
-      <div className="flex-1 relative bg-black min-h-0" style={{ marginTop: callType === "video" ? '60px' : '60px' }}>
+      <div
+        className="flex-1 relative bg-black min-h-0"
+        style={{ marginTop: callType === "video" ? "60px" : "60px" }}
+      >
         {callType === "video" ? (
           <>
             {/* Remote Video - Complete Fullscreen */}
@@ -557,7 +498,6 @@ const PrivateCallModal = ({
               playsInline
               className="w-full h-full object-cover"
             />
-
             {/* Local Video - Picture in Picture */}
             <div className="absolute top-4 right-4 z-40">
               <video
@@ -566,7 +506,7 @@ const PrivateCallModal = ({
                 playsInline
                 muted
                 className="w-24 h-32 sm:w-28 sm:h-36 object-cover bg-gray-800 rounded-lg shadow-lg"
-                style={{ transform: 'scaleX(-1)' }}
+                style={{ transform: "scaleX(-1)" }}
               />
             </div>
 
@@ -576,13 +516,18 @@ const PrivateCallModal = ({
                 {/* Mute Button - Fully Transparent */}
                 <button
                   onClick={toggleMute}
-                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isMuted
-                    ? 'bg-red-500/60 hover:bg-red-500/80'
-                    : 'bg-black/30 hover:bg-black/50'
-                    } backdrop-blur-sm border border-white/20 shadow-xl hover:scale-110 active:scale-95`}
+                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 ${
+                    isMuted
+                      ? "bg-red-500/60 hover:bg-red-500/80"
+                      : "bg-black/30 hover:bg-black/50"
+                  } backdrop-blur-sm border border-white/20 shadow-xl hover:scale-110 active:scale-95`}
                   title={isMuted ? "Unmute" : "Mute"}
                 >
-                  {isMuted ? <MicOff className="w-5 h-5 text-white" /> : <Mic className="w-5 h-5 text-white" />}
+                  {isMuted ? (
+                    <MicOff className="w-5 h-5 text-white" />
+                  ) : (
+                    <Mic className="w-5 h-5 text-white" />
+                  )}
                 </button>
 
                 {/* End Call Button - Slightly More Visible */}
@@ -597,13 +542,18 @@ const PrivateCallModal = ({
                 {/* Video Toggle Button - Fully Transparent */}
                 <button
                   onClick={toggleVideo}
-                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isVideoOff
-                    ? 'bg-red-500/60 hover:bg-red-500/80'
-                    : 'bg-black/30 hover:bg-black/50'
-                    } backdrop-blur-sm border border-white/20 shadow-xl hover:scale-110 active:scale-95`}
+                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 ${
+                    isVideoOff
+                      ? "bg-red-500/60 hover:bg-red-500/80"
+                      : "bg-black/30 hover:bg-black/50"
+                  } backdrop-blur-sm border border-white/20 shadow-xl hover:scale-110 active:scale-95`}
                   title={isVideoOff ? "Turn on camera" : "Turn off camera"}
                 >
-                  {isVideoOff ? <VideoOffIcon className="w-5 h-5 text-white" /> : <Video className="w-5 h-5 text-white" />}
+                  {isVideoOff ? (
+                    <VideoOffIcon className="w-5 h-5 text-white" />
+                  ) : (
+                    <Video className="w-5 h-5 text-white" />
+                  )}
                 </button>
               </div>
             </div>
@@ -614,7 +564,10 @@ const PrivateCallModal = ({
                 <div className="text-center">
                   <div className="avatar mb-6 relative">
                     <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full ring-4 ring-white/20">
-                      <img src={otherUser?.profilePic || "/avatar.png"} alt={otherUser?.nickname} />
+                      <img
+                        src={otherUser?.profilePic || "/avatar.png"}
+                        alt={otherUser?.nickname}
+                      />
                     </div>
                     {isReconnecting && (
                       <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
@@ -626,7 +579,11 @@ const PrivateCallModal = ({
                     {otherUser?.nickname || otherUser?.username}
                   </h3>
                   <p className="text-white/70 text-base animate-pulse">
-                    {isReconnecting ? "Reconnecting..." : (callStatus === "connecting" ? "Connecting..." : "Waiting for video...")}
+                    {isReconnecting
+                      ? "Reconnecting..."
+                      : callStatus === "connecting"
+                        ? "Connecting..."
+                        : "Waiting for video..."}
                   </p>
                 </div>
               </div>
@@ -635,18 +592,26 @@ const PrivateCallModal = ({
         ) : (
           /* Audio Call - Keep Bottom Bar for Audio */
           <>
-            <div className="flex items-center justify-center h-full" style={{ marginBottom: '140px' }}>
+            <div
+              className="flex items-center justify-center h-full"
+              style={{ marginBottom: "140px" }}
+            >
               <div className="text-center">
                 <div className="avatar mb-8">
                   <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full ring-4 ring-blue-400 ring-offset-4 ring-offset-black">
-                    <img src={otherUser?.profilePic || "/avatar.png"} alt={otherUser?.nickname} />
+                    <img
+                      src={otherUser?.profilePic || "/avatar.png"}
+                      alt={otherUser?.nickname}
+                    />
                   </div>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
                   {otherUser?.nickname || otherUser?.username}
                 </h2>
                 <p className="text-white/70 text-lg">
-                  {callStatus === "active" ? formatDuration(callDuration) : "Connecting..."}
+                  {callStatus === "active"
+                    ? formatDuration(callDuration)
+                    : "Connecting..."}
                 </p>
               </div>
             </div>
@@ -658,12 +623,18 @@ const PrivateCallModal = ({
                 <div className="flex flex-col items-center gap-2">
                   <button
                     onClick={toggleMute}
-                    className={`call-control-btn btn btn-circle btn-lg ${isMuted ? 'mute-btn-active' : 'mute-btn-inactive'}`}
+                    className={`call-control-btn btn btn-circle btn-lg ${isMuted ? "mute-btn-active" : "mute-btn-inactive"}`}
                     title={isMuted ? "Unmute" : "Mute"}
                   >
-                    {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                    {isMuted ? (
+                      <MicOff className="w-6 h-6" />
+                    ) : (
+                      <Mic className="w-6 h-6" />
+                    )}
                   </button>
-                  <span className="text-xs text-white/70 font-medium">{isMuted ? "Muted" : "Mic"}</span>
+                  <span className="text-xs text-white/70 font-medium">
+                    {isMuted ? "Muted" : "Mic"}
+                  </span>
                 </div>
 
                 {/* End Call Button */}
@@ -675,30 +646,28 @@ const PrivateCallModal = ({
                   >
                     <PhoneOff className="w-7 h-7" />
                   </button>
-                  <span className="text-xs text-white/70 font-medium">End Call</span>
+                  <span className="text-xs text-white/70 font-medium">
+                    End Call
+                  </span>
                 </div>
               </div>
 
               {/* Call Info */}
               <div className="text-center">
                 <p className="text-sm text-white/60">
-                  {callStatus === "active" && `Duration: ${formatDuration(callDuration)}`}
-                  {callStatus === "connecting" && "Establishing secure connection..."}
+                  {callStatus === "active" &&
+                    `Duration: ${formatDuration(callDuration)}`}
+                  {callStatus === "connecting" &&
+                    "Establishing secure connection..."}
                   {callStatus === "ringing" && "Calling..."}
                 </p>
               </div>
             </div>
           </>
         )}
-
         {/* Audio element for audio calls */}
         {callType === "audio" && (
-          <audio
-            ref={remoteAudioRef}
-            autoPlay
-            playsInline
-            className="hidden"
-          />
+          <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
         )}
       </div>
     </div>

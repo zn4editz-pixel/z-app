@@ -9,137 +9,171 @@ import { Search, X, Video, Check, Gamepad2, Clock } from "lucide-react";
 import VerifiedBadge from "./VerifiedBadge";
 import { useNotificationStore } from "../store/useNotificationStore";
 import { getMessageStatusInfo, getThemeColors } from "../utils/messageStatus";
-
 const Sidebar = () => {
-  const {
-    selectedUser,
-    setSelectedUser,
-    unreadCounts = {},
-  } = useChatStore();
-
+  const { selectedUser, setSelectedUser, unreadCounts = {} } = useChatStore();
   const { onlineUsers = [], authUser } = useAuthStore();
-  const { friends, isLoading: isFriendsLoading, pendingReceived } = useFriendStore();
+  const {
+    friends,
+    isLoading: isFriendsLoading,
+    pendingReceived,
+  } = useFriendStore();
   const { notifications } = useNotificationStore();
   const { theme } = useThemeStore();
-
   // State declarations
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [, forceUpdate] = useState({});
-
-
   // Removed global 500ms forceUpdate interval for performance optimization
-
   // ✅ ENHANCED: Smart message preview with better logic
   const getMessagePreview = (user, unreadCount) => {
     const lastMsg = user.lastMessage;
-
     // Debug logging removed for performance
-
     // No messages yet - show "Tap to chat"
-    if (!lastMsg || (!lastMsg.text && !lastMsg.image && !lastMsg.voice && !lastMsg.isCallLog)) {
+    if (
+      !lastMsg ||
+      (!lastMsg.text && !lastMsg.image && !lastMsg.voice && !lastMsg.isCallLog)
+    ) {
       return { text: "Tap to chat", icon: null, bold: false, muted: true };
     }
-
     const isFromMe = lastMsg.senderId === authUser?.id;
     const isReceiverOnline = onlineUsers.includes(user.id);
-
     // Handle call logs
     if (lastMsg.isCallLog) {
-      const callIcon = lastMsg.callType === 'video' ? '📹' : '📞';
-      let callText = '';
-
-      if (lastMsg.callStatus === 'completed') {
-        const duration = lastMsg.callDuration ? ` (${Math.floor(lastMsg.callDuration / 60)}:${String(lastMsg.callDuration % 60).padStart(2, '0')})` : '';
+      const callIcon = lastMsg.callType === "video" ? "📹" : "📞";
+      let callText = "";
+      if (lastMsg.callStatus === "completed") {
+        const duration = lastMsg.callDuration
+          ? ` (${Math.floor(lastMsg.callDuration / 60)}:${String(lastMsg.callDuration % 60).padStart(2, "0")})`
+          : "";
         callText = isFromMe ? `You called${duration}` : `Called you${duration}`;
-      } else if (lastMsg.callStatus === 'missed') {
-        callText = isFromMe ? 'You missed a call' : 'Missed call';
-      } else if (lastMsg.callStatus === 'declined') {
-        callText = isFromMe ? 'Call declined' : 'You declined a call';
+      } else if (lastMsg.callStatus === "missed") {
+        callText = isFromMe ? "You missed a call" : "Missed call";
+      } else if (lastMsg.callStatus === "declined") {
+        callText = isFromMe ? "Call declined" : "You declined a call";
       } else {
-        callText = isFromMe ? 'You called' : 'Called you';
+        callText = isFromMe ? "You called" : "Called you";
       }
-
-      return { text: callText, icon: callIcon, bold: unreadCount > 0, muted: false };
+      return {
+        text: callText,
+        icon: callIcon,
+        bold: unreadCount > 0,
+        muted: false,
+      };
     }
-
     // Handle reactions
-    if (lastMsg.reactions && Array.isArray(lastMsg.reactions) && lastMsg.reactions.length > 0) {
-      const myReaction = lastMsg.reactions.find(r => r.userId === authUser?.id);
-      const theirReaction = lastMsg.reactions.find(r => r.userId === user.id);
-
+    if (
+      lastMsg.reactions &&
+      Array.isArray(lastMsg.reactions) &&
+      lastMsg.reactions.length > 0
+    ) {
+      const myReaction = lastMsg.reactions.find(
+        (r) => r.userId === authUser?.id,
+      );
+      const theirReaction = lastMsg.reactions.find((r) => r.userId === user.id);
       if (myReaction && isFromMe) {
-        return { text: `You reacted ${myReaction.emoji} to your message`, icon: null, bold: false, muted: false };
+        return {
+          text: `You reacted ${myReaction.emoji} to your message`,
+          icon: null,
+          bold: false,
+          muted: false,
+        };
       } else if (myReaction && !isFromMe) {
-        return { text: `You reacted ${myReaction.emoji}`, icon: null, bold: false, muted: false };
+        return {
+          text: `You reacted ${myReaction.emoji}`,
+          icon: null,
+          bold: false,
+          muted: false,
+        };
       } else if (theirReaction) {
-        return { text: `Reacted ${theirReaction.emoji} to your message`, icon: null, bold: unreadCount > 0, muted: false };
+        return {
+          text: `Reacted ${theirReaction.emoji} to your message`,
+          icon: null,
+          bold: unreadCount > 0,
+          muted: false,
+        };
       }
     }
-
     // Multiple unread messages
     if (unreadCount > 1) {
       return { text: "New messages", icon: null, bold: true, muted: false };
     }
-
     // Single unread message
     if (unreadCount === 1) {
       if (lastMsg.image) {
         return { text: "Sent a photo", icon: "📷", bold: true, muted: false };
       }
       if (lastMsg.voice) {
-        return { text: "Sent a voice message", icon: "🎤", bold: true, muted: false };
+        return {
+          text: "Sent a voice message",
+          icon: "🎤",
+          bold: true,
+          muted: false,
+        };
       }
-      return { text: lastMsg.text || "New message", icon: null, bold: true, muted: false };
+      return {
+        text: lastMsg.text || "New message",
+        icon: null,
+        bold: true,
+        muted: false,
+      };
     }
-
     // Read messages (no unread) - Show proper status for my messages
     if (lastMsg.image) {
-      return { text: isFromMe ? "You sent a photo" : "Sent a photo", icon: "📷", bold: false, muted: false };
+      return {
+        text: isFromMe ? "You sent a photo" : "Sent a photo",
+        icon: "📷",
+        bold: false,
+        muted: false,
+      };
     }
     if (lastMsg.voice) {
-      return { text: isFromMe ? "You sent a voice message" : "Sent a voice message", icon: "🎤", bold: false, muted: false };
+      return {
+        text: isFromMe ? "You sent a voice message" : "Sent a voice message",
+        icon: "🎤",
+        bold: false,
+        muted: false,
+      };
     }
-
     // Handle Game Invites - Special Styling
     if (lastMsg.text && lastMsg.text.startsWith("GAME_INVITE:")) {
-      const msgTime = new Date(lastMsg.createdAt || lastMsg.timestamp).getTime();
+      const msgTime = new Date(
+        lastMsg.createdAt || lastMsg.timestamp,
+      ).getTime();
       const timeDiff = Date.now() - msgTime;
       const isExpired = timeDiff > 20000; // 20 seconds expiration
-
       if (isExpired) {
         return {
           text: "Game Expired",
           icon: <Clock size={14} className="text-base-content/60" />,
           bold: false,
           muted: true,
-          shining: false
+          shining: false,
         };
       }
-
       return {
         text: "Let's Play!",
         icon: <Gamepad2 size={14} className="text-indigo-500" />,
         bold: true,
         muted: false,
-        shining: true // Special flag for gradient effect
+        shining: true, // Special flag for gradient effect
       };
     }
-
     // ✅ FIXED: Regular text message with proper status sync
     const prefix = isFromMe ? "You: " : "";
     let statusIcon = null;
-
     if (isFromMe) {
       // Get theme colors and status info for proper sync
       const themeColors = getThemeColors(theme);
-      const statusInfo = getMessageStatusInfo(lastMsg, true, isReceiverOnline, themeColors);
-
+      const statusInfo = getMessageStatusInfo(
+        lastMsg,
+        true,
+        isReceiverOnline,
+        themeColors,
+      );
       // Debug logging removed for performance
-
       if (statusInfo.show) {
-        if (statusInfo.type === 'double-tick') {
+        if (statusInfo.type === "double-tick") {
           // Double tick for delivered/read
           statusIcon = (
             <svg
@@ -152,7 +186,7 @@ const Sidebar = () => {
               <path d="m5.354 7.146.896.897-.707.707-.897-.896a.5.5 0 1 1 .708-.708z" />
             </svg>
           );
-        } else if (statusInfo.type === 'single-tick') {
+        } else if (statusInfo.type === "single-tick") {
           // Single tick for sent
           statusIcon = (
             <svg
@@ -164,7 +198,7 @@ const Sidebar = () => {
               <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z" />
             </svg>
           );
-        } else if (statusInfo.type === 'clock') {
+        } else if (statusInfo.type === "clock") {
           // Clock for sending/failed
           statusIcon = (
             <svg
@@ -180,17 +214,26 @@ const Sidebar = () => {
         }
       }
     }
-
-    return { text: prefix + (lastMsg.text || ""), icon: statusIcon, bold: false, muted: false };
+    return {
+      text: prefix + (lastMsg.text || ""),
+      icon: statusIcon,
+      bold: false,
+      muted: false,
+    };
   };
-
   // Calculate if there are any Social Hub updates
-  const adminNotifications = notifications.filter(n => n.type === 'admin' || n.type === 'admin_broadcast');
-  const hasVerificationUpdate = authUser?.verificationRequest?.status && authUser.verificationRequest.status !== "none";
-  const hasSocialHubUpdates = pendingReceived.length > 0 || adminNotifications.length > 0 || hasVerificationUpdate;
-
+  const adminNotifications = notifications.filter(
+    (n) => n.type === "admin" || n.type === "admin_broadcast",
+  );
+  const hasVerificationUpdate =
+    authUser?.verificationRequest?.status &&
+    authUser.verificationRequest.status !== "none";
+  const hasSocialHubUpdates =
+    pendingReceived.length > 0 ||
+    adminNotifications.length > 0 ||
+    hasVerificationUpdate;
   const filteredUsers = friends
-    .filter((u) => u && (u.id))
+    .filter((u) => u && u.id)
     .filter((u) => {
       if (!query) return true;
       return `${u.nickname || u.username}`
@@ -201,31 +244,29 @@ const Sidebar = () => {
     .sort((a, b) => {
       // Priority 1: Sort by most recent interaction (latest message timestamp)
       // This ensures the person you most recently chatted with appears at the top
-      const aTimestamp = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : 0;
-      const bTimestamp = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
-
+      const aTimestamp = a.lastMessage?.timestamp
+        ? new Date(a.lastMessage.timestamp).getTime()
+        : 0;
+      const bTimestamp = b.lastMessage?.timestamp
+        ? new Date(b.lastMessage.timestamp).getTime()
+        : 0;
       // If both have messages, sort by most recent
       if (aTimestamp && bTimestamp) {
         return bTimestamp - aTimestamp; // Most recent first
       }
-
       // If only one has messages, that one comes first
       if (aTimestamp && !bTimestamp) return -1;
       if (!aTimestamp && bTimestamp) return 1;
-
       // Priority 2: If no messages, online users come first
       const aOnline = onlineUsers.includes(a.id);
       const bOnline = onlineUsers.includes(b.id);
-
       if (aOnline && !bOnline) return -1;
       if (!aOnline && bOnline) return 1;
-
       // Priority 3: Alphabetical by display name
-      const aName = (a.nickname || a.username || '').toLowerCase();
-      const bName = (b.nickname || b.username || '').toLowerCase();
+      const aName = (a.nickname || a.username || "").toLowerCase();
+      const bName = (b.nickname || b.username || "").toLowerCase();
       return aName.localeCompare(bName);
     });
-
   return (
     <>
       {/* Sidebar Container */}
@@ -254,7 +295,6 @@ const Sidebar = () => {
               <Search className="w-5 h-5" />
             </button>
           </div>
-
           {/* Friends Horizontal Bar - Stranger button fixed, then scrollable friends */}
           <div className="flex py-3 pt-4 -mx-3 sm:-mx-4 relative">
             {/* Stranger Chat Button - Compact with border */}
@@ -264,7 +304,7 @@ const Sidebar = () => {
                   <Link
                     to="/stranger-settings"
                     className="flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-all hover:scale-105"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                    style={{ WebkitTapHighlightColor: "transparent" }}
                   >
                     <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-dashed border-base-content/30 flex items-center justify-center bg-base-200/50 hover:bg-base-200 transition-colors">
                       <Video className="w-6 h-6 sm:w-7 sm:h-7 text-base-content/70" />
@@ -276,10 +316,8 @@ const Sidebar = () => {
                 </div>
               </div>
             </div>
-
             {/* Scrollable Friends Container - Added padding top to prevent clipping on hover */}
             <div className="flex gap-3 sm:gap-4 overflow-x-auto pr-3 sm:pr-4 scrollbar-hide pl-3 overflow-y-visible">
-
               {/* All Friends - Online first with green ring, then offline */}
               {friends
                 .sort((a, b) => {
@@ -296,7 +334,7 @@ const Sidebar = () => {
                       key={u.id}
                       onClick={() => setSelectedUser(u)}
                       className="flex-none flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] active:scale-95 transition-all duration-200 focus:outline-none hover:scale-105"
-                      style={{ WebkitTapHighlightColor: 'transparent' }}
+                      style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <div className="relative">
                         {/* Avatar with enhanced online indicator */}
@@ -305,18 +343,19 @@ const Sidebar = () => {
                           {isOnline && (
                             <div className="absolute inset-0 rounded-full bg-success/20 blur-sm"></div>
                           )}
-
                           {/* Avatar container */}
-                          <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] transition-all ${isOnline
-                            ? 'bg-gradient-to-br from-success to-success/80 shadow-lg shadow-success/30'
-                            : 'bg-base-content/15'
-                            }`}>
+                          <div
+                            className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] transition-all ${
+                              isOnline
+                                ? "bg-gradient-to-br from-success to-success/80 shadow-lg shadow-success/30"
+                                : "bg-base-content/15"
+                            }`}
+                          >
                             <img
                               src={u.profilePic || "/avatar.png"}
                               alt={u.nickname || u.username}
                               className="w-full h-full object-cover rounded-full border-2 border-base-100"
                             />
-
                             {/* Enhanced online indicator */}
                             {isOnline && (
                               <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-success rounded-full border-[3px] border-base-100 shadow-md">
@@ -326,9 +365,11 @@ const Sidebar = () => {
                           </div>
                         </div>
                       </div>
-
-                      <span className={`text-xs sm:text-sm truncate w-14 sm:w-16 text-center font-medium transition-colors ${isOnline ? 'text-success' : 'text-base-content/60'
-                        }`}>
+                      <span
+                        className={`text-xs sm:text-sm truncate w-14 sm:w-16 text-center font-medium transition-colors ${
+                          isOnline ? "text-success" : "text-base-content/60"
+                        }`}
+                      >
                         {(u.nickname || u.username || "User").split(" ")[0]}
                       </span>
                     </button>
@@ -337,7 +378,6 @@ const Sidebar = () => {
             </div>
           </div>
         </div>
-
         {/* Scrollable Chat List - THIS IS THE KEY FIX */}
         <div className="flex-1 min-h-0 flex flex-col">
           {/* Online Filter - Compact for mobile */}
@@ -351,19 +391,21 @@ const Sidebar = () => {
               />
               {/* Custom Visual Checkbox - Guaranteed Size */}
               <div
-                style={{ width: '12px', height: '12px' }}
+                style={{ width: "12px", height: "12px" }}
                 className={`
                   rounded-full border transition-all duration-200 flex-shrink-0
-                  ${showOnlineOnly
-                    ? "bg-primary border-primary"
-                    : "border-base-content/30 group-hover:border-base-content/50"
+                  ${
+                    showOnlineOnly
+                      ? "bg-primary border-primary"
+                      : "border-base-content/30 group-hover:border-base-content/50"
                   }
                 `}
               />
-              <span className="text-[10px] sm:text-xs font-medium text-base-content/70 select-none">Show Active only</span>
+              <span className="text-[10px] sm:text-xs font-medium text-base-content/70 select-none">
+                Show Active only
+              </span>
             </label>
           </div>
-
           {/* Scrollable List */}
           <div className="flex-1 overflow-y-auto px-2 sm:px-3 py-2">
             {/* Conversations List */}
@@ -372,7 +414,9 @@ const Sidebar = () => {
                 <SidebarSkeleton />
               ) : filteredUsers.length === 0 ? (
                 <div className="text-center text-base-content/60 py-8 px-4 text-sm sm:text-base">
-                  {query ? "No results found" : "No friends yet. Add some friends to start chatting!"}
+                  {query
+                    ? "No results found"
+                    : "No friends yet. Add some friends to start chatting!"}
                 </div>
               ) : (
                 filteredUsers.map((user) => {
@@ -386,8 +430,11 @@ const Sidebar = () => {
                         setSelectedUser(user);
                         if (searchOpen) setSearchOpen(false);
                       }}
-                      className={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg text-left transition-all hover:bg-base-200 card-touch ${(selectedUser?.id || selectedUser?.id) === userId ? "bg-base-200 ring-2 ring-primary/20" : ""
-                        }`}
+                      className={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg text-left transition-all hover:bg-base-200 card-touch ${
+                        (selectedUser?.id || selectedUser?.id) === userId
+                          ? "bg-base-200 ring-2 ring-primary/20"
+                          : ""
+                      }`}
                     >
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
@@ -402,35 +449,43 @@ const Sidebar = () => {
                           <span className="absolute right-0 bottom-0 w-3 h-3 rounded-full ring-2 ring-base-100 bg-success" />
                         )}
                       </div>
-
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold truncate text-sm sm:text-base flex items-center gap-1">
-                          <span className="truncate">{user.nickname || user.username}</span>
+                          <span className="truncate">
+                            {user.nickname || user.username}
+                          </span>
                           {user.isVerified && <VerifiedBadge size="xs" />}
                         </div>
                         {(() => {
                           const preview = getMessagePreview(user, unread);
                           return (
-                            <div className={`text-xs sm:text-sm truncate flex items-center gap-1 ${preview.bold ? 'font-semibold text-base-content' :
-                              preview.muted ? 'text-base-content/40' :
-                                'text-base-content/60'
-                              }`}>
-                              {preview.icon && (
-                                typeof preview.icon === 'string' ? (
-                                  <span className="flex-shrink-0">{preview.icon}</span>
+                            <div
+                              className={`text-xs sm:text-sm truncate flex items-center gap-1 ${
+                                preview.bold
+                                  ? "font-semibold text-base-content"
+                                  : preview.muted
+                                    ? "text-base-content/40"
+                                    : "text-base-content/60"
+                              }`}
+                            >
+                              {preview.icon &&
+                                (typeof preview.icon === "string" ? (
+                                  <span className="flex-shrink-0">
+                                    {preview.icon}
+                                  </span>
                                 ) : (
                                   preview.icon
-                                )
-                              )}
-                              <span className={`truncate ${preview.shining ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-transparent bg-clip-text font-bold animate-pulse' : ''}`}>
+                                ))}
+                              <span
+                                className={`truncate ${preview.shining ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-transparent bg-clip-text font-bold animate-pulse" : ""}`}
+                              >
                                 {preview.text}
                               </span>
                             </div>
                           );
                         })()}
                       </div>
-
                       {/* Professional Unread Badge - Fixed Layering */}
                       {unread > 0 && (
                         <div className="flex-shrink-0 relative z-10">
@@ -448,7 +503,6 @@ const Sidebar = () => {
           </div>
         </div>
       </aside>
-
       {/* Enhanced Search Overlay */}
       {searchOpen && (
         <div
@@ -480,7 +534,6 @@ const Sidebar = () => {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-
               {/* Search Input */}
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -504,15 +557,14 @@ const Sidebar = () => {
                   </button>
                 )}
               </div>
-
               {/* Results Count */}
               {query && (
                 <p className="mt-3 text-sm text-base-content/60">
-                  {filteredUsers.length} {filteredUsers.length === 1 ? 'friend' : 'friends'} found
+                  {filteredUsers.length}{" "}
+                  {filteredUsers.length === 1 ? "friend" : "friends"} found
                 </p>
               )}
             </div>
-
             {/* Search Results */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               {!query ? (
@@ -520,7 +572,9 @@ const Sidebar = () => {
                   <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                     <Search className="w-10 h-10 sm:w-12 sm:h-12 text-primary" />
                   </div>
-                  <h3 className="text-lg sm:text-xl font-semibold mb-2">Search Your Friends</h3>
+                  <h3 className="text-lg sm:text-xl font-semibold mb-2">
+                    Search Your Friends
+                  </h3>
                   <p className="text-sm sm:text-base text-base-content/60 max-w-sm">
                     Type a name or username to find your friends quickly
                   </p>
@@ -553,7 +607,6 @@ const Sidebar = () => {
                             <span className="absolute right-0 bottom-0 w-3 h-3 sm:w-4 sm:h-4 rounded-full ring-2 ring-base-100 bg-success animate-pulse-glow" />
                           )}
                         </div>
-
                         {/* Info */}
                         <div className="flex-1 min-w-0 text-left">
                           <div className="flex items-center gap-2 mb-1">
@@ -572,7 +625,6 @@ const Sidebar = () => {
                             )}
                           </div>
                         </div>
-
                         {/* Professional Unread Badge - Fixed Layering */}
                         {unread > 0 && (
                           <div className="flex-shrink-0 relative z-10">
@@ -582,11 +634,20 @@ const Sidebar = () => {
                             </span>
                           </div>
                         )}
-
                         {/* Arrow Icon */}
                         <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          <svg
+                            className="w-5 h-5 text-primary"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
                           </svg>
                         </div>
                       </button>
@@ -596,13 +657,26 @@ const Sidebar = () => {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-base-300 flex items-center justify-center mb-4">
-                    <svg className="w-10 h-10 sm:w-12 sm:h-12 text-base-content/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <svg
+                      className="w-10 h-10 sm:w-12 sm:h-12 text-base-content/40"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
                     </svg>
                   </div>
-                  <h3 className="text-lg sm:text-xl font-semibold mb-2">No Results Found</h3>
+                  <h3 className="text-lg sm:text-xl font-semibold mb-2">
+                    No Results Found
+                  </h3>
                   <p className="text-sm sm:text-base text-base-content/60 max-w-sm">
-                    No friends found matching "<span className="font-semibold">{query}</span>"
+                    No friends found matching "
+                    <span className="font-semibold">{query}</span>"
                   </p>
                 </div>
               )}
@@ -610,7 +684,6 @@ const Sidebar = () => {
           </div>
         </div>
       )}
-
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -645,14 +718,12 @@ const Sidebar = () => {
         .animate-pulse-glow {
           animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
-        
         /* Notification Badge Fixes */
         .notification-badge {
           position: relative;
           z-index: 50 !important;
           pointer-events: auto;
         }
-        
         .notification-badge::before {
           content: '';
           position: absolute;
@@ -665,5 +736,4 @@ const Sidebar = () => {
     </>
   );
 };
-
 export default Sidebar;

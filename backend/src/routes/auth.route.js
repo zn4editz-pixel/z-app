@@ -17,8 +17,9 @@ import {
 	sendEmailChangeOTP,
 	verifyEmailChangeOTP,
 } from "../controllers/auth.controller.js";
+
 // Assuming 'auth.middleware.js' is correct. If it's 'protectRoute.js', let me know.
-import { protectRoute } from "../middleware/auth.middleware.js"; 
+import { protectRoute } from "../middleware/auth.middleware.js";
 import { authLimiter } from "../middleware/security.js";
 
 const router = express.Router();

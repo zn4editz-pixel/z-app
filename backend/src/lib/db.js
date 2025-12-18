@@ -3,7 +3,6 @@ import { PrismaClient } from '@prisma/client';
 
 // Validate database URL
 if (!process.env.DATABASE_URL) {
-  console.error('❌ DATABASE_URL environment variable is required');
   process.exit(1);
 }
 
@@ -29,18 +28,15 @@ export class DatabaseCache {
     cache.delete(key);
     return null;
   }
-
   static async set(key, value, ttl = 300) {
     cache.set(key, {
       value,
       expires: Date.now() + (ttl * 1000)
     });
   }
-
   static async del(key) {
     cache.delete(key);
   }
-
   static async invalidatePattern(pattern) {
     for (const key of cache.keys()) {
       if (key.includes(pattern.replace('*', ''))) {
@@ -55,7 +51,6 @@ export class QueryOptimizer {
   static async findUserById(id) {
     const cacheKey = `user:${id}`;
     let user = await DatabaseCache.get(cacheKey);
-
     if (!user) {
       user = await prisma.user.findUnique({
         where: { id },
@@ -72,17 +67,14 @@ export class QueryOptimizer {
           city: true,
         },
       });
-
       if (user) {
         await DatabaseCache.set(cacheKey, user, 600);
       }
     }
     return user;
   }
-
   static async getMessages(senderId, receiverId, page = 1, limit = 50) {
     const offset = (page - 1) * limit;
-
     const messages = await prisma.message.findMany({
       where: {
         OR: [
@@ -101,8 +93,7 @@ export class QueryOptimizer {
         voiceDuration: true,
         createdAt: true,
         status: true,
-        senderId: true,
-        receiverId: true,
+        senderId: true, receiverId: true,
         replyToId: true,
         isDeleted: true,
         reactions: true,
@@ -112,10 +103,8 @@ export class QueryOptimizer {
         callStatus: true,
       },
     });
-
     return messages;
   }
-
   static async batchUpdateUserStatus(userIds, isOnline) {
     await prisma.user.updateMany({
       where: { id: { in: userIds } },
@@ -124,7 +113,6 @@ export class QueryOptimizer {
         lastSeen: new Date(),
       },
     });
-
     for (const userId of userIds) {
       await DatabaseCache.del(`user:${userId}`);
     }

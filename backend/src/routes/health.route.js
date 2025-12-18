@@ -21,15 +21,14 @@ router.get('/ping', async (req, res) => {
 		// Test database connection
 		const { ConnectionMonitor } = await import('../lib/db.js');
 		const dbHealth = await ConnectionMonitor.checkHealth();
-		
-		res.json({ 
-			status: 'ok', 
+		res.json({
+			status: 'ok',
 			timestamp: new Date().toISOString(),
 			database: dbHealth.database || 'unknown'
 		});
 	} catch (error) {
-		res.json({ 
-			status: 'ok', 
+		res.json({
+			status: 'ok',
 			timestamp: new Date().toISOString(),
 			database: 'error',
 			error: error.message
@@ -49,7 +48,6 @@ router.get('/env', (req, res) => {
 		RENDER: process.env.RENDER || 'not set',
 		timestamp: new Date().toISOString()
 	};
-	
 	res.json(envCheck);
 });
 
@@ -59,7 +57,7 @@ router.get('/', async (req, res) => {
 		// Test database connection
 		const { ConnectionMonitor } = await import('../lib/db.js');
 		const dbHealth = await ConnectionMonitor.checkHealth();
-		
+
 		const healthStatus = {
 			status: dbHealth.database === 'healthy' ? 'healthy' : 'degraded',
 			service: 'z-app-backend',

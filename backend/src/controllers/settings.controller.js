@@ -23,7 +23,6 @@ export const getSettings = async (req, res) => {
 
         res.status(200).json(settings);
     } catch (error) {
-        console.error("Error fetching settings:", error.message);
         // FAILSAFE: Return default settings if DB fails, so frontend doesn't break
         res.status(200).json({
             id: "default_settings",
@@ -66,7 +65,6 @@ export const updateSettings = async (req, res) => {
 
         res.status(200).json(settings);
     } catch (error) {
-        console.error("Error updating settings:", error.message);
         res.status(500).json({ error: "Failed to update settings" });
     }
 };

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { Send, Mail, Users, User, Loader2 } from "lucide-react";
-
 const AdminNotifications = ({ users = [] }) => {
   const [notificationType, setNotificationType] = useState("personal"); // personal or broadcast
   const [selectedUser, setSelectedUser] = useState("");
@@ -11,7 +10,6 @@ const AdminNotifications = ({ users = [] }) => {
   const [color, setColor] = useState("blue");
   const [type, setType] = useState("info");
   const [isSending, setIsSending] = useState(false);
-
   const colors = [
     { value: "green", label: "Green (Success)", class: "bg-success" },
     { value: "red", label: "Red (Error)", class: "bg-error" },
@@ -19,48 +17,47 @@ const AdminNotifications = ({ users = [] }) => {
     { value: "yellow", label: "Yellow (Warning)", class: "bg-warning" },
     { value: "orange", label: "Orange (Alert)", class: "bg-orange-500" },
   ];
-
   const types = [
     { value: "success", label: "Success", icon: "✓" },
     { value: "warning", label: "Warning", icon: "⚠" },
     { value: "error", label: "Error", icon: "✕" },
     { value: "info", label: "Info", icon: "ℹ" },
   ];
-
   const handleSendNotification = async (e) => {
     e.preventDefault();
-
     if (!title.trim() || !message.trim()) {
       toast.error("Title and message are required");
       return;
     }
-
     if (notificationType === "personal" && !selectedUser) {
       toast.error("Please select a user");
       return;
     }
-
     setIsSending(true);
-
     try {
       if (notificationType === "personal") {
-        await axiosInstance.post(`/admin/notifications/personal/${selectedUser}`, {
-          title,
-          message,
-          color,
-          type,
-        });
+        await axiosInstance.post(
+          `/admin/notifications/personal/${selectedUser}`,
+          {
+            title,
+            message,
+            color,
+            type,
+          },
+        );
         toast.success("Notification sent successfully!");
       } else {
-        const response = await axiosInstance.post("/admin/notifications/broadcast", {
-          title,
-          message,
-          color,
-          type,
-        });
+        const response = await axiosInstance.post(
+          "/admin/notifications/broadcast",
+          {
+            title,
+            message,
+            color,
+            type,
+          },
+        );
         toast.success(`Broadcast sent to ${response.data.count} users!`);
       }
-
       // Reset form
       setTitle("");
       setMessage("");
@@ -73,7 +70,6 @@ const AdminNotifications = ({ users = [] }) => {
       setIsSending(false);
     }
   };
-
   return (
     <div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 border border-base-300">
       <div className="flex items-center gap-3 mb-6">
@@ -82,10 +78,11 @@ const AdminNotifications = ({ users = [] }) => {
         </div>
         <div>
           <h2 className="text-xl font-bold">Send Notifications</h2>
-          <p className="text-sm text-base-content/60">Send messages to users in Social Hub</p>
+          <p className="text-sm text-base-content/60">
+            Send messages to users in Social Hub
+          </p>
         </div>
       </div>
-
       <form onSubmit={handleSendNotification} className="space-y-4">
         {/* Notification Type */}
         <div className="flex gap-2">
@@ -110,7 +107,6 @@ const AdminNotifications = ({ users = [] }) => {
             Broadcast
           </button>
         </div>
-
         {/* User Selection (Personal Only) */}
         {notificationType === "personal" && (
           <div className="form-control">
@@ -132,7 +128,6 @@ const AdminNotifications = ({ users = [] }) => {
             </select>
           </div>
         )}
-
         {/* Title */}
         <div className="form-control">
           <label className="label">
@@ -147,7 +142,6 @@ const AdminNotifications = ({ users = [] }) => {
             required
           />
         </div>
-
         {/* Message */}
         <div className="form-control">
           <label className="label">
@@ -161,7 +155,6 @@ const AdminNotifications = ({ users = [] }) => {
             required
           />
         </div>
-
         {/* Color and Type */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Color */}
@@ -181,7 +174,6 @@ const AdminNotifications = ({ users = [] }) => {
               ))}
             </select>
           </div>
-
           {/* Type */}
           <div className="form-control">
             <label className="label">
@@ -200,15 +192,18 @@ const AdminNotifications = ({ users = [] }) => {
             </select>
           </div>
         </div>
-
         {/* Preview */}
-        <div className="alert shadow-lg" style={{ backgroundColor: `var(--${color})`, color: 'white' }}>
+        <div
+          className="alert shadow-lg"
+          style={{ backgroundColor: `var(--${color})`, color: "white" }}
+        >
           <div>
             <span className="font-bold">{title || "Preview Title"}</span>
-            <p className="text-sm opacity-90">{message || "Preview message will appear here..."}</p>
+            <p className="text-sm opacity-90">
+              {message || "Preview message will appear here..."}
+            </p>
           </div>
         </div>
-
         {/* Submit Button */}
         <button
           type="submit"
@@ -223,7 +218,9 @@ const AdminNotifications = ({ users = [] }) => {
           ) : (
             <>
               <Send className="w-4 h-4" />
-              {notificationType === "personal" ? "Send to User" : "Broadcast to All Users"}
+              {notificationType === "personal"
+                ? "Send to User"
+                : "Broadcast to All Users"}
             </>
           )}
         </button>
@@ -231,5 +228,4 @@ const AdminNotifications = ({ users = [] }) => {
     </div>
   );
 };
-
 export default AdminNotifications;

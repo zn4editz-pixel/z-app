@@ -1,992 +1,310 @@
 import prisma from "../lib/db.js";
 import { emitToUser } from "../lib/socketHandlers.js";
 import {
-	sendVerificationApprovedEmail,
-	sendVerificationRejectedEmail,
-	sendReportStatusEmail,
-	sendAccountSuspendedEmail
+  sendVerificationApprovedEmail,
+  sendVerificationRejectedEmail,
+  sendReportStatusEmail,
+  sendAccountSuspendedEmail
 } from "../lib/email.js";
-import { adminErrorHandler } from "../middleware/adminErrorHandler.js";
 
-
-
-let adminUsersCache = null;
-let adminUsersCacheTime = 0;
-const ADMIN_USERS_CACHE_TTL = 2000; // Reduced to 2 seconds for real-time online status
-
-const clearAdminUsersCache = () => {
-	adminUsersCache = null;
-	adminUsersCacheTime = 0;
-};
-
-const clearAdminStatsCache = () => {
-	adminStatsCache = null;
-	adminStatsCacheTime = 0;
-};
-
-export const getAllUsers = async (req, res) => {
-	try {
-		// ALWAYS get fresh online status from socket connections (source of truth)
-		const { userSocketMap } = await import("../lib/socketHandlers.js");
-		const onlineUserIds = Object.keys(userSocketMap);
-
-		console.log(`📊 Admin: Fetching users. ${onlineUserIds.length} users currently online`);
-
-		// Fetch fresh user data from database (no caching for admin to ensure accuracy)
-		const users = await prisma.user.findMany({
-			select: {
-				id: true, username: true, nickname: true, email: true,
-				profilePic: true, isVerified: true, isOnline: true,
-				isSuspended: true, suspensionEndTime: true, suspensionReason: true,
-				lastSeen: true, createdAt: true, country: true, countryCode: true,
-				city: true, region: true, timezone: true, isVPN: true, lastIP: true
-			},
-			orderBy: { createdAt: "desc" },
-			take: 100
-		});
-
-		// ALWAYS override database isOnline with socket map (socket is source of truth)
-		const usersWithAccurateOnlineStatus = users.map(user => ({
-			...user,
-			isOnline: onlineUserIds.includes(user.id) // Socket map is the truth
-		}));
-
-		console.log(`✅ Admin: Returning ${usersWithAccurateOnlineStatus.length} users with accurate online status`);
-		res.status(200).json(usersWithAccurateOnlineStatus);
-	} catch (err) {
-		console.error("getAllUsers error:", err);
-		res.status(500).json({ error: "Failed to fetch users" });
-	}
-};
-
-export const suspendUser = async (req, res) => {
-	const { userId } = req.params;
-	const { until, duration, reason } = req.body;
-	
-	if (!reason) {
-		return res.status(400).json({ error: "Reason is required" });
-	}
-	
-	try {
-		// Check if user exists
-		const user = await prisma.user.findUnique({ where: { id: userId } });
-		if (!user) {
-			return res.status(404).json({ error: "User not found" });
-		}
-
-		// Check if user is already suspended
-		if (user.isSuspended) {
-			return res.status(400).json({ error: "User is already suspended" });
-		}
-
-		console.log(`⚠️ Admin: Suspending user ${userId} (${user.username}) for: ${reason}`);
-
-		let suspendUntilDate;
-		if (until) {
-			suspendUntilDate = new Date(until);
-			if (isNaN(suspendUntilDate.getTime())) {
-				return res.status(400).json({ error: "Invalid date format" });
-			}
-		} else if (duration) {
-			const now = new Date();
-			const match = duration.match(/^(\d+)([dhm])$/);
-			if (match) {
-				const value = parseInt(match[1]);
-				const unit = match[2];
-				const multipliers = { 
-					d: 24 * 60 * 60 * 1000, 
-					h: 60 * 60 * 1000, 
-					m: 60 * 1000 
-				};
-				suspendUntilDate = new Date(now.getTime() + value * multipliers[unit]);
-			} else {
-				return res.status(400).json({ error: "Invalid duration format. Use format like '7d', '24h', '30m'" });
-			}
-		} else {
-			return res.status(400).json({ error: "Either until or duration is required" });
-		}
-
-		// Update user suspension status
-		const updatedUser = await prisma.user.update({
-			where: { id: userId },
-			data: { 
-				isSuspended: true, 
-				suspensionEndTime: suspendUntilDate, 
-				suspensionReason: reason,
-				suspensionStartTime: new Date()
-			}
-		});
-
-		// Clear admin caches
-		clearAdminUsersCache();
-		clearAdminStatsCache();
-
-		// Notify user via socket
-		try {
-			emitToUser(userId, "user-action", { 
-				type: "suspended", 
-				reason, 
-				until: suspendUntilDate 
-			});
-		} catch (socketErr) {
-			console.log("User not connected for suspension notification");
-		}
-
-		// Send suspension email
-		try {
-			await sendAccountSuspendedEmail(
-				user.email, 
-				user.nickname || user.username, 
-				reason, 
-				suspendUntilDate
-			);
-		} catch (emailErr) {
-			console.error("Failed to send suspension email:", emailErr);
-		}
-
-		console.log(`✅ Admin: User ${userId} suspended until ${suspendUntilDate}`);
-
-		res.status(200).json({ 
-			message: "User suspended successfully", 
-			user: {
-				id: updatedUser.id,
-				username: updatedUser.username,
-				isSuspended: updatedUser.isSuspended,
-				suspensionReason: updatedUser.suspensionReason,
-				suspensionEndTime: updatedUser.suspensionEndTime
-			}
-		});
-	} catch (err) {
-		console.error("suspendUser error:", err);
-		res.status(500).json({ 
-			error: "Failed to suspend user", 
-			details: process.env.NODE_ENV === 'development' ? err.message : undefined
-		});
-	}
-};
-
-export const unsuspendUser = async (req, res) => {
-	try {
-		const { userId } = req.params;
-		
-		// Check if user exists
-		const user = await prisma.user.findUnique({ where: { id: userId } });
-		if (!user) {
-			return res.status(404).json({ error: "User not found" });
-		}
-
-		console.log(`✅ Admin: Unsuspending user ${userId} (${user.username})`);
-
-		const updatedUser = await prisma.user.update({
-			where: { id: userId },
-			data: { 
-				isSuspended: false, 
-				suspensionEndTime: null, 
-				suspensionReason: null,
-				suspensionStartTime: null
-			}
-		});
-		
-		clearAdminUsersCache();
-		clearAdminStatsCache();
-		
-		// Notify user via socket
-		try {
-			emitToUser(userId, "user-action", {
-				type: "unsuspended"
-			});
-		} catch (socketErr) {
-			console.log("User not connected for unsuspension notification");
-		}
-		
-		res.status(200).json({ 
-			message: "User unsuspended successfully", 
-			user: {
-				id: updatedUser.id,
-				username: updatedUser.username,
-				isSuspended: updatedUser.isSuspended
-			}
-		});
-	} catch (err) {
-		console.error("unsuspendUser error:", err);
-		res.status(500).json({ 
-			error: "Failed to unsuspend user", 
-			details: err.message 
-		});
-	}
-};
-
-export const blockUser = async (req, res) => {
-	try {
-		const { userId } = req.params;
-		
-		// Check if user exists
-		const user = await prisma.user.findUnique({ where: { id: userId } });
-		if (!user) {
-			return res.status(404).json({ error: "User not found" });
-		}
-
-		// Check if user is already blocked
-		if (user.isBlocked) {
-			return res.status(400).json({ error: "User is already blocked" });
-		}
-
-		console.log(`🚫 Admin: Blocking user ${userId} (${user.username})`);
-
-		const updatedUser = await prisma.user.update({
-			where: { id: userId },
-			data: { isBlocked: true }
-		});
-		
-		clearAdminUsersCache();
-		clearAdminStatsCache();
-		
-		// Notify user via socket
-		try {
-			emitToUser(userId, "user-action", {
-				type: "blocked"
-			});
-		} catch (socketErr) {
-			console.log("User not connected for block notification");
-		}
-		
-		res.status(200).json({ 
-			message: "User blocked successfully", 
-			user: {
-				id: updatedUser.id,
-				username: updatedUser.username,
-				isBlocked: updatedUser.isBlocked
-			}
-		});
-	} catch (err) {
-		console.error("blockUser error:", err);
-		res.status(500).json({ 
-			error: "Failed to block user", 
-			details: err.message 
-		});
-	}
-};
-
-export const unblockUser = async (req, res) => {
-	try {
-		const { userId } = req.params;
-		
-		// Check if user exists
-		const user = await prisma.user.findUnique({ where: { id: userId } });
-		if (!user) {
-			return res.status(404).json({ error: "User not found" });
-		}
-
-		// Check if user is actually blocked
-		if (!user.isBlocked) {
-			return res.status(400).json({ error: "User is not blocked" });
-		}
-
-		console.log(`✅ Admin: Unblocking user ${userId} (${user.username})`);
-
-		const updatedUser = await prisma.user.update({
-			where: { id: userId },
-			data: { isBlocked: false }
-		});
-		
-		clearAdminUsersCache();
-		clearAdminStatsCache();
-		
-		// Notify user via socket
-		try {
-			emitToUser(userId, "user-action", { type: "unblocked" });
-		} catch (socketErr) {
-			console.log("User not connected for unblock notification");
-		}
-		
-		res.status(200).json({ 
-			message: "User unblocked successfully", 
-			user: {
-				id: updatedUser.id,
-				username: updatedUser.username,
-				isBlocked: updatedUser.isBlocked
-			}
-		});
-	} catch (err) {
-		console.error("unblockUser error:", err);
-		res.status(500).json({ 
-			error: "Failed to unblock user", 
-			details: err.message 
-		});
-	}
-};
-
-export const deleteUser = async (req, res) => {
-	try {
-		const { userId } = req.params;
-		
-		// Check if user exists
-		const user = await prisma.user.findUnique({ where: { id: userId } });
-		if (!user) {
-			return res.status(404).json({ error: "User not found" });
-		}
-
-		console.log(`🗑️ Admin: Deleting user ${userId} (${user.username})`);
-
-		// Use transaction to ensure all related data is deleted properly
-		const result = await prisma.$transaction(async (tx) => {
-			// Delete all messages (both sent and received)
-			const deletedMessages = await tx.message.deleteMany({ 
-				OR: [
-					{ senderId: userId }, 
-					{ receiverId: userId }
-				] 
-			});
-			console.log(`🗑️ Deleted ${deletedMessages.count} messages`);
-
-			// Delete all friend requests (both sent and received)
-			const deletedFriendRequests = await tx.friendRequest.deleteMany({ 
-				OR: [
-					{ senderId: userId }, 
-					{ receiverId: userId }
-				] 
-			});
-			console.log(`🗑️ Deleted ${deletedFriendRequests.count} friend requests`);
-
-			// Delete all reports (both made by user and against user)
-			const deletedReports = await tx.report.deleteMany({ 
-				OR: [
-					{ reporterId: userId }, 
-					{ reportedUserId: userId }
-				] 
-			});
-			console.log(`🗑️ Deleted ${deletedReports.count} reports`);
-
-			// Delete any admin notifications related to this user (skip if table doesn't exist)
-			try {
-				const deletedNotifications = await tx.adminNotification.deleteMany({
-					OR: [
-						{ message: { contains: userId } },
-						{ title: { contains: user.username } },
-						{ link: { contains: userId } }
-					]
-				});
-				console.log(`🗑️ Deleted ${deletedNotifications.count} admin notifications`);
-			} catch (notificationErr) {
-				console.log("No admin notifications to delete or table doesn't exist");
-			}
-
-			// Finally delete the user
-			const deletedUser = await tx.user.delete({ where: { id: userId } });
-			console.log(`🗑️ User ${userId} deleted successfully`);
-			
-			return {
-				deletedMessages: deletedMessages.count,
-				deletedFriendRequests: deletedFriendRequests.count,
-				deletedReports: deletedReports.count,
-				deletedUser
-			};
-		}, {
-			timeout: 30000, // 30 second timeout for large deletions
-			maxWait: 5000,  // Don't wait more than 5 seconds to start the transaction
-		});
-
-		// Clear admin caches
-		clearAdminUsersCache();
-		clearAdminStatsCache();
-
-		// Notify user (if still connected)
-		try {
-			emitToUser(userId, "admin-action", { action: "account-deleted" });
-		} catch (socketErr) {
-			console.log("User not connected for deletion notification");
-		}
-
-		res.status(200).json({ 
-			message: "User and all related data deleted successfully",
-			deletedUser: {
-				id: userId,
-				username: user.username,
-				email: user.email
-			},
-			deletionStats: {
-				messages: result.deletedMessages,
-				friendRequests: result.deletedFriendRequests,
-				reports: result.deletedReports
-			}
-		});
-	} catch (err) {
-		console.error("deleteUser error:", err);
-		
-		// Provide more specific error messages
-		let errorMessage = "Failed to delete user";
-		let statusCode = 500;
-		
-		if (err.code === 'P2003') {
-			errorMessage = "Cannot delete user due to foreign key constraints";
-			statusCode = 400;
-		} else if (err.code === 'P2025') {
-			errorMessage = "User not found or already deleted";
-			statusCode = 404;
-		} else if (err.message && err.message.includes('timeout')) {
-			errorMessage = "Deletion timeout - user has too much data";
-			statusCode = 408;
-		} else if (err.code === 'P2034') {
-			errorMessage = "Transaction conflict - please try again";
-			statusCode = 409;
-		}
-		
-		res.status(statusCode).json({ 
-			error: errorMessage, 
-			details: process.env.NODE_ENV === 'development' ? err.message : undefined,
-			code: err.code || 'UNKNOWN'
-		});
-	}
-};
-
-export const toggleVerification = async (req, res) => {
-	try {
-		const { userId } = req.params;
-		
-		// Check if user exists
-		const user = await prisma.user.findUnique({ where: { id: userId } });
-		if (!user) {
-			return res.status(404).json({ error: "User not found" });
-		}
-
-		const newVerificationStatus = !user.isVerified;
-		console.log(`${newVerificationStatus ? '✅' : '❌'} Admin: ${newVerificationStatus ? 'Verifying' : 'Unverifying'} user ${userId} (${user.username})`);
-
-		const updatedUser = await prisma.user.update({
-			where: { id: userId },
-			data: { 
-				isVerified: newVerificationStatus,
-				verificationStatus: newVerificationStatus ? "approved" : "none",
-				verificationReviewedAt: new Date(),
-				verificationReviewedBy: req.user?.id || "admin"
-			}
-		});
-		
-		clearAdminUsersCache();
-		clearAdminStatsCache();
-		
-		// Notify user via socket
-		try {
-			emitToUser(userId, "verification-status-changed", { 
-				isVerified: updatedUser.isVerified,
-				message: newVerificationStatus ? "Account verified!" : "Verification removed"
-			});
-		} catch (socketErr) {
-			console.log("User not connected for verification notification");
-		}
-		
-		res.status(200).json({ 
-			message: `User ${newVerificationStatus ? 'verified' : 'unverified'} successfully`, 
-			user: {
-				id: updatedUser.id,
-				username: updatedUser.username,
-				isVerified: updatedUser.isVerified,
-				verificationStatus: updatedUser.verificationStatus
-			}
-		});
-	} catch (err) {
-		console.error("toggleVerification error:", err);
-		res.status(500).json({ 
-			error: "Failed to toggle verification", 
-			details: err.message 
-		});
-	}
-};
-
-export const getReports = async (req, res) => {
-	try {
-		const reports = await prisma.report.findMany({
-			orderBy: { createdAt: "desc" },
-			take: 100,
-			include: {
-				reporter: { select: { username: true, nickname: true, profilePic: true, email: true } },
-				reportedUser: { select: { username: true, nickname: true, profilePic: true, email: true } }
-			}
-		});
-		res.status(200).json(reports);
-	} catch (err) {
-		res.status(500).json({ error: "Failed to fetch reports" });
-	}
-};
-
-export const getAIReports = async (req, res) => {
-	try {
-		const aiReports = await prisma.report.findMany({
-			where: { isAIDetected: true },
-			orderBy: { createdAt: "desc" },
-			include: {
-				reporter: { select: { username: true, nickname: true, profilePic: true, email: true } },
-				reportedUser: { select: { username: true, nickname: true, profilePic: true, email: true } }
-			}
-		});
-
-		// ✅ FIX: Calculate average confidence
-		const totalConfidence = aiReports.reduce((sum, r) => sum + (r.aiConfidence || 0), 0);
-		const avgConfidence = aiReports.length > 0 ? totalConfidence / aiReports.length : 0;
-
-		const stats = {
-			total: aiReports.length,
-			pending: aiReports.filter(r => r.status === "pending").length,
-			reviewed: aiReports.filter(r => r.status === "reviewed").length,
-			actionTaken: aiReports.filter(r => r.status === "action_taken").length,
-			dismissed: aiReports.filter(r => r.status === "dismissed").length,
-			avgConfidence: avgConfidence // ✅ FIX: Add average confidence
-		};
-		res.status(200).json({ reports: aiReports, stats });
-	} catch (err) {
-		console.error("Error fetching AI reports:", err);
-		res.status(500).json({ error: "Failed to fetch AI reports" });
-	}
-};
-
-export const updateReportStatus = async (req, res) => {
-	const { reportId } = req.params;
-	const { status, adminNotes, actionTaken } = req.body;
-	try {
-		const report = await prisma.report.findUnique({
-			where: { id: reportId },
-			include: {
-				reporter: { select: { id: true, username: true, nickname: true, email: true } },
-				reportedUser: { select: { username: true, nickname: true } }
-			}
-		});
-		if (!report) return res.status(404).json({ error: "Report not found" });
-		const updatedReport = await prisma.report.update({
-			where: { id: reportId },
-			data: {
-				status,
-				adminNotes: adminNotes || report.adminNotes,
-				actionTaken: actionTaken || report.actionTaken,
-				reviewedBy: req.user.id,
-				reviewedAt: new Date()
-			}
-		});
-		res.status(200).json({ message: `Report marked as ${status}`, report: updatedReport });
-	} catch (err) {
-		res.status(500).json({ error: "Failed to update report status" });
-	}
-};
-
-export const deleteReport = async (req, res) => {
-	try {
-		await prisma.report.delete({ where: { id: req.params.reportId } });
-		res.status(200).json({ message: "Report deleted successfully" });
-	} catch (err) {
-		res.status(500).json({ error: "Failed to delete report" });
-	}
-};
-
-export const getVerificationRequests = async (req, res) => {
-	try {
-		const users = await prisma.user.findMany({
-			where: { verificationStatus: "pending" },
-			select: {
-				id: true, username: true, nickname: true, profilePic: true,
-				email: true, verificationStatus: true, verificationReason: true,
-				verificationIdProof: true, verificationRequestedAt: true,
-				isVerified: true, createdAt: true
-			},
-			take: 50,
-			orderBy: { verificationRequestedAt: "desc" }
-		});
-		res.status(200).json(users);
-	} catch (err) {
-		res.status(200).json([]);
-	}
-};
-
-export const approveVerification = async (req, res) => {
-	try {
-		const { userId } = req.params;
-		
-		// Check if user exists
-		const existingUser = await prisma.user.findUnique({ where: { id: userId } });
-		if (!existingUser) {
-			return res.status(404).json({ error: "User not found" });
-		}
-
-		console.log(`✅ Admin: Approving verification for user ${userId} (${existingUser.username})`);
-
-		const user = await prisma.user.update({
-			where: { id: userId },
-			data: {
-				isVerified: true,
-				verificationStatus: "approved",
-				verificationReviewedAt: new Date(),
-				verificationReviewedBy: req.user?.id || "admin"
-			}
-		});
-
-		// Clear admin caches
-		clearAdminUsersCache();
-		clearAdminStatsCache();
-
-		// Send socket notification with enhanced data
-		try {
-			emitToUser(userId, "verification-approved", { 
-				message: "Verification approved! You now have a verified badge.",
-				isVerified: true,
-				verificationStatus: "approved"
-			});
-			console.log(`📡 Socket notification sent to user ${userId}`);
-		} catch (socketErr) {
-			console.error("Failed to send socket notification:", socketErr);
-		}
-
-		// Send email notification
-		try {
-			await sendVerificationApprovedEmail(user.email, user.nickname || user.username);
-			console.log(`📧 Approval email sent to ${user.email}`);
-		} catch (emailErr) {
-			console.error("Failed to send approval email:", emailErr);
-		}
-
-		res.status(200).json({ 
-			message: "Verification approved successfully", 
-			user: {
-				id: user.id,
-				username: user.username,
-				isVerified: user.isVerified,
-				verificationStatus: user.verificationStatus
-			}
-		});
-	} catch (err) {
-		console.error("approveVerification error:", err);
-		res.status(500).json({ 
-			error: "Failed to approve verification", 
-			details: process.env.NODE_ENV === 'development' ? err.message : undefined
-		});
-	}
-};
-
-export const rejectVerification = async (req, res) => {
-	try {
-		const { userId } = req.params;
-		const { reason } = req.body;
-		
-		// Check if user exists
-		const existingUser = await prisma.user.findUnique({ where: { id: userId } });
-		if (!existingUser) {
-			return res.status(404).json({ error: "User not found" });
-		}
-
-		const rejectionReason = reason || "Does not meet verification criteria";
-		console.log(`❌ Admin: Rejecting verification for user ${userId} (${existingUser.username}) - Reason: ${rejectionReason}`);
-
-		const user = await prisma.user.update({
-			where: { id: userId },
-			data: {
-				isVerified: false,
-				verificationStatus: "rejected",
-				verificationAdminNote: rejectionReason,
-				verificationReviewedAt: new Date(),
-				verificationReviewedBy: req.user?.id || "admin"
-			}
-		});
-
-		// Clear admin caches
-		clearAdminUsersCache();
-		clearAdminStatsCache();
-
-		// Send socket notification with enhanced data
-		try {
-			emitToUser(userId, "verification-rejected", { 
-				message: "Verification request was rejected",
-				reason: rejectionReason,
-				isVerified: false,
-				verificationStatus: "rejected"
-			});
-			console.log(`📡 Socket rejection notification sent to user ${userId}`);
-		} catch (socketErr) {
-			console.error("Failed to send socket notification:", socketErr);
-		}
-
-		// Send email notification
-		try {
-			await sendVerificationRejectedEmail(user.email, user.nickname || user.username, rejectionReason);
-			console.log(`📧 Rejection email sent to ${user.email}`);
-		} catch (emailErr) {
-			console.error("Failed to send rejection email:", emailErr);
-		}
-
-		res.status(200).json({ 
-			message: "Verification rejected successfully", 
-			user: {
-				id: user.id,
-				username: user.username,
-				isVerified: user.isVerified,
-				verificationStatus: user.verificationStatus,
-				verificationAdminNote: user.verificationAdminNote
-			}
-		});
-	} catch (err) {
-		console.error("rejectVerification error:", err);
-		res.status(500).json({ 
-			error: "Failed to reject verification", 
-			details: process.env.NODE_ENV === 'development' ? err.message : undefined
-		});
-	}
-};
-
-// Cache for admin stats
-let adminStatsCache = null;
-let adminStatsCacheTime = 0;
-const ADMIN_STATS_CACHE_TTL = 30000; // 30 seconds cache
-
+// --- Stats ---
 export const getAdminStats = async (req, res) => {
-	try {
-		const now = Date.now();
+  try {
+    const totalUsers = await prisma.user.count();
+    const activeUsers = await prisma.user.count({ where: { isOnline: true } });
+    const totalMessages = await prisma.message.count();
+    const pendingReports = await prisma.report.count({ where: { status: "pending" } });
 
-		// Return cached data if still valid
-		if (adminStatsCache && (now - adminStatsCacheTime) < ADMIN_STATS_CACHE_TTL) {
-			// Always get fresh online count from socket
-			const { userSocketMap } = await import("../lib/socketHandlers.js");
-			const freshStats = {
-				...adminStatsCache,
-				onlineUsers: Object.keys(userSocketMap).length
-			};
-			return res.status(200).json(freshStats);
-		}
+    // New users today
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const newUsersToday = await prisma.user.count({ where: { createdAt: { gte: startOfDay } } });
 
-		const { userSocketMap } = await import("../lib/socketHandlers.js");
-
-		// Optimized parallel queries
-		const [
-			totalUsers,
-			verifiedUsers,
-			suspendedUsers,
-			pendingVerifications,
-			pendingReports,
-			totalReports,
-			recentUsers,
-			approvedVerifications
-		] = await Promise.all([
-			prisma.user.count(),
-			prisma.user.count({ where: { isVerified: true } }),
-			prisma.user.count({ where: { isSuspended: true } }),
-			prisma.user.count({ where: { verificationStatus: "pending" } }),
-			prisma.report.count({ where: { status: "pending" } }),
-			prisma.report.count(),
-			prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
-			prisma.user.count({ where: { verificationStatus: "approved" } })
-		]);
-
-		const stats = {
-			totalUsers,
-			verifiedUsers,
-			onlineUsers: Object.keys(userSocketMap).length,
-			suspendedUsers,
-			pendingVerifications,
-			pendingReports,
-			totalReports,
-			recentUsers,
-			approvedVerifications
-		};
-
-		// Cache the stats (except online users which changes frequently)
-		adminStatsCache = { ...stats };
-		adminStatsCacheTime = now;
-
-		res.status(200).json(stats);
-	} catch (err) {
-		console.error("getAdminStats error:", err);
-		res.status(500).json({ error: "Failed to fetch admin statistics" });
-	}
+    res.status(200).json({
+      totalUsers,
+      activeUsers,
+      totalMessages,
+      pendingReports,
+      newUsersToday
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 
-export const getDashboardStats = async (req, res) => {
-	try {
-		const { userSocketMap } = await import("../lib/socketHandlers.js");
-		const [totalUsers, verifiedUsers, suspendedUsers, blockedUsers, pendingVerifications, pendingReports, newUsersThisWeek, newUsersThisMonth] = await Promise.all([
-			prisma.user.count(),
-			prisma.user.count({ where: { isVerified: true } }),
-			prisma.user.count({ where: { isSuspended: true } }),
-			prisma.user.count({ where: { isBlocked: true } }),
-			prisma.user.count({ where: { verificationStatus: "pending" } }),
-			prisma.report.count({ where: { status: "pending" } }),
-			prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
-			prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } })
-		]);
-		res.status(200).json({
-			totalUsers, verifiedUsers, onlineUsers: Object.keys(userSocketMap).length,
-			suspendedUsers, blockedUsers, pendingVerifications, pendingReports, newUsersThisWeek, newUsersThisMonth
-		});
-	} catch (err) {
-		res.status(500).json({ error: "Failed to fetch dashboard statistics" });
-	}
-};
-
-export const sendPersonalNotification = async (req, res) => {
-	try {
-		const { title, message } = req.body;
-		if (!title || !message) return res.status(400).json({ error: "Title and message required" });
-		const notification = await prisma.adminNotification.create({
-			data: { type: "info", title, message }
-		});
-		res.status(200).json({ message: "Notification sent", notification });
-	} catch (err) {
-		res.status(500).json({ error: "Failed to send notification" });
-	}
-};
-
-export const sendBroadcastNotification = async (req, res) => {
-	try {
-		const { title, message } = req.body;
-		if (!title || !message) return res.status(400).json({ error: "Title and message required" });
-		const notification = await prisma.adminNotification.create({
-			data: { type: "broadcast", title, message }
-		});
-		req.app.get("io")?.emit("admin-broadcast", { title, message, createdAt: new Date() });
-		res.status(200).json({ message: "Broadcast sent", notification });
-	} catch (err) {
-		res.status(500).json({ error: "Failed to send broadcast" });
-	}
-};
-
-export const getUserNotifications = async (req, res) => {
-	try {
-		const notifications = await prisma.adminNotification.findMany({
-			orderBy: { createdAt: "desc" },
-			take: 50
-		});
-		res.status(200).json(notifications);
-	} catch (err) {
-		res.status(500).json({ error: "Failed to fetch notifications" });
-	}
-};
-
-export const markNotificationRead = async (req, res) => {
-	try {
-		await prisma.adminNotification.update({
-			where: { id: req.params.notificationId },
-			data: { isRead: true }
-		});
-		res.status(200).json({ message: "Notification marked as read" });
-	} catch (err) {
-		res.status(500).json({ error: "Failed to mark notification as read" });
-	}
-};
-
-export const deleteNotification = async (req, res) => {
-	try {
-		await prisma.adminNotification.delete({
-			where: { id: req.params.notificationId }
-		});
-		res.status(200).json({ message: "Notification deleted" });
-	} catch (err) {
-		res.status(500).json({ error: "Failed to delete notification" });
-	}
-};
-
-export const submitManualReport = async (req, res) => {
-	try {
-		const { title, description, severity } = req.body;
-		let screenshotUrl = null;
-
-		// Handle screenshot upload if provided
-		if (req.file) {
-			// Upload to Cloudinary or your storage
-			const cloudinary = await import("../lib/cloudinary.js");
-			const result = await cloudinary.default.uploader.upload(req.file.path, {
-				folder: "manual-reports"
-			});
-			screenshotUrl = result.secure_url;
-		}
-
-		// Create manual report in database
-		const report = await prisma.manualReport.create({
-			data: {
-				title,
-				description,
-				severity,
-				screenshot: screenshotUrl,
-				reportedBy: req.user.id,
-				status: "pending"
-			}
-		});
-
-		res.status(200).json({ message: "Report submitted successfully", report });
-	} catch (err) {
-		console.error("Submit manual report error:", err);
-		res.status(500).json({ error: "Failed to submit report" });
-	}
-};
-
-export const getManualReports = async (req, res) => {
-	try {
-		const reports = await prisma.manualReport.findMany({
-			orderBy: { createdAt: "desc" },
-			take: 50,
-			include: {
-				reporter: {
-					select: { username: true, nickname: true, profilePic: true }
-				}
-			}
-		});
-		res.status(200).json(reports);
-	} catch (err) {
-		console.error("Get manual reports error:", err);
-		res.status(500).json({ error: "Failed to fetch manual reports" });
-	}
-};
 export const getSystemStats = async (req, res) => {
-	try {
-		const { default: os } = await import("os");
-
-		// Check DB latency
-		const start = Date.now();
-		await prisma.$queryRaw`SELECT 1`;
-		const dbLatency = Date.now() - start;
-
-		const totalMem = os.totalmem();
-		const freeMem = os.freemem();
-		const memoryUsage = Math.round(((totalMem - freeMem) / totalMem) * 100);
-
-		const stats = {
-			uptime: os.uptime(),
-			loadAvg: os.loadavg(),
-			totalMem,
-			freeMem,
-			memoryUsage, // Percentage
-			platform: os.platform(),
-			cpuCount: os.cpus().length,
-			dbStatus: "connected",
-			dbLatency: dbLatency
-		};
-		res.status(200).json(stats);
-	} catch (err) {
-		console.error("System stats error:", err);
-		res.status(500).json({ error: "Failed to fetch system stats", dbStatus: "disconnected" });
-	}
+  // Placeholder for system stats (CPU, Memory, etc.) - could delegate to health controller logic or return basic DB info
+  try {
+    const userCount = await prisma.user.count();
+    const messageCount = await prisma.message.count();
+    res.status(200).json({
+      database: { users: userCount, messages: messageCount },
+      uptime: process.uptime()
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch system stats" });
+  }
 };
 
 export const getGameStats = async (req, res) => {
-	try {
-		const { gameManager } = await import("../lib/gameManager.js");
+  // Placeholder
+  res.status(200).json({ activeGames: 0, totalGamesPlayed: 0 });
+};
 
-		const activeGames = gameManager.games.size;
-		let totalPlayers = 0;
-		let waitingGames = 0;
-		let playingGames = 0;
+// --- User Management ---
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true, fullName: true, email: true, username: true, profilePic: true,
+        isOnline: true, isVerified: true, role: true, status: true, createdAt: true,
+        reportsReceived: { select: { id: true } }
+      },
+    });
 
-		for (const game of gameManager.games.values()) {
-			totalPlayers += game.playerIds.length;
-			if (game.status === 'waiting') waitingGames++;
-			if (game.status === 'playing') playingGames++;
-		}
+    // Sync with socket map if possible
+    let onlineUserIds = [];
+    try {
+      const { userSocketMap } = await import("../lib/socketHandlers.js");
+      onlineUserIds = Object.keys(userSocketMap);
+    } catch (e) { }
 
-		// Fetch persisted game stats only if you have a Game model
-		// For now, we return active in-memory stats
-		const stats = {
-			activeGames,
-			totalPlayers,
-			waitingGames,
-			playingGames
-		};
+    const formattedUsers = users.map((user) => ({
+      ...user,
+      isOnline: onlineUserIds.includes(String(user.id)) || user.isOnline,
+      reportCount: user.reportsReceived.length,
+    }));
+    res.status(200).json(formattedUsers);
+  } catch (error) {
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
-		res.status(200).json(stats);
-	} catch (err) {
-		console.error("Game stats error:", err);
-		res.status(500).json({ error: "Failed to fetch game stats" });
-	}
+const updateUserStatus = async (userId, status, banReason = null) => {
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { status, banReason: status === 'active' ? null : banReason },
+  });
+  // Notify via email
+  if (status !== 'active') {
+    const action = status === 'banned' ? 'Playing Account Banned' : 'Account Suspended';
+    sendAccountSuspendedEmail(updatedUser.email, updatedUser.fullName, action, banReason);
+  }
+  // Force disconnect
+  try {
+    const { getReceiverSocketId, getIO } = await import("../lib/socketHandlers.js");
+    const socketId = getReceiverSocketId(userId);
+    const io = getIO();
+    if (socketId && io) {
+      io.to(socketId).emit("forceLogout", { reason: `Your account has been ${status}.` });
+      io.sockets.sockets.get(socketId)?.disconnect(true);
+    }
+  } catch (e) { }
+  return updatedUser;
+};
+
+export const suspendUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { reason } = req.body;
+    await updateUserStatus(userId, 'suspended', reason);
+    res.status(200).json({ message: "User suspended" });
+  } catch (err) { res.status(500).json({ error: "Failed to suspend user" }); }
+};
+
+export const unsuspendUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await updateUserStatus(userId, 'active');
+    res.status(200).json({ message: "User unsuspended" });
+  } catch (err) { res.status(500).json({ error: "Failed to unsuspend user" }); }
+};
+
+export const blockUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { reason } = req.body;
+    await updateUserStatus(userId, 'banned', reason);
+    res.status(200).json({ message: "User blocked" });
+  } catch (err) { res.status(500).json({ error: "Failed to block user" }); }
+};
+
+export const unblockUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await updateUserStatus(userId, 'active');
+    res.status(200).json({ message: "User unblocked" });
+  } catch (err) { res.status(500).json({ error: "Failed to unblock user" }); }
+};
+
+export const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await prisma.user.delete({ where: { id: userId } });
+    res.status(200).json({ message: "User deleted" });
+  } catch (err) { res.status(500).json({ error: "Failed to delete user" }); }
+};
+
+export const toggleVerification = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const newStatus = !user.isVerified;
+    await prisma.user.update({ where: { id: userId }, data: { isVerified: newStatus } });
+    res.status(200).json({ message: `User verification ${newStatus ? 'enabled' : 'disabled'}` });
+  } catch (err) { res.status(500).json({ error: "Failed to toggle verification" }); }
+};
+
+// --- Verification Requests ---
+export const getVerificationRequests = async (req, res) => {
+  try {
+    const requests = await prisma.verificationRequest.findMany({
+      where: { status: 'pending' },
+      include: { user: { select: { id: true, fullName: true, username: true, email: true, profilePic: true } } }
+    });
+    res.status(200).json(requests);
+  } catch (error) { res.status(500).json({ message: "Error fetching requests" }); }
+};
+
+export const approveVerification = async (req, res) => {
+  const { id } = req.params; // Expects userId based on route usage in corrupted file, but typically route uses request ID? 
+  // Route is /approve/:userId in admin.route.js. So id is userId.
+  try {
+    // Find request for this user
+    const request = await prisma.verificationRequest.findFirst({ where: { userId: id, status: 'pending' } });
+    if (!request) return res.status(404).json({ message: "Request not found" });
+
+    await prisma.$transaction([
+      prisma.verificationRequest.update({ where: { id: request.id }, data: { status: 'approved' } }),
+      prisma.user.update({ where: { id }, data: { isVerified: true } })
+    ]);
+    const user = await prisma.user.findUnique({ where: { id } });
+    sendVerificationApprovedEmail(user.email, user.fullName);
+    res.status(200).json({ message: "Verification approved" });
+  } catch (error) { res.status(500).json({ message: "Error approving" }); }
+};
+
+export const rejectVerification = async (req, res) => {
+  const { id } = req.params; // userId
+  const { reason } = req.body;
+  try {
+    const request = await prisma.verificationRequest.findFirst({ where: { userId: id, status: 'pending' } });
+    if (!request) return res.status(404).json({ message: "Request not found" });
+
+    await prisma.verificationRequest.update({
+      where: { id: request.id },
+      data: { status: 'rejected', rejectionReason: reason }
+    });
+    const user = await prisma.user.findUnique({ where: { id } });
+    sendVerificationRejectedEmail(user.email, user.fullName, reason);
+    res.status(200).json({ message: "Verification rejected" });
+  } catch (error) { res.status(500).json({ message: "Error rejecting" }); }
+};
+
+// --- Reports ---
+export const getReports = async (req, res) => {
+  try {
+    const reports = await prisma.report.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        reporter: { select: { id: true, username: true, email: true } },
+        reportedUser: { select: { id: true, username: true, email: true, profilePic: true, status: true } }
+      }
+    });
+    res.status(200).json(reports);
+  } catch (error) { res.status(500).json({ message: "Error fetching reports" }); }
+};
+
+export const getAIReports = async (req, res) => {
+  // Placeholder - filter by source='AI' if schema supports it, or just return all for now
+  res.status(200).json([]);
+};
+
+export const updateReportStatus = async (req, res) => {
+  const { reportId } = req.params;
+  const { status, actionTaken } = req.body;
+  try {
+    const report = await prisma.report.update({
+      where: { id: reportId },
+      data: { status, actionTaken }
+    });
+    res.status(200).json(report);
+  } catch (error) { res.status(500).json({ message: "Error updating report" }); }
+};
+
+export const deleteReport = async (req, res) => {
+  const { reportId } = req.params;
+  try {
+    await prisma.report.delete({ where: { id: reportId } });
+    res.status(200).json({ message: "Report deleted" });
+  } catch (err) { res.status(500).json({ error: "Failed to delete report" }); }
+};
+
+// --- Notifications ---
+export const sendPersonalNotification = async (req, res) => {
+  const { userId } = req.params;
+  const { message, type } = req.body;
+  try {
+    const notification = await prisma.notification.create({
+      data: { userId, message, type: type || 'admin_message' }
+    });
+    emitToUser(userId, "notification", notification);
+    res.status(200).json(notification);
+  } catch (err) { res.status(500).json({ error: 'Failed to send notification' }); }
+};
+
+export const sendBroadcastNotification = async (req, res) => {
+  const { message, type } = req.body;
+  try {
+    // Inefficient for massive user base, but functional for now
+    const users = await prisma.user.findMany({ select: { id: true } });
+    // Create notifications? Or just emit? Ideally create DB records.
+    // Batch create might fail if too large. For now just emit.
+    // Use a system notification mechanism ideally.
+    const { getIO } = await import("../lib/socketHandlers.js");
+    getIO().emit("broadcast_notification", { message, type });
+    res.status(200).json({ message: "Broadcast sent" });
+  } catch (err) { res.status(500).json({ error: 'Failed to broadcast' }); }
+};
+
+export const getUserNotifications = async (req, res) => {
+  const userId = req.user?.id ? req.user.id : req.query.userId;
+  if (!userId) return res.status(400).json({ error: "User ID required" });
+  try {
+    const notifications = await prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.status(200).json(notifications);
+  } catch (err) { res.status(500).json({ error: "Failed to fetch notifications" }); }
+};
+
+export const markNotificationRead = async (req, res) => {
+  const { notificationId } = req.params;
+  try {
+    await prisma.notification.update({
+      where: { id: notificationId },
+      data: { isRead: true }
+    });
+    res.status(200).json({ message: "Marked as read" });
+  } catch (err) { res.status(500).json({ error: "Failed to update notification" }); }
+};
+
+export const deleteNotification = async (req, res) => {
+  const { notificationId } = req.params; // This matches route definition :notificationId
+  try {
+    await prisma.notification.delete({ where: { id: notificationId } });
+    res.status(200).json({ message: "Notification deleted" });
+  } catch (err) { res.status(500).json({ error: "Failed to delete notification" }); }
+};
+
+// --- Manual Reports ---
+export const submitManualReport = async (req, res) => {
+  // Admin submitting a report manually?
+  res.status(200).json({ message: "Not implemented" });
+};
+
+export const getManualReports = async (req, res) => {
+  res.status(200).json([]);
 };

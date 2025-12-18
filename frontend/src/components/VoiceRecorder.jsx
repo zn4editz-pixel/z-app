@@ -1,38 +1,32 @@
 import { useState, useRef, useEffect } from "react";
 import { Mic, X, Send, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
-
 const VoiceRecorder = ({ onSendVoice, disabled }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioURL, setAudioURL] = useState(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [isSending, setIsSending] = useState(false);
-
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
-
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (audioURL) URL.revokeObjectURL(audioURL);
     };
   }, [audioURL]);
-
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
-
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           chunksRef.current.push(e.data);
         }
       };
-
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
         const url = URL.createObjectURL(blob);
@@ -40,20 +34,16 @@ const VoiceRecorder = ({ onSendVoice, disabled }) => {
         setAudioURL(url);
         stream.getTracks().forEach((track) => track.stop());
       };
-
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
-
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
     } catch (error) {
-      console.error("Error accessing microphone:", error);
       toast.error("Could not access microphone");
     }
   };
-
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
@@ -64,17 +54,14 @@ const VoiceRecorder = ({ onSendVoice, disabled }) => {
       }
     }
   };
-
   const cancelRecording = () => {
     if (audioURL) URL.revokeObjectURL(audioURL);
     setAudioBlob(null);
     setAudioURL(null);
     setRecordingTime(0);
   };
-
   const sendVoiceMessage = async () => {
     if (!audioBlob) return;
-
     setIsSending(true);
     try {
       const reader = new FileReader();
@@ -86,19 +73,16 @@ const VoiceRecorder = ({ onSendVoice, disabled }) => {
         // toast.success("Voice message sent!"); // 🔇 Disabled - no toast while sending voice message
       };
     } catch (error) {
-      console.error("Error sending voice:", error);
       toast.error("Failed to send voice message");
     } finally {
       setIsSending(false);
     }
   };
-
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
-
   // Preview state - after recording
   if (audioBlob) {
     return (
@@ -114,15 +98,13 @@ const VoiceRecorder = ({ onSendVoice, disabled }) => {
               {formatTime(recordingTime)}
             </span>
           </div>
-
           {/* Audio Player */}
-          <audio 
-            src={audioURL} 
-            controls 
+          <audio
+            src={audioURL}
+            controls
             className="w-full mb-3 h-10 sm:h-12"
-            style={{ outline: 'none' }}
+            style={{ outline: "none" }}
           />
-
           {/* Actions */}
           <div className="flex gap-2">
             <button
@@ -157,7 +139,6 @@ const VoiceRecorder = ({ onSendVoice, disabled }) => {
       </div>
     );
   }
-
   // Recording state
   if (isRecording) {
     return (
@@ -170,11 +151,14 @@ const VoiceRecorder = ({ onSendVoice, disabled }) => {
                 <Mic className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm font-medium text-base-content/70">Recording</p>
-                <p className="text-xl sm:text-2xl font-mono font-bold text-error">{formatTime(recordingTime)}</p>
+                <p className="text-xs sm:text-sm font-medium text-base-content/70">
+                  Recording
+                </p>
+                <p className="text-xl sm:text-2xl font-mono font-bold text-error">
+                  {formatTime(recordingTime)}
+                </p>
               </div>
             </div>
-
             {/* Stop button */}
             <button
               onClick={stopRecording}
@@ -189,7 +173,6 @@ const VoiceRecorder = ({ onSendVoice, disabled }) => {
       </div>
     );
   }
-
   // Default button
   return (
     <button
@@ -202,5 +185,4 @@ const VoiceRecorder = ({ onSendVoice, disabled }) => {
     </button>
   );
 };
-
 export default VoiceRecorder;

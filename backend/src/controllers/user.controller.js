@@ -1,4 +1,5 @@
 import prisma from "../lib/db.js";
+import cloudinary from "../lib/cloudinary.js";
 
 // ─── Get All Users (Admin Only) ──────────────────────────────
 export const getAllUsers = async (req, res) => {
@@ -25,7 +26,6 @@ export const getAllUsers = async (req, res) => {
 		});
 		res.status(200).json(users);
 	} catch (err) {
-		console.error("Get all users error:", err);
 		res.status(500).json({ error: "Failed to fetch users" });
 	}
 };
@@ -55,12 +55,9 @@ export const getUserById = async (req, res) => {
 				updatedAt: true
 			}
 		});
-
 		if (!user) return res.status(404).json({ error: "User not found" });
-
 		res.status(200).json(user);
 	} catch (err) {
-		console.error("Get user by ID error:", err);
 		res.status(500).json({ error: "Failed to fetch user" });
 	}
 };
@@ -89,12 +86,9 @@ export const getUserProfile = async (req, res) => {
 				updatedAt: true
 			}
 		});
-
 		if (!user) return res.status(404).json({ error: "User not found" });
-
 		res.status(200).json(user);
 	} catch (err) {
-		console.error("Get user profile error:", err);
 		res.status(500).json({ error: "Failed to fetch profile" });
 	}
 };
@@ -103,7 +97,6 @@ export const getUserProfile = async (req, res) => {
 export const getUserByUsername = async (req, res) => {
 	try {
 		const { username } = req.params;
-
 		// Find the user by their username (Prisma usernames are stored lowercase)
 		const user = await prisma.user.findUnique({
 			where: { username: username.toLowerCase() },
@@ -129,16 +122,12 @@ export const getUserByUsername = async (req, res) => {
 				updatedAt: true
 			}
 		});
-
 		if (!user) {
 			return res.status(404).json({ error: "User not found" });
 		}
-
 		// We will add friend status logic here later
 		res.status(200).json(user);
-
 	} catch (err) {
-		console.error("Get user by username error:", err);
 		res.status(500).json({ error: "Failed to fetch user profile" });
 	}
 };
@@ -148,14 +137,11 @@ export const updateUserProfile = async (req, res) => {
 	try {
 		const { nickname, bio, profilePic, username, fullName } = req.body;
 		const userId = req.user.id;
-
 		const user = await prisma.user.findUnique({
 			where: { id: userId }
 		});
 		if (!user) return res.status(404).json({ error: "User not found" });
-
 		const updateData = {};
-
 		// Handle full name update if provided
 		if (fullName !== undefined && fullName !== user.fullName) {
 			if (!fullName || fullName.trim().length < 2) {
@@ -163,7 +149,6 @@ export const updateUserProfile = async (req, res) => {
 			}
 			updateData.fullName = fullName.trim();
 		}
-
 		// Handle username change if provided
 		if (username && username !== user.username) {
 			// Check if username is available
@@ -173,18 +158,15 @@ export const updateUserProfile = async (req, res) => {
 			if (existingUser) {
 				return res.status(400).json({ error: "Username already taken" });
 			}
-
 			// Check username change limits
 			const now = new Date();
 			const twoDaysAgo = new Date(now.getTime() - (2 * 24 * 60 * 60 * 1000));
 			const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-
 			// Reset weekly counter if a week has passed
 			if (!user.weekStartDate || user.weekStartDate < oneWeekAgo) {
 				updateData.usernameChangesThisWeek = 0;
 				updateData.weekStartDate = now;
 			}
-
 			// Check if user has exceeded weekly limit
 			const changesThisWeek = updateData.usernameChangesThisWeek ?? user.usernameChangesThisWeek;
 			if (changesThisWeek >= 2) {
@@ -193,7 +175,6 @@ export const updateUserProfile = async (req, res) => {
 					nextChangeDate: new Date(user.weekStartDate.getTime() + (7 * 24 * 60 * 60 * 1000))
 				});
 			}
-
 			// Check if 2 days have passed since last change
 			if (user.lastUsernameChange && user.lastUsernameChange > twoDaysAgo) {
 				const nextChangeDate = new Date(user.lastUsernameChange.getTime() + (2 * 24 * 60 * 60 * 1000));
@@ -202,17 +183,33 @@ export const updateUserProfile = async (req, res) => {
 					nextChangeDate
 				});
 			}
-
 			// Update username
 			updateData.username = username.toLowerCase();
 			updateData.lastUsernameChange = now;
 			updateData.usernameChangesThisWeek = (updateData.usernameChangesThisWeek ?? user.usernameChangesThisWeek) + 1;
 		}
-
 		if (nickname !== undefined) updateData.nickname = nickname;
 		if (bio !== undefined) updateData.bio = bio;
-		if (profilePic !== undefined) updateData.profilePic = profilePic;
-
+		if (profilePic !== undefined) {
+			if (profilePic.startsWith("data:image")) {
+				try {
+					const uploadResponse = await cloudinary.uploader.upload(profilePic, {
+						folder: "user_profiles",
+						resource_type: "image",
+						format: 'webp',
+						transformation: [{ width: 400, height: 400, crop: "fill" }]
+					});
+					updateData.profilePic = uploadResponse.secure_url;
+				} catch (error) {
+					console.error("Error uploading profile pic:", error);
+					// Fallback: don't update profilePic or return error?
+					// For now, allow failing silently (keeping old pic) or returning error.
+					return res.status(500).json({ error: "Failed to upload image" });
+				}
+			} else {
+				updateData.profilePic = profilePic; // Already a URL
+			}
+		}
 		const updatedUser = await prisma.user.update({
 			where: { id: userId },
 			data: updateData,
@@ -235,10 +232,8 @@ export const updateUserProfile = async (req, res) => {
 				updatedAt: true
 			}
 		});
-
 		res.status(200).json(updatedUser);
 	} catch (err) {
-		console.error("Update profile error:", err);
 		res.status(500).json({ error: "Failed to update profile" });
 	}
 };
@@ -248,7 +243,6 @@ export const checkUsernameAvailability = async (req, res) => {
 	try {
 		const { username } = req.params;
 		const userId = req.user.id;
-
 		// Check if it's the user's current username
 		const currentUser = await prisma.user.findUnique({
 			where: { id: userId }
@@ -256,18 +250,15 @@ export const checkUsernameAvailability = async (req, res) => {
 		if (currentUser.username === username.toLowerCase()) {
 			return res.status(200).json({ available: true, current: true });
 		}
-
 		// Check if username exists
 		const existingUser = await prisma.user.findUnique({
 			where: { username: username.toLowerCase() }
 		});
-
 		res.status(200).json({
 			available: !existingUser,
 			current: false
 		});
 	} catch (err) {
-		console.error("Check username error:", err);
 		res.status(500).json({ error: "Failed to check username" });
 	}
 };
@@ -279,27 +270,21 @@ export const getUsernameChangeInfo = async (req, res) => {
 		const user = await prisma.user.findUnique({
 			where: { id: userId }
 		});
-
 		if (!user) return res.status(404).json({ error: "User not found" });
-
 		const now = new Date();
 		const twoDaysAgo = new Date(now.getTime() - (2 * 24 * 60 * 60 * 1000));
 		const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-
 		// Reset weekly counter if needed
 		let changesThisWeek = user.usernameChangesThisWeek;
 		if (!user.weekStartDate || user.weekStartDate < oneWeekAgo) {
 			changesThisWeek = 0;
 		}
-
 		const canChange = changesThisWeek < 2 &&
 			(!user.lastUsernameChange || user.lastUsernameChange < twoDaysAgo);
-
 		let nextChangeDate = null;
 		if (user.lastUsernameChange && user.lastUsernameChange >= twoDaysAgo) {
 			nextChangeDate = new Date(user.lastUsernameChange.getTime() + (2 * 24 * 60 * 60 * 1000));
 		}
-
 		res.status(200).json({
 			canChange,
 			changesThisWeek,
@@ -309,7 +294,6 @@ export const getUsernameChangeInfo = async (req, res) => {
 			history: (user.usernameChangeHistory || []).slice(-5) // Last 5 changes
 		});
 	} catch (err) {
-		console.error("Get username change info error:", err);
 		res.status(500).json({ error: "Failed to get username change info" });
 	}
 };
@@ -323,7 +307,6 @@ export const deleteMyAccount = async (req, res) => {
 		res.clearCookie("jwt");
 		res.status(200).json({ message: "Account deleted successfully" });
 	} catch (err) {
-		console.error("Delete account error:", err);
 		res.status(500).json({ error: "Failed to delete account" });
 	}
 };
@@ -335,12 +318,9 @@ export const deleteUser = async (req, res) => {
 		const deletedUser = await prisma.user.delete({
 			where: { id: userId }
 		});
-
 		if (!deletedUser) return res.status(404).json({ error: "User not found" });
-
 		res.status(200).json({ message: "User deleted successfully" });
 	} catch (err) {
-		console.error("Delete user error:", err);
 		res.status(500).json({ error: "Failed to delete user" });
 	}
 };
@@ -350,11 +330,9 @@ export const searchUsers = async (req, res) => {
 	try {
 		const query = req.query.q || "";
 		const loggedInUserId = req.user.id;
-
 		if (!query.trim()) {
 			return res.status(200).json([]);
 		}
-
 		// Prisma search with contains (case-insensitive)
 		const users = await prisma.user.findMany({
 			where: {
@@ -365,8 +343,7 @@ export const searchUsers = async (req, res) => {
 							{ nickname: { contains: query, mode: 'insensitive' } }
 						]
 					},
-					{ NOT: { id: loggedInUserId } }
-				]
+					{ NOT: { id: loggedInUserId } }]
 			},
 			select: {
 				id: true,
@@ -375,8 +352,7 @@ export const searchUsers = async (req, res) => {
 				nickname: true,
 				bio: true,
 				isVerified: true,
-				country: true,
-				countryCode: true,
+				country: true, countryCode: true,
 				city: true,
 				isOnline: true,
 				lastSeen: true
@@ -387,10 +363,8 @@ export const searchUsers = async (req, res) => {
 			],
 			take: 10
 		});
-
 		res.status(200).json(users);
 	} catch (err) {
-		console.error("Search users error:", err);
 		res.status(500).json({ error: "Failed to search users" });
 	}
 };
@@ -405,14 +379,12 @@ export const getSuggestedUsers = async (req, res) => {
 	try {
 		const loggedInUserId = req.user.id;
 		const now = Date.now();
-
 		// Return cached data if available and fresh
 		if (suggestedUsersCache && (now - cacheTimestamp) < CACHE_DURATION) {
 			// Filter out the logged-in user from cached results
 			const filteredUsers = suggestedUsersCache.filter(u => u.id !== loggedInUserId);
 			return res.status(200).json(filteredUsers.slice(0, 8));
 		}
-
 		// Fetch fresh data with ultra-optimized query
 		const users = await prisma.user.findMany({
 			where: {
@@ -424,8 +396,7 @@ export const getSuggestedUsers = async (req, res) => {
 				nickname: true,
 				profilePic: true,
 				isVerified: true,
-				bio: true,
-				country: true,
+				bio: true, country: true,
 				countryCode: true,
 				city: true,
 				isOnline: true,
@@ -438,16 +409,13 @@ export const getSuggestedUsers = async (req, res) => {
 			],
 			take: 20 // Fetch more for cache, filter logged-in user later
 		});
-
 		// Update cache
 		suggestedUsersCache = users;
 		cacheTimestamp = now;
-
 		// Filter out logged-in user and return
 		const filteredUsers = users.filter(u => u.id !== loggedInUserId);
 		res.status(200).json(filteredUsers.slice(0, 8));
 	} catch (err) {
-		console.error("Get suggested users error:", err);
 		res.status(500).json({ error: "Failed to fetch suggested users" });
 	}
 };

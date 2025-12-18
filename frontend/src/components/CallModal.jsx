@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useChatStore } from '../store/useChatStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { PhoneOff, Mic, MicOff, Video, VideoOff, Volume2, X, Phone, Loader2 } from 'lucide-react'; // Added Phone and Loader2
+import { PhoneOff, Mic, MicOff, Video, VideoOff, Volume2, X, Phone, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const CallModal = () => {
@@ -23,6 +23,7 @@ const CallModal = () => {
 
     // --- Local State ---
     const timerRef = useRef(null);
+    const [duration, setDuration] = useState(0);
 
     // --- Timer Logic ---
     useEffect(() => {
@@ -45,13 +46,12 @@ const CallModal = () => {
 
     // --- WebRTC Cleanup ---
     const cleanupWebRTC = useCallback(() => {
-        console.log("CallModal: Cleaning up WebRTC...");
         if (peerConnectionRef.current) {
             peerConnectionRef.current.getSenders().forEach(sender => sender.track?.stop());
             peerConnectionRef.current.onicecandidate = null;
             peerConnectionRef.current.ontrack = null;
             if (peerConnectionRef.current.signalingState !== 'closed') {
-                try { peerConnectionRef.current.close(); } catch (e) { console.error("Error closing PC:", e); }
+                try { peerConnectionRef.current.close(); } catch (e) { }
             }
             peerConnectionRef.current = null;
         }
@@ -66,20 +66,22 @@ const CallModal = () => {
         if (localVideoRef.current) localVideoRef.current.srcObject = null;
         if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
         iceCandidateQueueRef.current = [];
-        console.log("CallModal: WebRTC Cleanup finished.");
-    }, []); // No dependencies needed
+    }, []);
 
     // --- WebRTC Setup ---
     const createPeerConnection = useCallback(() => {
-        console.log("CallModal: Creating PeerConnection");
         cleanupWebRTC(); // Ensure clean state before creating
         const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] };
         const pc = new RTCPeerConnection(servers);
 
-        pc.onicecandidate = (event) => { if (event.candidate && socket && callPartner) { console.log("CallModal: Sending ICE candidate"); socket.emit("private:ice-candidate", { targetUserId: callPartner.id, candidate: event.candidate }); } };
+        pc.onicecandidate = (event) => {
+            if (event.candidate && socket && callPartner) {
+                socket.emit("private:ice-candidate", { targetUserId: callPartner.id, candidate: event.candidate });
+            }
+        };
+
         pc.ontrack = (event) => {
             if (event.streams && event.streams[0]) {
-                console.log("CallModal: Received remote track");
                 remoteStreamRef.current = event.streams[0];
                 if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStreamRef.current;
                 // Don't set state to connected here, let the store manage it via signals
@@ -87,53 +89,71 @@ const CallModal = () => {
         };
 
         if (localStreamRef.current) {
-            console.log("CallModal: Adding local tracks");
             localStreamRef.current.getTracks().forEach(track => {
                 // Only add video track if callType is 'video' and camera isn't off
                 if (track.kind === 'video' && (callType === 'audio' || isCameraOff)) {
                     track.enabled = false; // Keep track but disable it initially for audio call / camera off
                 }
-                 try { pc.addTrack(track, localStreamRef.current); } catch(e) { console.error("Error adding track:", e); }
+                try { pc.addTrack(track, localStreamRef.current); } catch (e) { }
             });
         }
-        iceCandidateQueueRef.current = [];
+
+        // Initialize queue (though cleanup usually handles it)
+        // iceCandidateQueueRef.current = []; // Already cleared in cleanup
         peerConnectionRef.current = pc;
         return pc;
-    }, [socket, callPartner, callType, isCameraOff, cleanupWebRTC]); // Add dependencies
+    }, [socket, callPartner, callType, isCameraOff, cleanupWebRTC]);
 
-     // --- WebRTC Signaling Handlers ---
+    // --- WebRTC Signaling Handlers ---
     const handleOffer = useCallback(async (callerId, sdp) => {
-        if (!localStreamRef.current) { console.error("Cannot handle offer: local stream not ready."); return; }
-        console.log("CallModal: Handling Offer");
-        const pc = createPeerConnection();
+        if (!localStreamRef.current) { return; }
+        const pc = createPeerConnection(); // This recreates PC from scratch
         try {
             await pc.setRemoteDescription(new RTCSessionDescription(sdp));
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             if (socket) socket.emit("private:answer", { callerId, sdp: pc.localDescription });
-            iceCandidateQueueRef.current.forEach(candidate => pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => console.error("Error adding queued ICE (offer):", e)));
+
+            // Process queued candidates
+            iceCandidateQueueRef.current.forEach(candidate => {
+                pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => { });
+            });
             iceCandidateQueueRef.current = [];
-        } catch (error) { console.error("Error handling offer:", error); cleanupWebRTC(); resetCallState(); }
-    }, [createPeerConnection, socket, cleanupWebRTC, resetCallState]); // Add dependencies
+        } catch (error) {
+            console.error("Handle Offer Error:", error);
+            cleanupWebRTC();
+            resetCallState();
+        }
+    }, [createPeerConnection, socket, cleanupWebRTC, resetCallState]);
 
     const handleAnswer = useCallback(async (sdp) => {
         const pc = peerConnectionRef.current;
-        if (!pc || pc.signalingState !== 'have-local-offer') { console.warn(`CallModal: Ignoring Answer in state ${pc?.signalingState}`); return; }
+        if (!pc || pc.signalingState !== 'have-local-offer') { return; }
         try {
-            console.log("CallModal: Handling Answer");
             await pc.setRemoteDescription(new RTCSessionDescription(sdp));
-            iceCandidateQueueRef.current.forEach(candidate => pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => console.error("Error adding queued ICE (answer):", e)));
+
+            // Process queued candidates
+            iceCandidateQueueRef.current.forEach(candidate => {
+                pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => { });
+            });
             iceCandidateQueueRef.current = [];
-        } catch (error) { console.error("Error handling answer:", error); cleanupWebRTC(); resetCallState(); }
-    }, [cleanupWebRTC, resetCallState]); // Add dependencies
+        } catch (error) {
+            console.error("Handle Answer Error:", error);
+            cleanupWebRTC();
+            resetCallState();
+        }
+    }, [cleanupWebRTC, resetCallState]);
 
     const handleIceCandidate = useCallback(async (candidate) => {
         const pc = peerConnectionRef.current;
         try {
-            if (!pc || !pc.remoteDescription || !pc.remoteDescription.type) { iceCandidateQueueRef.current.push(candidate); }
-            else { await pc.addIceCandidate(new RTCIceCandidate(candidate)); }
-        } catch (error) { console.error("Error adding ICE candidate:", error); }
-    }, []); // No dependencies
+            if (!pc || !pc.remoteDescription || !pc.remoteDescription.type) {
+                iceCandidateQueueRef.current.push(candidate);
+            } else {
+                await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            }
+        } catch (error) { }
+    }, []);
 
     // --- Main useEffect for Call Setup & Socket Listeners ---
     useEffect(() => {
@@ -146,42 +166,43 @@ const CallModal = () => {
 
         // Get Media -> Create PC -> Handle Signaling
         const setupCall = async () => {
-             // 1. Get User Media
-             if (!localStreamRef.current) {
-                  try {
-                       console.log("CallModal: Requesting media...");
-                       const stream = await navigator.mediaDevices.getUserMedia({ video: callType === 'video', audio: true });
-                       if (!isMounted) { stream.getTracks().forEach(t => t.stop()); return; }
-                       localStreamRef.current = stream;
-                       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-                       console.log("CallModal: Media obtained.");
-                  } catch (err) {
-                       console.error("Media error:", err); toast.error("Camera/Mic access denied.");
-                       if (isMounted) endCall(); // End call attempt if media fails
-                       return; // Stop setup if media failed
-                  }
-             }
+            // 1. Get User Media
+            if (!localStreamRef.current) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: callType === 'video', audio: true });
+                    if (!isMounted) { stream.getTracks().forEach(t => t.stop()); return; }
+                    localStreamRef.current = stream;
+                    if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+                } catch (err) {
+                    toast.error("Camera/Mic access denied.");
+                    if (isMounted) endCall(); // End call attempt if media fails
+                    return; // Stop setup if media failed
+                }
+            }
 
-             // 2. Create Peer Connection (if needed) and add tracks
-             if (!peerConnectionRef.current) {
-                  createPeerConnection(); // Creates PC and adds tracks based on current stream
-             }
+            // 2. Create Peer Connection (if needed) and add tracks
+            if (!peerConnectionRef.current) {
+                createPeerConnection(); // Creates PC and adds tracks based on current stream
+            }
 
-             // 3. Initiate Offer if we are the caller (state was 'outgoing' then 'connecting')
-             if (callState === 'connecting' && incomingCallData === null) { // Check incomingCallData to infer if we are caller
-                  const pc = peerConnectionRef.current;
-                  if (pc && pc.signalingState === 'stable') { // Only create offer if stable
-                      console.log("CallModal: Initiating Offer...");
-                      pc.createOffer()
+            // 3. Initiate Offer if we are the caller (state was 'outgoing' then 'connecting')
+            if (callState === 'connecting' && incomingCallData === null) { // Check incomingCallData to infer if we are caller
+                const pc = peerConnectionRef.current;
+                if (pc && pc.signalingState === 'stable') { // Only create offer if stable
+                    pc.createOffer()
                         .then(offer => pc.setLocalDescription(offer))
                         .then(() => { if (socket && callPartner) socket.emit("private:offer", { receiverId: callPartner.id, sdp: pc.localDescription }); })
-                        .catch(err => { console.error("Error creating offer:", err); cleanupWebRTC(); resetCallState(); });
-                  }
-             }
+                        .catch(err => {
+                            console.error("Create Offer Error:", err);
+                            cleanupWebRTC();
+                            resetCallState();
+                        });
+                }
+            }
         };
 
-        if (callState === 'connecting' || callState === 'connected') {
-             setupCall();
+        if (callState === 'connecting' || callState === 'connected' || callState === 'outgoing') {
+            setupCall();
         }
 
         // --- Socket Event Listeners for Signaling ---
@@ -195,18 +216,16 @@ const CallModal = () => {
 
         return () => {
             isMounted = false;
-            console.log("CallModal: Detaching signaling listeners.");
             socket.off("private:offer", onOffer);
             socket.off("private:answer", onAnswer);
             socket.off("private:ice-candidate", onIceCandidate);
-             // Cleanup WebRTC on state change away from connected/connecting, handled by main check
-             if (callState !== 'connecting' && callState !== 'connected') {
-                 cleanupWebRTC();
-             }
+            // Cleanup WebRTC on state change away from connected/connecting, handled by main check
+            if (callState !== 'connecting' && callState !== 'connected' && callState !== 'outgoing') {
+                cleanupWebRTC();
+            }
         };
-    // Re-run when call state or partner changes, or socket connects
+        // Re-run when call state or partner changes, or socket connects
     }, [callState, callPartner, socket, callType, incomingCallData, cleanupWebRTC, createPeerConnection, handleOffer, handleAnswer, handleIceCandidate, endCall, resetCallState]);
-
 
     // --- UI Event Handlers ---
     const handleToggleMute = () => {
@@ -222,7 +241,6 @@ const CallModal = () => {
             toggleCamera(); // Update store state
         }
     };
-
 
     // --- Render Logic ---
     if (callState === 'idle') return null; // Don't render anything if no call
@@ -261,10 +279,10 @@ const CallModal = () => {
             {/* Main Video Container - Full Screen */}
             <div className="flex-1 relative overflow-hidden">
                 {/* Remote Video - Full Screen Background */}
-                <video 
-                    ref={remoteVideoRef} 
-                    autoPlay 
-                    playsInline 
+                <video
+                    ref={remoteVideoRef}
+                    autoPlay
+                    playsInline
                     className="absolute inset-0 w-full h-full object-cover bg-base-300"
                 />
 
@@ -304,10 +322,9 @@ const CallModal = () => {
                                 )}
                             </div>
                         </div>
-                        
                         {/* Close Button */}
-                        <button 
-                            className="btn btn-ghost btn-circle btn-sm" 
+                        <button
+                            className="btn btn-ghost btn-circle btn-sm"
                             onClick={endCall}
                             aria-label="Close call window"
                         >
@@ -321,11 +338,11 @@ const CallModal = () => {
                     <div className="absolute top-20 right-4 z-20">
                         <div className="relative w-32 h-44 sm:w-36 sm:h-48 md:w-40 md:h-56 rounded-xl overflow-hidden shadow-2xl border-2 border-primary bg-base-300">
                             {!isCameraOff ? (
-                                <video 
-                                    ref={localVideoRef} 
-                                    autoPlay 
-                                    playsInline 
-                                    muted 
+                                <video
+                                    ref={localVideoRef}
+                                    autoPlay
+                                    playsInline
+                                    muted
                                     className="w-full h-full object-cover"
                                     style={{ transform: 'scaleX(-1)' }}
                                 />
@@ -366,7 +383,7 @@ const CallModal = () => {
                 <div className="absolute bottom-0 left-0 right-0 z-30 bg-base-100/95 backdrop-blur-md border-t border-base-300">
                     <div className="px-4 py-3 flex items-center justify-center gap-3">
                         {/* Mute Button */}
-                        <button 
+                        <button
                             className={`btn btn-circle ${isMuted ? 'btn-error' : 'btn-outline btn-primary'}`}
                             onClick={handleToggleMute}
                             title={isMuted ? 'Unmute' : 'Mute'}
@@ -377,7 +394,7 @@ const CallModal = () => {
 
                         {/* Camera Toggle (Video Call Only) */}
                         {callType === 'video' && (
-                            <button 
+                            <button
                                 className={`btn btn-circle ${isCameraOff ? 'btn-error' : 'btn-outline btn-primary'}`}
                                 onClick={handleToggleCamera}
                                 title={isCameraOff ? 'Turn On Camera' : 'Turn Off Camera'}
@@ -388,7 +405,7 @@ const CallModal = () => {
                         )}
 
                         {/* End Call Button */}
-                        <button 
+                        <button
                             className="btn btn-error btn-circle btn-lg mx-2"
                             onClick={endCall}
                             title="End Call"
@@ -398,7 +415,7 @@ const CallModal = () => {
                         </button>
 
                         {/* Volume Button (Placeholder) */}
-                        <button 
+                        <button
                             className="btn btn-circle btn-outline btn-primary hidden sm:flex"
                             title="Volume"
                             aria-label="Adjust volume"

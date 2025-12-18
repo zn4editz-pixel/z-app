@@ -1,59 +1,50 @@
-import React from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-
+import React from "react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 class OptimizedErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { 
-      hasError: false, 
-      error: null, 
+    this.state = {
+      hasError: false,
+      error: null,
       errorInfo: null,
-      retryCount: 0 
+      retryCount: 0,
     };
   }
-
   static getDerivedStateFromError(error) {
     // Update state so the next render will show the fallback UI
     return { hasError: true };
   }
-
   componentDidCatch(error, errorInfo) {
     // ✅ PERFORMANCE: Log error without blocking UI
-    console.error('🚨 Error Boundary Caught:', error, errorInfo);
-    
     this.setState({
       error,
       errorInfo,
     });
-
     // ✅ PERFORMANCE: Report to error tracking service (if available)
     if (window.gtag) {
-      window.gtag('event', 'exception', {
+      window.gtag("event", "exception", {
         description: error.toString(),
         fatal: false,
       });
     }
   }
-
   handleRetry = () => {
     // ✅ PERFORMANCE: Limit retry attempts to prevent infinite loops
     if (this.state.retryCount < 3) {
-      this.setState(prevState => ({
+      this.setState((prevState) => ({
         hasError: false,
         error: null,
         errorInfo: null,
-        retryCount: prevState.retryCount + 1
+        retryCount: prevState.retryCount + 1,
       }));
     } else {
       // Force page reload after 3 failed retries
       window.location.reload();
     }
   };
-
   handleGoHome = () => {
-    window.location.href = '/';
+    window.location.href = "/";
   };
-
   render() {
     if (this.state.hasError) {
       // ✅ PERFORMANCE: Lightweight error UI
@@ -66,11 +57,10 @@ class OptimizedErrorBoundary extends React.Component {
                 Oops! Something went wrong
               </h1>
               <p className="text-base-content/70 mb-6">
-                {this.props.fallbackMessage || 
-                 "We're sorry, but something unexpected happened. Please try again."}
+                {this.props.fallbackMessage ||
+                  "We're sorry, but something unexpected happened. Please try again."}
               </p>
             </div>
-
             <div className="space-y-3">
               {this.state.retryCount < 3 ? (
                 <button
@@ -90,7 +80,6 @@ class OptimizedErrorBoundary extends React.Component {
                   Reload Page
                 </button>
               )}
-              
               <button
                 onClick={this.handleGoHome}
                 className="btn btn-outline w-full"
@@ -99,7 +88,6 @@ class OptimizedErrorBoundary extends React.Component {
                 Go Home
               </button>
             </div>
-
             {/* ✅ PERFORMANCE: Show error details only in development */}
             {import.meta.env.DEV && this.state.error && (
               <details className="mt-6 text-left">
@@ -116,11 +104,9 @@ class OptimizedErrorBoundary extends React.Component {
         </div>
       );
     }
-
     return this.props.children;
   }
 }
-
 // ✅ PERFORMANCE: Functional wrapper for easier usage
 export const withErrorBoundary = (Component, fallbackMessage) => {
   return function WrappedComponent(props) {
@@ -131,5 +117,4 @@ export const withErrorBoundary = (Component, fallbackMessage) => {
     );
   };
 };
-
 export default OptimizedErrorBoundary;

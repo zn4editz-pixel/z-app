@@ -16,14 +16,27 @@ try {
   console.log('📦 Installing dependencies...');
   execSync('npm install', { stdio: 'inherit', cwd: __dirname });
 
-  // Step 2: Setup build schema (SQLite, no connection needed)
-  console.log('🔧 Setting up build-safe schema...');
-  const schemaPath = path.join(__dirname, 'prisma/schema.prisma');
-  const buildSchemaPath = path.join(__dirname, 'prisma/schema.build.prisma');
-  
-  if (fs.existsSync(buildSchemaPath)) {
-    fs.copyFileSync(buildSchemaPath, schemaPath);
-    console.log('✅ Build schema activated (SQLite, no connection required)');
+  // Step 2: Setup build schema
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
+
+  if (isProduction) {
+    console.log('🌍 Production environment detected (Render/Node).');
+    console.log('🔄 Delegating to setup-schema.js for correct production schema...');
+    try {
+      execSync('node scripts/setup-schema.js', { stdio: 'inherit', cwd: __dirname });
+    } catch (e) {
+      console.warn('⚠️ setup-schema.js failed, falling back to existing schema check.');
+    }
+  } else {
+    // Development / Build Only (Vercel/Local) - Use Safe SQLite Schema
+    console.log('🔧 Setting up build-safe schema (SQLite)...');
+    const schemaPath = path.join(__dirname, 'prisma/schema.prisma');
+    const buildSchemaPath = path.join(__dirname, 'prisma/schema.build.prisma');
+
+    if (fs.existsSync(buildSchemaPath)) {
+      fs.copyFileSync(buildSchemaPath, schemaPath);
+      console.log('✅ Build schema activated (SQLite, no connection required)');
+    }
   }
 
   // Step 3: Generate Prisma client (no database connection)

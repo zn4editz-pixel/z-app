@@ -3,16 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Lock, Eye, EyeOff, ArrowLeft, Mail, Shield } from "lucide-react";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
-
 const ChangePasswordPage = () => {
   const navigate = useNavigate();
-
   // Step 1 - OTP Request
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [maskedEmail, setMaskedEmail] = useState("");
-
   // Step 2 - Password Change
   const [otp, setOtp] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -21,7 +18,6 @@ const ChangePasswordPage = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const handleSendOTP = async () => {
     setIsLoading(true);
     try {
@@ -36,25 +32,20 @@ const ChangePasswordPage = () => {
       setIsLoading(false);
     }
   };
-
   const handleChangePassword = async (e) => {
     e.preventDefault();
-
     if (!otp || !currentPassword || !newPassword || !confirmPassword) {
       toast.error("All fields are required");
       return;
     }
-
     if (newPassword.length < 6) {
       toast.error("New password must be at least 6 characters");
       return;
     }
-
     if (newPassword !== confirmPassword) {
       toast.error("New passwords do not match");
       return;
     }
-
     setIsLoading(true);
     try {
       await axiosInstance.post("/auth/change-password", {
@@ -70,7 +61,6 @@ const ChangePasswordPage = () => {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200 flex items-center justify-center p-3 sm:p-4">
       <div className="w-full max-w-md">
@@ -82,7 +72,6 @@ const ChangePasswordPage = () => {
           <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
           <span className="text-xs sm:text-sm">Back</span>
         </button>
-
         <div className="bg-base-100 rounded-xl shadow-lg p-4 sm:p-6 border border-base-300">
           {/* Header */}
           <div className="text-center mb-4 sm:mb-6">
@@ -94,7 +83,6 @@ const ChangePasswordPage = () => {
               {step === 1 ? "Verify your identity" : "Enter new password"}
             </p>
           </div>
-
           {/* Step 1: Send OTP */}
           {step === 1 && (
             <div className="space-y-3 sm:space-y-4">
@@ -104,7 +92,6 @@ const ChangePasswordPage = () => {
                   For security, we'll send a verification code to your email
                 </p>
               </div>
-
               <button
                 onClick={handleSendOTP}
                 disabled={isLoading}
@@ -117,27 +104,34 @@ const ChangePasswordPage = () => {
                            disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {/* Animated background shimmer */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
-                              translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-
+                <div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
+                              translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"
+                ></div>
                 {isLoading ? (
                   <>
                     <span className="loading loading-spinner loading-sm relative z-10"></span>
-                    <span className="text-xs sm:text-sm font-semibold relative z-10 text-primary-content">Sending...</span>
+                    <span className="text-xs sm:text-sm font-semibold relative z-10 text-primary-content">
+                      Sending...
+                    </span>
                   </>
                 ) : (
                   <>
                     <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 relative z-10 group-hover:rotate-12 transition-transform duration-300" />
-                    <span className="text-xs sm:text-sm font-semibold relative z-10 text-primary-content">Send Verification Code</span>
+                    <span className="text-xs sm:text-sm font-semibold relative z-10 text-primary-content">
+                      Send Verification Code
+                    </span>
                   </>
                 )}
               </button>
             </div>
           )}
-
           {/* Step 2: Verify OTP & Change Password */}
           {step === 2 && (
-            <form onSubmit={handleChangePassword} className="space-y-3 sm:space-y-4">
+            <form
+              onSubmit={handleChangePassword}
+              className="space-y-3 sm:space-y-4"
+            >
               {/* OTP Sent Message */}
               <div className="flex items-start gap-2 p-2 sm:p-3 bg-success/10 rounded-lg border border-success/20">
                 <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success mt-0.5 flex-shrink-0" />
@@ -145,11 +139,12 @@ const ChangePasswordPage = () => {
                   Verification code sent to {maskedEmail}
                 </p>
               </div>
-
               {/* OTP Input */}
               <div>
                 <label className="label py-1 sm:py-2">
-                  <span className="label-text text-xs sm:text-sm font-medium">Verification Code</span>
+                  <span className="label-text text-xs sm:text-sm font-medium">
+                    Verification Code
+                  </span>
                 </label>
                 <input
                   type="text"
@@ -161,11 +156,12 @@ const ChangePasswordPage = () => {
                   autoComplete="one-time-code"
                 />
               </div>
-
               {/* Current Password */}
               <div>
                 <label className="label py-1 sm:py-2">
-                  <span className="label-text text-xs sm:text-sm font-medium">Current Password</span>
+                  <span className="label-text text-xs sm:text-sm font-medium">
+                    Current Password
+                  </span>
                 </label>
                 <div className="relative">
                   <input
@@ -189,11 +185,12 @@ const ChangePasswordPage = () => {
                   </button>
                 </div>
               </div>
-
               {/* New Password */}
               <div>
                 <label className="label py-1 sm:py-2">
-                  <span className="label-text text-xs sm:text-sm font-medium">New Password</span>
+                  <span className="label-text text-xs sm:text-sm font-medium">
+                    New Password
+                  </span>
                 </label>
                 <div className="relative">
                   <input
@@ -217,11 +214,12 @@ const ChangePasswordPage = () => {
                   </button>
                 </div>
               </div>
-
               {/* Confirm Password */}
               <div>
                 <label className="label py-1 sm:py-2">
-                  <span className="label-text text-xs sm:text-sm font-medium">Confirm New Password</span>
+                  <span className="label-text text-xs sm:text-sm font-medium">
+                    Confirm New Password
+                  </span>
                 </label>
                 <div className="relative">
                   <input
@@ -245,7 +243,6 @@ const ChangePasswordPage = () => {
                   </button>
                 </div>
               </div>
-
               {/* Submit Button */}
               <button
                 type="submit"
@@ -259,22 +256,26 @@ const ChangePasswordPage = () => {
                            disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {/* Animated background shimmer */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
-                              translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-
+                <div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
+                              translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"
+                ></div>
                 {isLoading ? (
                   <>
                     <span className="loading loading-spinner loading-sm relative z-10"></span>
-                    <span className="text-xs sm:text-sm font-semibold relative z-10 text-primary-content">Changing...</span>
+                    <span className="text-xs sm:text-sm font-semibold relative z-10 text-primary-content">
+                      Changing...
+                    </span>
                   </>
                 ) : (
                   <>
                     <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 relative z-10 group-hover:rotate-12 transition-transform duration-300" />
-                    <span className="text-xs sm:text-sm font-semibold relative z-10 text-primary-content">Change Password</span>
+                    <span className="text-xs sm:text-sm font-semibold relative z-10 text-primary-content">
+                      Change Password
+                    </span>
                   </>
                 )}
               </button>
-
               {/* Resend OTP */}
               <button
                 type="button"
@@ -295,5 +296,4 @@ const ChangePasswordPage = () => {
     </div>
   );
 };
-
 export default ChangePasswordPage;

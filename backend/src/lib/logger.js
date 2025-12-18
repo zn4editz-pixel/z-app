@@ -1,94 +1,1 @@
-// 📝 PRODUCTION LOGGING SYSTEM
-import fs from 'fs';
-import path from 'path';
-
-class Logger {
-  constructor() {
-    this.logDir = path.join(process.cwd(), 'logs');
-    this.ensureLogDir();
-  }
-
-  ensureLogDir() {
-    if (!fs.existsSync(this.logDir)) {
-      fs.mkdirSync(this.logDir, { recursive: true });
-    }
-  }
-
-  formatMessage(level, message, meta = {}) {
-    return JSON.stringify({
-      timestamp: new Date().toISOString(),
-      level,
-      message,
-      ...meta,
-      pid: process.pid,
-      memory: process.memoryUsage().heapUsed
-    }) + '\n';
-  }
-
-  writeToFile(filename, content) {
-    if (process.env.NODE_ENV === 'production') {
-      const filePath = path.join(this.logDir, filename);
-      fs.appendFileSync(filePath, content);
-    }
-  }
-
-  info(message, meta = {}) {
-    const formatted = this.formatMessage('INFO', message, meta);
-    console.log(`ℹ️  ${message}`, meta);
-    this.writeToFile('app.log', formatted);
-  }
-
-  error(message, error = null, meta = {}) {
-    const errorMeta = error ? {
-      error: error.message,
-      stack: error.stack,
-      ...meta
-    } : meta;
-    
-    const formatted = this.formatMessage('ERROR', message, errorMeta);
-    console.error(`❌ ${message}`, errorMeta);
-    this.writeToFile('error.log', formatted);
-  }
-
-  warn(message, meta = {}) {
-    const formatted = this.formatMessage('WARN', message, meta);
-    console.warn(`⚠️  ${message}`, meta);
-    this.writeToFile('app.log', formatted);
-  }
-
-  debug(message, meta = {}) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🐛 ${message}`, meta);
-    }
-  }
-
-  // Security logging
-  security(event, details = {}) {
-    const formatted = this.formatMessage('SECURITY', event, {
-      ...details,
-      userAgent: details.userAgent,
-      ip: details.ip,
-      userId: details.userId
-    });
-    
-    console.warn(`🔒 SECURITY: ${event}`, details);
-    this.writeToFile('security.log', formatted);
-  }
-
-  // Performance logging
-  performance(operation, duration, meta = {}) {
-    const formatted = this.formatMessage('PERFORMANCE', operation, {
-      duration: `${duration}ms`,
-      ...meta
-    });
-    
-    if (duration > 1000) {
-      console.warn(`🐌 SLOW: ${operation} took ${duration}ms`, meta);
-    }
-    
-    this.writeToFile('performance.log', formatted);
-  }
-}
-
-export const logger = new Logger();
-export default logger;
+// 📝 PRODUCTION LOGGING SYSTEMimport fs from 'fs';import path from 'path';class Logger {  constructor() {    this.logDir = path.join(process.cwd(), 'logs');    this.ensureLogDir();  }  ensureLogDir() {    if (!fs.existsSync(this.logDir)) {      fs.mkdirSync(this.logDir, { recursive: true });    }  }  formatMessage(level, message, meta = {}) {    return JSON.stringify({      timestamp: new Date().toISOString(),      level,      message,      ...meta,      pid: process.pid,      memory: process.memoryUsage().heapUsed    }) + '\n';  }  writeToFile(filename, content) {    if (process.env.NODE_ENV === 'production') {      const filePath = path.join(this.logDir, filename);      fs.appendFileSync(filePath, content);    }  }  info(message, meta = {}) {    const formatted = this.formatMessage('INFO', message, meta);    this.writeToFile('app.log', formatted);  }  error(message, error = null, meta = {}) {    const errorMeta = error ? {      error: error.message,      stack: error.stack,      ...meta    } : meta;    const formatted = this.formatMessage('ERROR', message, errorMeta);    this.writeToFile('error.log', formatted);  }  warn(message, meta = {}) {    const formatted = this.formatMessage('WARN', message, meta);    this.writeToFile('app.log', formatted);  }  debug(message, meta = {}) {    if (process.env.NODE_ENV === 'development') {    }  }  // Security logging  security(event, details = {}) {    const formatted = this.formatMessage('SECURITY', event, {      ...details,      userAgent: details.userAgent,      ip: details.ip,      userId: details.userId    });    this.writeToFile('security.log', formatted);  }  // Performance logging  performance(operation, duration, meta = {}) {    const formatted = this.formatMessage('PERFORMANCE', operation, {      duration: `${duration}ms`,      ...meta    });    if (duration > 1000) {    }    this.writeToFile('performance.log', formatted);  }}export const logger = new Logger();export default logger;

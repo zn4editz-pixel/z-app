@@ -1,22 +1,28 @@
 // Offline data caching utilities using localStorage
 
 const CACHE_KEYS = {
-  MESSAGES: 'z_app_messages_cache',
-  USERS: 'z_app_users_cache',
-  FRIENDS: 'z_app_friends_cache',
-  PROFILE: 'z_app_profile_cache',
-  LAST_SYNC: 'z_app_last_sync',
+  MESSAGES: "z_app_messages_cache",
+  USERS: "z_app_users_cache",
+  FRIENDS: "z_app_friends_cache",
+  PROFILE: "z_app_profile_cache",
+  LAST_SYNC: "z_app_last_sync",
 };
 
 // Save data to cache
 export const saveToCache = (key, data) => {
   try {
-    localStorage.setItem(key, JSON.stringify({
-      data,
-      timestamp: Date.now(),
-    }));
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        data,
+        timestamp: Date.now(),
+      }),
+    );
   } catch (error) {
-    if (import.meta.env.DEV) console.error('Failed to save to cache:', error);
+    // Silent fail in production
+    if (import.meta.env.DEV) {
+      console.error("Cache save error:", error);
+    }
   }
 };
 
@@ -25,26 +31,28 @@ export const getFromCache = (key) => {
   try {
     const cached = localStorage.getItem(key);
     if (!cached) return null;
-    
+
     const { data, timestamp } = JSON.parse(cached);
-    
+
     // Cache expires after 7 days
     const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
     if (Date.now() - timestamp > SEVEN_DAYS) {
       localStorage.removeItem(key);
       return null;
     }
-    
+
     return data;
   } catch (error) {
-    if (import.meta.env.DEV) console.error('Failed to get from cache:', error);
+    if (import.meta.env.DEV) {
+      console.error("Cache read error:", error);
+    }
     return null;
   }
 };
 
 // Clear all cache
 export const clearCache = () => {
-  Object.values(CACHE_KEYS).forEach(key => {
+  Object.values(CACHE_KEYS).forEach((key) => {
     localStorage.removeItem(key);
   });
 };

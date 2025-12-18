@@ -1,10 +1,11 @@
+// ... keep imports but REMOVE useFriendStore
 import { create } from "zustand";
-import React from 'react'; // Added for store-level react usage if needed, though strictly not typical for vanilla zustand, kept for safety with listeners
-import { axiosInstance } from "../lib/axios.js"; // Used for API calls
+import React from "react";
+import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
-import { useFriendStore } from "./useFriendStore.js";
 import { SocketMonitor } from "../utils/socketMonitor.js";
+import logger from "../utils/secureLogger.js";
 
 // ✅ PRODUCTION SOCKET URL CONFIGURATION
 const getSocketURL = () => {
@@ -12,450 +13,336 @@ const getSocketURL = () => {
   if (import.meta.env.MODE === "development") {
     return "http://localhost:5001";
   }
-  
   // Production - use environment variable or fallback
-  const apiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+  const apiUrl =
+    import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
   if (apiUrl) {
     return apiUrl;
   }
-  
   // Fallback to current domain with HTTPS
-  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+  const protocol = window.location.protocol === "https:" ? "https:" : "http:";
   const host = window.location.host;
   return `${protocol}//${host}`;
 };
 
 const SOCKET_URL = getSocketURL();
 
-// Import secure logger
-import logger from "../utils/secureLogger.js";
-
-// Log the socket URL being used for debugging (only in development)
 logger.debug("Socket URL Configured:", SOCKET_URL);
 
-
 export const useAuthStore = create((set, get) => ({
-	authUser: null,
-	isSigningUp: false,
-	isLoggingIn: false,
-	isUpdatingProfile: false,
-	isCheckingAuth: true,
-	onlineUsers: [],
-	socket: null,
-	socketMonitor: null,
+  authUser: null,
+  isSigningUp: false,
+  isLoggingIn: false,
+  isUpdatingProfile: false,
+  isCheckingAuth: true,
+  onlineUsers: [],
+  socket: null,
+  socketMonitor: null,
 
-	setAuthUser: (user) => {
-		set({ authUser: user });
-	},
+  setAuthUser: (user) => {
+    set({ authUser: user });
+  },
 
-	checkAuth: async () => {
-		try {
-			// Restore token from localStorage if exists
-			const token = localStorage.getItem("token");
-			const cachedUser = localStorage.getItem("authUser");
+  checkAuth: async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const cachedUser = localStorage.getItem("authUser");
 
-			if (!token) {
-				// No token, skip auth check
-				set({ authUser: null, isCheckingAuth: false });
-				return;
-			}
+      if (!token) {
+        set({ authUser: null, isCheckingAuth: false });
+        return;
+      }
 
-			// ✅ FIX: Check for old MongoDB user IDs and clear them
-			if (cachedUser) {
-				try {
-					const parsedUser = JSON.parse(cachedUser);
-					// If user ID looks like MongoDB ObjectId (24 hex chars), clear old data
-					if (parsedUser.id && parsedUser.id.length === 24 && /^[0-9a-fA-F]{24}$/.test(parsedUser.id)) {
-						if (import.meta.env.DEV) console.log("🧹 Detected old MongoDB user data, clearing for fresh login...");
-						localStorage.removeItem("authUser");
-						localStorage.removeItem("token");
-						delete axiosInstance.defaults.headers.common['Authorization'];
-						set({ authUser: null, isCheckingAuth: false });
-						toast.error("Please log in again - your account has been migrated to a new system");
-						return;
-					}
-					set({ authUser: parsedUser, isCheckingAuth: false });
-				} catch (e) {
-					console.error("Failed to parse cached user, clearing auth data");
-					localStorage.removeItem("authUser");
-					localStorage.removeItem("token");
-					delete axiosInstance.defaults.headers.common['Authorization'];
-					set({ authUser: null, isCheckingAuth: false });
-					return;
-				}
-			} else {
-				// Don't stop checking auth yet - wait for backend confirmation
-				// set({ isCheckingAuth: true }); 
-			}
+      if (cachedUser) {
+        try {
+          const parsedUser = JSON.parse(cachedUser);
+          // If user ID looks like MongoDB ObjectId (24 hex chars), clear old data
+          if (
+            parsedUser.id &&
+            parsedUser.id.length === 24 &&
+            /^[0-9a-fA-F]{24}$/.test(parsedUser.id)
+          ) {
+            if (import.meta.env.DEV) localStorage.removeItem("authUser");
+            localStorage.removeItem("token");
+            delete axiosInstance.defaults.headers.common["Authorization"];
+            set({ authUser: null, isCheckingAuth: false });
+            toast.error(
+              "Please log in again - your account has been migrated to a new system",
+            );
+            return;
+          }
+          set({ authUser: parsedUser, isCheckingAuth: false });
+        } catch (e) {
+          localStorage.removeItem("authUser");
+          localStorage.removeItem("token");
+          delete axiosInstance.defaults.headers.common["Authorization"];
+          set({ authUser: null, isCheckingAuth: false });
+          return;
+        }
+      }
 
-			// Set token in axios headers
-			axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-			// Check auth with backend in background
-			const res = await axiosInstance.get("/auth/check");
-			const user = res.data;
+      const res = await axiosInstance.get("/auth/check");
+      const user = res.data;
 
-			if (!user || typeof user !== 'object') {
-				throw new Error("Invalid user data received");
-			}
+      if (!user || typeof user !== "object") {
+        throw new Error("Invalid user data received");
+      }
 
-			// Check if user is blocked or suspended
-			if (user.isBlocked) {
-				console.log("User is blocked");
-				toast.error("Account is blocked");
-				set({ authUser: null, isCheckingAuth: false });
-				localStorage.removeItem("authUser");
-				localStorage.removeItem("token");
-				delete axiosInstance.defaults.headers.common['Authorization'];
-				get().disconnectSocket();
-				useFriendStore.getState().clearFriendData();
-				return;
-			}
-			if (user.isSuspended && user.suspensionEndTime && new Date(user.suspensionEndTime) > new Date()) {
-				console.log("User is suspended");
-				toast.error("Account is suspended");
-				set({ authUser: null, isCheckingAuth: false });
-				localStorage.removeItem("authUser");
-				localStorage.removeItem("token");
-				delete axiosInstance.defaults.headers.common['Authorization'];
-				get().disconnectSocket();
-				useFriendStore.getState().clearFriendData();
-				return;
-			}
+      if (user.isBlocked) {
+        toast.error("Account is blocked");
+        set({ authUser: null, isCheckingAuth: false });
+        localStorage.removeItem("authUser");
+        localStorage.removeItem("token");
+        delete axiosInstance.defaults.headers.common["Authorization"];
+        get().disconnectSocket();
+        return;
+      }
 
-			// Auth successful
-			console.log("Auth check successful for user:", user.username);
-			set({ authUser: user });
-			localStorage.setItem("authUser", JSON.stringify(user));
-			get().connectSocket();
-			useFriendStore.getState().fetchFriendData();
-		} catch (error) {
-			console.log("Auth check failed:", error.response?.status, error.response?.data?.message || error.message);
+      if (
+        user.isSuspended &&
+        user.suspensionEndTime &&
+        new Date(user.suspensionEndTime) > new Date()
+      ) {
+        toast.error("Account is suspended");
+        set({ authUser: null, isCheckingAuth: false });
+        localStorage.removeItem("authUser");
+        localStorage.removeItem("token");
+        delete axiosInstance.defaults.headers.common["Authorization"];
+        get().disconnectSocket();
+        return;
+      }
 
-			// Only clear auth for specific auth failures, not network errors
-			if (error.response?.status === 401 && error.response?.data?.message?.includes("Invalid token")) {
-				console.log("🧹 Invalid token - clearing authentication data");
-				set({ authUser: null });
-				localStorage.removeItem("authUser");
-				localStorage.removeItem("token");
-				delete axiosInstance.defaults.headers.common['Authorization'];
-				get().disconnectSocket();
-				useFriendStore.getState().clearFriendData();
-				toast.error("Please log in again - your session has expired");
-			} else {
-				// For network errors or other issues, keep the user logged in (offline support)
-				console.log("Network error or temporary issue during auth check, keeping user logged in");
-				const cachedUser = localStorage.getItem("authUser");
-				if (cachedUser) {
-					try {
-						const parsedUser = JSON.parse(cachedUser);
-						// Double-check for MongoDB IDs even in network errors
-						if (parsedUser.id && parsedUser.id.length === 24 && /^[0-9a-fA-F]{24}$/.test(parsedUser.id)) {
-							console.log("🧹 Network error but detected MongoDB ID, clearing auth");
-							localStorage.removeItem("authUser");
-							localStorage.removeItem("token");
-							delete axiosInstance.defaults.headers.common['Authorization'];
-							set({ authUser: null, isCheckingAuth: false });
-							return;
-						}
-						// Trust cache for network errors
-						set({ authUser: parsedUser, isCheckingAuth: false });
-						console.log("✅ Using cached user data due to network error");
-					} catch (e) {
-						console.error("Failed to parse cached user:", e);
-						localStorage.removeItem("authUser");
-						localStorage.removeItem("token");
-						set({ authUser: null });
-					}
-				} else {
-					// No cached user and network error - just stop loading
-					set({ isCheckingAuth: false });
-				}
-			}
-		} finally {
-			set({ isCheckingAuth: false });
-		}
-	},
+      set({ authUser: user });
+      localStorage.setItem("authUser", JSON.stringify(user));
+      get().connectSocket();
+    } catch (error) {
+      if (
+        error.response?.status === 401 &&
+        error.response?.data?.message?.includes("Invalid token")
+      ) {
+        set({ authUser: null });
+        localStorage.removeItem("authUser");
+        localStorage.removeItem("token");
+        delete axiosInstance.defaults.headers.common["Authorization"];
+        get().disconnectSocket();
+        toast.error("Please log in again - your session has expired");
+      } else {
+        const cachedUser = localStorage.getItem("authUser");
+        if (cachedUser) {
+          try {
+            const parsedUser = JSON.parse(cachedUser);
+            if (
+              parsedUser.id &&
+              parsedUser.id.length === 24 &&
+              /^[0-9a-fA-F]{24}$/.test(parsedUser.id)
+            ) {
+              localStorage.removeItem("authUser");
+              localStorage.removeItem("token");
+              delete axiosInstance.defaults.headers.common["Authorization"];
+              set({ authUser: null, isCheckingAuth: false });
+              return;
+            }
+            set({ authUser: parsedUser, isCheckingAuth: false });
+          } catch (e) {
+            localStorage.removeItem("authUser");
+            localStorage.removeItem("token");
+            set({ authUser: null });
+          }
+        } else {
+          set({ isCheckingAuth: false });
+        }
+      }
+    } finally {
+      set({ isCheckingAuth: false });
+    }
+  },
 
-	signup: async (data) => {
-		set({ isSigningUp: true });
-		try {
-			const res = await axiosInstance.post("/auth/signup", data); // Removed withCredentials
-			const { token, ...user } = res.data;
+  signup: async (data) => {
+    set({ isSigningUp: true });
+    try {
+      const res = await axiosInstance.post("/auth/signup", data);
+      const { token, ...user } = res.data;
 
-			// Store token for mobile compatibility
-			if (token) {
-				localStorage.setItem("token", token);
-				axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-			}
+      if (token) {
+        localStorage.setItem("token", token);
+        axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      }
 
-			set({ authUser: user });
-			localStorage.setItem("authUser", JSON.stringify(user));
-			toast.success("Account created successfully");
-			get().connectSocket(); // Connect socket after setting authUser
-			useFriendStore.getState().fetchFriendData();
-			return true; // Indicate success for navigation
-		} catch (error) {
-			toast.error(error.response?.data?.message || "Signup failed");
-			return false; // Indicate failure
-		} finally {
-			set({ isSigningUp: false });
-		}
-	},
+      set({ authUser: user });
+      localStorage.setItem("authUser", JSON.stringify(user));
+      toast.success("Account created successfully");
+      get().connectSocket();
+      return true;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Signup failed");
+      return false;
+    } finally {
+      set({ isSigningUp: false });
+    }
+  },
 
-	login: async (data) => {
-		set({ isLoggingIn: true });
-		try {
-			const res = await axiosInstance.post("/auth/login", data); // Removed withCredentials
-			const { token, ...user } = res.data;
+  login: async (data) => {
+    set({ isLoggingIn: true });
+    try {
+      const res = await axiosInstance.post("/auth/login", data);
+      const { token, ...user } = res.data;
 
-			if (!user || typeof user !== 'object') {
-				throw new Error("Invalid login response");
-			}
-			if (user.isBlocked) {
-				toast.error("Account is blocked");
-				return false;
-			}
-			if (user.isSuspended && user.suspensionEndTime && new Date(user.suspensionEndTime) > new Date()) {
-				toast.error("Account is suspended");
-				return false;
-			}
+      if (!user || typeof user !== "object") {
+        throw new Error("Invalid login response");
+      }
 
-			// Store token for mobile compatibility
-			if (token) {
-				localStorage.setItem("token", token);
-				axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-			}
+      if (user.isBlocked) {
+        toast.error("Account is blocked");
+        return false;
+      }
 
-			set({ authUser: user });
-			localStorage.setItem("authUser", JSON.stringify(user));
-			toast.success("Logged in successfully");
-			get().connectSocket(); // Connect socket after setting authUser
-			useFriendStore.getState().fetchFriendData();
-			return true; // Indicate success for navigation
-		} catch (error) {
-			toast.error(error.response?.data?.message || "Login failed");
-			return false; // Indicate failure
-		} finally {
-			set({ isLoggingIn: false });
-		}
-	},
+      if (
+        user.isSuspended &&
+        user.suspensionEndTime &&
+        new Date(user.suspensionEndTime) > new Date()
+      ) {
+        toast.error("Account is suspended");
+        return false;
+      }
 
-	logout: async () => {
-		const socket = get().socket; // Get socket before clearing state
-		if (socket) get().disconnectSocket(); // Disconnect socket first
+      if (token) {
+        localStorage.setItem("token", token);
+        axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      }
 
-		try {
-			// Still attempt API logout even if socket failsafe triggers
-			await axiosInstance.post("/auth/logout", {});
-		} catch (error) {
-			console.error("Logout API call error:", error.response?.data?.message || error.message);
-			// Don't necessarily stop the logout process here
-		} finally {
-			localStorage.removeItem("authUser");
-			localStorage.removeItem("token");
-			delete axiosInstance.defaults.headers.common['Authorization'];
-			set({ authUser: null, onlineUsers: [], socket: null }); // Clear socket in state too
-			useFriendStore.getState().clearFriendData();
-			toast.success("Logged out successfully");
-			// Optionally navigate here or let App.jsx handle redirect via authUser change
-		}
-	},
+      set({ authUser: user });
+      localStorage.setItem("authUser", JSON.stringify(user));
+      toast.success("Logged in successfully");
+      get().connectSocket();
+      return true;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Login failed");
+      return false;
+    } finally {
+      set({ isLoggingIn: false });
+    }
+  },
 
-	updateProfile: async (data) => {
-		set({ isUpdatingProfile: true });
-		try {
-			// Use the correct user profile endpoint
-			const res = await axiosInstance.put("/users/me", data);
-			const user = res.data;
-			set({ authUser: user });
-			localStorage.setItem("authUser", JSON.stringify(user));
-			// Don't show toast here - let the calling component handle it
-			return user;
-		} catch (error) {
-			console.error("Update profile error:", error);
-			throw error; // Let the calling component handle the error
-		} finally {
-			set({ isUpdatingProfile: false });
-		}
-	},
+  logout: async () => {
+    const socket = get().socket;
+    if (socket) get().disconnectSocket();
 
-	connectSocket: () => {
-		const { authUser, socket } = get();
-		// Prevent multiple connections or connecting without user
-		if (!authUser || socket) {
-			console.log(`connectSocket: Skipped. authUser: ${!!authUser}, socket: ${!!socket}`);
-			return;
-		}
+    try {
+      await axiosInstance.post("/auth/logout", {});
+    } catch (error) {
+      // Ignore error
+    } finally {
+      localStorage.removeItem("authUser");
+      localStorage.removeItem("token");
+      delete axiosInstance.defaults.headers.common["Authorization"];
+      set({ authUser: null, onlineUsers: [], socket: null });
+      toast.success("Logged out successfully");
+    }
+  },
 
-		console.log(`Connecting socket to ${SOCKET_URL} for user ${authUser.id}`);
+  updateProfile: async (data) => {
+    set({ isUpdatingProfile: true });
+    try {
+      const res = await axiosInstance.put("/users/me", data);
+      const user = res.data;
+      set({ authUser: user });
+      localStorage.setItem("authUser", JSON.stringify(user));
+      return user;
+    } catch (error) {
+      throw error;
+    } finally {
+      set({ isUpdatingProfile: false });
+    }
+  },
 
-		// Get token for authentication
-		const token = localStorage.getItem("token");
+  connectSocket: () => {
+    const { authUser, socket } = get();
+    if (!authUser || socket) {
+      return;
+    }
 
-		// ✅ --- USE CORRECT SOCKET_URL WITH TOKEN AUTH ---
-		const newSocket = io(SOCKET_URL, {
-			query: {
-				userId: authUser.id,
-				token: token // Send token for mobile compatibility
-			},
-			auth: {
-				token: token // Also send in auth object
-			},
-			// Optional: force new connection if needed, depends on server behavior
-			// forceNew: true,
-			transports: ["websocket"], // Explicitly use websockets
-			// `withCredentials: true` is NOT needed for socket.io client usually,
-			// auth happens via query or initial handshake/token
-		});
-		// ✅ --- END CORRECTION ---
+    const token = localStorage.getItem("token");
+    const newSocket = io(SOCKET_URL, {
+      query: {
+        userId: authUser.id,
+        token: token,
+      },
+      auth: {
+        token: token,
+      },
+      transports: ["websocket"],
+    });
 
-		set({ socket: newSocket });
+    set({ socket: newSocket });
 
-		// Start socket monitoring for auto-reconnection
-		const monitor = new SocketMonitor(newSocket, authUser);
-		monitor.start();
-		set({ socketMonitor: monitor });
+    const monitor = new SocketMonitor(newSocket, authUser);
+    monitor.start();
+    set({ socketMonitor: monitor });
 
-		newSocket.on("connect", () => {
-			console.log("✅ Socket connected:", newSocket.id);
+    newSocket.on("connect", () => {
+      if (authUser?.id) {
+        newSocket.emit("register-user", authUser.id);
+      }
+    });
 
-			// 🔥 CRITICAL: Register user immediately on connection
-			if (authUser?.id) {
-				console.log(`📝 Registering user ${authUser.id} with socket ${newSocket.id}`);
-				newSocket.emit("register-user", authUser.id);
+    newSocket.on("getOnlineUsers", (userIds) => {
+      set({ onlineUsers: userIds });
+    });
 
-				// 🧪 TEST: Add global test function for debugging
-				window.testSocketConnection = () => {
-					console.log('🧪 SOCKET CONNECTION TEST:');
-					console.log(`   Connected: ${newSocket.connected}`);
-					console.log(`   Socket ID: ${newSocket.id}`);
-					console.log(`   User ID: ${authUser.id}`);
+    const forceLogout = (msg) => {
+      toast.error(msg);
+      get().logout();
+    };
 
-					// Test message sending
-					newSocket.emit("sendMessage", {
-						receiverId: authUser.id, // Send to self for testing
-						text: `🧪 Socket test message - ${new Date().toISOString()}`,
-						tempId: `test-${Date.now()}`
-					});
+    newSocket.on("user-suspended", ({ reason }) => {
+      forceLogout(`Suspended: ${reason || "N/A"}`);
+    });
+    newSocket.on("user-blocked", () => forceLogout("Account blocked"));
+    newSocket.on("user-deleted", () => forceLogout("Account deleted"));
 
-					console.log('🧪 Test message sent via socket');
-				};
-			}
+    newSocket.on("disconnect", (reason) => {
+      // Handle disconnect
+    });
 
-			// 🔥 REAL-TIME: Subscribe to friend events when socket connects
-			useFriendStore.getState().subscribeToFriendEvents(newSocket);
-		});
+    newSocket.io.on("reconnect", async (attempt) => {
+      const currentUser = get().authUser;
+      if (currentUser) {
+        newSocket.emit("register-user", currentUser.id);
+        setTimeout(() => {
+          get().checkAuth();
+        }, 100);
+      }
+    });
+  },
 
-		newSocket.on("connect_error", (err) => {
-			console.error("Socket connection error:", err.message, err.description);
-			// Only show error after multiple failed attempts
-			if (!newSocket.recovered) {
-				// Don't spam errors - socket will auto-retry
-				console.log("⚠️ Socket connection failed, will retry automatically...");
-			}
-		});
-		newSocket.on("getOnlineUsers", (userIds) => {
-			console.log('📡 Online users updated:', userIds.length, 'users online');
-			console.log('📡 Online user IDs:', userIds);
-			set({ onlineUsers: userIds });
-		});
+  disconnectSocket: () => {
+    const { socket, socketMonitor } = get();
+    if (socketMonitor) {
+      socketMonitor.stop();
+      set({ socketMonitor: null });
+    }
+    if (socket) {
+      socket.disconnect();
+      set({ socket: null, onlineUsers: [] });
+    }
+  },
 
-		const forceLogout = (msg) => {
-			toast.error(msg);
-			// Call the main logout action to ensure consistent cleanup
-			get().logout();
-		};
-
-		// Admin action listeners remain the same
-		newSocket.on("user-suspended", ({ reason }) => { forceLogout(`Suspended: ${reason || "N/A"}`); });
-		newSocket.on("user-blocked", () => forceLogout("Account blocked"));
-		newSocket.on("user-deleted", () => forceLogout("Account deleted"));
-
-		newSocket.on("disconnect", (reason) => {
-			console.log("⚠️ Socket disconnected:", reason);
-			// Attempt to reconnect manually or show message? For now, just log.
-			// If reason is 'io server disconnect', it was likely intentional (e.g., logout)
-			if (reason !== 'io server disconnect') {
-				// Could try to reconnect or notify user connection lost
-			}
-			// Clear socket ref in state if disconnected unexpectedly? Risky if it auto-reconnects.
-			// set({ socket: null }); // Consider implications
-		});
-
-		// Reconnect logic might be handled automatically by socket.io, but explicit checkAuth can be good
-		newSocket.io.on("reconnect", async (attempt) => {
-			console.log(`🔄 Socket reconnected after ${attempt} attempts`);
-			// Re-register user and fetch data upon successful reconnect
-			const currentUser = get().authUser;
-			if (currentUser) { // Check if user is still logged in client-side
-				newSocket.emit("register-user", currentUser.id); // Re-register
-				// Don't await checkAuth to avoid blocking the reconnection
-				setTimeout(() => {
-					get().checkAuth(); // Re-check auth and fetch friend data
-				}, 100);
-			}
-		});
-		newSocket.io.on("reconnect_attempt", (attempt) => {
-			console.log(`Attempting to reconnect socket... (${attempt})`);
-		});
-		newSocket.io.on("reconnect_error", (error) => {
-			console.error("Socket reconnection error:", error.message);
-		});
-		newSocket.io.on("reconnect_failed", () => {
-			console.error("Socket reconnection failed after multiple attempts.");
-		});
-	},
-
-	disconnectSocket: () => {
-		const { socket, socketMonitor } = get();
-
-		// Stop socket monitor
-		if (socketMonitor) {
-			socketMonitor.stop();
-			set({ socketMonitor: null });
-		}
-
-		if (socket) {
-			console.log("Disconnecting socket...", socket.id);
-
-			// 🔥 REAL-TIME: Unsubscribe from friend events before disconnecting
-			useFriendStore.getState().unsubscribeFromFriendEvents(socket);
-
-			socket.disconnect();
-			set({ socket: null, onlineUsers: [] }); // Clear socket and online users
-		}
-	},
-
-	// ✅ PERFORMANCE: Check network status
-	initNetworkListeners: () => {
-		if (typeof window === 'undefined') return;
-
-		console.log("🔌 Initializing Network Listeners...");
-
-		window.addEventListener('online', () => {
-			console.log("🌐 Network is ONLINE! Attempting immediate socket reconnect...");
-			const { authUser, socket } = get();
-
-			// Force check auth to ensure token is valid, then connect
-			if (authUser) {
-				if (socket && !socket.connected) {
-					socket.connect();
-				} else if (!socket) {
-					get().connectSocket();
-				}
-				// Refresh data
-				useFriendStore.getState().fetchFriendData();
-			}
-		});
-
-		window.addEventListener('offline', () => {
-			console.log("🔌 Network is OFFLINE.");
-			// Optional: visual indicator or pause queue
-		});
-	}
+  initNetworkListeners: () => {
+    if (typeof window === "undefined") return;
+    window.addEventListener("online", () => {
+      const { authUser, socket } = get();
+      if (authUser) {
+        if (socket && !socket.connected) {
+          socket.connect();
+        } else if (!socket) {
+          get().connectSocket();
+        }
+      }
+    });
+  },
 }));
-
 // Initialize listeners outside the store definition to run once (or call from App.jsx)
 // For simplicity, we can let the App component call this, OR just run it here if side-effects allowed.
 // But valid zustand pattern is to expose it.

@@ -18,7 +18,6 @@ const THRESHOLDS = {
 export const getServerMetrics = async (req, res) => {
 	try {
 		const startTime = Date.now();
-
 		// Collect all metrics in parallel
 		const [
 			backendMetrics,
@@ -33,7 +32,6 @@ export const getServerMetrics = async (req, res) => {
 			getSystemMetrics(),
 			detectBugs()
 		]);
-
 		const metrics = {
 			timestamp: new Date().toISOString(),
 			backend: backendMetrics,
@@ -44,16 +42,13 @@ export const getServerMetrics = async (req, res) => {
 			bugs: bugDetection,
 			collectionTime: Date.now() - startTime
 		};
-
 		// Store in history
 		metricsHistory.push(metrics);
 		if (metricsHistory.length > MAX_HISTORY) {
 			metricsHistory.shift();
 		}
-
 		res.status(200).json(metrics);
 	} catch (err) {
-		console.error("Error collecting server metrics:", err);
 		res.status(500).json({ error: "Failed to collect metrics" });
 	}
 };
@@ -61,15 +56,12 @@ export const getServerMetrics = async (req, res) => {
 // Backend Performance Metrics
 const getBackendMetrics = async () => {
 	const start = Date.now();
-
 	try {
 		// Test database connection
 		await prisma.$queryRaw`SELECT 1`;
 		const dbCheckTime = Date.now() - start;
-
 		const status = monitorStats.averageResponseTime < THRESHOLDS.backend.warning ? 'healthy' :
 			monitorStats.averageResponseTime < THRESHOLDS.backend.critical ? 'warning' : 'critical';
-
 		return {
 			responseTime: Math.round(monitorStats.averageResponseTime || dbCheckTime), // Use actual avg response time
 			status,
@@ -92,21 +84,17 @@ const getBackendMetrics = async () => {
 // Database Performance Metrics
 const getDatabaseMetrics = async () => {
 	const start = Date.now();
-
 	try {
 		// Test query performance
 		await prisma.user.count();
 		const queryTime = Date.now() - start;
-
 		// Get connection pool stats
 		const [userCount, messageCount] = await Promise.all([
 			prisma.user.count(),
 			prisma.message.count()
 		]);
-
 		const status = queryTime < THRESHOLDS.database.warning ? 'healthy' :
 			queryTime < THRESHOLDS.database.critical ? 'warning' : 'critical';
-
 		return {
 			queryTime,
 			status,
@@ -131,16 +119,12 @@ const getSocketMetrics = async () => {
 	try {
 		const { getIO, userSocketMap } = await import("../lib/socketHandlers.js");
 		const io = getIO();
-
 		const connectedUsers = Object.keys(userSocketMap || {}).length;
 		const totalSockets = io?.sockets?.sockets?.size || 0;
-
 		// Estimate latency (you can enhance with actual ping/pong)
 		const latency = 10 + Math.random() * 20; // Simulated for now
-
 		const status = latency < THRESHOLDS.socket.warning ? 'healthy' :
 			latency < THRESHOLDS.socket.critical ? 'warning' : 'critical';
-
 		return {
 			latency: Math.round(latency),
 			status,
@@ -177,7 +161,6 @@ const getSystemMetrics = () => {
 	const totalMem = os.totalmem();
 	const freeMem = os.freemem();
 	const usedMem = totalMem - freeMem;
-
 	// Calculate CPU usage
 	let totalIdle = 0;
 	let totalTick = 0;
@@ -188,7 +171,6 @@ const getSystemMetrics = () => {
 		totalIdle += cpu.times.idle;
 	});
 	const cpuUsage = 100 - ~~(100 * totalIdle / totalTick);
-
 	return {
 		cpu: cpuUsage,
 		memory: Math.round((usedMem / totalMem) * 100),
@@ -202,7 +184,6 @@ const getSystemMetrics = () => {
 // Bug Detection System
 const detectBugs = async () => {
 	const bugs = [];
-
 	try {
 		// Check for suspended users with expired suspensions
 		const expiredSuspensions = await prisma.user.count({
@@ -213,7 +194,6 @@ const detectBugs = async () => {
 				}
 			}
 		});
-
 		if (expiredSuspensions > 0) {
 			bugs.push({
 				severity: 'medium',
@@ -223,11 +203,9 @@ const detectBugs = async () => {
 				timestamp: new Date().toISOString()
 			});
 		}
-
 		// Check for orphaned messages (messages where sender or receiver user doesn't exist)
 		// This is a more complex check, so we'll skip it for now to avoid performance issues
 		// You can implement this with a raw SQL query if needed
-
 		// Check memory usage
 		const memUsage = process.memoryUsage().heapUsed / 1024 / 1024;
 		if (memUsage > 500) {
@@ -239,7 +217,6 @@ const detectBugs = async () => {
 				timestamp: new Date().toISOString()
 			});
 		}
-
 		// Check for pending reports older than 7 days
 		const oldReports = await prisma.report.count({
 			where: {
@@ -249,7 +226,6 @@ const detectBugs = async () => {
 				}
 			}
 		});
-
 		if (oldReports > 0) {
 			bugs.push({
 				severity: 'medium',
@@ -259,7 +235,6 @@ const detectBugs = async () => {
 				timestamp: new Date().toISOString()
 			});
 		}
-
 		// Check Redis connection
 		if (redisClient) {
 			try {
@@ -274,11 +249,8 @@ const detectBugs = async () => {
 				});
 			}
 		}
-
 	} catch (err) {
-		console.error("Error in bug detection:", err);
 	}
-
 	return bugs;
 };
 
@@ -287,41 +259,31 @@ const getActiveConnections = () => {
 	// Track this in your middleware
 	return Math.floor(Math.random() * 50) + 10; // Placeholder
 };
-
 const getRequestsPerMinute = () => {
 	// Track this in your middleware
 	return Math.floor(Math.random() * 100) + 50; // Placeholder
 };
-
 const getErrorRate = () => {
 	// Track this in your error handler
 	return (Math.random() * 2).toFixed(2); // Placeholder
 };
-
 const getSocketMessagesPerSecond = () => {
 	// Track this in socket.js
 	return Math.floor(Math.random() * 20) + 5; // Placeholder
 };
-
 const getCacheHitRate = async () => {
 	// Track this in Redis operations
 	return 85 + Math.random() * 10; // Placeholder
 };
-
 const calculateTrend = (metricPath) => {
 	if (metricsHistory.length < 2) return 0;
-
 	const recent = metricsHistory.slice(-10);
 	const values = recent.map(m => getNestedValue(m, metricPath)).filter(v => v != null);
-
 	if (values.length < 2) return 0;
-
 	const avg1 = values.slice(0, Math.floor(values.length / 2)).reduce((a, b) => a + b, 0) / Math.floor(values.length / 2);
 	const avg2 = values.slice(Math.floor(values.length / 2)).reduce((a, b) => a + b, 0) / (values.length - Math.floor(values.length / 2));
-
 	return avg2 - avg1;
 };
-
 const getNestedValue = (obj, path) => {
 	return path.split('.').reduce((acc, part) => acc?.[part], obj);
 };

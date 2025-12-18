@@ -3,36 +3,32 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useFriendStore } from "../store/useFriendStore";
 import { useChatStore } from "../store/useChatStore";
 import { useEffect, useState } from "react";
-import {
-  Home,
-  Users,
-  User,
-  Settings,
-} from "lucide-react";
-
+import { Home, Users, User, Settings } from "lucide-react";
 const MobileBottomNav = () => {
   const location = useLocation();
   const { authUser } = useAuthStore();
   const { selectedUser } = useChatStore();
   const { pendingReceived } = useFriendStore();
-
   // Detect mobile device
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-    
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
   // Don't show on auth pages, stranger chat page, or when in mobile chat mode
-  const isMobileChatMode = isMobile && selectedUser && location.pathname === '/';
-  if (!authUser || !authUser.hasCompletedProfile || location.pathname === "/stranger" || isMobileChatMode) return null;
-
+  const isMobileChatMode =
+    isMobile && selectedUser && location.pathname === "/";
+  if (
+    !authUser ||
+    !authUser.hasCompletedProfile ||
+    location.pathname === "/stranger" ||
+    isMobileChatMode
+  )
+    return null;
   const isActive = (path) => location.pathname === path;
-
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 mobile-bottom-bar safe-area-bottom">
       <div className="flex items-center justify-around h-16 px-2">
@@ -49,7 +45,6 @@ const MobileBottomNav = () => {
             <div className="absolute top-1 w-1.5 h-1.5 bg-primary rounded-full"></div>
           )}
         </Link>
-
         {/* Social Hub / Discover */}
         <Link
           to="/discover"
@@ -68,7 +63,6 @@ const MobileBottomNav = () => {
             <div className="absolute top-1 w-1.5 h-1.5 bg-primary rounded-full"></div>
           )}
         </Link>
-
         {/* Profile */}
         <Link
           to="/profile"
@@ -82,7 +76,6 @@ const MobileBottomNav = () => {
             <div className="absolute top-1 w-1.5 h-1.5 bg-primary rounded-full"></div>
           )}
         </Link>
-
         {/* Settings */}
         <Link
           to="/settings"
@@ -100,5 +93,4 @@ const MobileBottomNav = () => {
     </div>
   );
 };
-
 export default MobileBottomNav;

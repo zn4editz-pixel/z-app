@@ -11,18 +11,19 @@ const NoChatSelected = () => {
               style={{
                 maskImage: 'url("/z-app-logo.png")',
                 WebkitMaskImage: 'url("/z-app-logo.png")',
-                maskSize: 'contain',
-                WebkitMaskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                maskPosition: 'center',
-                WebkitMaskPosition: 'center',
+                maskSize: "contain",
+                WebkitMaskSize: "contain",
+                maskRepeat: "no-repeat",
+                WebkitMaskRepeat: "no-repeat",
+                maskPosition: "center",
+                WebkitMaskPosition: "center",
               }}
             />
           </div>
         </div>
-
-        <h2 className="text-2xl font-bold text-base-content">Welcome to Z-APP!</h2>
+        <h2 className="text-2xl font-bold text-base-content">
+          Welcome to Z-APP!
+        </h2>
         <p className="text-base-content/70 text-lg">
           Select a conversation from the sidebar to start chatting
         </p>
@@ -30,5 +31,4 @@ const NoChatSelected = () => {
     </div>
   );
 };
-
 export default NoChatSelected;

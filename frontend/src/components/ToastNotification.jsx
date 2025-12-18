@@ -1,8 +1,12 @@
 // src/components/ToastNotification.jsx
 import { toast } from "react-hot-toast";
-
 // Function to show the toast
-export const showMessageToast = ({ senderName, senderAvatar, messageText, theme }) => {
+export const showMessageToast = ({
+  senderName,
+  senderAvatar,
+  messageText,
+  theme,
+}) => {
   toast.custom(
     (t) => (
       <div
@@ -26,6 +30,6 @@ export const showMessageToast = ({ senderName, senderAvatar, messageText, theme 
     {
       id: `msg-${Date.now()}`,
       duration: 4000,
-    }
+    },
   );
 };

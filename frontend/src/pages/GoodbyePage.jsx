@@ -3,7 +3,9 @@ const GoodbyePage = () => {
     <div className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 md:p-8 text-center bg-base-200">
       <div className="max-w-md w-full bg-base-100 rounded-xl shadow-lg p-6 sm:p-8 space-y-4">
         <div className="text-6xl sm:text-7xl mb-4">👋</div>
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-error">Account Deleted</h1>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-error">
+          Account Deleted
+        </h1>
         <p className="text-sm sm:text-base md:text-lg text-base-content/70">
           Your account has been permanently deleted.
         </p>
@@ -19,5 +21,4 @@ const GoodbyePage = () => {
     </div>
   );
 };
-
 export default GoodbyePage;

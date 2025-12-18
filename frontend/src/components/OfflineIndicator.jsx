@@ -1,10 +1,8 @@
-import { useOfflineDetection } from '../hooks/useOfflineDetection';
-import { WifiOff, Wifi } from 'lucide-react';
-import { useState, useEffect } from 'react';
-
+import { useOfflineDetection } from "../hooks/useOfflineDetection";
+import { WifiOff, Wifi } from "lucide-react";
+import { useState, useEffect } from "react";
 const OfflineIndicator = () => {
   const isOnline = useOfflineDetection();
-
   useEffect(() => {
     if (!isOnline) {
       setWasOffline(true);
@@ -17,7 +15,6 @@ const OfflineIndicator = () => {
       }, 3000);
     }
   }, [isOnline, wasOffline]);
-
   // Show reconnected message
   if (showReconnected) {
     return (
@@ -29,7 +26,6 @@ const OfflineIndicator = () => {
       </div>
     );
   }
-
   // Show offline indicator - subtle and non-intrusive
   if (!isOnline) {
     return (
@@ -44,8 +40,6 @@ const OfflineIndicator = () => {
       </div>
     );
   }
-
   return null;
 };
-
 export default OfflineIndicator;

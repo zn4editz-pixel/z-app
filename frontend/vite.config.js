@@ -12,11 +12,17 @@ export default defineConfig({
   esbuild: {
     drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
     jsx: 'automatic',
+    minifyIdentifiers: true,
+    minifySyntax: true,
+    minifyWhitespace: true,
   },
   build: {
     outDir: "dist",
     sourcemap: false,
-    chunkSizeWarningLimit: 1000,
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 800,
+    assetsInlineLimit: 2048,
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
         entryFileNames: (chunkInfo) => {
@@ -39,19 +45,25 @@ export default defineConfig({
           return `assets/[name]-[hash].[ext]`;
         },
         manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'router': ['react-router-dom'],
-          'ui': ['lucide-react', 'react-hot-toast'],
-          'state': ['zustand'],
+          'react-core': ['react', 'react-dom'],
+          'react-router': ['react-router-dom'],
+          'ui-components': ['lucide-react', 'react-hot-toast'],
+          'state-management': ['zustand'],
           'network': ['axios', 'socket.io-client'],
           'animations': ['framer-motion', 'gsap'],
-          'utils': ['@studio-freight/lenis', 'lenis']
+          'utils': ['@studio-freight/lenis', 'lenis'],
+          'ai-models': ['@tensorflow/tfjs', 'nsfwjs']
         }
+      },
+      treeshake: {
+        moduleSideEffects: false,
+        propertyReadSideEffects: false,
+        unknownGlobalSideEffects: false
       }
     },
     target: 'esnext',
-    minify: 'esbuild',
-    assetsInlineLimit: 4096, // Inline small assets
+    reportCompressedSize: false,
+    cssMinify: true,
   },
   resolve: {
     alias: {
@@ -62,8 +74,17 @@ export default defineConfig({
     port: 5173,
     host: true
   },
-  // Performance optimizations
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'zustand', 'axios', 'socket.io-client']
+    include: [
+      'react', 
+      'react-dom', 
+      'react-router-dom', 
+      'zustand', 
+      'axios', 
+      'socket.io-client',
+      'lucide-react',
+      'react-hot-toast'
+    ],
+    exclude: ['@tensorflow/tfjs', 'nsfwjs']
   }
 });

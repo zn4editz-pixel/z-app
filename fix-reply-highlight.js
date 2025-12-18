@@ -1,99 +1,1 @@
-/**
- * Fix Reply Highlight Functionality
- * Makes the "Tap to view" feature work like Instagram/WhatsApp
- */
-
-const fs = require('fs');
-const path = require('path');
-
-console.log('🔧 Fixing reply highlight functionality...');
-
-// Fix the highlight CSS to be more reliable
-const cssPath = path.join(__dirname, 'frontend/src/index.css');
-let cssContent = fs.readFileSync(cssPath, 'utf8');
-
-// Add a simple, working highlight effect
-const highlightCSS = `
-/* ===== WORKING REPLY HIGHLIGHT EFFECT ===== */
-.message-highlight {
-  background-color: rgba(59, 130, 246, 0.15) !important;
-  border-radius: 1rem !important;
-  transform: scale(1.02) !important;
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2) !important;
-  transition: all 0.3s ease !important;
-  position: relative !important;
-  z-index: 10 !important;
-}
-
-.message-highlight-fade {
-  background-color: transparent !important;
-  transform: scale(1) !important;
-  box-shadow: none !important;
-  transition: all 0.5s ease !important;
-}
-`;
-
-// Add the CSS if not already present
-if (!cssContent.includes('message-highlight')) {
-  cssContent += highlightCSS;
-  fs.writeFileSync(cssPath, cssContent);
-  console.log('✅ Added working highlight CSS');
-}
-
-// Fix the ChatMessage component
-const chatMessagePath = path.join(__dirname, 'frontend/src/components/ChatMessage.jsx');
-let chatMessageContent = fs.readFileSync(chatMessagePath, 'utf8');
-
-// Replace the complex highlight with a simple working one
-const oldHighlight = `replyElement.classList.remove('instagram-highlight-flash');
-                        void replyElement.offsetWidth; // Trigger reflow
-                        replyElement.classList.add('instagram-highlight-flash');
-                        
-                        // Remove highlight after animation
-                        setTimeout(() => {
-                          replyElement.classList.remove('instagram-highlight-flash');
-                        }, 2000);`;
-
-const newHighlight = `// Simple working highlight
-                        replyElement.classList.add('message-highlight');
-                        setTimeout(() => {
-                          replyElement.classList.remove('message-highlight');
-                          replyElement.classList.add('message-highlight-fade');
-                          setTimeout(() => {
-                            replyElement.classList.remove('message-highlight-fade');
-                          }, 500);
-                        }, 1500);`;
-
-if (chatMessageContent.includes('instagram-highlight-flash')) {
-  chatMessageContent = chatMessageContent.replace(oldHighlight, newHighlight);
-  fs.writeFileSync(chatMessagePath, chatMessageContent);
-  console.log('✅ Fixed ChatMessage highlight');
-}
-
-// Fix the MessageInput component
-const messageInputPath = path.join(__dirname, 'frontend/src/components/MessageInput.jsx');
-let messageInputContent = fs.readFileSync(messageInputPath, 'utf8');
-
-if (messageInputContent.includes('instagram-highlight-flash')) {
-  messageInputContent = messageInputContent.replace(
-    /replyElement\.classList\.remove\('instagram-highlight-flash'\);[\s\S]*?}, 2000\);/g,
-    `// Simple working highlight
-                  replyElement.classList.add('message-highlight');
-                  setTimeout(() => {
-                    replyElement.classList.remove('message-highlight');
-                    replyElement.classList.add('message-highlight-fade');
-                    setTimeout(() => {
-                      replyElement.classList.remove('message-highlight-fade');
-                    }, 500);
-                  }, 1500);`
-  );
-  fs.writeFileSync(messageInputPath, messageInputContent);
-  console.log('✅ Fixed MessageInput highlight');
-}
-
-console.log('🎉 Reply highlight functionality fixed!');
-console.log('📝 Changes made:');
-console.log('  - Added simple, reliable highlight CSS');
-console.log('  - Fixed ChatMessage highlight effect');
-console.log('  - Fixed MessageInput highlight effect');
-console.log('  - Removed complex animations that might not work');
+/** * Fix Reply Highlight Functionality * Makes the "Tap to view" feature work like Instagram/WhatsApp */const fs = require('fs');const path = require('path');// Fix the highlight CSS to be more reliableconst cssPath = path.join(__dirname, 'frontend/src/index.css');let cssContent = fs.readFileSync(cssPath, 'utf8');// Add a simple, working highlight effectconst highlightCSS = `/* ===== WORKING REPLY HIGHLIGHT EFFECT ===== */.message-highlight {  background-color: rgba(59, 130, 246, 0.15) !important;  border-radius: 1rem !important;  transform: scale(1.02) !important;  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2) !important;  transition: all 0.3s ease !important;  position: relative !important;  z-index: 10 !important;}.message-highlight-fade {  background-color: transparent !important;  transform: scale(1) !important;  box-shadow: none !important;  transition: all 0.5s ease !important;}`;// Add the CSS if not already presentif (!cssContent.includes('message-highlight')) {  cssContent += highlightCSS;  fs.writeFileSync(cssPath, cssContent);}// Fix the ChatMessage componentconst chatMessagePath = path.join(__dirname, 'frontend/src/components/ChatMessage.jsx');let chatMessageContent = fs.readFileSync(chatMessagePath, 'utf8');// Replace the complex highlight with a simple working oneconst oldHighlight = `replyElement.classList.remove('instagram-highlight-flash');                        void replyElement.offsetWidth; // Trigger reflow                        replyElement.classList.add('instagram-highlight-flash');                        // Remove highlight after animation                        setTimeout(() => {                          replyElement.classList.remove('instagram-highlight-flash');                        }, 2000);`;const newHighlight = `// Simple working highlight                        replyElement.classList.add('message-highlight');                        setTimeout(() => {                          replyElement.classList.remove('message-highlight');                          replyElement.classList.add('message-highlight-fade');                          setTimeout(() => {                            replyElement.classList.remove('message-highlight-fade');                          }, 500);                        }, 1500);`;if (chatMessageContent.includes('instagram-highlight-flash')) {  chatMessageContent = chatMessageContent.replace(oldHighlight, newHighlight);  fs.writeFileSync(chatMessagePath, chatMessageContent);}// Fix the MessageInput componentconst messageInputPath = path.join(__dirname, 'frontend/src/components/MessageInput.jsx');let messageInputContent = fs.readFileSync(messageInputPath, 'utf8');if (messageInputContent.includes('instagram-highlight-flash')) {  messageInputContent = messageInputContent.replace(    /replyElement\.classList\.remove\('instagram-highlight-flash'\);[\s\S]*?}, 2000\);/g,    `// Simple working highlight                  replyElement.classList.add('message-highlight');                  setTimeout(() => {                    replyElement.classList.remove('message-highlight');                    replyElement.classList.add('message-highlight-fade');                    setTimeout(() => {                      replyElement.classList.remove('message-highlight-fade');                    }, 500);                  }, 1500);`  );  fs.writeFileSync(messageInputPath, messageInputContent);}

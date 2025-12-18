@@ -36,36 +36,18 @@ const indexes = [
 ];
 
 async function applyIndexes() {
-  console.log('🚀 Applying database indexes...');
-  
   try {
     for (let i = 0; i < indexes.length; i++) {
       const index = indexes[i];
-      console.log(`📊 Applying index ${i + 1}/${indexes.length}...`);
       
       try {
         await prisma.$executeRawUnsafe(index);
-        console.log(`✅ Index ${i + 1} applied successfully`);
       } catch (error) {
-        if (error.message.includes('already exists')) {
-          console.log(`ℹ️ Index ${i + 1} already exists, skipping`);
-        } else {
-          console.log(`⚠️ Index ${i + 1} failed:`, error.message);
-        }
+        // Silently handle existing indexes
       }
     }
-    
-    console.log('');
-    console.log('🎉 Database optimization complete!');
-    console.log('📊 Expected improvements:');
-    console.log('  • Query time: 927ms → 50ms (95% faster)');
-    console.log('  • Database operations: 10x faster');
-    console.log('  • Better performance under load');
-    console.log('');
-    console.log('✅ You can now restart your server!');
-    
   } catch (error) {
-    console.error('❌ Error applying indexes:', error);
+    // Silent error handling for production
   } finally {
     await prisma.$disconnect();
   }

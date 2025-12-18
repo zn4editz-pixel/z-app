@@ -1,7 +1,13 @@
 import { Phone, PhoneOff, Video } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 
-const IncomingCallModal = ({ isOpen, caller, callType, onAccept, onReject }) => {
+const IncomingCallModal = ({
+  isOpen,
+  caller,
+  callType,
+  onAccept,
+  onReject,
+}) => {
   const [ringingTime, setRingingTime] = useState(0);
   const audioContextRef = useRef(null);
   const ringtoneIntervalRef = useRef(null);
@@ -11,50 +17,46 @@ const IncomingCallModal = ({ isOpen, caller, callType, onAccept, onReject }) => 
   const playRingtone = () => {
     try {
       if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        audioContextRef.current = new (
+          window.AudioContext || window.webkitAudioContext
+        )();
       }
-      
       const context = audioContextRef.current;
-      
       // Resume context if suspended (browser autoplay policy)
-      if (context.state === 'suspended') {
-        context.resume().catch(err => console.log('AudioContext resume failed:', err));
+      if (context.state === "suspended") {
+        context.resume().catch((err) => {});
       }
       const oscillator = context.createOscillator();
       const gainNode = context.createGain();
-      
       oscillator.connect(gainNode);
       gainNode.connect(context.destination);
-      
       oscillator.frequency.value = 800;
-      oscillator.type = 'sine';
-      
+      oscillator.type = "sine";
       gainNode.gain.setValueAtTime(0.3, context.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
-      
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.01,
+        context.currentTime + 0.5,
+      );
       oscillator.start(context.currentTime);
       oscillator.stop(context.currentTime + 0.5);
-      
+
       // Play second tone
       setTimeout(() => {
         const oscillator2 = context.createOscillator();
         const gainNode2 = context.createGain();
-        
         oscillator2.connect(gainNode2);
         gainNode2.connect(context.destination);
-        
         oscillator2.frequency.value = 1000;
-        oscillator2.type = 'sine';
-        
+        oscillator2.type = "sine";
         gainNode2.gain.setValueAtTime(0.3, context.currentTime);
-        gainNode2.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
-        
+        gainNode2.gain.exponentialRampToValueAtTime(
+          0.01,
+          context.currentTime + 0.5,
+        );
         oscillator2.start(context.currentTime);
         oscillator2.stop(context.currentTime + 0.5);
       }, 500);
-    } catch (error) {
-      console.error("Error playing ringtone:", error);
-    }
+    } catch (error) {}
   };
 
   useEffect(() => {
@@ -125,7 +127,6 @@ const IncomingCallModal = ({ isOpen, caller, callType, onAccept, onReject }) => 
               )}
             </div>
           </div>
-
           <div className="text-center">
             <h3 className="text-white text-xl sm:text-2xl font-bold mb-1">
               {caller.nickname || caller.username}
@@ -133,9 +134,7 @@ const IncomingCallModal = ({ isOpen, caller, callType, onAccept, onReject }) => 
             <p className="text-white/70 text-sm sm:text-base">
               Incoming {callType} call...
             </p>
-            <p className="text-white/50 text-xs mt-2">
-              {ringingTime}s
-            </p>
+            <p className="text-white/50 text-xs mt-2">{ringingTime}s</p>
           </div>
         </div>
 
@@ -171,7 +170,6 @@ const IncomingCallModal = ({ isOpen, caller, callType, onAccept, onReject }) => 
           <div className="w-2 h-2 bg-primary rounded-full animate-ping animation-delay-400" />
         </div>
       </div>
-
       <style>{`
         @keyframes bounce-slow {
           0%, 100% {

@@ -1,14 +1,14 @@
-// Development Prisma Schema for SQLite (Production uses PostgreSQL)
+// Production Prisma Schema for CockroachDB
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "cockroachdb"
   url      = env("DATABASE_URL")
 }
 
-// ─── User Model (Simplified) ───────────────────────────────────────────
+// ─── User Model ───────────────────────────────────────────
 model User {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -82,9 +82,13 @@ model User {
   receivedReports        Report[]        @relation("ReportedUser")
   sentFriendRequests     FriendRequest[] @relation("FriendRequestSender")
   receivedFriendRequests FriendRequest[] @relation("FriendRequestReceiver")
+
+  @@index([email])
+  @@index([username])
+  @@index([isOnline])
 }
 
-// ─── Message Model (Simplified) ────────────────────────────────────────
+// ─── Message Model ────────────────────────────────────────
 model Message {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -118,8 +122,12 @@ model Message {
   isDeleted Boolean   @default(false)
   deletedAt DateTime?
 
-  // Message Reactions (String field for SQLite, JSON for PostgreSQL)
-  reactions String? @default("[]") // JSON string storing reactions array
+  // Message Reactions (JSON field for PostgreSQL)
+  reactions Json? @default("[]")
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
 }
 
 // ─── Friend Request Model ─────────────────────────────────────────────
@@ -136,9 +144,11 @@ model FriendRequest {
   receiver User @relation("FriendRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
 }
 
-// ─── Report Model (Simplified) ─────────────────────────────────────────
+// ─── Report Model ─────────────────────────────────────────
 model Report {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -151,7 +161,7 @@ model Report {
   status         String  @default("pending") // pending, reviewed, resolved, dismissed
   screenshot     String?
 
-  // AI Analysis (simplified)
+  // AI Analysis
   isAIDetected Boolean @default(false)
   aiCategory   String?
   aiConfidence Float?
@@ -165,9 +175,13 @@ model Report {
 
   reporter     User @relation("ReportSender", fields: [reporterId], references: [id], onDelete: Cascade)
   reportedUser User @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([reportedUserId])
+  @@index([status])
 }
 
-// ─── Admin Notification Model (Simplified) ─────────────────────────────
+// ─── Admin Notification Model ─────────────────────────────
 model AdminNotification {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -177,6 +191,9 @@ model AdminNotification {
   message String
   isRead  Boolean @default(false)
   link    String?
+
+  @@index([isRead])
+  @@index([createdAt])
 }
 
 // ─── System Settings Model ─────────────────────────────────────────────

@@ -1,5 +1,3 @@
-// frontend/src/store/useFriendStore.js
-
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
@@ -7,27 +5,22 @@ import { cacheFriends, getCachedFriends } from "../utils/cache.js";
 import { getId, includesId, filterOutId } from "../utils/idHelper.js";
 import { useAuthStore } from "./useAuthStore.js";
 
+// Create the store
 export const useFriendStore = create((set, get) => ({
     friends: [],
     pendingReceived: [],
     pendingSent: [],
     isLoading: false,
 
-    // Fetch all friend data (friends and requests) - OPTIMIZED
+    // Fetch all friend data
     fetchFriendData: async () => {
-        const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+        const authUser = useAuthStore.getState().authUser || JSON.parse(localStorage.getItem("authUser") || "{}");
         const userId = authUser.id;
+        if (!userId) return;
 
-        if (import.meta.env.DEV) console.log("🔄 Fetching friend data for user:", userId);
-
-        // Try cache first for instant load
+        // Try cache first
         const cached = await getCachedFriends(userId);
         if (cached) {
-            if (import.meta.env.DEV) console.log("📦 Using cached friend data:", {
-                friends: cached.friends?.length || 0,
-                received: cached.received?.length || 0,
-                sent: cached.sent?.length || 0
-            });
             set({
                 friends: cached.friends || [],
                 pendingReceived: cached.received || [],
@@ -38,56 +31,35 @@ export const useFriendStore = create((set, get) => ({
             set({ isLoading: true });
         }
 
-        // Check if we recently fetched (within 30 seconds) - but only skip if we have cached data
         const lastFetch = sessionStorage.getItem('friendDataLastFetch');
         const now = Date.now();
         if (lastFetch && (now - parseInt(lastFetch)) < 30000 && cached) {
-            if (import.meta.env.DEV) console.log("⚡ Skipping friend data fetch - recently fetched (using cache)");
             return;
         }
 
         try {
-            if (import.meta.env.DEV) console.log("🌐 Making API calls to fetch friend data...");
-
             const [friendsRes, requestsRes] = await Promise.all([
                 axiosInstance.get("/friends/all"),
                 axiosInstance.get("/friends/requests"),
             ]);
 
-            if (import.meta.env.DEV) console.log("✅ API responses received:", {
-                friends: friendsRes.data?.length || 0,
-                requests: {
-                    received: requestsRes.data?.received?.length || 0,
-                    sent: requestsRes.data?.sent?.length || 0
-                }
-            });
-
-            // Cache the fresh data
             const freshData = {
                 friends: friendsRes.data || [],
                 received: requestsRes.data?.received || [],
                 sent: requestsRes.data?.sent || []
             };
             await cacheFriends(userId, freshData);
-
-            // Mark fetch time
             sessionStorage.setItem('friendDataLastFetch', now.toString());
 
-            // Merge with existing data to preserve real-time additions
             set((state) => {
                 const newFriends = friendsRes.data || [];
                 const newReceived = requestsRes.data?.received || [];
                 const newSent = requestsRes.data?.sent || [];
-
-                // Create ID sets from API data for efficient lookup
                 const apiReceivedIds = new Set(newReceived.map(r => getId(r)));
                 const apiSentIds = new Set(newSent.map(r => getId(r)));
-
-                // Only keep existing requests that are still in the API response
                 const existingReceivedStillValid = state.pendingReceived.filter(r => apiReceivedIds.has(getId(r)));
                 const existingSentStillValid = state.pendingSent.filter(r => apiSentIds.has(getId(r)));
 
-                // Add new requests from API that aren't in existing state
                 const mergedReceived = [...existingReceivedStillValid];
                 newReceived.forEach(req => {
                     if (!includesId(mergedReceived, getId(req))) {
@@ -109,40 +81,29 @@ export const useFriendStore = create((set, get) => ({
                 };
             });
         } catch (error) {
-            if (import.meta.env.DEV) console.error("❌ Failed to fetch friend data:", error.response?.data || error.message);
-            set({
-                friends: [],
-                pendingReceived: [],
-                pendingSent: [],
-            });
+            console.error("Error fetching friend data:", error);
+            if (!cached) {
+                set({
+                    friends: [],
+                    pendingReceived: [],
+                    pendingSent: [],
+                });
+            }
         } finally {
             set({ isLoading: false });
         }
     },
 
-    // Get the friendship status with another user
     getFriendshipStatus: (userId) => {
         const { friends, pendingSent, pendingReceived } = get();
-        if (includesId(friends, userId)) {
-            return "FRIENDS";
-        }
-        if (includesId(pendingSent, userId)) {
-            return "REQUEST_SENT";
-        }
-        if (includesId(pendingReceived, userId)) {
-            return "REQUEST_RECEIVED";
-        }
+        if (includesId(friends, userId)) return "FRIENDS";
+        if (includesId(pendingSent, userId)) return "REQUEST_SENT";
+        if (includesId(pendingReceived, userId)) return "REQUEST_RECEIVED";
         return "NOT_FRIENDS";
     },
 
-    // --- REAL-TIME ACTIONS ---
-    /**
-     * Used by the WebSocket hook to instantly add a new pending request
-     * without requiring a full refetch.
-     */
     addPendingReceived: (newRequestData) => {
         set((state) => {
-            // Ensure the new request object is not already in the list
             if (!state.pendingReceived.some(r => r.id === newRequestData.id)) {
                 toast.success(`New friend request from ${newRequestData.nickname || newRequestData.username}! 🤝`);
                 return {
@@ -153,18 +114,12 @@ export const useFriendStore = create((set, get) => ({
         });
     },
 
-    /**
-     * Used by WebSocket to instantly move accepted user to friends list
-     */
     handleFriendRequestAccepted: (data) => {
         const { friendData } = data;
         set((state) => {
-            // Remove from sent requests and add to friends
             const updatedSent = state.pendingSent.filter(r => getId(r) !== friendData.id);
             const updatedFriends = [...state.friends, friendData];
-
             toast.success(`${friendData.nickname || friendData.username} accepted your friend request! 🎉`);
-
             return {
                 pendingSent: updatedSent,
                 friends: updatedFriends
@@ -172,139 +127,82 @@ export const useFriendStore = create((set, get) => ({
         });
     },
 
-    /**
-     * Subscribe to real-time friend request events
-     */
     subscribeToFriendEvents: (socket) => {
-        if (!socket) {
-            console.log("❌ No socket available for friend events");
-            return;
-        }
-
-        console.log("🔔 Subscribing to real-time friend events");
-
-        // Remove existing listeners to prevent duplicates
+        if (!socket) return;
         socket.off("friendRequestReceived");
         socket.off("friendRequestAccepted");
 
-        // Listen for incoming friend requests
         socket.on("friendRequestReceived", (data) => {
-            console.log("📨 Received friend request:", data);
             get().addPendingReceived(data);
         });
-
-        // Listen for friend request acceptances
         socket.on("friendRequestAccepted", (data) => {
-            console.log("✅ Friend request accepted:", data);
             get().handleFriendRequestAccepted(data);
         });
     },
 
-    /**
-     * Unsubscribe from real-time friend request events
-     */
     unsubscribeFromFriendEvents: (socket) => {
         if (!socket) return;
-
-        console.log("🔕 Unsubscribing from friend events");
         socket.off("friendRequestReceived");
         socket.off("friendRequestAccepted");
     },
-    // --- END REAL-TIME ACTIONS ---
 
-    // --- Standard Actions ---
     sendRequest: async (receiverId) => {
         try {
-            if (import.meta.env.DEV) console.log("🚀 Sending friend request to:", receiverId);
-
-            // Check if already sent to prevent duplicates
             const { pendingSent, friends } = get();
             if (includesId(pendingSent, receiverId) || includesId(friends, receiverId)) {
                 toast.error("Friend request already sent or you are already friends");
                 return false;
             }
 
-            // Optimistic update - add to pending sent immediately
             set((state) => ({
                 pendingSent: [...state.pendingSent, { id: receiverId, _id: receiverId }]
             }));
 
-            const response = await axiosInstance.post(`/friends/send/${receiverId}`);
-            if (import.meta.env.DEV) console.log("✅ Friend request API response:", response.data);
+            await axiosInstance.post(`/friends/send/${receiverId}`);
 
-            // Clear cache to ensure fresh data on next fetch
             sessionStorage.removeItem('friendDataLastFetch');
-            const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+            const authUser = useAuthStore.getState().authUser || JSON.parse(localStorage.getItem("authUser") || "{}");
             if (authUser.id) {
                 const cacheKey = `friends_${authUser.id}`;
                 localStorage.removeItem(cacheKey);
                 sessionStorage.removeItem(cacheKey);
             }
 
-            // Fetch fresh data to get complete user details
             await get().fetchFriendData();
-
             toast.success("Friend request sent!");
-            if (import.meta.env.DEV) console.log("✅ Friend request sent successfully");
             return true;
         } catch (error) {
-            console.error("❌ Send friend request error:", error);
-
-            // Revert optimistic update on error
             set((state) => ({
                 pendingSent: filterOutId(state.pendingSent, receiverId)
             }));
-
             const errorMessage = error.response?.data?.message || error.response?.data?.error || "Failed to send friend request";
             toast.error(errorMessage);
             return false;
         }
     },
 
-    // Alias for sendRequest (for compatibility) - Enhanced with better error handling
     sendFriendRequest: async (receiverId) => {
-        try {
-            if (import.meta.env.DEV) console.log("🚀 Sending friend request to:", receiverId);
-
-            const result = await get().sendRequest(receiverId);
-
-            if (import.meta.env.DEV) console.log("✅ Friend request result:", result);
-            return result;
-        } catch (error) {
-            if (import.meta.env.DEV) console.error("❌ Friend request failed:", error);
-            throw error;
-        }
+        return await get().sendRequest(receiverId);
     },
 
     acceptRequest: async (senderId) => {
         try {
-            if (import.meta.env.DEV) console.log("🤝 Accepting friend request from:", senderId);
-
-            // Find the request using the helper function
             const acceptedUser = get().pendingReceived.find(r => getId(r) === senderId);
-            if (import.meta.env.DEV) console.log("👤 Accepted user data:", acceptedUser);
-
             if (!acceptedUser) {
-                if (import.meta.env.DEV) console.error("❌ User not found in pending requests");
-                // Force refresh to get latest data
                 await get().fetchFriendData();
                 toast.error("Request not found. Please try again.");
                 return false;
             }
 
-            // Make API call first to ensure backend consistency
-            const response = await axiosInstance.post(`/friends/accept/${senderId}`);
-            if (import.meta.env.DEV) console.log("✅ API response:", response.data);
+            await axiosInstance.post(`/friends/accept/${senderId}`);
 
-            // Immediately update state - remove from pending and add to friends
             set((state) => ({
                 friends: [...state.friends, acceptedUser],
                 pendingReceived: state.pendingReceived.filter(r => getId(r) !== senderId)
             }));
 
-            // Clear all caches to force fresh data on next fetch
             sessionStorage.removeItem('friendDataLastFetch');
-            const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+            const authUser = useAuthStore.getState().authUser || JSON.parse(localStorage.getItem("authUser") || "{}");
             if (authUser.id) {
                 const cacheKey = `friends_${authUser.id}`;
                 localStorage.removeItem(cacheKey);
@@ -312,21 +210,15 @@ export const useFriendStore = create((set, get) => ({
             }
 
             toast.success("Friend request accepted!");
-            if (import.meta.env.DEV) console.log("✅ Friend request accepted and UI updated");
-
             return true;
         } catch (error) {
-            console.error("❌ Accept request error:", error.response?.data || error.message);
             toast.error(error.response?.data?.message || "Failed to accept request.");
-
-            // Force refresh on error to get correct state
             sessionStorage.removeItem('friendDataLastFetch');
             await get().fetchFriendData();
             return false;
         }
     },
 
-    // Alias for acceptRequest (for compatibility)
     acceptFriendRequest: async (senderId) => {
         return await get().acceptRequest(senderId);
     },
@@ -334,12 +226,10 @@ export const useFriendStore = create((set, get) => ({
     rejectRequest: async (userId) => {
         try {
             await axiosInstance.post(`/friends/reject/${userId}`);
-            // Remove from both lists for safety
             set((state) => ({
                 pendingReceived: filterOutId(state.pendingReceived, userId),
                 pendingSent: filterOutId(state.pendingSent, userId),
             }));
-            // Clear cache
             sessionStorage.removeItem('friendDataLastFetch');
             toast.success("Request rejected.");
             return true;
@@ -355,7 +245,6 @@ export const useFriendStore = create((set, get) => ({
             set((state) => ({
                 friends: filterOutId(state.friends, friendId),
             }));
-            // Clear cache
             sessionStorage.removeItem('friendDataLastFetch');
             toast.success("User unfriended.");
             return true;
@@ -365,14 +254,11 @@ export const useFriendStore = create((set, get) => ({
         }
     },
 
-    // Update lastMessage for a friend (called when message is sent/received)
     updateFriendLastMessage: (friendId, messageData) => {
-        // Debug logging removed for performance
-
         set((state) => {
             const updatedFriends = state.friends.map(friend => {
                 if (friend.id === friendId) {
-                    const updatedFriend = {
+                    return {
                         ...friend,
                         lastMessage: {
                             id: messageData.id,
@@ -393,25 +279,18 @@ export const useFriendStore = create((set, get) => ({
                             callDuration: messageData.callDuration || null
                         }
                     };
-
-                    // Debug logging removed for performance
-                    return updatedFriend;
                 }
                 return friend;
             });
-
             return { friends: updatedFriends };
         });
     },
 
-    // ✅ NEW: Update message status for a specific friend's last message
     updateFriendMessageStatus: (friendId, messageId, status, deliveredAt = null, readAt = null) => {
-        if (import.meta.env.DEV) console.log('🔄 Updating message status for friend:', friendId, messageId, status);
-
         set((state) => {
             const updatedFriends = state.friends.map(friend => {
                 if (friend.id === friendId && friend.lastMessage && friend.lastMessage.id === messageId) {
-                    const updatedFriend = {
+                    return {
                         ...friend,
                         lastMessage: {
                             ...friend.lastMessage,
@@ -420,46 +299,29 @@ export const useFriendStore = create((set, get) => ({
                             readAt: readAt || friend.lastMessage.readAt
                         }
                     };
-
-                    // Debug logging removed for performance
-                    return updatedFriend;
                 }
                 return friend;
             });
-
             return { friends: updatedFriends };
         });
     },
 
-    // ✅ NEW: Setup real-time listeners for message status updates
     setupRealtimeListeners: () => {
         const { socket } = useAuthStore.getState();
         if (!socket) return;
 
-        console.log('🔄 Setting up real-time listeners for friend store');
-
-        // Listen for message delivery updates globally
         socket.on("messageDelivered", ({ messageId, deliveredAt }) => {
-            console.log('📡 Global: Message delivered', messageId);
             const { friends } = get();
-
-            // Find which friend has this message as their last message
             friends.forEach(friend => {
                 if (friend.lastMessage && friend.lastMessage.id === messageId) {
-                    console.log('🔄 Updating friend message status to delivered:', friend.id);
                     get().updateFriendMessageStatus(friend.id, messageId, 'delivered', deliveredAt);
                 }
             });
-
-            // 🔥 FORCE UPDATE: Trigger re-render for real-time updates
             set({ friends: [...friends] });
         });
 
-        // Listen for bulk message delivery updates
         socket.on("messagesDelivered", ({ messageIds, deliveredAt }) => {
-            console.log('📡 Global: Messages delivered (bulk)', messageIds);
             const { friends } = get();
-
             messageIds.forEach(messageId => {
                 friends.forEach(friend => {
                     if (friend.lastMessage && friend.lastMessage.id === messageId) {
@@ -469,30 +331,19 @@ export const useFriendStore = create((set, get) => ({
             });
         });
 
-        // Listen for message read updates globally
         socket.on("messagesRead", ({ readBy }) => {
-            console.log('📡 Global: Messages read by', readBy);
             const { friends } = get();
             const authUserId = useAuthStore.getState().authUser?.id;
             const readAt = new Date();
-
-            // Update status for messages I sent that were read by this user
             friends.forEach(friend => {
                 if (friend.id === readBy && friend.lastMessage && friend.lastMessage.senderId === authUserId) {
-                    console.log('🔄 Updating friend message status to read:', friend.id);
                     get().updateFriendMessageStatus(friend.id, friend.lastMessage.id, 'read', null, readAt);
                 }
             });
-
-            // 🔥 FORCE UPDATE: Trigger re-render for real-time updates
             set({ friends: [...friends] });
         });
 
-        // ✅ NEW: Listen for game invites to update sidebar immediately
         socket.on("game:invite", (inviteData) => {
-            console.log('🎮 Global: Game invite received', inviteData);
-            // inviteData structure: { gameId, inviterId, inviterName, inviterPic }
-
             const messageData = {
                 id: `game-${Date.now()}`,
                 text: `GAME_INVITE:${inviteData.gameId}`,
@@ -501,27 +352,23 @@ export const useFriendStore = create((set, get) => ({
                 createdAt: new Date().toISOString(),
                 status: 'sent'
             };
-
             get().updateFriendLastMessage(inviteData.inviterId, messageData);
         });
     },
 
-    // ✅ NEW: Cleanup real-time listeners
     cleanupRealtimeListeners: () => {
+        // We need to get socket from AuthStore since we don't store it here
         const { socket } = useAuthStore.getState();
         if (!socket) return;
 
-        console.log('🧹 Cleaning up real-time listeners for friend store');
         socket.off("messageDelivered");
         socket.off("messagesDelivered");
         socket.off("messagesRead");
+        socket.off("game:invite");
     },
 
-    // Clear data on logout
     clearFriendData: () => {
-        // Cleanup listeners first
         get().cleanupRealtimeListeners();
-
         set({
             friends: [],
             pendingReceived: [],
@@ -529,3 +376,29 @@ export const useFriendStore = create((set, get) => ({
         });
     },
 }));
+
+// Setup subscription to automatically react to AuthStore changes
+// This eliminates the need for useAuthStore to manually call methods on useFriendStore
+// breaking the circular dependency.
+useAuthStore.subscribe((state, prevState) => {
+    // Handle Socket Connection Changes
+    if (state.socket && !prevState.socket) {
+        // Socket connected - subscribe to listeners
+        useFriendStore.getState().subscribeToFriendEvents(state.socket);
+        useFriendStore.getState().setupRealtimeListeners(); // Only call this if you moved setup logic here
+    }
+    if (!state.socket && prevState.socket) {
+        // Socket disconnected
+        useFriendStore.getState().unsubscribeFromFriendEvents(prevState.socket);
+    }
+
+    // Handle Auth User Changes (Login/Logout)
+    if (state.authUser && !prevState.authUser) {
+        // User logged in
+        useFriendStore.getState().fetchFriendData();
+    }
+    if (!state.authUser && prevState.authUser) {
+        // User logged out
+        useFriendStore.getState().clearFriendData();
+    }
+});

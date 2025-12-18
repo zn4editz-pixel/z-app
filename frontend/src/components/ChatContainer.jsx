@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useLayoutEffect } from "react";
 import React from "react";
 import { Download, Play, Pause } from "lucide-react";
 import toast from "react-hot-toast";
-
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
@@ -12,11 +11,9 @@ import CallLogMessage from "./CallLogMessage";
 import ChatMessage from "./ChatMessage";
 import { formatMessageTime } from "../lib/utils";
 import { getDateLabel, isDifferentDay } from "../utils/dateUtils";
-
 // ✅ CRITICAL: Import animations for floating reactions
 import "../styles/animations.css";
 import SeasonalParticles from "./effects/SeasonalParticles";
-
 const ChatContainer = ({ onStartCall }) => {
   const {
     messages = [],
@@ -26,107 +23,88 @@ const ChatContainer = ({ onStartCall }) => {
     subscribeToMessages,
     subscribeToReactions,
   } = useChatStore();
-
   const { authUser, socket } = useAuthStore();
   const bottomRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const isInitialLoad = useRef(true);
   const previousMessagesLength = useRef(0);
-
   // Voice message playback
   const [playingVoiceId, setPlayingVoiceId] = useState(null);
   const audioRefs = useRef({});
-
-
   // Typing indicator - Use Global Store State
   //   const [isTyping, setIsTyping] = useState(false); // ❌ Removed local state
   const { isTyping, typingUserId } = useChatStore(); // ✅ Use store state
   const typingTimeoutRef = useRef(null);
-
-
   // Reply to message
   const [replyingTo, setReplyingTo] = useState(null);
-
   // ✅ NEW: Instagram-style "New message" indicator
   const [showNewMessageButton, setShowNewMessageButton] = useState(false);
   const [newMessageCount, setNewMessageCount] = useState(0);
-
   // ✅ NEW: Floating reactions system
   const [floatingReactions, setFloatingReactions] = useState([]);
-
   // ✅ CRITICAL FIX: Move mobile keyboard detection hooks to top
   const [isMobile, setIsMobile] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-
   // ✅ Mobile detection effect
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
   useEffect(() => {
     if (!isMobile) return;
-
     const handleViewportChange = () => {
-      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      const viewportHeight =
+        window.visualViewport?.height || window.innerHeight;
       const windowHeight = window.screen.height;
       const keyboardThreshold = windowHeight * 0.75;
-
       setKeyboardVisible(viewportHeight < keyboardThreshold);
     };
-
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleViewportChange);
-      return () => window.visualViewport.removeEventListener('resize', handleViewportChange);
+      window.visualViewport.addEventListener("resize", handleViewportChange);
+      return () =>
+        window.visualViewport.removeEventListener(
+          "resize",
+          handleViewportChange,
+        );
     } else {
-      window.addEventListener('resize', handleViewportChange);
-      return () => window.removeEventListener('resize', handleViewportChange);
+      window.addEventListener("resize", handleViewportChange);
+      return () => window.removeEventListener("resize", handleViewportChange);
     }
   }, [isMobile]);
-
   // ✅ SIMPLE: Add window function for manual testing
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.testChatContainerFloating = (emoji = '🧪') => {
-        console.log('🧪 Manual ChatContainer floating test triggered');
-        triggerFloatingReaction(emoji, null);
-      };
-    }
-  }, []);
-
+  // Debug hook removed for production
   const handleReply = (message) => {
     setReplyingTo(message);
   };
-
   // ✅ SIMPLE & GUARANTEED: Working floating reaction function
   const triggerFloatingReaction = (emoji, messageElement) => {
-    console.log('🎉 ChatContainer: Creating floating reaction', emoji);
-
     try {
       let x = 50; // Default center
       let y = 50; // Default center
-
       // Try to get position from message element
       if (messageElement && messageElement.getBoundingClientRect) {
         const rect = messageElement.getBoundingClientRect();
-        const containerRect = scrollContainerRef.current?.getBoundingClientRect();
-
+        const containerRect =
+          scrollContainerRef.current?.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0 && containerRect) {
           // Calculate relative position within the chat container
-          x = ((rect.left + rect.width / 2 - containerRect.left) / containerRect.width) * 100;
-          y = ((rect.top + rect.height / 2 - containerRect.top) / containerRect.height) * 100;
-
+          x =
+            ((rect.left + rect.width / 2 - containerRect.left) /
+              containerRect.width) *
+            100;
+          y =
+            ((rect.top + rect.height / 2 - containerRect.top) /
+              containerRect.height) *
+            100;
           // Keep within bounds
           x = Math.max(10, Math.min(90, x));
           y = Math.max(10, Math.min(90, y));
         }
       }
-
       // Create floating reaction
       const reaction = {
         id: Date.now() + Math.random(),
@@ -134,28 +112,21 @@ const ChatContainer = ({ onStartCall }) => {
         x,
         y,
         delay: 0,
-        duration: 3000
+        duration: 3000,
       };
-
-      console.log('✅ Creating floating reaction at:', x, y);
-
       // Add to state
-      setFloatingReactions(prev => [...prev, reaction]);
-
+      setFloatingReactions((prev) => [...prev, reaction]);
       // Remove after animation
       setTimeout(() => {
-        setFloatingReactions(prev => prev.filter(r => r.id !== reaction.id));
+        setFloatingReactions((prev) =>
+          prev.filter((r) => r.id !== reaction.id),
+        );
       }, reaction.duration + 500);
-
       // Haptic feedback
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
-
-      console.log('✅ Floating reaction created successfully');
-
     } catch (error) {
-      console.error('❌ Error creating floating reaction:', error);
       // Still try to create a basic reaction at center
       const fallbackReaction = {
         id: Date.now() + Math.random(),
@@ -163,50 +134,39 @@ const ChatContainer = ({ onStartCall }) => {
         x: 50,
         y: 50,
         delay: 0,
-        duration: 3000
+        duration: 3000,
       };
-
-      setFloatingReactions(prev => [...prev, fallbackReaction]);
+      setFloatingReactions((prev) => [...prev, fallbackReaction]);
       setTimeout(() => {
-        setFloatingReactions(prev => prev.filter(r => r.id !== fallbackReaction.id));
+        setFloatingReactions((prev) =>
+          prev.filter((r) => r.id !== fallbackReaction.id),
+        );
       }, 3500);
     }
   };
-
-
-
   useEffect(() => {
     if (!selectedUser?.id) return;
-
-    if (import.meta.env.DEV) console.log(`📱 ChatContainer: Loading chat for ${selectedUser.nickname || selectedUser.username}`);
 
     // ✅ ENHANCED: Reset state for new chat
     isInitialLoad.current = true;
     previousMessagesLength.current = 0;
     setShowNewMessageButton(false);
     setNewMessageCount(0);
-
     // ✅ INSTANT: Load messages immediately without delay
     getMessages?.(selectedUser.id);
-
     // ✅ ENHANCED: Force scroll to bottom after a brief delay to ensure messages are rendered
     // ✅ SMOOTH: Scroll to bottom after chat switch
     setTimeout(() => {
       if (scrollContainerRef.current) {
-        scrollToBottomSmooth('smooth');
-        if (import.meta.env.DEV) console.log('🔄 Smooth scroll to bottom after chat switch');
+        scrollToBottomSmooth("smooth");
       }
     }, 100);
-
     // ✅ FIXED: Subscribe to socket events without parameters - but only if not already subscribed
     // Note: Subscriptions are now handled in HomePage to avoid conflicts
-
     return () => {
       // Cleanup is handled by the store
     };
   }, [selectedUser?.id, getMessages, subscribeToMessages]);
-
-
   // ✅ RELIABLE: Use Global Store State for Typing
   // We no longer listen locally. We trust useChatStore.js which handles 'typing' and 'stopTyping' global events.
   // This prevents double-listeners and inconsistencies.
@@ -214,91 +174,93 @@ const ChatContainer = ({ onStartCall }) => {
     // Logic moved to useChatStore.js
     // Just consuming 'isTyping' from store now.
   }, []);
-
   // ✅ INSTANT SCROLL: Use useLayoutEffect to scroll before paint
   useLayoutEffect(() => {
-    if (messages.length > 0 && isInitialLoad.current && scrollContainerRef.current) {
+    if (
+      messages.length > 0 &&
+      isInitialLoad.current &&
+      scrollContainerRef.current
+    ) {
       // Smooth scroll for initial load
-      scrollToBottomSmooth('smooth');
+      scrollToBottomSmooth("smooth");
     }
   }, [messages, selectedUser?.id]);
-
   // ✅ SMOOTH SCROLL: Professional feel
-  const scrollToBottomSmooth = (behavior = 'smooth') => {
+  const scrollToBottomSmooth = (behavior = "smooth") => {
     if (!scrollContainerRef.current) return;
-
     const container = scrollContainerRef.current;
-    
     // Smooth scroll animation
     container.scrollTo({
       top: container.scrollHeight,
-      behavior: behavior
+      behavior: behavior,
     });
   };
-
   useEffect(() => {
     if (!bottomRef.current || !scrollContainerRef.current) return;
-
     const container = scrollContainerRef.current;
-
     // Threshold for auto-scrolling
-    const isScrolledToBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
-
+    const isScrolledToBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight <
+      150;
     // Process new messages
     if (messages.length > 0) {
-      if (!isInitialLoad.current && messages.length > previousMessagesLength.current) {
+      if (
+        !isInitialLoad.current &&
+        messages.length > previousMessagesLength.current
+      ) {
         // Source check
         const newMessages = messages.slice(previousMessagesLength.current);
-        const receivedMessages = newMessages.filter(msg => msg.senderId !== authUser?.id);
-        const sentMessages = newMessages.filter(msg => msg.senderId === authUser?.id);
-
+        const receivedMessages = newMessages.filter(
+          (msg) => msg.senderId !== authUser?.id,
+        );
+        const sentMessages = newMessages.filter(
+          (msg) => msg.senderId === authUser?.id,
+        );
         if (sentMessages.length > 0) {
           // ALWAYS auto-scroll for own sent messages - SMOOTH
-          scrollToBottomSmooth('smooth');
+          scrollToBottomSmooth("smooth");
           setShowNewMessageButton(false);
           setNewMessageCount(0);
         } else if (receivedMessages.length > 0) {
           // For received messages - SMOOTH
           if (isScrolledToBottom) {
             // User is watching the chat bottom -> Smooth scroll
-            scrollToBottomSmooth('smooth');
+            scrollToBottomSmooth("smooth");
           } else {
             // User is scrolled up reading old history -> Don't jerk them down
-            setNewMessageCount(prev => prev + receivedMessages.length);
+            setNewMessageCount((prev) => prev + receivedMessages.length);
             setShowNewMessageButton(true);
           }
         }
       } else if (isInitialLoad.current) {
         // INITIAL LOAD: Instant jump (no animation)
         if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+          scrollContainerRef.current.scrollTop =
+            scrollContainerRef.current.scrollHeight;
         }
         isInitialLoad.current = false;
       }
-
       previousMessagesLength.current = messages.length;
     }
   }, [messages.length, authUser?.id]);
-
   // Handle typing indicator smooth scroll
   useEffect(() => {
     if (isTyping && scrollContainerRef.current) {
       const container = scrollContainerRef.current;
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-
+      const isNearBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight <
+        100;
       if (isNearBottom) {
-        scrollToBottomSmooth('smooth');
+        scrollToBottomSmooth("smooth");
       }
     }
   }, [isTyping]);
-
   // ✅ ENHANCED: Additional scroll effect for better reliability
   useEffect(() => {
     if (messages.length > 0 && isInitialLoad.current) {
       // ✅ MULTIPLE ATTEMPTS: Ensure scroll happens after DOM updates
       const attempts = [0, 50, 100, 200];
-
-      attempts.forEach(delay => {
+      attempts.forEach((delay) => {
         setTimeout(() => {
           if (scrollContainerRef.current && isInitialLoad.current) {
             scrollToBottom(false); // Instant scroll
@@ -307,49 +269,42 @@ const ChatContainer = ({ onStartCall }) => {
       });
     }
   }, [messages]);
-
   // ✅ SMOOTH: Scroll to bottom function with animation
   const scrollToBottom = (smooth = true) => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
-
       if (smooth) {
         container.scrollTo({
           top: container.scrollHeight,
-          behavior: 'smooth'
+          behavior: "smooth",
         });
       } else {
         // Instant scroll for fallback
         container.scrollTop = container.scrollHeight;
       }
-
       setShowNewMessageButton(false);
       setNewMessageCount(0);
     }
   };
-
   // ✅ NEW: Detect manual scroll
   const handleScroll = () => {
     if (!scrollContainerRef.current) return;
     const container = scrollContainerRef.current;
-    const isScrolledToBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-
+    const isScrolledToBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight <
+      100;
     if (isScrolledToBottom) {
       setShowNewMessageButton(false);
       setNewMessageCount(0);
     }
   };
-
   // Typing indicator logic is now handled in useChatStore
-
-
   // Call handling is now done in HomePage
   const handleStartCall = (type) => {
     if (onStartCall) {
       onStartCall(type);
     }
   };
-
   const handleDownloadImage = async (imageUrl, fileName = "image.jpg") => {
     try {
       const response = await fetch(imageUrl);
@@ -364,15 +319,12 @@ const ChatContainer = ({ onStartCall }) => {
       window.URL.revokeObjectURL(url);
       toast.success("Image downloaded!");
     } catch (error) {
-      console.error("Download error:", error);
       toast.error("Failed to download image");
     }
   };
-
   const toggleVoicePlayback = (messageId) => {
     const audio = audioRefs.current[messageId];
     if (!audio) return;
-
     if (playingVoiceId === messageId) {
       audio.pause();
       setPlayingVoiceId(null);
@@ -383,9 +335,6 @@ const ChatContainer = ({ onStartCall }) => {
       setPlayingVoiceId(messageId);
     }
   };
-
-
-
   if (!selectedUser) {
     return (
       <div className="flex-1 flex items-center justify-center p-8 relative overflow-hidden">
@@ -399,21 +348,20 @@ const ChatContainer = ({ onStartCall }) => {
       </div>
     );
   }
-
-
-
   return (
     <>
-      <div className={`flex-1 flex flex-col h-full w-full ${isMobile ? 'mobile-chat-fullscreen' : ''
-        }`}>
+      <div
+        className={`flex-1 flex flex-col h-full w-full ${isMobile ? "mobile-chat-fullscreen" : ""
+          }`}
+      >
         <ChatHeader onStartCall={handleStartCall} />
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
           data-chat-container
-          className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent relative ${isMobile && keyboardVisible ? 'chat-container-mobile-keyboard' : ''
-            } ${isMobile ? 'pt-24 mobile-chat-container professional-chat-container' : 'pt-6'}`}
-          style={{ WebkitOverflowScrolling: 'touch' }}
+          className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent relative ${isMobile && keyboardVisible ? "chat-container-mobile-keyboard" : ""
+            } ${isMobile ? "pt-24 mobile-chat-container professional-chat-container" : "pt-6"}`}
+          style={{ WebkitOverflowScrolling: "touch" }}
         >
           {isMessagesLoading ? (
             <MessageSkeleton />
@@ -422,9 +370,12 @@ const ChatContainer = ({ onStartCall }) => {
               <div className="w-20 h-20 rounded-full bg-base-200/50 flex items-center justify-center mb-6 shadow-sm">
                 <div className="text-4xl">💬</div>
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-base-content">No messages yet</h3>
+              <h3 className="text-xl font-semibold mb-3 text-base-content">
+                No messages yet
+              </h3>
               <p className="text-base text-base-content/60 max-w-sm leading-relaxed">
-                Start the conversation by sending a message to {selectedUser?.nickname || selectedUser?.username}!
+                Start the conversation by sending a message to{" "}
+                {selectedUser?.nickname || selectedUser?.username}!
               </p>
             </div>
           ) : (
@@ -432,8 +383,13 @@ const ChatContainer = ({ onStartCall }) => {
               {messages.map((message, index) => {
                 const mine = message.senderId === authUser?.id;
                 const previousMessage = index > 0 ? messages[index - 1] : null;
-                const showDateSeparator = index === 0 || (previousMessage && isDifferentDay(message.createdAt, previousMessage.createdAt));
-
+                const showDateSeparator =
+                  index === 0 ||
+                  (previousMessage &&
+                    isDifferentDay(
+                      message.createdAt,
+                      previousMessage.createdAt,
+                    ));
                 return (
                   <React.Fragment key={`message-group-${message.id}`}>
                     {/* Instagram-style Date Separator */}
@@ -446,12 +402,16 @@ const ChatContainer = ({ onStartCall }) => {
                         </div>
                       </div>
                     )}
-
                     {/* Render call log message */}
-                    {(message.messageType === "call" || message.callData || message.isCallLog) ? (
+                    {message.messageType === "call" ||
+                      message.callData ||
+                      message.isCallLog ? (
                       <div className="flex justify-center w-full my-2">
                         <div className="max-w-md w-full">
-                          <CallLogMessage message={message} isOwnMessage={mine} />
+                          <CallLogMessage
+                            message={message}
+                            isOwnMessage={mine}
+                          />
                         </div>
                       </div>
                     ) : (
@@ -467,7 +427,6 @@ const ChatContainer = ({ onStartCall }) => {
               })}
             </>
           )}
-
           {/* Typing Indicator - Enhanced Bubble */}
           {/* Typing Indicator - Enhanced Bubble */}
           {isTyping && (
@@ -482,27 +441,33 @@ const ChatContainer = ({ onStartCall }) => {
                 </div>
                 <div className="chat-bubble flex items-center p-3 bg-base-200 rounded-2xl rounded-tl-none shadow-sm min-h-[44px]">
                   <div className="flex gap-1.5 px-2 items-center h-full">
-                    <span className="w-2.5 h-2.5 bg-base-content/50 rounded-full typing-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2.5 h-2.5 bg-base-content/50 rounded-full typing-bounce" style={{ animationDelay: '200ms' }} />
-                    <span className="w-2.5 h-2.5 bg-base-content/50 rounded-full typing-bounce" style={{ animationDelay: '400ms' }} />
+                    <span
+                      className="w-2.5 h-2.5 bg-base-content/50 rounded-full typing-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    />
+                    <span
+                      className="w-2.5 h-2.5 bg-base-content/50 rounded-full typing-bounce"
+                      style={{ animationDelay: "200ms" }}
+                    />
+                    <span
+                      className="w-2.5 h-2.5 bg-base-content/50 rounded-full typing-bounce"
+                      style={{ animationDelay: "400ms" }}
+                    />
                   </div>
                 </div>
               </div>
             </div>
           )}
-
           <div ref={bottomRef} />
-
-
           {/* ✅ SIMPLE FLOATING REACTIONS - GUARANTEED TO WORK */}
           <div
             className="floating-reactions-overlay"
             style={{
-              position: 'absolute',
+              position: "absolute",
               inset: 0,
-              pointerEvents: 'none',
-              overflow: 'hidden',
-              zIndex: 99999
+              pointerEvents: "none",
+              overflow: "hidden",
+              zIndex: 99999,
             }}
           >
             {floatingReactions.map((reaction) => (
@@ -510,23 +475,23 @@ const ChatContainer = ({ onStartCall }) => {
                 key={reaction.id}
                 className="floating-reaction-simple"
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   left: `${reaction.x}%`,
                   top: `${reaction.y}%`,
-                  fontSize: '2.5rem',
-                  transform: 'translate(-50%, -50%)',
+                  fontSize: "2.5rem",
+                  transform: "translate(-50%, -50%)",
                   zIndex: 99999,
-                  pointerEvents: 'none',
-                  fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif',
-                  animation: 'simpleFloatUp 3s ease-out forwards',
-                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+                  pointerEvents: "none",
+                  fontFamily:
+                    "Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif",
+                  animation: "simpleFloatUp 3s ease-out forwards",
+                  textShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
                 }}
               >
                 {reaction.emoji}
               </div>
             ))}
           </div>
-
           {/* Modern "New message" indicator */}
           {showNewMessageButton && (
             <button
@@ -537,8 +502,9 @@ const ChatContainer = ({ onStartCall }) => {
                          shadow-2xl hover:shadow-3xl hover:scale-105 active:scale-95
                          transition-all duration-300 animate-slide-up"
               style={{
-                backdropFilter: 'blur(12px)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1)'
+                backdropFilter: "blur(12px)",
+                boxShadow:
+                  "0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1)",
               }}
             >
               {/* Animated down arrow */}
@@ -550,35 +516,41 @@ const ChatContainer = ({ onStartCall }) => {
                   stroke="currentColor"
                   strokeWidth={2.5}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                  />
                 </svg>
               </div>
-
               {/* Message count badge */}
               {newMessageCount > 0 && (
-                <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 
+                <span
+                  className="flex items-center justify-center min-w-[20px] h-5 px-1.5 
                                bg-error text-error-content text-xs font-bold rounded-full
-                               animate-pulse">
-                  {newMessageCount > 99 ? '99+' : newMessageCount}
+                               animate-pulse"
+                >
+                  {newMessageCount > 99 ? "99+" : newMessageCount}
                 </span>
               )}
-
               {/* Text */}
               <span className="hidden sm:inline">
-                {newMessageCount > 1 ? `${newMessageCount} new messages` : 'New message'}
+                {newMessageCount > 1
+                  ? `${newMessageCount} new messages`
+                  : "New message"}
               </span>
               <span className="sm:hidden">
-                {newMessageCount > 1 ? 'New' : 'New'}
+                {newMessageCount > 1 ? "New" : "New"}
               </span>
             </button>
           )}
         </div>
-        <MessageInput replyingTo={replyingTo} onCancelReply={() => setReplyingTo(null)} />
+        <MessageInput
+          replyingTo={replyingTo}
+          onCancelReply={() => setReplyingTo(null)}
+        />
       </div>
-
-
     </>
   );
 };
-
 export default ChatContainer;

@@ -1,5 +1,4 @@
 import { X, Search } from "lucide-react";
-
 const SearchOverlay = ({ query, setQuery, results, onClose, onSelect }) => {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
@@ -30,11 +29,13 @@ const SearchOverlay = ({ query, setQuery, results, onClose, onSelect }) => {
             onChange={(e) => setQuery(e.target.value)}
             className="flex-1 bg-transparent outline-none text-base-content"
           />
-          <button onClick={onClose} className="text-base-content hover:text-primary">
+          <button
+            onClick={onClose}
+            className="text-base-content hover:text-primary"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
-
         {/* Results */}
         <div className="space-y-2">
           {results.length > 0 ? (
@@ -44,9 +45,8 @@ const SearchOverlay = ({ query, setQuery, results, onClose, onSelect }) => {
                 user.avatar && user.avatar.trim() !== ""
                   ? user.avatar
                   : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      user.name || "User"
+                      user.name || "User",
                     )}&background=random&color=fff`;
-
               return (
                 <button
                   key={idx}
@@ -70,5 +70,4 @@ const SearchOverlay = ({ query, setQuery, results, onClose, onSelect }) => {
     </div>
   );
 };
-
 export default SearchOverlay;

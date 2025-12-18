@@ -33,9 +33,24 @@
 
 /* Ensure proper touch targets on mobile */
 @media (max-width: 768px) {
+
   .login-form-container input,
   .login-form-container button {
     min-height: 44px;
     touch-action: manipulation;
   }
+}
+
+/* 🙈 HIDE SCROLLBAR - User Requested Fix */
+/* Hide scrollbar for Chrome, Safari and Opera */
+.auth-smooth-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.auth-smooth-scroll {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }

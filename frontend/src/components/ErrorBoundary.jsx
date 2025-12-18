@@ -1,44 +1,36 @@
-import React from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-
+import React from "react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
   }
-
   static getDerivedStateFromError(error) {
     return { hasError: true };
   }
-
-
   componentDidCatch(error, errorInfo) {
     // Log error to console for debugging
-    if (import.meta.env.DEV) console.error('ErrorBoundary caught an error:', error, errorInfo);
-
-    this.setState({
-      error,
-      errorInfo
-    });
-
+    if (import.meta.env.DEV)
+      this.setState({
+        error,
+        errorInfo,
+      });
     // Log to a remote service if configured (Placeholder)
     try {
       if (window.logErrorToService) {
-        window.logErrorToService({ error, componentStack: errorInfo?.componentStack });
+        window.logErrorToService({
+          error,
+          componentStack: errorInfo?.componentStack,
+        });
       }
-    } catch (e) {
-      console.error("Failed to send error to remote service", e);
-    }
+    } catch (e) {}
   }
-
   handleReload = () => {
     window.location.reload();
   };
-
   handleGoHome = () => {
-    window.location.href = '/';
+    window.location.href = "/";
   };
-
   render() {
     if (this.state.hasError) {
       return (
@@ -48,15 +40,16 @@ class ErrorBoundary extends React.Component {
             <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-error/10 flex items-center justify-center">
               <AlertTriangle className="w-10 h-10 text-error" />
             </div>
-
             {/* Error Message */}
-            <h1 className="text-2xl font-bold mb-2">Oops! Something went wrong</h1>
+            <h1 className="text-2xl font-bold mb-2">
+              Oops! Something went wrong
+            </h1>
             <p className="text-base-content/70 mb-6">
-              We're sorry for the inconvenience. The application encountered an unexpected error.
+              We're sorry for the inconvenience. The application encountered an
+              unexpected error.
             </p>
-
             {/* Error Details (only in development) */}
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {process.env.NODE_ENV === "development" && this.state.error && (
               <details className="mb-6 text-left">
                 <summary className="cursor-pointer text-sm font-semibold text-error mb-2">
                   Error Details (Development Only)
@@ -73,7 +66,6 @@ class ErrorBoundary extends React.Component {
                 </div>
               </details>
             )}
-
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
               <button
@@ -91,7 +83,6 @@ class ErrorBoundary extends React.Component {
                 Go Home
               </button>
             </div>
-
             {/* Help Text */}
             <p className="text-xs text-base-content/50 mt-6">
               If this problem persists, please contact support.
@@ -100,9 +91,7 @@ class ErrorBoundary extends React.Component {
         </div>
       );
     }
-
     return this.props.children;
   }
 }
-
 export default ErrorBoundary;

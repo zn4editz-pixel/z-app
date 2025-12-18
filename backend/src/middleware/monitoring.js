@@ -1,67 +1,1 @@
-// 📊 PRODUCTION MONITORING MIDDLEWARE
-import process from 'process';
-
-// Performance monitoring
-export const performanceMonitor = (req, res, next) => {
-  const start = Date.now();
-  
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    const { method, url } = req;
-    const { statusCode } = res;
-    
-    // Log slow requests (>1000ms)
-    if (duration > 1000) {
-      console.warn(`🐌 SLOW REQUEST: ${method} ${url} - ${duration}ms - ${statusCode}`);
-    }
-    
-    // Log errors
-    if (statusCode >= 400) {
-      console.error(`❌ ERROR: ${method} ${url} - ${statusCode} - ${duration}ms`);
-    }
-  });
-  
-  next();
-};
-
-// Memory monitoring
-export const memoryMonitor = () => {
-  const usage = process.memoryUsage();
-  const formatBytes = (bytes) => Math.round(bytes / 1024 / 1024 * 100) / 100;
-  
-  return {
-    rss: `${formatBytes(usage.rss)} MB`,
-    heapTotal: `${formatBytes(usage.heapTotal)} MB`,
-    heapUsed: `${formatBytes(usage.heapUsed)} MB`,
-    external: `${formatBytes(usage.external)} MB`,
-    uptime: `${Math.round(process.uptime())} seconds`
-  };
-};
-
-// Health check endpoint data
-export const getHealthData = async () => {
-  try {
-    const memory = memoryMonitor();
-    const cpuUsage = process.cpuUsage();
-    
-    return {
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      version: process.env.npm_package_version || '2.0.0',
-      environment: process.env.NODE_ENV || 'development',
-      memory,
-      cpu: {
-        user: Math.round(cpuUsage.user / 1000),
-        system: Math.round(cpuUsage.system / 1000)
-      },
-      uptime: Math.round(process.uptime()),
-      nodeVersion: process.version
-    };
-  } catch (error) {
-    return {
-      status: 'unhealthy',
-      error: error.message,
-      timestamp: new Date().toISOString()
-    };
-  }
-};
+// 📊 PRODUCTION MONITORING MIDDLEWAREimport process from 'process';// Performance monitoringexport const performanceMonitor = (req, res, next) => {  const start = Date.now();  res.on('finish', () => {    const duration = Date.now() - start;    const { method, url } = req;    const { statusCode } = res;    // Log slow requests (>1000ms)    if (duration > 1000) {    }    // Log errors    if (statusCode >= 400) {    }  });  next();};// Memory monitoringexport const memoryMonitor = () => {  const usage = process.memoryUsage();  const formatBytes = (bytes) => Math.round(bytes / 1024 / 1024 * 100) / 100;  return {    rss: `${formatBytes(usage.rss)} MB`,    heapTotal: `${formatBytes(usage.heapTotal)} MB`,    heapUsed: `${formatBytes(usage.heapUsed)} MB`,    external: `${formatBytes(usage.external)} MB`,    uptime: `${Math.round(process.uptime())} seconds`  };};// Health check endpoint dataexport const getHealthData = async () => {  try {    const memory = memoryMonitor();    const cpuUsage = process.cpuUsage();    return {      status: 'healthy',      timestamp: new Date().toISOString(),      version: process.env.npm_package_version || '2.0.0',      environment: process.env.NODE_ENV || 'development',      memory,      cpu: {        user: Math.round(cpuUsage.user / 1000),        system: Math.round(cpuUsage.system / 1000)      },      uptime: Math.round(process.uptime()),      nodeVersion: process.version    };  } catch (error) {    return {      status: 'unhealthy',      error: error.message,      timestamp: new Date().toISOString()    };  }};
