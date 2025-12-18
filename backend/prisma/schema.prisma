@@ -1,4 +1,4 @@
-// Production Prisma Schema for CockroachDB
+// Production Prisma Schema for PostgreSQL
 generator client {
   provider = "prisma-client-js"
 }

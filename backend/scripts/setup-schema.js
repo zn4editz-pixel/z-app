@@ -27,7 +27,7 @@ try {
     // Use production schema (PostgreSQL for Render)
     if (fs.existsSync(productionSchemaPath)) {
       fs.copyFileSync(productionSchemaPath, schemaPath);
-      console.log('✅ Using production schema (PostgreSQL for Render)');
+      console.log('✅ Using production schema (CockroachDB for Render)');
       console.log('🔗 Database URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
       console.log('🚀 Render deployment mode activated');
     } else {
