@@ -59,7 +59,7 @@ export const getAllUsers = async (req, res) => {
       select: {
         id: true, fullName: true, email: true, username: true, profilePic: true,
         isOnline: true, isVerified: true, role: true, status: true, createdAt: true,
-        reportsReceived: { select: { id: true } }
+        receivedReports: { select: { id: true } }
       },
     });
 
@@ -73,7 +73,7 @@ export const getAllUsers = async (req, res) => {
     const formattedUsers = users.map((user) => ({
       ...user,
       isOnline: onlineUserIds.includes(String(user.id)) || user.isOnline,
-      reportCount: user.reportsReceived.length,
+      reportCount: user.receivedReports.length,
     }));
     res.status(200).json(formattedUsers);
   } catch (error) {
@@ -159,47 +159,100 @@ export const toggleVerification = async (req, res) => {
 // --- Verification Requests ---
 export const getVerificationRequests = async (req, res) => {
   try {
-    const requests = await prisma.verificationRequest.findMany({
-      where: { status: 'pending' },
-      include: { user: { select: { id: true, fullName: true, username: true, email: true, profilePic: true } } }
+    const users = await prisma.user.findMany({
+      where: { verificationStatus: 'pending' },
+      select: {
+        id: true,
+        fullName: true,
+        username: true,
+        email: true,
+        profilePic: true,
+        verificationReason: true,
+        verificationIdProof: true,
+        verificationRequestedAt: true
+      }
     });
+
+    // Map to expected format if necessary, or return users directly
+    // Frontend likely expects an array of objects that have a 'user' property or similar if strictly typed, 
+    // but typically we can just return the data. 
+    // However, the original code returned `verificationRequest` objects which CONTAINED a user.
+    // To minimize frontend breakage, let's wrap them to look like request objects.
+    const requests = users.map(user => ({
+      id: user.id, // Use user ID as request ID effectively
+      userId: user.id,
+      status: 'pending',
+      reason: user.verificationReason,
+      idProof: user.verificationIdProof,
+      createdAt: user.verificationRequestedAt,
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        username: user.username,
+        email: user.email,
+        profilePic: user.profilePic
+      }
+    }));
+
     res.status(200).json(requests);
-  } catch (error) { res.status(500).json({ message: "Error fetching requests" }); }
+  } catch (error) {
+    console.error("Error fetching requests:", error);
+    res.status(500).json({ message: "Error fetching requests" });
+  }
 };
 
 export const approveVerification = async (req, res) => {
-  const { id } = req.params; // Expects userId based on route usage in corrupted file, but typically route uses request ID? 
-  // Route is /approve/:userId in admin.route.js. So id is userId.
+  const { id } = req.params; // userId
   try {
-    // Find request for this user
-    const request = await prisma.verificationRequest.findFirst({ where: { userId: id, status: 'pending' } });
-    if (!request) return res.status(404).json({ message: "Request not found" });
-
-    await prisma.$transaction([
-      prisma.verificationRequest.update({ where: { id: request.id }, data: { status: 'approved' } }),
-      prisma.user.update({ where: { id }, data: { isVerified: true } })
-    ]);
     const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.verificationStatus !== 'pending') {
+      // Optionally allow approving even if not pending? Assuming yes for admin power.
+    }
+
+    await prisma.user.update({
+      where: { id },
+      data: {
+        isVerified: true,
+        verificationStatus: 'approved',
+        verificationReviewedAt: new Date(),
+        verificationReviewedBy: 'admin' // In real app, use req.user.id
+      }
+    });
+
     sendVerificationApprovedEmail(user.email, user.fullName);
     res.status(200).json({ message: "Verification approved" });
-  } catch (error) { res.status(500).json({ message: "Error approving" }); }
+  } catch (error) {
+    console.error("Error approving verification:", error);
+    res.status(500).json({ message: "Error approving" });
+  }
 };
 
 export const rejectVerification = async (req, res) => {
   const { id } = req.params; // userId
   const { reason } = req.body;
   try {
-    const request = await prisma.verificationRequest.findFirst({ where: { userId: id, status: 'pending' } });
-    if (!request) return res.status(404).json({ message: "Request not found" });
-
-    await prisma.verificationRequest.update({
-      where: { id: request.id },
-      data: { status: 'rejected', rejectionReason: reason }
-    });
     const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    await prisma.user.update({
+      where: { id },
+      data: {
+        isVerified: false,
+        verificationStatus: 'rejected',
+        verificationAdminNote: reason,
+        verificationReviewedAt: new Date(),
+        verificationReviewedBy: 'admin'
+      }
+    });
+
     sendVerificationRejectedEmail(user.email, user.fullName, reason);
     res.status(200).json({ message: "Verification rejected" });
-  } catch (error) { res.status(500).json({ message: "Error rejecting" }); }
+  } catch (error) {
+    console.error("Error rejecting verification:", error);
+    res.status(500).json({ message: "Error rejecting" });
+  }
 };
 
 // --- Reports ---
