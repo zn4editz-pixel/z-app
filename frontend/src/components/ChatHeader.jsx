@@ -53,42 +53,42 @@ const ChatHeader = ({ onStartCall }) => {
   return (
     <div
       className={`${isMobile
-          ? "fixed top-0 left-0 right-0 z-50 px-3 py-1.5 bg-base-100/95 backdrop-blur-xl border-t border-t-base-300/30 border-b border-base-300/50 shadow-sm mobile-chat-header-professional"
-          : "px-4 py-2 border-b border-base-300 relative bg-base-100 z-30"
+          ? "fixed top-0 left-0 right-0 z-50 px-2 py-1 bg-base-100/95 backdrop-blur-xl border-t border-t-base-300/30 border-b border-base-300/50 shadow-sm mobile-chat-header-professional"
+          : "px-3 py-1.5 border-b border-base-300 relative bg-base-100 z-30"
         } ${isMobile && keyboardVisible ? "mobile-chat-header-keyboard" : ""}`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          {/* Back Button - Instagram Style */}
+      <div className="flex items-center justify-between min-h-[48px]">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {/* Back Button - Compact */}
           <button
             onClick={() => setSelectedUser(null)}
-            className="w-10 h-10 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation"
+            className="w-8 h-8 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation"
           >
-            <ArrowLeft className="w-5 h-5 text-base-content" />
+            <ArrowLeft className="w-4 h-4 text-base-content" />
           </button>
-          {/* Avatar with Online Indicator */}
+          {/* Avatar - Smaller */}
           <div className="relative flex-shrink-0">
-            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-base-300/30 shadow-sm">
+            <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-base-300/30 shadow-sm">
               <img
                 src={selectedUser.profilePic || "/avatar.png"}
                 alt={selectedUser.username}
                 className="w-full h-full object-cover"
               />
             </div>
-            {/* Online Status Dot */}
+            {/* Online Status Dot - Smaller */}
             {isOnline && (
-              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-base-100 shadow-sm animate-pulse"></div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border border-base-100 shadow-sm animate-pulse"></div>
             )}
           </div>
-          {/* User Info - Enhanced */}
+          {/* User Info - Compact */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-1">
-              <h3 className="font-semibold text-lg text-base-content truncate">
+            <div className="flex items-center gap-1">
+              <h3 className="font-semibold text-sm text-base-content truncate">
                 {selectedUser.nickname || selectedUser.username}
               </h3>
               {selectedUser.isVerified && <VerifiedBadge size="xs" />}
             </div>
-            <p className="text-sm text-base-content/60 font-medium">
+            <p className="text-xs text-base-content/60 font-medium leading-tight">
               {isTyping && typingUserId === selectedUser.id ? (
                 <span className="text-primary font-medium flex items-center gap-1">
                   typing...
@@ -101,23 +101,23 @@ const ChatHeader = ({ onStartCall }) => {
             </p>
           </div>
         </div>
-        {/* Header Actions - Professional Style */}
-        <div className="flex items-center gap-1">
-          {/* Video Call Button */}
+        {/* Header Actions - Compact */}
+        <div className="flex items-center gap-0.5">
+          {/* Video Call Button - Smaller */}
           <button
             onClick={() => handleStartCall("video")}
-            className="w-8 h-8 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation group"
+            className="w-7 h-7 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation group"
             title="Video Call"
           >
-            <Video className="w-5 h-5 text-base-content group-hover:text-primary transition-colors" />
+            <Video className="w-4 h-4 text-base-content group-hover:text-primary transition-colors" />
           </button>
-          {/* Audio Call Button */}
+          {/* Audio Call Button - Smaller */}
           <button
             onClick={() => handleStartCall("audio")}
-            className="w-8 h-8 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation group"
+            className="w-7 h-7 rounded-full bg-base-200/50 hover:bg-base-200 active:bg-base-300 flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation group"
             title="Voice Call"
           >
-            <Phone className="w-5 h-5 text-base-content group-hover:text-primary transition-colors" />
+            <Phone className="w-4 h-4 text-base-content group-hover:text-primary transition-colors" />
           </button>
         </div>
       </div>

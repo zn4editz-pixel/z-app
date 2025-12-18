@@ -279,12 +279,12 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
         </div>
       )}
 
-      {/* Enhanced Message Input Container */}
+      {/* Ultra-Compact Message Input Container */}
       <div
-        className={`px-3 py-2 w-full bg-base-100/95 backdrop-blur-xl border-t border-base-300/30 border-b border-base-300/20 sticky bottom-0 z-10 mobile-message-input-professional touch-optimized ${
+        className={`px-2 py-1 w-full bg-base-100/95 backdrop-blur-xl border-t border-base-300/30 border-b border-base-300/20 sticky bottom-0 z-10 mobile-message-input-professional touch-optimized ${
           keyboardVisible ? 'keyboard-visible' : ''
         }`}
-        style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
+        style={{ paddingBottom: "max(4px, env(safe-area-inset-bottom))" }}
       >
         {/* Enhanced Reply Preview */}
         {replyingTo && (
@@ -485,17 +485,22 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
             aria-label="File Attachment"
           />
 
-          {/* Enhanced Text Input */}
-          <div className="flex-1 flex items-center gap-2 bg-base-200/50 backdrop-blur-sm rounded-full px-4 py-2 md:px-5 md:py-3 min-w-0 border border-base-300/20 shadow-sm hover:shadow-md transition-all duration-200 my-1 professional-input">
+          {/* Ultra-Compact Text Input */}
+          <div className="flex-1 flex items-center gap-1.5 bg-base-200/50 backdrop-blur-sm rounded-full px-3 py-1.5 min-w-0 border border-base-300/20 shadow-sm hover:shadow-md transition-all duration-200 professional-input">
             <input
               ref={inputRef}
               type="text"
-              className="flex-1 bg-transparent outline-none border-none text-base md:text-[1.05rem] placeholder:text-base-content/40 min-w-0 font-normal leading-relaxed focus:outline-none focus:ring-0 focus:border-none shadow-none focus-visible:ring-0 focus-visible:outline-none touch-optimized"
+              className="flex-1 bg-transparent outline-none border-none text-sm placeholder:text-base-content/40 min-w-0 font-normal leading-relaxed focus:outline-none focus:ring-0 focus:border-none shadow-none focus-visible:ring-0 focus-visible:outline-none touch-optimized"
               style={{ 
-                outline: "none", 
-                boxShadow: "none", 
-                borderColor: "transparent",
-                fontSize: isMobile ? "16px" : "1.05rem" // Prevent zoom on iOS
+                outline: "none !important", 
+                boxShadow: "none !important", 
+                borderColor: "transparent !important",
+                border: "none !important",
+                WebkitAppearance: "none !important",
+                MozAppearance: "none !important",
+                appearance: "none !important",
+                WebkitTapHighlightColor: "transparent !important",
+                fontSize: "14px" // Compact size for all devices
               }}
               placeholder="Message..."
               value={text}

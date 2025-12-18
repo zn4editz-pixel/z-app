@@ -1,36 +1,36 @@
 /* ===== CHAT UI IMPROVEMENTS ===== */
 
-/* 1. REDUCED CHAT BAR HEIGHT - Instagram/WhatsApp Style */
+/* 1. ULTRA-COMPACT CHAT BAR HEIGHT - Instagram/WhatsApp Style */
 .mobile-message-input-professional {
-  padding: 8px 12px !important; /* Reduced from 12px 16px */
-  min-height: 60px !important; /* Reduced from 80px */
+  padding: 6px 8px !important; /* Ultra compact */
+  min-height: 48px !important; /* Much smaller */
 }
 
 .mobile-message-input-professional .flex {
-  gap: 8px !important; /* Reduced gap */
+  gap: 6px !important; /* Minimal gap */
 }
 
-/* Reduced input container height */
+/* Ultra compact input container */
 .mobile-message-input-professional input {
-  padding: 8px 12px !important; /* Reduced padding */
-  min-height: 36px !important; /* Reduced height */
-  font-size: 15px !important; /* Slightly smaller font */
+  padding: 6px 10px !important; /* Minimal padding */
+  min-height: 32px !important; /* Much smaller */
+  font-size: 14px !important; /* Compact font */
 }
 
-/* 2. REDUCED TOP BAR HEIGHT - Professional Mobile Header */
+/* 2. ULTRA-COMPACT TOP BAR HEIGHT - Professional Mobile Header */
 .mobile-chat-header-professional {
-  padding: 8px 12px !important; /* Reduced from 12px 16px */
-  min-height: 56px !important; /* Reduced from 70px */
+  padding: 4px 8px !important; /* Ultra compact */
+  min-height: 48px !important; /* Much smaller */
 }
 
 .mobile-chat-header-professional .flex {
-  gap: 8px !important; /* Reduced gap */
+  gap: 6px !important; /* Minimal gap */
 }
 
-/* Smaller avatar in header */
-.mobile-chat-header-professional .w-10 {
-  width: 36px !important;
-  height: 36px !important;
+/* Compact elements in header */
+.mobile-chat-header-professional .w-8 {
+  width: 32px !important;
+  height: 32px !important;
 }
 
 /* 3. INSTAGRAM-LEVEL SCROLLING & INFINITE LOADING */
@@ -89,11 +89,29 @@
   }
 }
 
-/* 4. FIX BLUE RECTANGLE WHILE TYPING */
-/* Remove all focus outlines and blue rectangles */
+/* 4. COMPLETELY ELIMINATE BLUE RECTANGLE - ALL BROWSERS */
+/* Remove ALL focus outlines and blue rectangles */
+input, textarea, select, button {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Specifically target message input */
+.mobile-message-input-professional input,
 .mobile-message-input-professional input:focus,
 .mobile-message-input-professional input:focus-visible,
-.mobile-message-input-professional input:active {
+.mobile-message-input-professional input:active,
+.mobile-message-input-professional input:hover {
   outline: none !important;
   box-shadow: none !important;
   border: none !important;
@@ -101,9 +119,15 @@
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
   appearance: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
 }
 
-/* Remove webkit autofill styling */
+/* Remove webkit autofill styling completely */
 .mobile-message-input-professional input:-webkit-autofill,
 .mobile-message-input-professional input:-webkit-autofill:hover,
 .mobile-message-input-professional input:-webkit-autofill:focus,
@@ -111,7 +135,25 @@
   -webkit-box-shadow: 0 0 0 30px transparent inset !important;
   -webkit-text-fill-color: inherit !important;
   background: transparent !important;
-  transition: background-color 5000s ease-in-out 0s;
+  background-color: transparent !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* Remove focus rings globally */
+*:focus, *:focus-visible, *:active {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Ensure text input still allows text selection */
+input[type="text"], textarea {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
 }
 
 /* 5. IMPROVED TRANSITIONS - Smooth & Professional */
@@ -576,5 +618,49 @@
   .chat-container-enter,
   .chat-slide-transition {
     animation: none !important;
+  }
+}
+/* COMPLETE BLUE RECTANGLE ELIMINATION - ALL CASES */
+input, textarea, select, button, div, span {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Allow text selection only for text inputs */
+input[type="text"], input[type="email"], input[type="password"], textarea {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
+/* Remove ALL possible focus indicators */
+*:focus, *:focus-visible, *:active, *:hover {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Ultra-compact mobile adjustments */
+@media (max-width: 768px) {
+  .mobile-chat-header-professional {
+    min-height: 44px !important;
+    padding: 2px 6px !important;
+  }
+  
+  .mobile-message-input-professional {
+    min-height: 44px !important;
+    padding: 4px 6px !important;
+  }
+  
+  .mobile-message-input-professional input {
+    min-height: 28px !important;
+    padding: 4px 8px !important;
+    font-size: 14px !important;
   }
 }

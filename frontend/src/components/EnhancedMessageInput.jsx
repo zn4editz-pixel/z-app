@@ -281,7 +281,7 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
 
       {/* Enhanced Message Input Container */}
       <div
-        className={`px-3 py-2 w-full bg-base-100/95 backdrop-blur-xl border-t border-base-300/30 border-b border-base-300/20 sticky bottom-0 z-10 mobile-message-input-professional touch-optimized ${
+        className={`px-2 py-1 w-full bg-base-100/95 backdrop-blur-xl border-t border-base-300/30 border-b border-base-300/20 sticky bottom-0 z-10 mobile-message-input-professional touch-optimized ${
           keyboardVisible ? 'keyboard-visible' : ''
         }`}
         style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
@@ -486,7 +486,7 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
           />
 
           {/* Enhanced Text Input */}
-          <div className="flex-1 flex items-center gap-2 bg-base-200/50 backdrop-blur-sm rounded-full px-4 py-2 md:px-5 md:py-3 min-w-0 border border-base-300/20 shadow-sm hover:shadow-md transition-all duration-200 my-1 professional-input">
+          <div className="flex-1 flex items-center gap-2 bg-base-200/50 backdrop-blur-sm rounded-full px-3 py-1.5 min-w-0 border border-base-300/20 shadow-sm hover:shadow-md transition-all duration-200 my-1 professional-input">
             <input
               ref={inputRef}
               type="text"
