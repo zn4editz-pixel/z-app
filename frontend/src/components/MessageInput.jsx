@@ -486,21 +486,34 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
           />
 
           {/* Ultra-Compact Text Input */}
-          <div className="flex-1 flex items-center gap-1.5 bg-base-200/50 backdrop-blur-sm rounded-full px-3 py-1.5 min-w-0 border border-base-300/20 shadow-sm hover:shadow-md transition-all duration-200 professional-input">
+          <div 
+            className="flex-1 flex items-center gap-1.5 bg-base-200/50 backdrop-blur-sm rounded-full px-3 py-1.5 min-w-0 border border-base-300/20 shadow-sm hover:shadow-md transition-all duration-200 professional-input"
+            style={{
+              WebkitTapHighlightColor: "transparent",
+              WebkitTouchCallout: "none",
+              outline: "none",
+              boxShadow: "none"
+            }}
+          >
             <input
               ref={inputRef}
               type="text"
               className="flex-1 bg-transparent outline-none border-none text-sm placeholder:text-base-content/40 min-w-0 font-normal leading-relaxed focus:outline-none focus:ring-0 focus:border-none shadow-none focus-visible:ring-0 focus-visible:outline-none touch-optimized"
               style={{ 
-                outline: "none !important", 
-                boxShadow: "none !important", 
-                borderColor: "transparent !important",
-                border: "none !important",
-                WebkitAppearance: "none !important",
-                MozAppearance: "none !important",
-                appearance: "none !important",
-                WebkitTapHighlightColor: "transparent !important",
-                fontSize: "14px" // Compact size for all devices
+                outline: "none", 
+                boxShadow: "none", 
+                borderColor: "transparent",
+                border: "none",
+                WebkitAppearance: "none",
+                MozAppearance: "none",
+                appearance: "none",
+                WebkitTapHighlightColor: "transparent",
+                WebkitTouchCallout: "none",
+                WebkitUserSelect: "text",
+                userSelect: "text",
+                fontSize: "14px", // Compact size for all devices
+                background: "transparent",
+                backgroundColor: "transparent"
               }}
               placeholder="Message..."
               value={text}
@@ -509,6 +522,8 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
               name="message"
               id="message-input"
               aria-label="Type a message"
+              data-tap-highlight="false"
+              data-touch-callout="false"
             />
             
             <button
