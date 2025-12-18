@@ -39,12 +39,41 @@ const ChatMessage = ({
   onReply,
   onFloatingReaction,
   isNewMessage = false,
+  previousMessage, // ✅ NEW prop
+  nextMessage, // ✅ NEW prop
 }) => {
   const { authUser, onlineUsers } = useAuthStore();
   const { addReaction, removeReaction, deleteMessage, selectedUser } =
     useChatStore();
   const { theme } = useThemeStore();
-  const [showReactions, setShowReactions] = useState(false);
+
+  // ✅ ENHANCED: Calculate Message Grouping
+  const isMyMessage = message.senderId === authUser.id;
+  const isSequenceStart = !previousMessage || previousMessage.senderId !== message.senderId;
+  const isSequenceEnd = !nextMessage || nextMessage.senderId !== message.senderId;
+
+  // Dynamic Border Radius Class
+  // Single: Rounded all (24px)
+  // Top: (Start yes, End no) -> Rounded Top, Small Bottom (4px) on user side
+  // Middle: (Start no, End no) -> Small Top/Bottom on user side
+  // Bottom: (Start no, End yes) -> Small Top, Rounded Bottom on user side
+
+  const getBorderRadiusDetails = () => {
+    if (isMyMessage) {
+      if (isSequenceStart && isSequenceEnd) return "rounded-[22px]"; // Single
+      if (isSequenceStart) return "rounded-[22px] rounded-br-md mb-[2px]"; // First
+      if (isSequenceEnd) return "rounded-[22px] rounded-tr-md mt-[2px]"; // Last
+      return "rounded-[22px] rounded-tr-md rounded-br-md my-[2px]"; // Middle
+    } else {
+      if (isSequenceStart && isSequenceEnd) return "rounded-[22px]"; // Single
+      if (isSequenceStart) return "rounded-[22px] rounded-bl-md mb-[2px]"; // First
+      if (isSequenceEnd) return "rounded-[22px] rounded-tl-md mt-[2px]"; // Last
+      return "rounded-[22px] rounded-tl-md rounded-bl-md my-[2px]"; // Middle
+    }
+  };
+
+  const bubbleRadiusClass = getBorderRadiusDetails();
+  const showAvatar = !isMyMessage && isSequenceEnd; // Only show avatar on the last message of a received group
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -59,7 +88,8 @@ const ChatMessage = ({
   const touchStartTime = useRef(0);
   const audioRef = useRef(null);
   const messageRef = useRef(null);
-  const isMyMessage = message.senderId === authUser.id;
+  const messageRef = useRef(null);
+  // isMyMessage calculated above
   // Check if receiver is online for message status (moved up to avoid temporal dead zone)
   const isReceiverOnline =
     selectedUser && onlineUsers.includes(selectedUser.id);
@@ -243,7 +273,7 @@ const ChatMessage = ({
         }
       }, 3500);
       if (navigator.vibrate) navigator.vibrate(30);
-    } catch (error) {}
+    } catch (error) { }
   };
   // ✅ SIMPLE: Long press handler with guaranteed floating reaction
   const handleLongPressReaction = () => {
@@ -393,7 +423,7 @@ const ChatMessage = ({
       <div
         ref={messageRef}
         id={`message-${message.id}`}
-        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? "message-with-reactions" : "mb-3"} relative w-full max-w-full px-3 message-scroll-item`}
+        className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"} ${Object.keys(groupedReactions).length > 0 ? "message-with-reactions mb-4" : isSequenceEnd ? "mb-3" : "mb-1"} relative w-full max-w-full px-3 message-scroll-item`}
       >
         <div
           className="flex items-end gap-2 relative min-w-0"
@@ -403,12 +433,16 @@ const ChatMessage = ({
           }}
         >
           {!isMyMessage && !isEmojiOnly && !isShortNumber && (
-            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-base-300 flex-shrink-0">
-              <img
-                src={selectedUser?.profilePic || "/avatar.png"}
-                alt="avatar"
-                className="w-full h-full object-cover"
-              />
+            <div className={`w-8 h-8 flex-shrink-0 ${showAvatar ? "opacity-100" : "opacity-0 invisible"}`}>
+              {showAvatar && (
+                <div className="w-8 h-8 rounded-full overflow-hidden border border-base-300">
+                  <img
+                    src={selectedUser?.profilePic || "/avatar.png"}
+                    alt="avatar"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
             </div>
           )}
           <div
@@ -437,18 +471,16 @@ const ChatMessage = ({
                 }}
               >
                 <div
-                  className={`w-8 h-8 rounded-full bg-base-300/80 backdrop-blur-sm flex items-center justify-center shadow-lg ${
-                    Math.abs(swipeOffset) >= SWIPE_THRESHOLD
-                      ? "bg-primary/20 scale-110"
-                      : ""
-                  } transition-all duration-200`}
+                  className={`w-8 h-8 rounded-full bg-base-300/80 backdrop-blur-sm flex items-center justify-center shadow-lg ${Math.abs(swipeOffset) >= SWIPE_THRESHOLD
+                    ? "bg-primary/20 scale-110"
+                    : ""
+                    } transition-all duration-200`}
                 >
                   <Reply
-                    className={`w-4 h-4 ${
-                      Math.abs(swipeOffset) >= SWIPE_THRESHOLD
-                        ? "text-primary"
-                        : "text-base-content/70"
-                    } ${isMyMessage ? "" : "scale-x-[-1]"} transition-colors duration-200`}
+                    className={`w-4 h-4 ${Math.abs(swipeOffset) >= SWIPE_THRESHOLD
+                      ? "text-primary"
+                      : "text-base-content/70"
+                      } ${isMyMessage ? "" : "scale-x-[-1]"} transition-colors duration-200`}
                   />
                 </div>
               </div>
@@ -524,33 +556,32 @@ const ChatMessage = ({
                 className={
                   isEmojiOnly || isNumberOnly
                     ? ""
-                    : `relative px-4 py-3 text-sm shadow-sm message-bubble-professional ${
-                        isMyMessage
-                          ? "bg-gradient-to-br from-primary to-primary/95 text-primary-content rounded-3xl rounded-br-lg"
-                          : "bg-base-200/80 backdrop-blur-sm text-base-content rounded-3xl rounded-bl-lg border border-base-300/20"
-                      }`
+                    : `relative px-4 py-2.5 text-[0.93rem] shadow-sm message-bubble-professional ${bubbleRadiusClass} ${isMyMessage
+                      ? "bg-gradient-to-br from-primary to-primary/95 text-primary-content"
+                      : "bg-base-200 text-base-content border border-base-300/10"
+                    }`
                 }
                 style={
                   isEmojiOnly || isNumberOnly
                     ? {}
                     : {
-                        display: "inline-block",
-                        maxWidth: "100%",
-                        wordBreak: "break-word",
-                        overflowWrap: "break-word",
-                        pointerEvents: "auto",
-                      }
+                      display: "inline-block",
+                      maxWidth: "100%",
+                      wordBreak: "break-word",
+                      overflowWrap: "break-word",
+                      pointerEvents: "auto",
+                    }
                 }
               >
                 {/* Reply To Message */}
                 {/* Reply To Message - Instagram/WhatsApp Style Quote Box */}
                 {message.replyTo && (
                   <div
-                    className={`mb-2 rounded-xl p-3 cursor-pointer active:scale-[0.98] transition-all duration-200 overflow-hidden relative instagram-reply-preview ${
+                    className={`mb-2 rounded-xl p-3 cursor-pointer active:scale-[0.98] transition-all duration-200 overflow-hidden relative instagram-reply-preview ${ // Style adjusted
                       isMyMessage
-                        ? "bg-black/8 dark:bg-black/15 hover:bg-black/12 dark:hover:bg-black/20"
-                        : "bg-base-content/4 hover:bg-base-content/8 border border-base-content/10"
-                    }`}
+                        ? "bg-black/10 dark:bg-black/20 hover:bg-black/15 dark:hover:bg-black/25"
+                        : "bg-base-content/5 hover:bg-base-content/10 border border-base-content/5"
+                      }`}
                     onClick={(e) => {
                       e.stopPropagation(); // Prevent bubbling
                       // Add haptic feedback
@@ -592,18 +623,17 @@ const ChatMessage = ({
                     <div className="pl-3">
                       {/* Header with user info */}
                       <div
-                        className={`text-[11px] font-semibold mb-1 truncate flex items-center gap-1.5 ${
-                          isMyMessage
-                            ? "text-primary-content/90"
-                            : "text-primary"
-                        }`}
+                        className={`text-[11px] font-semibold mb-1 truncate flex items-center gap-1.5 ${isMyMessage
+                          ? "text-primary-content/90"
+                          : "text-primary"
+                          }`}
                       >
                         <span>
                           {message.replyTo.senderId === authUser.id
                             ? "You"
                             : selectedUser?.fullName ||
-                              selectedUser?.nickname ||
-                              "User"}
+                            selectedUser?.nickname ||
+                            "User"}
                         </span>
                         {message.replyTo.isCallLog && (
                           <span className="opacity-60 font-normal text-[10px]">
@@ -616,11 +646,10 @@ const ChatMessage = ({
                       </div>
                       {/* Message content preview */}
                       <div
-                        className={`text-[12px] leading-tight opacity-90 ${
-                          isMyMessage
-                            ? "text-primary-content/85"
-                            : "text-base-content/75"
-                        }`}
+                        className={`text-[12px] leading-tight opacity-90 ${isMyMessage
+                          ? "text-primary-content/85"
+                          : "text-base-content/75"
+                          }`}
                       >
                         {message.replyTo.isCallLog ? (
                           <div className="flex items-center gap-1.5">
@@ -657,11 +686,10 @@ const ChatMessage = ({
                       {/* Show nested reply indicator if this is a reply to a reply */}
                       {message.replyTo.replyTo && (
                         <div
-                          className={`text-[10px] mt-1 opacity-60 flex items-center gap-1 ${
-                            isMyMessage
-                              ? "text-primary-content/70"
-                              : "text-base-content/60"
-                          }`}
+                          className={`text-[10px] mt-1 opacity-60 flex items-center gap-1 ${isMyMessage
+                            ? "text-primary-content/70"
+                            : "text-base-content/60"
+                            }`}
                         >
                           <span>↳</span>
                           <span>
@@ -738,13 +766,12 @@ const ChatMessage = ({
                       <div className="flex items-center gap-2 min-w-[200px] max-w-[280px]">
                         <button
                           onClick={toggleVoicePlayback}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                            isPlaying
-                              ? "bg-primary/20 scale-110"
-                              : isMyMessage
-                                ? "bg-primary-content/20"
-                                : "bg-primary/10"
-                          }`}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${isPlaying
+                            ? "bg-primary/20 scale-110"
+                            : isMyMessage
+                              ? "bg-primary-content/20"
+                              : "bg-primary/10"
+                            }`}
                         >
                           {isPlaying ? (
                             <Pause className="w-4 h-4" fill="currentColor" />
@@ -766,15 +793,14 @@ const ChatMessage = ({
                             return (
                               <div
                                 key={i}
-                                className={`w-[3px] rounded-full transition-all duration-150 ${
-                                  isActive
-                                    ? isMyMessage
-                                      ? "bg-primary-content"
-                                      : "bg-primary"
-                                    : isMyMessage
-                                      ? "bg-primary-content/30"
-                                      : "bg-base-content/30"
-                                }`}
+                                className={`w-[3px] rounded-full transition-all duration-150 ${isActive
+                                  ? isMyMessage
+                                    ? "bg-primary-content"
+                                    : "bg-primary"
+                                  : isMyMessage
+                                    ? "bg-primary-content/30"
+                                    : "bg-base-content/30"
+                                  }`}
                                 style={{
                                   height: `${height * 2.5}px`,
                                   transform:
@@ -941,9 +967,8 @@ const ChatMessage = ({
                     handleReactionSelect(emoji);
                     setShowReactionPicker(false);
                   }}
-                  className={`text-2xl sm:text-3xl hover:scale-110 active:scale-95 transition-transform p-2 rounded-full hover:bg-base-200 ${
-                    myReaction?.emoji === emoji ? "scale-110 bg-base-200" : ""
-                  }`}
+                  className={`text-2xl sm:text-3xl hover:scale-110 active:scale-95 transition-transform p-2 rounded-full hover:bg-base-200 ${myReaction?.emoji === emoji ? "scale-110 bg-base-200" : ""
+                    }`}
                   style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   {emoji}
@@ -1000,24 +1025,23 @@ const ChatMessage = ({
                       const reactionData = reactions.find(
                         (r) =>
                           (r.userId?.id || r.userId) ===
-                            (userId?.id || userId) && r.emoji === emoji,
+                          (userId?.id || userId) && r.emoji === emoji,
                       );
                       const isMyReaction =
                         (userId?.id || userId) === authUser.id;
                       const userName = isMyReaction
                         ? "You"
                         : reactionData?.user?.fullName ||
-                          reactionData?.user?.nickname ||
-                          selectedUser?.fullName ||
-                          "User";
+                        reactionData?.user?.nickname ||
+                        selectedUser?.fullName ||
+                        "User";
                       return (
                         <div
                           key={idx}
-                          className={`flex items-center justify-between py-1.5 px-2 rounded-lg transition-colors ${
-                            isMyReaction
-                              ? "bg-primary/10 hover:bg-primary/20 cursor-pointer"
-                              : "bg-base-200/50"
-                          }`}
+                          className={`flex items-center justify-between py-1.5 px-2 rounded-lg transition-colors ${isMyReaction
+                            ? "bg-primary/10 hover:bg-primary/20 cursor-pointer"
+                            : "bg-base-200/50"
+                            }`}
                           onClick={() => {
                             if (isMyReaction) {
                               removeReaction(message.id);
@@ -1101,8 +1125,8 @@ export default React.memo(ChatMessage, (prevProps, nextProps) => {
     prevProps.message.status === nextProps.message.status &&
     prevProps.message.isRead === nextProps.message.isRead &&
     prevProps.message.reactions?.length ===
-      nextProps.message.reactions?.length &&
+    nextProps.message.reactions?.length &&
     JSON.stringify(prevProps.message.reactions) ===
-      JSON.stringify(nextProps.message.reactions)
+    JSON.stringify(nextProps.message.reactions)
   );
 });

@@ -420,6 +420,8 @@ const ChatContainer = ({ onStartCall }) => {
                         message={message}
                         onReply={handleReply}
                         onFloatingReaction={triggerFloatingReaction}
+                        previousMessage={previousMessage}
+                        nextMessage={messages[index + 1]}
                       />
                     )}
                   </React.Fragment>
