@@ -7,6 +7,7 @@ import Sidebar from "../components/Sidebar";
 import NoChatSelected from "../components/NoChatSelected";
 import ChatContainer from "../components/ChatContainer";
 import { useCallStore } from "../store/useCallStore";
+import { AnimatePresence, motion } from "framer-motion";
 const HomePage = () => {
   const { selectedUser, restoreSelectedUser } = useChatStore();
   const { socket, authUser } = useAuthStore();
@@ -62,7 +63,9 @@ const HomePage = () => {
       // Now attempt restoration with loaded friends
       const restored = await restoreSelectedUser();
       if (restored) {
+        // Success
       } else {
+        // Failed
       }
       setIsRestoringChat(false);
     };
@@ -86,7 +89,6 @@ const HomePage = () => {
         if (targetUser) {
           const { setSelectedUser } = useChatStore.getState();
           setSelectedUser(targetUser);
-        } else {
         }
       }
     };
@@ -212,44 +214,50 @@ const HomePage = () => {
   return (
     <div className="fixed inset-0 bg-base-200 overflow-hidden">
       {/* Main container */}
-      <div className="h-full w-full flex flex-col overflow-hidden">
+      <div className="h-full w-full flex flex-col overflow-hidden relative">
         {/* Spacer for navbar - hidden in mobile chat mode */}
         {!isMobileChatMode && (
           <div className="h-14 sm:h-16 flex-shrink-0"></div>
         )}
         {/* Chat container - Full screen on mobile, contained on desktop */}
-        <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0">
-          <div
-            className={`bg-base-100 w-full h-full flex overflow-hidden border-base-300 ${
-              isMobileChatMode ? "fixed inset-0 z-40" : ""
-            }`}
-          >
-            {/* Sidebar - hidden in mobile chat mode */}
-            {!isMobileChatMode && <Sidebar />}
-            {/* Chat area */}
-            {selectedUser ? (
-              <div className="chat-slide-transition">
-                <ChatContainer onStartCall={handleStartCall} />
-              </div>
-            ) : isRestoringChat ? (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="loading loading-spinner loading-lg text-primary mb-4"></div>
-                  <p className="text-base-content/70">Restoring your chat...</p>
-                </div>
-              </div>
-            ) : (
-              <NoChatSelected />
-            )}
-            {/* Loading State */}
-            {isRestoringChat && !selectedUser && (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="loading loading-spinner loading-lg text-primary mb-4"></div>
-                  <p className="text-base-content/70">Restoring your chat...</p>
-                </div>
+        <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0 w-full relative">
+          <div className="bg-base-100 w-full h-full flex overflow-hidden border-base-300 relative">
+
+            {/* Sidebar - Always rendered on mobile (behind chat) or desktop (side) */}
+            <div className={`flex-shrink-0 ${isMobile ? 'w-full h-full absolute inset-0' : 'w-80 border-r'}`}>
+              <Sidebar />
+            </div>
+            {/* Desktop: Static Chat Area (if not mobile) */}
+            {!isMobile && (
+              <div className="flex-1 flex flex-col h-full overflow-hidden">
+                {selectedUser ? (
+                  <ChatContainer onStartCall={handleStartCall} />
+                ) : isRestoringChat ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="loading loading-spinner loading-lg text-primary mb-4"></div>
+                      <p className="text-base-content/70">Restoring your chat...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <NoChatSelected />
+                )}
               </div>
             )}
+            {/* Mobile: Animated Chat Overlay */}
+            <AnimatePresence>
+              {isMobile && selectedUser && (
+                <motion.div
+                  initial={{ x: "100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "100%" }}
+                  transition={{ type: "spring", damping: 30, stiffness: 300, mass: 1 }}
+                  className="fixed inset-0 z-50 bg-base-100 flex flex-col h-[100dvh]"
+                >
+                  <ChatContainer onStartCall={handleStartCall} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
         {/* Bottom padding for mobile safe area - hidden in mobile chat mode */}
