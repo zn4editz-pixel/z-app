@@ -13,48 +13,72 @@ export const useFriendStore = create((set, get) => ({
     isLoading: false,
 
     // Fetch all friend data
-    fetchFriendData: async () => {
-        const authUser = useAuthStore.getState().authUser || JSON.parse(localStorage.getItem("authUser") || "{}");
+    fetchFriendData: async (retryCount = 0) => {
+        let authUser;
+        try {
+            const storedAuth = localStorage.getItem("authUser");
+            authUser = useAuthStore.getState().authUser || (storedAuth ? JSON.parse(storedAuth) : {});
+        } catch (e) {
+            console.error("Error parsing authUser:", e);
+            authUser = {};
+        }
+
         const userId = authUser.id;
         if (!userId) return;
 
         // Try cache first
         const cached = await getCachedFriends(userId);
-        if (cached) {
+        if (cached && retryCount === 0) {
             set({
                 friends: cached.friends || [],
                 pendingReceived: cached.received || [],
                 pendingSent: cached.sent || [],
                 isLoading: false
             });
-        } else {
+        } else if (retryCount === 0) {
             set({ isLoading: true });
         }
 
+        // Cache validity check (30 seconds)
         const lastFetch = sessionStorage.getItem('friendDataLastFetch');
         const now = Date.now();
-        if (lastFetch && (now - parseInt(lastFetch)) < 30000 && cached) {
+        if (lastFetch && (now - parseInt(lastFetch)) < 30000 && cached && retryCount === 0) {
             return;
         }
 
         try {
-            const [friendsRes, requestsRes] = await Promise.all([
+            // Use allSettled to allow partial success
+            const results = await Promise.allSettled([
                 axiosInstance.get("/friends/all"),
                 axiosInstance.get("/friends/requests"),
             ]);
 
+            const friendsResult = results[0];
+            const requestsResult = results[1];
+
+            // If getting friends failed (critical), throw to trigger retry
+            if (friendsResult.status === "rejected") {
+                throw friendsResult.reason;
+            }
+
+            const friendsData = friendsResult.value.data || [];
+            const requestsData = requestsResult.status === "fulfilled" ? requestsResult.value.data : { received: [], sent: [] };
+
             const freshData = {
-                friends: friendsRes.data || [],
-                received: requestsRes.data?.received || [],
-                sent: requestsRes.data?.sent || []
+                friends: friendsData,
+                received: requestsData?.received || [],
+                sent: requestsData?.sent || []
             };
+
             await cacheFriends(userId, freshData);
             sessionStorage.setItem('friendDataLastFetch', now.toString());
 
             set((state) => {
-                const newFriends = friendsRes.data || [];
-                const newReceived = requestsRes.data?.received || [];
-                const newSent = requestsRes.data?.sent || [];
+                const newFriends = friendsData;
+                const newReceived = freshData.received;
+                const newSent = freshData.sent;
+
+                // Merge logic remains the same
                 const apiReceivedIds = new Set(newReceived.map(r => getId(r)));
                 const apiSentIds = new Set(newSent.map(r => getId(r)));
                 const existingReceivedStillValid = state.pendingReceived.filter(r => apiReceivedIds.has(getId(r)));
@@ -78,19 +102,29 @@ export const useFriendStore = create((set, get) => ({
                     friends: newFriends,
                     pendingReceived: mergedReceived,
                     pendingSent: mergedSent,
+                    isLoading: false // Ensure loading is cleared
                 };
             });
         } catch (error) {
-            console.error("Error fetching friend data:", error);
-            if (!cached) {
-                set({
-                    friends: [],
-                    pendingReceived: [],
-                    pendingSent: [],
-                });
+            console.error(`Error fetching friend data (attempt ${retryCount + 1}):`, error);
+
+            // Retry logic (max 3 retries)
+            if (retryCount < 3) {
+                const backoff = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+                setTimeout(() => {
+                    get().fetchFriendData(retryCount + 1);
+                }, backoff);
+            } else {
+                if (!cached) {
+                    set({
+                        friends: [],
+                        pendingReceived: [],
+                        pendingSent: [],
+                    });
+                    toast.error("Failed to load friends list");
+                }
+                set({ isLoading: false });
             }
-        } finally {
-            set({ isLoading: false });
         }
     },
 

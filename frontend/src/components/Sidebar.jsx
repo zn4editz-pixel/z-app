@@ -345,11 +345,10 @@ const Sidebar = () => {
                           )}
                           {/* Avatar container */}
                           <div
-                            className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] transition-all ${
-                              isOnline
+                            className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] transition-all ${isOnline
                                 ? "bg-gradient-to-br from-success to-success/80 shadow-lg shadow-success/30"
                                 : "bg-base-content/15"
-                            }`}
+                              }`}
                           >
                             <img
                               src={u.profilePic || "/avatar.png"}
@@ -366,9 +365,8 @@ const Sidebar = () => {
                         </div>
                       </div>
                       <span
-                        className={`text-xs sm:text-sm truncate w-14 sm:w-16 text-center font-medium transition-colors ${
-                          isOnline ? "text-success" : "text-base-content/60"
-                        }`}
+                        className={`text-xs sm:text-sm truncate w-14 sm:w-16 text-center font-medium transition-colors ${isOnline ? "text-success" : "text-base-content/60"
+                          }`}
                       >
                         {(u.nickname || u.username || "User").split(" ")[0]}
                       </span>
@@ -394,10 +392,9 @@ const Sidebar = () => {
                 style={{ width: "12px", height: "12px" }}
                 className={`
                   rounded-full border transition-all duration-200 flex-shrink-0
-                  ${
-                    showOnlineOnly
-                      ? "bg-primary border-primary"
-                      : "border-base-content/30 group-hover:border-base-content/50"
+                  ${showOnlineOnly
+                    ? "bg-primary border-primary"
+                    : "border-base-content/30 group-hover:border-base-content/50"
                   }
                 `}
               />
@@ -430,11 +427,10 @@ const Sidebar = () => {
                         setSelectedUser(user);
                         if (searchOpen) setSearchOpen(false);
                       }}
-                      className={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg text-left transition-all hover:bg-base-200 card-touch ${
-                        (selectedUser?.id || selectedUser?.id) === userId
+                      className={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg text-left transition-all hover:bg-base-200 card-touch ${(selectedUser?.id || selectedUser?.id) === userId
                           ? "bg-base-200 ring-2 ring-primary/20"
                           : ""
-                      }`}
+                        }`}
                     >
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
@@ -461,13 +457,12 @@ const Sidebar = () => {
                           const preview = getMessagePreview(user, unread);
                           return (
                             <div
-                              className={`text-xs sm:text-sm truncate flex items-center gap-1 ${
-                                preview.bold
+                              className={`text-xs sm:text-sm truncate flex items-center gap-1 ${preview.bold
                                   ? "font-semibold text-base-content"
                                   : preview.muted
                                     ? "text-base-content/40"
                                     : "text-base-content/60"
-                              }`}
+                                }`}
                             >
                               {preview.icon &&
                                 (typeof preview.icon === "string" ? (
@@ -541,6 +536,8 @@ const Sidebar = () => {
                 </div>
                 <input
                   type="text"
+                  name="search"
+                  id="friend-search"
                   placeholder="Search by name or username..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
