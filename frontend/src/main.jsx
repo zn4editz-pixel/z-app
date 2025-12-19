@@ -51,17 +51,22 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/sw.js")
-      .then((registration) => {})
-      .catch((error) => {});
+      .then((registration) => { })
+      .catch((error) => { });
   });
 }
-createRoot(document.getElementById("root")).render(
-  <BrowserRouter
-    future={{
-      v7_startTransition: true,
-      v7_relativeSplatPath: true,
-    }}
-  >
-    <App />
-  </BrowserRouter>,
-);
+try {
+  createRoot(document.getElementById("root")).render(
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
+      <App />
+    </BrowserRouter>,
+  );
+} catch (error) {
+  console.error("Failed to mount application:", error);
+  document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;font-family:system-ui,sans-serif;"><h1>Unable to load application</h1><p>Please refresh the page.</p></div>';
+}

@@ -152,20 +152,6 @@ html {
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  /* Prevent mobile bounce scrolling and fix bottom color */
-  body {
-    overscroll-behavior: none;
-    -webkit-overflow-scrolling: touch;
-    background-color: oklch(var(--b1));
-    min-height: 100vh;
-    min-height: 100dvh;
-  }
-
-  /* Fix mobile address bar color */
-  meta[name="theme-color"] {
-    content: oklch(var(--b1));
-  }
-
   /* Prevent mobile browser UI color mismatch */
   html {
     background-color: oklch(var(--b1));

@@ -178,7 +178,7 @@ const App = () => {
   return (
     <div
       data-theme={effectiveTheme}
-      className={`min-h-screen bg-base-100 ${showNavbarFinal ? "pt-14 md:pt-16" : ""}`}
+      className={`min-h-screen min-h-[100dvh] bg-base-100 ${showNavbarFinal ? "pt-14 md:pt-16" : ""}`}
     >
       <ErrorBoundary>
         {/* PermissionHandler removed - permissions requested on feature usage only */}

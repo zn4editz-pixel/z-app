@@ -29,14 +29,14 @@ const EnhancedChatContainer = ({ onStartCall }) => {
     subscribeToMessages,
     subscribeToReactions,
   } = useChatStore();
-  
+
   const { authUser, socket } = useAuthStore();
   const bottomRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const isInitialLoad = useRef(true);
   const previousMessagesLength = useRef(0);
   const loadingMoreRef = useRef(false);
-  
+
   // Enhanced state management
   const [playingVoiceId, setPlayingVoiceId] = useState(null);
   const audioRefs = useRef({});
@@ -48,31 +48,32 @@ const EnhancedChatContainer = ({ onStartCall }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true); // Control initial load state for CSS
 
   // Mobile detection with keyboard handling
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-    
+
     const handleKeyboard = () => {
       if (!isMobile) return;
-      
+
       const viewportHeight = window.visualViewport?.height || window.innerHeight;
       const windowHeight = window.screen.height;
       const keyboardThreshold = windowHeight * 0.75;
-      
+
       setKeyboardVisible(viewportHeight < keyboardThreshold);
     };
-    
+
     checkMobile();
     handleKeyboard();
-    
+
     window.addEventListener("resize", checkMobile);
     if (window.visualViewport) {
       window.visualViewport.addEventListener("resize", handleKeyboard);
     }
-    
+
     return () => {
       window.removeEventListener("resize", checkMobile);
       if (window.visualViewport) {
@@ -84,26 +85,26 @@ const EnhancedChatContainer = ({ onStartCall }) => {
   // Instagram-style infinite scroll
   const handleScroll = useCallback(async () => {
     if (!scrollContainerRef.current || !selectedUser?.id || loadingMoreRef.current) return;
-    
+
     const container = scrollContainerRef.current;
     const { scrollTop, scrollHeight, clientHeight } = container;
-    
+
     // Check if scrolled to bottom for new message button
     const isScrolledToBottom = scrollHeight - scrollTop - clientHeight < 100;
     if (isScrolledToBottom) {
       setShowNewMessageButton(false);
       setNewMessageCount(0);
     }
-    
+
     // Check if scrolled to top for loading more messages
     if (scrollTop < SCROLL_THRESHOLD && hasMoreMessages && !isLoadingMore) {
       loadingMoreRef.current = true;
       setIsLoadingMore(true);
-      
+
       try {
         const previousScrollHeight = scrollHeight;
         await loadMoreMessages?.(selectedUser.id);
-        
+
         // Maintain scroll position after loading
         setTimeout(() => {
           if (scrollContainerRef.current) {
@@ -126,11 +127,11 @@ const EnhancedChatContainer = ({ onStartCall }) => {
     try {
       let x = 50;
       let y = 50;
-      
+
       if (messageElement && messageElement.getBoundingClientRect) {
         const rect = messageElement.getBoundingClientRect();
         const containerRect = scrollContainerRef.current?.getBoundingClientRect();
-        
+
         if (rect.width > 0 && rect.height > 0 && containerRect) {
           x = ((rect.left + rect.width / 2 - containerRect.left) / containerRect.width) * 100;
           y = ((rect.top + rect.height / 2 - containerRect.top) / containerRect.height) * 100;
@@ -138,7 +139,7 @@ const EnhancedChatContainer = ({ onStartCall }) => {
           y = Math.max(10, Math.min(90, y));
         }
       }
-      
+
       const reaction = {
         id: Date.now() + Math.random(),
         emoji,
@@ -147,13 +148,13 @@ const EnhancedChatContainer = ({ onStartCall }) => {
         delay: 0,
         duration: 3000,
       };
-      
+
       setFloatingReactions(prev => [...prev, reaction]);
-      
+
       setTimeout(() => {
         setFloatingReactions(prev => prev.filter(r => r.id !== reaction.id));
       }, reaction.duration + 500);
-      
+
       // Enhanced haptic feedback
       if (navigator.vibrate) {
         navigator.vibrate([30, 10, 30]);
@@ -168,6 +169,7 @@ const EnhancedChatContainer = ({ onStartCall }) => {
     if (!selectedUser?.id) return;
 
     isInitialLoad.current = true;
+    setIsFirstLoad(true); // Reset state
     previousMessagesLength.current = 0;
     setShowNewMessageButton(false);
     setNewMessageCount(0);
@@ -190,27 +192,27 @@ const EnhancedChatContainer = ({ onStartCall }) => {
   // Enhanced scroll management - Instagram style
   const scrollToBottomSmooth = useCallback((behavior = "smooth") => {
     if (!scrollContainerRef.current) return;
-    
+
     const container = scrollContainerRef.current;
-    
+
     // For initial load, always use instant scroll
-    if (isInitialLoad.current) {
+    if (isFirstLoad) {
       container.scrollTop = container.scrollHeight;
       return;
     }
-    
+
     container.scrollTo({
       top: container.scrollHeight,
       behavior: behavior,
     });
-  }, []);
+  }, [isFirstLoad]);
 
   // Handle new messages with smart scrolling - Instagram style
   useEffect(() => {
     if (!bottomRef.current || !scrollContainerRef.current) return;
-    
+
     const container = scrollContainerRef.current;
-    const isScrolledToBottom = 
+    const isScrolledToBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight < 150;
 
     if (messages.length > 0) {
@@ -240,37 +242,41 @@ const EnhancedChatContainer = ({ onStartCall }) => {
             container.scrollTop = container.scrollHeight;
           }
         };
-        
+
         // Immediate scroll
         instantScroll();
-        
+
         // Additional attempts to ensure it works
         setTimeout(instantScroll, 0);
-        setTimeout(instantScroll, 10);
-        setTimeout(instantScroll, 50);
-        
-        isInitialLoad.current = false;
+
+        // Disable initial load state after a short delay to allow layout to settle
+        if (messages.length > 0) {
+          setTimeout(() => {
+            setIsFirstLoad(false);
+            isInitialLoad.current = false;
+          }, 100);
+        }
       }
-      
+
       previousMessagesLength.current = messages.length;
     }
   }, [messages.length, authUser?.id, scrollToBottomSmooth]);
 
   // Instagram-style instant scroll on initial load - before paint
   useLayoutEffect(() => {
-    if (messages.length > 0 && isInitialLoad.current && scrollContainerRef.current) {
+    if (messages.length > 0 && isFirstLoad && scrollContainerRef.current) {
       const container = scrollContainerRef.current;
       container.scrollTop = container.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isFirstLoad]);
 
   // Handle typing indicator scroll
   useEffect(() => {
     if (isTyping && scrollContainerRef.current) {
       const container = scrollContainerRef.current;
-      const isNearBottom = 
+      const isNearBottom =
         container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-      
+
       if (isNearBottom) {
         scrollToBottomSmooth("smooth");
       }
@@ -284,9 +290,9 @@ const EnhancedChatContainer = ({ onStartCall }) => {
   const scrollToBottom = useCallback((smooth = true) => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
-      
+
       // Instagram-style: Always instant scroll for initial load
-      if (isInitialLoad.current || !smooth) {
+      if (isFirstLoad || !smooth) {
         container.scrollTop = container.scrollHeight;
       } else {
         container.scrollTo({
@@ -297,7 +303,7 @@ const EnhancedChatContainer = ({ onStartCall }) => {
       setShowNewMessageButton(false);
       setNewMessageCount(0);
     }
-  }, []);
+  }, [isFirstLoad]);
 
   const handleStartCall = useCallback((type) => {
     if (onStartCall) {
@@ -320,20 +326,18 @@ const EnhancedChatContainer = ({ onStartCall }) => {
   }
 
   return (
-    <div className={`flex-1 flex flex-col h-full w-full chat-performance-optimized chat-container-enter ${
-      isMobile ? "mobile-chat-fullscreen" : ""
-    }`}>
+    <div className={`flex-1 flex flex-col h-full w-full chat-performance-optimized chat-container-enter ${isMobile ? "mobile-chat-fullscreen" : ""
+      }`}>
       <ChatHeader onStartCall={handleStartCall} />
-      
+
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
         data-chat-container
-        className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent relative chat-scroll-optimized instant-scroll ${
-          isMobile 
-            ? `pt-24 mobile-chat-container professional-chat-container ${keyboardVisible ? 'keyboard-visible' : ''}` 
-            : "pt-6"
-        } ${isInitialLoad.current ? 'chat-initial-load' : ''}`}
+        className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3 bg-base-100 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent relative chat-scroll-optimized ${isMobile
+          ? `pt-24 mobile-chat-container professional-chat-container ${keyboardVisible ? 'keyboard-visible' : ''}`
+          : "pt-6"
+          } ${isFirstLoad ? 'instant-scroll chat-initial-load' : ''}`}
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         {/* Instagram-style loading more indicator */}
@@ -383,7 +387,7 @@ const EnhancedChatContainer = ({ onStartCall }) => {
                       </div>
                     </div>
                   )}
-                  
+
                   {message.messageType === "call" || message.callData || message.isCallLog ? (
                     <div className="flex justify-center w-full my-2">
                       <div className="max-w-md w-full">
@@ -391,15 +395,13 @@ const EnhancedChatContainer = ({ onStartCall }) => {
                       </div>
                     </div>
                   ) : (
-                    <div className="message-enter-animation">
-                      <ChatMessage
-                        message={message}
-                        onReply={handleReply}
-                        onFloatingReaction={triggerFloatingReaction}
-                        previousMessage={previousMessage}
-                        nextMessage={messages[index + 1]}
-                      />
-                    </div>
+                    <ChatMessage
+                      message={message}
+                      onReply={handleReply}
+                      onFloatingReaction={triggerFloatingReaction}
+                      previousMessage={previousMessage}
+                      nextMessage={messages[index + 1]}
+                    />
                   )}
                 </React.Fragment>
               );

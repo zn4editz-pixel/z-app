@@ -42,6 +42,8 @@ const GlobalCallUI = () => {
   const handleCallEnd = () => {
     endCall();
   };
+  if (!authUser) return null;
+
   return (
     <>
       {/* Incoming Call Modal - Shows when receiving a call */}
