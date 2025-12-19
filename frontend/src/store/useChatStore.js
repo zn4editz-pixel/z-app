@@ -34,13 +34,13 @@ export const useChatStore = create((set, get) => ({
     try {
       const res = await axiosInstance.get("/messages/unread-counts");
       set({ unreadCounts: res.data || {} });
-    } catch (error) {}
+    } catch (error) { }
   },
 
   loadMoreMessages: async (userId) => {
     const { messages } = get();
     if (messages.length === 0) return;
-    
+
     try {
       const oldestMessage = messages[0];
       const response = await axiosInstance.get(`/messages/${userId}`, {
@@ -49,7 +49,7 @@ export const useChatStore = create((set, get) => ({
           limit: 50
         }
       });
-      
+
       const olderMessages = response.data;
       if (olderMessages.length > 0) {
         set((state) => ({
@@ -95,7 +95,7 @@ export const useChatStore = create((set, get) => ({
             cacheMessagesDB(chatId, res.data);
           }
         })
-        .catch((err) => {});
+        .catch((err) => { });
       return;
     }
 
@@ -142,6 +142,7 @@ export const useChatStore = create((set, get) => ({
       voice: messageData.voice || null,
       voiceDuration: messageData.voiceDuration || null,
       replyToId: messageData.replyTo || null,
+      replyTo: messageData.replyToData || null, // ⚡ Store full object for optimistic UI
       status: "sent", // ⚡ Show as sent immediately for speed
       createdAt: timestamp,
       reactions: [],
@@ -161,12 +162,16 @@ export const useChatStore = create((set, get) => ({
         useFriendStore
           .getState()
           .updateFriendLastMessage(selectedUser.id, optimisticMessage);
-      } catch (e) {}
+      } catch (e) { }
     }, 0);
+
+    // Prepare payload for server (remove UI-only fields)
+    const payload = { ...messageData };
+    delete payload.replyToData;
 
     // ⚡ FIRE-AND-FORGET: Send to server (no await, no blocking)
     axiosInstance
-      .post(`/messages/send/${selectedUser.id}`, messageData)
+      .post(`/messages/send/${selectedUser.id}`, payload)
       .then((res) => {
         // ✅ Success: Replace temp message with server response
         const serverMessage = {
@@ -520,11 +525,11 @@ export const useChatStore = create((set, get) => ({
       const updatedMessages = messages.map((msg) =>
         msg.senderId === userId && !msg.isRead
           ? {
-              ...msg,
-              isRead: true,
-              status: "read",
-              readAt: new Date().toISOString(),
-            }
+            ...msg,
+            isRead: true,
+            status: "read",
+            readAt: new Date().toISOString(),
+          }
           : msg,
       );
       // Only update if something changed
@@ -536,7 +541,7 @@ export const useChatStore = create((set, get) => ({
 
     try {
       await axiosInstance.put(`/messages/read/${userId}`);
-    } catch (error) {}
+    } catch (error) { }
   },
 
   unsubscribeFromMessages: () => {
@@ -624,7 +629,7 @@ export const useChatStore = create((set, get) => ({
           window.history.replaceState({}, "", currentUrl);
         }
       }
-    } catch (error) {}
+    } catch (error) { }
     return false;
   },
 

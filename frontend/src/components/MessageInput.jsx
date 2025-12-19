@@ -16,18 +16,18 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  
+
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const inputRef = useRef(null);
   const attachmentMenuRef = useRef(null);
   const lastTyped = useRef(0);
-  
+
   const { sendMessage, selectedUser } = useChatStore();
   const { socket } = useAuthStore();
-  
+
   const emojis = [
-    "😊", "😂", "❤️", "👍", "🎉", "🔥", 
+    "😊", "😂", "❤️", "👍", "🎉", "🔥",
     "😍", "🤔", "👏", "🙌", "💯", "✨",
   ];
 
@@ -36,17 +36,17 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-    
+
     const handleKeyboard = () => {
       if (!window.innerWidth || window.innerWidth > 768) return;
-      
+
       const viewportHeight = window.visualViewport?.height || window.innerHeight;
       const windowHeight = window.screen.height;
       const keyboardThreshold = windowHeight * 0.75;
-      
+
       const isKeyboardVisible = viewportHeight < keyboardThreshold;
       setKeyboardVisible(isKeyboardVisible);
-      
+
       // Add class to body for CSS targeting
       if (isKeyboardVisible) {
         document.body.classList.add('mobile-keyboard-visible');
@@ -54,15 +54,15 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
         document.body.classList.remove('mobile-keyboard-visible');
       }
     };
-    
+
     checkMobile();
     handleKeyboard();
-    
+
     window.addEventListener("resize", checkMobile);
     if (window.visualViewport) {
       window.visualViewport.addEventListener("resize", handleKeyboard);
     }
-    
+
     return () => {
       window.removeEventListener("resize", checkMobile);
       if (window.visualViewport) {
@@ -79,11 +79,11 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
         setShowAttachmentMenu(false);
       }
     };
-    
+
     if (showAttachmentMenu) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -92,9 +92,9 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
   // Enhanced typing indicator with throttling
   const handleTyping = (value) => {
     setText(value);
-    
+
     if (!socket || !selectedUser) return;
-    
+
     const now = Date.now();
     if (now - lastTyped.current > 2000) {
       const { authUser } = useAuthStore.getState();
@@ -105,10 +105,10 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
       lastTyped.current = now;
       setIsTyping(true);
     }
-    
+
     // Clear existing timeout
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    
+
     // Set new timeout
     typingTimeoutRef.current = setTimeout(() => {
       if (isTyping) {
@@ -149,7 +149,7 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
       toast.error("Please select an image file");
       return;
     }
-    
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
@@ -175,36 +175,37 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    
+
     if (!text.trim() && !imagePreview) return;
-    
+
     // Stop typing indicator immediately
     if (socket && selectedUser) {
       socket.emit("stopTyping", { receiverId: selectedUser.id });
     }
-    
+
     // Store values before clearing
     const messageText = text.trim();
     const messageImage = imagePreview;
     const messageReplyTo = replyingTo?.id || null;
-    
+
     // Clear form immediately for better UX
     setText("");
     setImagePreview(null);
     setShowEmojiPicker(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (onCancelReply) onCancelReply();
-    
+
     // Focus back to input
     if (inputRef.current) {
       inputRef.current.focus();
     }
-    
+
     // Send message in background
     sendMessage({
       text: messageText,
       image: messageImage,
       replyTo: messageReplyTo,
+      replyToData: replyingTo // Pass full object for optimistic UI
     }).catch((error) => {
       console.error("Failed to send message:", error);
     });
@@ -217,9 +218,9 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
         voiceDuration: duration,
       });
     } catch (error) {
-      const errorMsg = error.response?.data?.details || 
-                      error.response?.data?.error || 
-                      "Failed to send voice message";
+      const errorMsg = error.response?.data?.details ||
+        error.response?.data?.error ||
+        "Failed to send voice message";
       toast.error(`Error: ${errorMsg}`);
     }
   };
@@ -247,7 +248,7 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
           >
             <X className="w-6 h-6" />
           </button>
-          
+
           <button
             onClick={() => {
               const link = document.createElement("a");
@@ -264,7 +265,7 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
             </svg>
             <span className="hidden sm:inline">Save</span>
           </button>
-          
+
           <div className="relative max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
             <img
               src={tempImage}
@@ -272,7 +273,7 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
               className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
             />
           </div>
-          
+
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm opacity-60 pointer-events-none">
             Tap anywhere to close
           </div>
@@ -281,9 +282,8 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
 
       {/* Ultra-Compact Message Input Container */}
       <div
-        className={`px-2 py-1 w-full bg-base-100/95 backdrop-blur-xl border-t border-base-300/30 border-b border-base-300/20 sticky bottom-0 z-10 mobile-message-input-professional touch-optimized ${
-          keyboardVisible ? 'keyboard-visible' : ''
-        }`}
+        className={`px-2 py-1 w-full bg-base-100/95 backdrop-blur-xl border-t border-base-300/30 border-b border-base-300/20 sticky bottom-0 z-10 mobile-message-input-professional touch-optimized ${keyboardVisible ? 'keyboard-visible' : ''
+          }`}
         style={{ paddingBottom: "max(4px, env(safe-area-inset-bottom))" }}
       >
         {/* Enhanced Reply Preview */}
@@ -318,7 +318,7 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                   </svg>
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-semibold text-primary">Replying to</span>
@@ -329,7 +329,7 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
                     </span>
                     <span className="text-xs text-base-content/50 ml-auto">Tap to view</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     {replyingTo.image && (
                       <div className="flex-shrink-0 w-6 h-6 rounded bg-base-300/50 flex items-center justify-center">
@@ -341,21 +341,21 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
                         <span className="text-xs">🎤</span>
                       </div>
                     )}
-                    
+
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-base-content/70 truncate leading-tight">
                         {replyingTo.text && replyingTo.text.trim()
                           ? replyingTo.text
                           : replyingTo.image
-                          ? "📷 Photo"
-                          : replyingTo.voice
-                          ? "🎤 Voice message"
-                          : "Message"}
+                            ? "📷 Photo"
+                            : replyingTo.voice
+                              ? "🎤 Voice message"
+                              : "Message"}
                       </p>
                     </div>
                   </div>
                 </div>
-                
+
                 <button
                   onClick={onCancelReply}
                   className="flex-shrink-0 w-7 h-7 rounded-full bg-base-300/50 hover:bg-error/20 hover:text-error flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 haptic-feedback"
@@ -422,22 +422,20 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
           {/* Enhanced Attachment Menu */}
           <div className="relative" ref={attachmentMenuRef}>
             {showAttachmentMenu && (
-              <div className={`absolute bottom-full left-0 mb-3 p-3 bg-base-100/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-base-300/30 flex flex-col gap-3 min-w-[48px] z-50 transform origin-bottom-left transition-all duration-300 ease-out ${
-                showAttachmentMenu ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-2 pointer-events-none"
-              }`}>
+              <div className={`absolute bottom-full left-0 mb-3 p-3 bg-base-100/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-base-300/30 flex flex-col gap-3 min-w-[48px] z-50 transform origin-bottom-left transition-all duration-300 ease-out ${showAttachmentMenu ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-2 pointer-events-none"
+                }`}>
                 <button
                   type="button"
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation shadow-sm haptic-feedback ${
-                    imagePreview
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation shadow-sm haptic-feedback ${imagePreview
                       ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
                       : "bg-base-200/50 text-base-content/70 hover:bg-base-200 hover:text-base-content"
-                  }`}
+                    }`}
                   onClick={() => fileInputRef.current?.click()}
                   title="Attach Image"
                 >
                   <Image size={22} />
                 </button>
-                
+
                 <button
                   type="button"
                   className="w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation shadow-sm bg-base-200/50 text-indigo-500 hover:bg-base-200 haptic-feedback"
@@ -460,14 +458,13 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
                 </button>
               </div>
             )}
-            
+
             <button
               type="button"
-              className={`w-9 h-9 rounded-2xl flex items-center justify-center transition-all duration-300 active:scale-95 touch-manipulation haptic-feedback ${
-                showAttachmentMenu
+              className={`w-9 h-9 rounded-2xl flex items-center justify-center transition-all duration-300 active:scale-95 touch-manipulation haptic-feedback ${showAttachmentMenu
                   ? "bg-primary/10 text-primary rotate-180 shadow-sm"
                   : "bg-base-200/50 text-base-content/70 hover:bg-base-200 hover:text-base-content"
-              }`}
+                }`}
               onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
             >
               <ChevronUp size={20} />
@@ -486,8 +483,8 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
           />
 
           {/* Ultra-Compact Text Input */}
-          <div 
-            className="flex-1 flex items-center gap-1.5 bg-base-200/50 backdrop-blur-sm rounded-full px-3 py-1.5 min-w-0 border border-base-300/20 shadow-sm hover:shadow-md transition-all duration-200 professional-input"
+          <div
+            className="flex-1 flex items-center gap-1.5 bg-base-200/50 backdrop-blur-sm rounded-full px-3 py-1.5 min-w-0 border border-base-300/20 shadow-sm hover:shadow-md transition-all duration-200 professional-input focus-within:ring-0 focus-within:outline-none"
             style={{
               WebkitTapHighlightColor: "transparent",
               WebkitTouchCallout: "none",
@@ -499,9 +496,9 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
               ref={inputRef}
               type="text"
               className="flex-1 bg-transparent outline-none border-none text-sm placeholder:text-base-content/40 min-w-0 font-normal leading-relaxed focus:outline-none focus:ring-0 focus:border-none shadow-none focus-visible:ring-0 focus-visible:outline-none touch-optimized"
-              style={{ 
-                outline: "none", 
-                boxShadow: "none", 
+              style={{
+                outline: "none",
+                boxShadow: "none",
                 borderColor: "transparent",
                 border: "none",
                 WebkitAppearance: "none",
@@ -525,14 +522,13 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
               data-tap-highlight="false"
               data-touch-callout="false"
             />
-            
+
             <button
               type="button"
-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 active:scale-95 touch-manipulation flex-shrink-0 haptic-feedback ${
-                showEmojiPicker
+              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 active:scale-95 touch-manipulation flex-shrink-0 haptic-feedback ${showEmojiPicker
                   ? "bg-primary/10 text-primary shadow-sm"
                   : "bg-transparent text-base-content/50 hover:bg-base-300/50 hover:text-base-content/80"
-              }`}
+                }`}
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               title="Add emoji"
               aria-label="Add emoji"
@@ -547,7 +543,7 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
               <VoiceRecorder onSendVoice={handleSendVoice} />
             </div>
           )}
-          
+
           {(text.trim() || imagePreview) && (
             <button
               type="submit"
