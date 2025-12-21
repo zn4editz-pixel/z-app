@@ -296,7 +296,7 @@ const Sidebar = () => {
             </button>
           </div>
           {/* Friends Horizontal Bar - Stranger button fixed, then scrollable friends */}
-          <div className="flex py-3 pt-4 -mx-3 sm:-mx-4 relative">
+          <div className="flex py-3 pt-4 -mx-3 sm:-mx-4 relative md:hidden">
             {/* Stranger Chat Button - Compact with border */}
             <div className="flex-none pl-3 sm:pl-4 sticky left-0 z-10 bg-base-100">
               <div className="flex items-center gap-2 border-r border-base-content/10 pr-2">
