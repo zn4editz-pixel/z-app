@@ -8,6 +8,7 @@ import {
   Maximize2,
   Minimize2,
   Loader2,
+  FlipHorizontal,
 } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import toast from "react-hot-toast";
@@ -33,6 +34,7 @@ const PrivateCallModal = ({
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMirrored, setIsMirrored] = useState(true); // Default to mirrored for selfie view
   const [callDuration, setCallDuration] = useState(0);
 
   // AI Moderation state
@@ -90,7 +92,7 @@ const PrivateCallModal = ({
           callType: callType,
           duration: finalDuration,
         });
-      } catch (error) {}
+      } catch (error) { }
     }
 
     setCallStatus("ended");
@@ -129,22 +131,22 @@ const PrivateCallModal = ({
           // Ensure autoplay works
           remoteVideoRef.current
             .play()
-            .then(() => {})
+            .then(() => { })
             .catch((err) => {
               // Try to play again after user interaction
               setTimeout(() => {
-                remoteVideoRef.current?.play().catch((e) => {});
+                remoteVideoRef.current?.play().catch((e) => { });
               }, 1000);
             });
         } else if (callType === "audio" && remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = e.streams[0];
           remoteAudioRef.current
             .play()
-            .then(() => {})
+            .then(() => { })
             .catch((err) => {
               // Try to play again
               setTimeout(() => {
-                remoteAudioRef.current?.play().catch((e) => {});
+                remoteAudioRef.current?.play().catch((e) => { });
               }, 1000);
             });
         }
@@ -295,7 +297,7 @@ const PrivateCallModal = ({
 
         // Process queued ICE candidates
         iceCandidateQueueRef.current.forEach((candidate) => {
-          pc.addIceCandidate(new RTCIceCandidate(candidate)).catch((err) => {});
+          pc.addIceCandidate(new RTCIceCandidate(candidate)).catch((err) => { });
         });
         iceCandidateQueueRef.current = [];
       } catch (error) {
@@ -318,7 +320,7 @@ const PrivateCallModal = ({
 
         // Process queued ICE candidates
         iceCandidateQueueRef.current.forEach((candidate) => {
-          pc.addIceCandidate(new RTCIceCandidate(candidate)).catch((err) => {});
+          pc.addIceCandidate(new RTCIceCandidate(candidate)).catch((err) => { });
         });
         iceCandidateQueueRef.current = [];
       } catch (error) {
@@ -334,7 +336,7 @@ const PrivateCallModal = ({
     if (!pc || !pc.remoteDescription) {
       iceCandidateQueueRef.current.push(candidate);
     } else {
-      pc.addIceCandidate(new RTCIceCandidate(candidate)).catch((err) => {});
+      pc.addIceCandidate(new RTCIceCandidate(candidate)).catch((err) => { });
     }
   }, []);
 
@@ -356,6 +358,10 @@ const PrivateCallModal = ({
         setIsVideoOff(!videoTrack.enabled);
       }
     }
+  };
+
+  const toggleMirror = () => {
+    setIsMirrored((prev) => !prev);
   };
 
   useEffect(() => {
@@ -450,7 +456,7 @@ const PrivateCallModal = ({
   };
 
   return (
-    <div className="call-modal fixed inset-0 z-50 bg-black flex flex-col overflow-hidden">
+    <div className="call-modal fixed inset-0 z-50 bg-black flex flex-col overflow-hidden" style={{ backgroundColor: '#000000' }}>
       {/* Call Status Bar - Always Visible */}
       <div className="call-status-bar">
         <div className="flex items-center justify-between">
@@ -505,8 +511,8 @@ const PrivateCallModal = ({
                 autoPlay
                 playsInline
                 muted
-                className="w-24 h-32 sm:w-28 sm:h-36 object-cover bg-gray-800 rounded-lg shadow-lg"
-                style={{ transform: "scaleX(-1)" }}
+                className="w-24 h-32 sm:w-28 sm:h-36 object-cover bg-gray-800 rounded-lg shadow-lg transition-transform duration-300"
+                style={{ transform: isMirrored ? "scaleX(-1)" : "none" }}
               />
             </div>
 
@@ -516,11 +522,10 @@ const PrivateCallModal = ({
                 {/* Mute Button - Fully Transparent */}
                 <button
                   onClick={toggleMute}
-                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 ${
-                    isMuted
+                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isMuted
                       ? "bg-red-500/60 hover:bg-red-500/80"
                       : "bg-black/30 hover:bg-black/50"
-                  } backdrop-blur-sm border border-white/20 shadow-xl hover:scale-110 active:scale-95`}
+                    } backdrop-blur-sm border border-white/20 shadow-xl hover:scale-110 active:scale-95`}
                   title={isMuted ? "Unmute" : "Mute"}
                 >
                   {isMuted ? (
@@ -542,11 +547,10 @@ const PrivateCallModal = ({
                 {/* Video Toggle Button - Fully Transparent */}
                 <button
                   onClick={toggleVideo}
-                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 ${
-                    isVideoOff
+                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isVideoOff
                       ? "bg-red-500/60 hover:bg-red-500/80"
                       : "bg-black/30 hover:bg-black/50"
-                  } backdrop-blur-sm border border-white/20 shadow-xl hover:scale-110 active:scale-95`}
+                    } backdrop-blur-sm border border-white/20 shadow-xl hover:scale-110 active:scale-95`}
                   title={isVideoOff ? "Turn on camera" : "Turn off camera"}
                 >
                   {isVideoOff ? (
@@ -554,6 +558,15 @@ const PrivateCallModal = ({
                   ) : (
                     <Video className="w-5 h-5 text-white" />
                   )}
+                </button>
+
+                {/* Flip Camera Button - Fully Transparent */}
+                <button
+                  onClick={toggleMirror}
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-black/30 hover:bg-black/50 backdrop-blur-sm border border-white/20 shadow-xl hover:scale-110 active:scale-95"
+                  title={isMirrored ? "Disable Mirror" : "Enable Mirror"}
+                >
+                  <FlipHorizontal className="w-5 h-5 text-white" />
                 </button>
               </div>
             </div>

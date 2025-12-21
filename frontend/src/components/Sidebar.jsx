@@ -346,8 +346,8 @@ const Sidebar = () => {
                           {/* Avatar container */}
                           <div
                             className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] transition-all ${isOnline
-                                ? "bg-gradient-to-br from-success to-success/80 shadow-lg shadow-success/30"
-                                : "bg-base-content/15"
+                              ? "bg-gradient-to-br from-success to-success/80 shadow-lg shadow-success/30"
+                              : "bg-base-content/15"
                               }`}
                           >
                             <img
@@ -389,15 +389,17 @@ const Sidebar = () => {
               />
               {/* Custom Visual Checkbox - Guaranteed Size */}
               <div
-                style={{ width: "12px", height: "12px" }}
+                style={{ width: "14px", height: "14px" }}
                 className={`
-                  rounded-full border transition-all duration-200 flex-shrink-0
+                  rounded-md border transition-all duration-200 flex-shrink-0 flex items-center justify-center
                   ${showOnlineOnly
                     ? "bg-primary border-primary"
                     : "border-base-content/30 group-hover:border-base-content/50"
                   }
                 `}
-              />
+              >
+                {showOnlineOnly && <Check size={10} className="text-primary-content" strokeWidth={3} />}
+              </div>
               <span className="text-[10px] sm:text-xs font-medium text-base-content/70 select-none">
                 Show Active only
               </span>
@@ -428,8 +430,8 @@ const Sidebar = () => {
                         if (searchOpen) setSearchOpen(false);
                       }}
                       className={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg text-left transition-all hover:bg-base-200 card-touch ${(selectedUser?.id || selectedUser?.id) === userId
-                          ? "bg-base-200 ring-2 ring-primary/20"
-                          : ""
+                        ? "bg-base-200 ring-2 ring-primary/20"
+                        : ""
                         }`}
                     >
                       {/* Avatar */}
@@ -458,10 +460,10 @@ const Sidebar = () => {
                           return (
                             <div
                               className={`text-xs sm:text-sm truncate flex items-center gap-1 ${preview.bold
-                                  ? "font-semibold text-base-content"
-                                  : preview.muted
-                                    ? "text-base-content/40"
-                                    : "text-base-content/60"
+                                ? "font-semibold text-base-content"
+                                : preview.muted
+                                  ? "text-base-content/40"
+                                  : "text-base-content/60"
                                 }`}
                             >
                               {preview.icon &&
