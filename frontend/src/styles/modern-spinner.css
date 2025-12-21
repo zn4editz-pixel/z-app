@@ -154,27 +154,27 @@
 
 /* Theme Variants */
 .modern-spinner.text-primary {
-  color: hsl(var(--p));
+  color: oklch(var(--p));
 }
 
 .modern-spinner.text-secondary {
-  color: hsl(var(--s));
+  color: oklch(var(--s));
 }
 
 .modern-spinner.text-accent {
-  color: hsl(var(--a));
+  color: oklch(var(--a));
 }
 
 .modern-spinner.text-success {
-  color: hsl(var(--su));
+  color: oklch(var(--su));
 }
 
 .modern-spinner.text-warning {
-  color: hsl(var(--wa));
+  color: oklch(var(--wa));
 }
 
 .modern-spinner.text-error {
-  color: hsl(var(--er));
+  color: oklch(var(--er));
 }
 
 .modern-spinner.text-white {

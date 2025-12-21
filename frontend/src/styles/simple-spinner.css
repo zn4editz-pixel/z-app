@@ -2,7 +2,7 @@
 .simple-spinner {
   position: relative;
   border: 3px solid hsl(var(--bc) / 0.1);
-  border-top: 3px solid hsl(var(--p));
+  border-top: 3px solid oklch(var(--p));
   border-radius: 50%;
   animation: enhanced-spin 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
   opacity: 0.9;

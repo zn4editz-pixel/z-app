@@ -63,7 +63,7 @@
   position: absolute;
   top: -2px;
   right: -2px;
-  background: hsl(var(--er)) !important;
+  background: oklch(var(--er)) !important;
   color: white !important;
   font-size: 0.75rem !important;
   font-weight: bold !important;

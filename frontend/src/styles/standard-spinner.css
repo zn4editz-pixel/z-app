@@ -9,7 +9,7 @@
   width: 100%;
   height: 100%;
   border: 2px solid hsl(var(--bc) / 0.2);
-  border-top: 2px solid hsl(var(--bc));
+  border-top: 2px solid oklch(var(--bc));
   border-radius: 50%;
   animation: standard-spin 1s linear infinite;
   will-change: transform;

@@ -40,21 +40,21 @@ header .btn.btn-circle:active,
 header .btn-ghost.btn-sm:active,
 header .btn-circle.btn-sm:active {
   background-color: hsl(var(--p) / 0.2) !important;
-  color: hsl(var(--p)) !important;
+  color: oklch(var(--p)) !important;
   border-color: transparent !important;
 }
 
 header .btn-ghost:active svg,
 header .btn-circle:active svg {
-  color: hsl(var(--p)) !important;
-  stroke: hsl(var(--p)) !important;
+  color: oklch(var(--p)) !important;
+  stroke: oklch(var(--p)) !important;
 }
 
 /* Focus state */
 header .btn.btn-ghost:focus-visible,
 header .btn.btn-circle:focus-visible {
   background-color: hsl(var(--p) / 0.15) !important;
-  color: hsl(var(--p)) !important;
+  color: oklch(var(--p)) !important;
   outline: 2px solid hsl(var(--p) / 0.3) !important;
   border-color: transparent !important;
 }

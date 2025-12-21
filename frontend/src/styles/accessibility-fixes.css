@@ -35,7 +35,7 @@ body {
 
 /* Link text - use theme primary color */
 a {
-  color: hsl(var(--p));
+  color: oklch(var(--p));
 }
 
 a:hover {
@@ -156,7 +156,7 @@ a:not(.btn):not([class*="btn-"]) {
 
 /* Ensure primary color uses theme primary */
 .text-primary {
-  color: hsl(var(--p)) !important;
+  color: oklch(var(--p)) !important;
 }
 
 /* bg-primary now uses DaisyUI theme color - DO NOT OVERRIDE */

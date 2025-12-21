@@ -68,7 +68,7 @@
   position: absolute;
   width: 100%;
   height: 100%;
-  color: hsl(var(--p));
+  color: oklch(var(--p));
   animation: refresh-outer-spin 3s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
 }
 
@@ -95,7 +95,7 @@
   position: absolute;
   width: 8px;
   height: 8px;
-  background: hsl(var(--s));
+  background: oklch(var(--s));
   border-radius: 50%;
   top: 50%;
   left: 50%;
@@ -110,9 +110,9 @@
   width: 48px;
   height: 48px;
   background: linear-gradient(135deg,
-      hsl(var(--p)) 0%,
-      hsl(var(--s)) 50%,
-      hsl(var(--a)) 100%);
+      oklch(var(--p)) 0%,
+      oklch(var(--s)) 50%,
+      oklch(var(--a)) 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -141,7 +141,7 @@
   position: absolute;
   width: 4px;
   height: 4px;
-  background: hsl(var(--a));
+  background: oklch(var(--a));
   border-radius: 50%;
   top: 50%;
   left: 50%;
@@ -154,7 +154,7 @@
 /* ⚠️ SCOPED: Text Elements */
 .refresh-spinner-overlay .refresh-spinner-text {
   text-align: center;
-  color: hsl(var(--bc));
+  color: oklch(var(--bc));
 }
 
 .refresh-spinner-overlay .refresh-message {
@@ -167,7 +167,7 @@
 .refresh-spinner-overlay .refresh-percentage {
   font-size: 2rem;
   font-weight: 700;
-  color: hsl(var(--p));
+  color: oklch(var(--p));
   animation: refresh-percentage-pulse 1s ease-in-out infinite;
   text-shadow: 0 0 20px hsl(var(--p) / 0.3);
 }

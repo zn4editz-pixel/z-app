@@ -7,23 +7,23 @@ body,
   min-height: 100vh;
   background-color: #1a1a1a;
   /* Fallback dark bg */
-  background-color: hsl(var(--b1));
+  background-color: oklch(var(--b1));
   color: #ffffff;
   /* Fallback text */
-  color: hsl(var(--bc));
+  color: oklch(var(--bc));
 }
 
 /* Login page specific fixes */
 .login-container {
   min-height: 100vh;
-  background: hsl(var(--b1));
+  background: oklch(var(--b1));
 }
 
 /* Enhanced button styling */
 .login-btn {
-  background: hsl(var(--p)) !important;
-  color: hsl(var(--pc)) !important;
-  border: 2px solid hsl(var(--p)) !important;
+  background: oklch(var(--p)) !important;
+  color: oklch(var(--pc)) !important;
+  border: 2px solid oklch(var(--p)) !important;
   font-weight: 600 !important;
   transition: all 0.2s ease !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
@@ -64,7 +64,7 @@ body,
 
 /* Dark Mode Theme Color Override - Dynamic */
 [data-theme="dark"] .login-logo-icon {
-  color: hsl(var(--p)) !important;
+  color: oklch(var(--p)) !important;
   /* Primary Theme Color */
   filter: drop-shadow(0 0 5px hsl(var(--p) / 0.5));
 }
@@ -72,11 +72,11 @@ body,
 /* Animated Gradient Text - Theme Aware */
 .animate-gradient-text {
   font-weight: 800;
-  color: hsl(var(--p)) !important;
+  color: oklch(var(--p)) !important;
   /* Primary fallback */
 
   /* Gradient properties - Pure Theme Variables */
-  background: linear-gradient(to right, hsl(var(--p)), hsl(var(--s)), hsl(var(--p)));
+  background: linear-gradient(to right, oklch(var(--p)), oklch(var(--s)), oklch(var(--p)));
   background-size: 200% auto;
 
   /* Text clip magic */
@@ -91,8 +91,8 @@ body,
 /* Dark Mode Gradient Override - Dynamic Safety */
 [data-theme="dark"] .animate-gradient-text {
   /* Ensure visibility but use theme variables */
-  background: linear-gradient(to right, hsl(var(--p)), hsl(var(--s)), hsl(var(--p))) !important;
-  color: hsl(var(--p)) !important;
+  background: linear-gradient(to right, oklch(var(--p)), oklch(var(--s)), oklch(var(--p))) !important;
+  color: oklch(var(--p)) !important;
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -130,8 +130,8 @@ body,
 
 /* Error boundary */
 .error-boundary {
-  background: hsl(var(--b2));
-  color: hsl(var(--bc));
+  background: oklch(var(--b2));
+  color: oklch(var(--bc));
 }
 
 /* Smooth app entry */

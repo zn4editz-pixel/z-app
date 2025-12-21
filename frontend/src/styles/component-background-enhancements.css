@@ -18,7 +18,7 @@
   right: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, color-mix(in srgb, hsl(var(--p)) 6%, transparent 94%) 0%, transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, oklch(var(--p)) 6%, transparent 94%) 0%, transparent 70%);
   animation: hero-glow 8s ease-in-out infinite alternate;
   pointer-events: none;
 }
@@ -31,8 +31,8 @@
 /* Welcome section - Elevated */
 .welcome-section {
   background: var(--bg-elevated) !important;
-  border-top: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
-  border-bottom: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+  border-top: 1px solid color-mix(in srgb, oklch(var(--bc)) 8%, transparent 92%);
+  border-bottom: 1px solid color-mix(in srgb, oklch(var(--bc)) 8%, transparent 92%);
 }
 
 /* ===== CHAT INTERFACE ENHANCEMENTS ===== */
@@ -41,14 +41,14 @@
 .chat-sidebar,
 .conversations-list {
   background: var(--bg-dark) !important;
-  border-right: 2px solid color-mix(in srgb, hsl(var(--p)) 12%, transparent 88%);
+  border-right: 2px solid color-mix(in srgb, oklch(var(--p)) 12%, transparent 88%);
 }
 
 /* Active chat item - Accent highlight */
 .chat-item.active,
 .conversation-item.active {
   background: var(--bg-accent-light) !important;
-  border-left: 4px solid hsl(var(--p));
+  border-left: 4px solid oklch(var(--p));
   transform: translateX(4px);
 }
 
@@ -63,8 +63,8 @@
   position: absolute;
   inset: 0;
   background-image: 
-    radial-gradient(circle at 20% 80%, color-mix(in srgb, hsl(var(--bc)) 2%, transparent 98%) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, color-mix(in srgb, hsl(var(--bc)) 2%, transparent 98%) 0%, transparent 50%);
+    radial-gradient(circle at 20% 80%, color-mix(in srgb, oklch(var(--bc)) 2%, transparent 98%) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, color-mix(in srgb, oklch(var(--bc)) 2%, transparent 98%) 0%, transparent 50%);
   pointer-events: none;
 }
 
@@ -72,8 +72,8 @@
 .message-input-area,
 .chat-input-wrapper {
   background: var(--bg-bright) !important;
-  border-top: 2px solid color-mix(in srgb, hsl(var(--p)) 15%, transparent 85%);
-  box-shadow: 0 -4px 20px color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+  border-top: 2px solid color-mix(in srgb, oklch(var(--p)) 15%, transparent 85%);
+  box-shadow: 0 -4px 20px color-mix(in srgb, oklch(var(--bc)) 8%, transparent 92%);
 }
 
 /* ===== PROFILE PAGE ENHANCEMENTS ===== */
@@ -90,9 +90,9 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg, 
-    color-mix(in srgb, hsl(var(--p)) 8%, transparent 92%) 0%, 
+    color-mix(in srgb, oklch(var(--p)) 8%, transparent 92%) 0%, 
     transparent 50%, 
-    color-mix(in srgb, hsl(var(--s)) 6%, transparent 94%) 100%);
+    color-mix(in srgb, oklch(var(--s)) 6%, transparent 94%) 100%);
   pointer-events: none;
 }
 
@@ -102,7 +102,7 @@
   border-radius: 16px;
   margin: 1rem 0;
   padding: 1.5rem;
-  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+  border: 1px solid color-mix(in srgb, oklch(var(--bc)) 8%, transparent 92%);
 }
 
 .profile-section:nth-child(even) {
@@ -110,14 +110,14 @@
   border-radius: 16px;
   margin: 1rem 0;
   padding: 1.5rem;
-  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 6%, transparent 94%);
+  border: 1px solid color-mix(in srgb, oklch(var(--bc)) 6%, transparent 94%);
 }
 
 /* Profile stats cards - Dark for contrast */
 .profile-stats-card,
 .stats-container {
   background: var(--bg-dark) !important;
-  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 12%, transparent 88%);
+  border: 1px solid color-mix(in srgb, oklch(var(--bc)) 12%, transparent 88%);
   border-radius: 20px;
   position: relative;
 }
@@ -129,7 +129,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, hsl(var(--p)), hsl(var(--s)), hsl(var(--a)));
+  background: linear-gradient(90deg, oklch(var(--p)), oklch(var(--s)), oklch(var(--a)));
   border-radius: 20px 20px 0 0;
 }
 
@@ -138,7 +138,7 @@
 /* Discover header - Bright with search focus */
 .discover-header {
   background: var(--bg-bright) !important;
-  border-bottom: 2px solid color-mix(in srgb, hsl(var(--p)) 15%, transparent 85%);
+  border-bottom: 2px solid color-mix(in srgb, oklch(var(--p)) 15%, transparent 85%);
   padding: 2rem 1rem;
 }
 
@@ -146,20 +146,20 @@
 .user-card:nth-child(4n+1),
 .user-card:nth-child(4n+4) {
   background: var(--bg-elevated) !important;
-  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+  border: 1px solid color-mix(in srgb, oklch(var(--bc)) 8%, transparent 92%);
 }
 
 .user-card:nth-child(4n+2),
 .user-card:nth-child(4n+3) {
   background: var(--bg-bright) !important;
-  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 6%, transparent 94%);
+  border: 1px solid color-mix(in srgb, oklch(var(--bc)) 6%, transparent 94%);
 }
 
 /* Featured users - Special accent background */
 .user-card.featured,
 .user-card.verified {
   background: var(--bg-accent-light) !important;
-  border: 2px solid color-mix(in srgb, hsl(var(--p)) 25%, transparent 75%);
+  border: 2px solid color-mix(in srgb, oklch(var(--p)) 25%, transparent 75%);
   position: relative;
   overflow: hidden;
 }
@@ -172,7 +172,7 @@
   left: -2px;
   right: -2px;
   height: 4px;
-  background: linear-gradient(90deg, hsl(var(--p)), hsl(var(--s)), hsl(var(--a)), hsl(var(--p)));
+  background: linear-gradient(90deg, oklch(var(--p)), oklch(var(--s)), oklch(var(--a)), oklch(var(--p)));
   background-size: 200% 100%;
   animation: featured-border 3s linear infinite;
 }
@@ -188,7 +188,7 @@
 .dashboard-overview {
   background: var(--bg-gradient-bright) !important;
   border-radius: 20px;
-  border: 2px solid color-mix(in srgb, hsl(var(--p)) 20%, transparent 80%);
+  border: 2px solid color-mix(in srgb, oklch(var(--p)) 20%, transparent 80%);
   position: relative;
   overflow: hidden;
 }
@@ -213,28 +213,28 @@
 /* Admin panels - Alternating dark/bright */
 .admin-panel:nth-child(odd) {
   background: var(--bg-dark) !important;
-  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 15%, transparent 85%);
+  border: 1px solid color-mix(in srgb, oklch(var(--bc)) 15%, transparent 85%);
 }
 
 .admin-panel:nth-child(even) {
   background: var(--bg-bright) !important;
-  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+  border: 1px solid color-mix(in srgb, oklch(var(--bc)) 8%, transparent 92%);
 }
 
 /* Critical alerts - Special red-tinted background */
 .alert-critical,
 .notification-urgent {
-  background: color-mix(in srgb, hsl(var(--er)) 8%, var(--bg-bright) 92%) !important;
-  border: 2px solid color-mix(in srgb, hsl(var(--er)) 30%, transparent 70%);
+  background: color-mix(in srgb, oklch(var(--er)) 8%, var(--bg-bright) 92%) !important;
+  border: 2px solid color-mix(in srgb, oklch(var(--er)) 30%, transparent 70%);
   animation: alert-pulse 2s ease-in-out infinite;
 }
 
 @keyframes alert-pulse {
   0%, 100% { 
-    box-shadow: 0 0 0 0 color-mix(in srgb, hsl(var(--er)) 20%, transparent 80%);
+    box-shadow: 0 0 0 0 color-mix(in srgb, oklch(var(--er)) 20%, transparent 80%);
   }
   50% { 
-    box-shadow: 0 0 0 8px color-mix(in srgb, hsl(var(--er)) 5%, transparent 95%);
+    box-shadow: 0 0 0 8px color-mix(in srgb, oklch(var(--er)) 5%, transparent 95%);
   }
 }
 
@@ -245,7 +245,7 @@
   border-radius: 16px;
   margin: 1rem 0;
   padding: 2rem;
-  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+  border: 1px solid color-mix(in srgb, oklch(var(--bc)) 8%, transparent 92%);
   transition: all 0.3s ease;
 }
 
@@ -259,13 +259,13 @@
 
 .settings-section:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px color-mix(in srgb, hsl(var(--bc)) 12%, transparent 88%);
+  box-shadow: 0 8px 25px color-mix(in srgb, oklch(var(--bc)) 12%, transparent 88%);
 }
 
 /* Settings header - Accent background */
 .settings-header {
   background: var(--bg-accent-light) !important;
-  border-bottom: 3px solid hsl(var(--p));
+  border-bottom: 3px solid oklch(var(--p));
   border-radius: 16px 16px 0 0;
 }
 
@@ -275,7 +275,7 @@
 .video-container,
 .stranger-video-area {
   background: var(--bg-dark) !important;
-  border: 2px solid color-mix(in srgb, hsl(var(--bc)) 15%, transparent 85%);
+  border: 2px solid color-mix(in srgb, oklch(var(--bc)) 15%, transparent 85%);
   position: relative;
 }
 
@@ -283,21 +283,21 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, transparent 30%, color-mix(in srgb, hsl(var(--bc)) 5%, transparent 95%) 100%);
+  background: radial-gradient(circle at center, transparent 30%, color-mix(in srgb, oklch(var(--bc)) 5%, transparent 95%) 100%);
   pointer-events: none;
 }
 
 /* Chat panel - Bright for readability */
 .stranger-chat-panel {
   background: var(--bg-bright) !important;
-  border-left: 2px solid color-mix(in srgb, hsl(var(--p)) 15%, transparent 85%);
+  border-left: 2px solid color-mix(in srgb, oklch(var(--p)) 15%, transparent 85%);
 }
 
 /* Control buttons area - Elevated */
 .video-controls,
 .stranger-controls {
   background: var(--bg-elevated) !important;
-  border-top: 1px solid color-mix(in srgb, hsl(var(--bc)) 10%, transparent 90%);
+  border-top: 1px solid color-mix(in srgb, oklch(var(--bc)) 10%, transparent 90%);
   border-radius: 0 0 16px 16px;
 }
 
@@ -307,20 +307,20 @@
 .call-modal,
 .video-call-modal {
   background: var(--bg-bright) !important;
-  border: 3px solid color-mix(in srgb, hsl(var(--su)) 25%, transparent 75%);
-  box-shadow: 0 25px 50px color-mix(in srgb, hsl(var(--su)) 20%, transparent 80%);
+  border: 3px solid color-mix(in srgb, oklch(var(--su)) 25%, transparent 75%);
+  box-shadow: 0 25px 50px color-mix(in srgb, oklch(var(--su)) 20%, transparent 80%);
 }
 
 /* Confirmation modals - Accent background */
 .confirmation-modal {
   background: var(--bg-accent-light) !important;
-  border: 2px solid color-mix(in srgb, hsl(var(--wa)) 25%, transparent 75%);
+  border: 2px solid color-mix(in srgb, oklch(var(--wa)) 25%, transparent 75%);
 }
 
 /* Error modals - Error-tinted background */
 .error-modal {
-  background: color-mix(in srgb, hsl(var(--er)) 6%, var(--bg-bright) 94%) !important;
-  border: 2px solid color-mix(in srgb, hsl(var(--er)) 30%, transparent 70%);
+  background: color-mix(in srgb, oklch(var(--er)) 6%, var(--bg-bright) 94%) !important;
+  border: 2px solid color-mix(in srgb, oklch(var(--er)) 30%, transparent 70%);
 }
 
 /* ===== MOBILE SPECIFIC ENHANCEMENTS ===== */
@@ -329,19 +329,19 @@
   /* Mobile header - Simplified bright */
   .mobile-header {
     background: var(--bg-bright) !important;
-    border-bottom: 1px solid color-mix(in srgb, hsl(var(--bc)) 10%, transparent 90%);
+    border-bottom: 1px solid color-mix(in srgb, oklch(var(--bc)) 10%, transparent 90%);
   }
   
   /* Mobile bottom nav - Dark for thumb reach */
   .mobile-bottom-nav {
     background: var(--bg-dark) !important;
-    border-top: 2px solid color-mix(in srgb, hsl(var(--p)) 15%, transparent 85%);
+    border-top: 2px solid color-mix(in srgb, oklch(var(--p)) 15%, transparent 85%);
   }
   
   /* Mobile cards - Reduced contrast */
   .mobile-card {
     background: var(--bg-elevated) !important;
-    border: 1px solid color-mix(in srgb, hsl(var(--bc)) 6%, transparent 94%);
+    border: 1px solid color-mix(in srgb, oklch(var(--bc)) 6%, transparent 94%);
   }
   
   /* Mobile chat - Full bright for readability */
@@ -351,7 +351,7 @@
   
   .mobile-message-input {
     background: var(--bg-bright) !important;
-    border-top: 1px solid color-mix(in srgb, hsl(var(--p)) 12%, transparent 88%);
+    border-top: 1px solid color-mix(in srgb, oklch(var(--p)) 12%, transparent 88%);
   }
 }
 
@@ -369,7 +369,7 @@
   inset: 0;
   background: linear-gradient(45deg, 
     transparent 25%, 
-    color-mix(in srgb, hsl(var(--bc)) 3%, transparent 97%) 50%, 
+    color-mix(in srgb, oklch(var(--bc)) 3%, transparent 97%) 50%, 
     transparent 75%);
   background-size: 40px 40px;
   animation: loading-pattern 2s linear infinite;
@@ -402,8 +402,8 @@
 .floating-element {
   background: var(--bg-bright) !important;
   box-shadow: 
-    0 4px 20px color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%),
-    0 0 0 1px color-mix(in srgb, hsl(var(--p)) 15%, transparent 85%);
+    0 4px 20px color-mix(in srgb, oklch(var(--bc)) 8%, transparent 92%),
+    0 0 0 1px color-mix(in srgb, oklch(var(--p)) 15%, transparent 85%);
   animation: float-glow 4s ease-in-out infinite alternate;
 }
 
@@ -411,14 +411,14 @@
   0% { 
     transform: translateY(0px);
     box-shadow: 
-      0 4px 20px color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%),
-      0 0 0 1px color-mix(in srgb, hsl(var(--p)) 15%, transparent 85%);
+      0 4px 20px color-mix(in srgb, oklch(var(--bc)) 8%, transparent 92%),
+      0 0 0 1px color-mix(in srgb, oklch(var(--p)) 15%, transparent 85%);
   }
   100% { 
     transform: translateY(-4px);
     box-shadow: 
-      0 8px 30px color-mix(in srgb, hsl(var(--bc)) 12%, transparent 88%),
-      0 0 0 1px color-mix(in srgb, hsl(var(--p)) 25%, transparent 75%);
+      0 8px 30px color-mix(in srgb, oklch(var(--bc)) 12%, transparent 88%),
+      0 0 0 1px color-mix(in srgb, oklch(var(--p)) 25%, transparent 75%);
   }
 }
 
@@ -434,12 +434,12 @@
 
 /* Success states - Green-tinted backgrounds */
 .success-state {
-  background: color-mix(in srgb, hsl(var(--su)) 8%, var(--bg-bright) 92%) !important;
-  border: 1px solid color-mix(in srgb, hsl(var(--su)) 25%, transparent 75%);
+  background: color-mix(in srgb, oklch(var(--su)) 8%, var(--bg-bright) 92%) !important;
+  border: 1px solid color-mix(in srgb, oklch(var(--su)) 25%, transparent 75%);
 }
 
 /* Warning states - Yellow-tinted backgrounds */
 .warning-state {
-  background: color-mix(in srgb, hsl(var(--wa)) 8%, var(--bg-bright) 92%) !important;
-  border: 1px solid color-mix(in srgb, hsl(var(--wa)) 25%, transparent 75%);
+  background: color-mix(in srgb, oklch(var(--wa)) 8%, var(--bg-bright) 92%) !important;
+  border: 1px solid color-mix(in srgb, oklch(var(--wa)) 25%, transparent 75%);
 }

@@ -4,25 +4,25 @@
 header .btn {
   background-color: transparent !important;
   border: none !important;
-  color: hsl(var(--bc)) !important;
+  color: oklch(var(--bc)) !important;
 }
 
 /* Hover state - no background, just keep same color */
 header .btn:hover {
   background-color: transparent !important;
-  color: hsl(var(--bc)) !important;
+  color: oklch(var(--bc)) !important;
 }
 
 /* Click/active state - no background */
 header .btn:active {
   background-color: transparent !important;
-  color: hsl(var(--bc)) !important;
+  color: oklch(var(--bc)) !important;
 }
 
 /* Focus state - no background */
 header .btn:focus {
   background-color: transparent !important;
-  color: hsl(var(--bc)) !important;
+  color: oklch(var(--bc)) !important;
 }
 
 /* Active page button - NO background, just white icon */

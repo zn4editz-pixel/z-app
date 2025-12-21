@@ -12,7 +12,7 @@
   left: 50%;
   width: 3px;
   height: 25%;
-  background-color: hsl(var(--p));
+  background-color: oklch(var(--p));
   border-radius: 2px;
   transform-origin: 50% 200%;
   margin-left: -1.5px;
@@ -37,7 +37,7 @@
 [data-theme="dark"] .ios-spinner-bar,
 [data-theme="night"] .ios-spinner-bar,
 [data-theme="black"] .ios-spinner-bar {
-  background-color: hsl(var(--p));
+  background-color: oklch(var(--p));
   box-shadow: 0 0 3px hsl(var(--p) / 0.5);
 }
 

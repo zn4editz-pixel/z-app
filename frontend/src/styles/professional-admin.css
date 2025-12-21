@@ -206,10 +206,10 @@
 
 .admin-tab-active {
   background: linear-gradient(135deg, 
-    hsl(var(--p)) 0%, 
-    hsl(var(--s)) 100%
+    oklch(var(--p)) 0%, 
+    oklch(var(--s)) 100%
   );
-  color: hsl(var(--pc));
+  color: oklch(var(--pc));
   transform: translateY(-2px);
   box-shadow: 
     0 8px 25px hsl(var(--p) / 0.3),
@@ -223,8 +223,8 @@
 }
 
 .admin-tab-inactive:hover {
-  background: hsl(var(--b2));
-  color: hsl(var(--bc));
+  background: oklch(var(--b2));
+  color: oklch(var(--bc));
   transform: translateY(-1px);
   box-shadow: 0 4px 12px hsl(var(--bc) / 0.1);
 }
@@ -393,9 +393,9 @@
 /* ===== LOADING ANIMATIONS ===== */
 .admin-loading-shimmer {
   background: linear-gradient(90deg,
-    hsl(var(--b2)) 25%,
-    hsl(var(--b3)) 50%,
-    hsl(var(--b2)) 75%
+    oklch(var(--b2)) 25%,
+    oklch(var(--b3)) 50%,
+    oklch(var(--b2)) 75%
   );
   background-size: 200% 100%;
   animation: admin-shimmer 2s ease-in-out infinite;

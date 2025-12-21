@@ -32,11 +32,11 @@
   width: 40px;
   height: 40px;
   border: 3px solid hsl(var(--bc) / 0.2);
-  border-top: 3px solid hsl(var(--p));
+  border-top: 3px solid oklch(var(--p));
   border-radius: 50%;
   animation: simple-spin 1s linear infinite;
   pointer-events: auto;
-  background: hsl(var(--b1));
+  background: oklch(var(--b1));
   box-shadow: 0 2px 8px hsl(var(--bc) / 0.1);
 }
 

@@ -3,13 +3,13 @@
 /* 1. FIX WHITE SCREEN AT BOTTOM */
 html, body, #root {
   min-height: 100vh;
-  background-color: hsl(var(--b1));
+  background-color: oklch(var(--b1));
 }
 
 /* 2. FIX LOGIN PAGE LAYOUT */
 .h-screen {
   min-height: 100vh;
-  background-color: hsl(var(--b1));
+  background-color: oklch(var(--b1));
 }
 
 /* 3. ENSURE GRID WORKS PROPERLY */
@@ -62,11 +62,11 @@ html, body, #root {
 
 /* 8. ENSURE BACKGROUNDS ARE CONSISTENT */
 .bg-base-100 {
-  background-color: hsl(var(--b1));
+  background-color: oklch(var(--b1));
 }
 
 .bg-base-200 {
-  background-color: hsl(var(--b2));
+  background-color: oklch(var(--b2));
 }
 
 /* 9. BASIC LAYOUT FIXES ONLY */

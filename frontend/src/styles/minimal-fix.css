@@ -2,10 +2,10 @@
 
 /* Fix white space at bottom during scroll */
 html, body {
-  background-color: hsl(var(--b1));
+  background-color: oklch(var(--b1));
 }
 
 /* Ensure consistent background */
 #root {
-  background-color: hsl(var(--b1));
+  background-color: oklch(var(--b1));
 }

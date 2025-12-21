@@ -33,7 +33,7 @@
 
 /* 🎯 BRIGHT/COLORED ticks for SEEN messages (read) */
 .message-status-component .text-primary {
-  color: hsl(var(--p)) !important;
+  color: oklch(var(--p)) !important;
   filter: brightness(1.2) saturate(1.3) !important;
   opacity: 1 !important;
 }
