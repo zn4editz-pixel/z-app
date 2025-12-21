@@ -215,10 +215,10 @@ const HomePage = () => {
     <div className="fixed inset-0 bg-base-200 overflow-hidden">
       {/* Main container */}
       <div className="h-full w-full flex flex-col overflow-hidden relative">
-        {/* Spacer for navbar - hidden in mobile chat mode */}
-        {!isMobileChatMode && (
+        {/* Spacer for navbar - REMOVED (Handled by App.jsx global padding) */}
+        {/* {!isMobileChatMode && (
           <div className="h-14 sm:h-16 flex-shrink-0"></div>
-        )}
+        )} */}
         {/* Chat container - Full screen on mobile, contained on desktop */}
         <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0 w-full relative">
           <div className="bg-base-100 w-full h-full flex overflow-hidden border-base-300 relative">
