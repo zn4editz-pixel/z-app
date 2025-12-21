@@ -96,7 +96,7 @@ header[class*="navbar"],
   font-weight: 600 !important;
   border-radius: 9999px !important;
   background: oklch(var(--er)) !important;
-  color: hsl(var(--erc)) !important;
+  color: oklch(var(--erc)) !important;
   border: 2px solid oklch(var(--b1)) !important;
 }
 

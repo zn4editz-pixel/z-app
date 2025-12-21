@@ -9,7 +9,9 @@ if (!fs.existsSync(stylesDir)) {
 }
 
 const files = fs.readdirSync(stylesDir).filter(f => f.endsWith('.css'));
-const varsToFix = ['p', 's', 'a', 'n', 'b1', 'b2', 'b3', 'bc', 'pc', 'sc', 'ac', 'nc', 'in', 'su', 'wa', 'er'];
+// Add migrated-theme folder to list if possible, or just run separately? 
+// For now, let's stick to styles folder as per previous logic.
+const varsToFix = ['p', 's', 'a', 'n', 'b1', 'b2', 'b3', 'bc', 'pc', 'sc', 'ac', 'nc', 'in', 'su', 'wa', 'er', 'erc'];
 
 let totalReplacements = 0;
 
@@ -19,14 +21,18 @@ files.forEach(file => {
     let original = content;
 
     varsToFix.forEach(v => {
-        // Regex to match hsl(var(--v)) globally
-        // Be careful to match exact variable name boundaries if possible, but these short ones are distinct enough in this context
-        const regex = new RegExp(`hsl\\(var\\(--${v}\\)\\)`, 'g');
-        content = content.replace(regex, `oklch(var(--${v}))`);
+        // Regex to match hsl(var(--v)) or hsl(var(--v) / alpha) or hsl(var(--v)/alpha)
+        // Groups: 
+        // 1: The variable part (var(--v))
+        // 2: The optional / alpha part
+        // We match strict hsl( ... ) wrapper.
 
-        // Also handle cases with !important inside the parens (unlikely but possible) or whitespace
-        const regexSpace = new RegExp(`hsl\\(\\s*var\\(--${v}\\)\\s*\\)`, 'g');
-        content = content.replace(regexSpace, `oklch(var(--${v}))`);
+        // This regex matches: hsl(var(--p)) and hsl(var(--p) / 0.5)
+        const regex = new RegExp(`hsl\\(\\s*var\\(--${v}\\)(?:\\s*\\/\\s*[\\d.]+%?)?\\s*\\)`, 'g');
+
+        content = content.replace(regex, (match) => {
+            return match.replace('hsl', 'oklch');
+        });
     });
 
     if (content !== original) {

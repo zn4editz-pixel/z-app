@@ -38,7 +38,7 @@
 [data-theme="night"] .ios-spinner-bar,
 [data-theme="black"] .ios-spinner-bar {
   background-color: oklch(var(--p));
-  box-shadow: 0 0 3px hsl(var(--p) / 0.5);
+  box-shadow: 0 0 3px oklch(var(--p) / 0.5);
 }
 
 /* Cyberpunk theme */

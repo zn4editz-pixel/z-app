@@ -66,7 +66,7 @@ body,
 [data-theme="dark"] .login-logo-icon {
   color: oklch(var(--p)) !important;
   /* Primary Theme Color */
-  filter: drop-shadow(0 0 5px hsl(var(--p) / 0.5));
+  filter: drop-shadow(0 0 5px oklch(var(--p) / 0.5));
 }
 
 /* Animated Gradient Text - Theme Aware */

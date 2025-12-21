@@ -56,7 +56,7 @@
   height: 1rem;
   background: oklch(var(--p));
   border-radius: 50%;
-  box-shadow: 0 0 20px hsl(var(--p) / 0.5);
+  box-shadow: 0 0 20px oklch(var(--p) / 0.5);
 }
 
 .refresh-spinner-center {
@@ -118,7 +118,7 @@
 .refresh-loading-dot {
   width: 0.5rem;
   height: 0.5rem;
-  background: hsl(var(--p) / 0.6);
+  background: oklch(var(--p) / 0.6);
   border-radius: 50%;
   animation: refresh-pulse 1.4s ease-in-out infinite;
 }

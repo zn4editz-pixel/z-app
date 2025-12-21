@@ -25,7 +25,7 @@
 
 /* Icon color states */
 .navbar-icon-btn svg {
-  color: hsl(var(--bc) / 0.6) !important;
+  color: oklch(var(--bc) / 0.6) !important;
   transition: color 0.2s ease !important;
 }
 

@@ -8,9 +8,9 @@
   right: 0;
   bottom: 0;
   background: linear-gradient(135deg,
-      hsl(var(--b1) / 0.95) 0%,
-      hsl(var(--b2) / 0.98) 50%,
-      hsl(var(--b1) / 0.95) 100%);
+      oklch(var(--b1) / 0.95) 0%,
+      oklch(var(--b2) / 0.98) 50%,
+      oklch(var(--b1) / 0.95) 100%);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   display: flex;
@@ -44,12 +44,12 @@
   gap: 24px;
   padding: 40px;
   border-radius: 24px;
-  background: hsl(var(--b1) / 0.8);
-  border: 1px solid hsl(var(--bc) / 0.1);
+  background: oklch(var(--b1) / 0.8);
+  border: 1px solid oklch(var(--bc) / 0.1);
   box-shadow:
-    0 20px 60px hsl(var(--bc) / 0.1),
-    0 8px 32px hsl(var(--bc) / 0.05),
-    inset 0 1px 0 hsl(var(--bc) / 0.1);
+    0 20px 60px oklch(var(--bc) / 0.1),
+    0 8px 32px oklch(var(--bc) / 0.05),
+    inset 0 1px 0 oklch(var(--bc) / 0.1);
   animation: refresh-container-float 3s ease-in-out infinite;
 }
 
@@ -101,7 +101,7 @@
   left: 50%;
   transform-origin: 0 0;
   animation: refresh-dot-pulse 1.5s ease-in-out infinite;
-  box-shadow: 0 0 12px hsl(var(--s) / 0.6);
+  box-shadow: 0 0 12px oklch(var(--s) / 0.6);
 }
 
 /* ⚠️ SCOPED: Inner Core */
@@ -119,8 +119,8 @@
   justify-content: center;
   animation: refresh-core-pulse 2s ease-in-out infinite;
   box-shadow:
-    0 0 20px hsl(var(--p) / 0.4),
-    inset 0 2px 8px hsl(var(--bc) / 0.1);
+    0 0 20px oklch(var(--p) / 0.4),
+    inset 0 2px 8px oklch(var(--bc) / 0.1);
 }
 
 .refresh-spinner-overlay .refresh-spinner-logo {
@@ -148,7 +148,7 @@
   transform-origin: 0 0;
   animation: refresh-particle-orbit 4s linear infinite;
   opacity: 0.7;
-  box-shadow: 0 0 8px hsl(var(--a) / 0.8);
+  box-shadow: 0 0 8px oklch(var(--a) / 0.8);
 }
 
 /* ⚠️ SCOPED: Text Elements */
@@ -169,7 +169,7 @@
   font-weight: 700;
   color: oklch(var(--p));
   animation: refresh-percentage-pulse 1s ease-in-out infinite;
-  text-shadow: 0 0 20px hsl(var(--p) / 0.3);
+  text-shadow: 0 0 20px oklch(var(--p) / 0.3);
 }
 
 /* ⚠️ SCOPED: Loading Dots */
@@ -181,7 +181,7 @@
 .refresh-spinner-overlay .refresh-loading-dots span {
   width: 8px;
   height: 8px;
-  background: hsl(var(--bc) / 0.6);
+  background: oklch(var(--bc) / 0.6);
   border-radius: 50%;
   animation: refresh-dot-bounce 1.4s ease-in-out infinite;
 }
@@ -268,16 +268,16 @@
   100% {
     transform: scale(1);
     box-shadow:
-      0 0 20px hsl(var(--p) / 0.4),
-      inset 0 2px 8px hsl(var(--bc) / 0.1);
+      0 0 20px oklch(var(--p) / 0.4),
+      inset 0 2px 8px oklch(var(--bc) / 0.1);
   }
 
   50% {
     transform: scale(1.1);
     box-shadow:
-      0 0 30px hsl(var(--p) / 0.6),
-      0 0 50px hsl(var(--s) / 0.3),
-      inset 0 2px 8px hsl(var(--bc) / 0.1);
+      0 0 30px oklch(var(--p) / 0.6),
+      0 0 50px oklch(var(--s) / 0.3),
+      inset 0 2px 8px oklch(var(--bc) / 0.1);
   }
 }
 
@@ -323,7 +323,7 @@
 
   50% {
     opacity: 1;
-    text-shadow: 0 0 20px hsl(var(--bc) / 0.3);
+    text-shadow: 0 0 20px oklch(var(--bc) / 0.3);
   }
 }
 
@@ -360,11 +360,11 @@
 [data-theme="dark"] .refresh-spinner-overlay .refresh-spinner-container,
 [data-theme="night"] .refresh-spinner-overlay .refresh-spinner-container,
 [data-theme="black"] .refresh-spinner-overlay .refresh-spinner-container {
-  background: hsl(var(--b1) / 0.9);
+  background: oklch(var(--b1) / 0.9);
   box-shadow:
-    0 20px 60px hsl(var(--bc) / 0.2),
-    0 8px 32px hsl(var(--bc) / 0.1),
-    inset 0 1px 0 hsl(var(--bc) / 0.2);
+    0 20px 60px oklch(var(--bc) / 0.2),
+    0 8px 32px oklch(var(--bc) / 0.1),
+    inset 0 1px 0 oklch(var(--bc) / 0.2);
 }
 
 [data-theme="dark"] .refresh-spinner-overlay .refresh-progress-circle,

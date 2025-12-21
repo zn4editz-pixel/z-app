@@ -1156,11 +1156,11 @@ html {
 
   0%,
   100% {
-    box-shadow: 0 0 0 0 hsl(var(--p) / 0.4);
+    box-shadow: 0 0 0 0 oklch(var(--p) / 0.4);
   }
 
   50% {
-    box-shadow: 0 0 0 4px hsl(var(--p) / 0);
+    box-shadow: 0 0 0 4px oklch(var(--p) / 0);
   }
 }
 
@@ -1201,7 +1201,7 @@ html {
 }
 
 .glow-hover:hover {
-  box-shadow: 0 0 20px hsl(var(--p) / 0.4);
+  box-shadow: 0 0 20px oklch(var(--p) / 0.4);
 }
 
 /* Smooth Width Transition */
@@ -1261,12 +1261,12 @@ html {
   }
 
   15% {
-    background-color: hsl(var(--p) / 0.25);
+    background-color: oklch(var(--p) / 0.25);
     transform: scale(1.02);
   }
 
   50% {
-    background-color: hsl(var(--p) / 0.15);
+    background-color: oklch(var(--p) / 0.15);
     transform: scale(1.01);
   }
 

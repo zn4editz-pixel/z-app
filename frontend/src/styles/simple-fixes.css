@@ -45,8 +45,8 @@ html, body, #root {
 .w-16.h-16.rounded-2xl {
   width: 4rem !important;
   height: 4rem !important;
-  background-color: hsl(var(--p) / 0.2) !important;
-  border: 1px solid hsl(var(--p) / 0.3) !important;
+  background-color: oklch(var(--p) / 0.2) !important;
+  border: 1px solid oklch(var(--p) / 0.3) !important;
   border-radius: 1rem !important;
 }
 

@@ -23,7 +23,7 @@ header .btn.btn-ghost:hover:not(.btn-active),
 header .btn.btn-circle:hover:not(.btn-active),
 header .btn-ghost.btn-sm:hover:not(.btn-active),
 header .btn-circle.btn-sm:hover:not(.btn-active) {
-  background-color: hsl(var(--p) / 0.15) !important;
+  background-color: oklch(var(--p) / 0.15) !important;
   color: #ffffff !important;
   border-color: transparent !important;
 }
@@ -39,7 +39,7 @@ header .btn.btn-ghost:active,
 header .btn.btn-circle:active,
 header .btn-ghost.btn-sm:active,
 header .btn-circle.btn-sm:active {
-  background-color: hsl(var(--p) / 0.2) !important;
+  background-color: oklch(var(--p) / 0.2) !important;
   color: oklch(var(--p)) !important;
   border-color: transparent !important;
 }
@@ -53,16 +53,16 @@ header .btn-circle:active svg {
 /* Focus state */
 header .btn.btn-ghost:focus-visible,
 header .btn.btn-circle:focus-visible {
-  background-color: hsl(var(--p) / 0.15) !important;
+  background-color: oklch(var(--p) / 0.15) !important;
   color: oklch(var(--p)) !important;
-  outline: 2px solid hsl(var(--p) / 0.3) !important;
+  outline: 2px solid oklch(var(--p) / 0.3) !important;
   border-color: transparent !important;
 }
 
 /* Active page state - highlighted with theme primary color background, white icon */
 header .btn.btn-active,
 header .btn-active.btn-sm {
-  background-color: hsl(var(--p) / 0.2) !important;
+  background-color: oklch(var(--p) / 0.2) !important;
   color: #ffffff !important;
   border-color: transparent !important;
 }
@@ -75,7 +75,7 @@ header .btn-active svg {
 /* Active page hover - slightly stronger */
 header .btn.btn-active:hover,
 header .btn-active.btn-sm:hover {
-  background-color: hsl(var(--p) / 0.3) !important;
+  background-color: oklch(var(--p) / 0.3) !important;
   color: #ffffff !important;
   border-color: transparent !important;
 }

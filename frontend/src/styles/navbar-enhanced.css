@@ -4,7 +4,7 @@
 .navbar-skeleton {
   background: oklch(var(--b1)) !important;
   background-color: oklch(var(--b1)) !important;
-  border-bottom: 2px solid hsl(var(--bc) / 0.2) !important;
+  border-bottom: 2px solid oklch(var(--bc) / 0.2) !important;
   position: fixed !important;
   width: 100% !important;
   top: 0 !important;
@@ -41,7 +41,7 @@
 .navbar-icon-btn.active {
   background-color: oklch(var(--p)) !important;
   color: oklch(var(--pc)) !important;
-  box-shadow: 0 2px 4px 0 hsl(var(--p) / 0.3) !important;
+  box-shadow: 0 2px 4px 0 oklch(var(--p) / 0.3) !important;
 }
 
 .navbar-icon-btn.active:hover {
@@ -64,7 +64,7 @@
   font-weight: 600 !important;
   border-radius: 9999px !important;
   background: oklch(var(--er)) !important;
-  color: hsl(var(--erc)) !important;
+  color: oklch(var(--erc)) !important;
   border: 2px solid oklch(var(--b1)) !important;
 }
 
@@ -209,7 +209,7 @@ header[class*="navbar"] {
 
 /* Force border color to always be text color */
 .navbar-skeleton {
-  border-bottom-color: hsl(var(--bc) / 0.2) !important;
+  border-bottom-color: oklch(var(--bc) / 0.2) !important;
 }
 
 /* Allow animations but prevent opacity changes */
