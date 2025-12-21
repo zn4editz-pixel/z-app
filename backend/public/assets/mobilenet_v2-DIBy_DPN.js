@@ -1,0 +1,1 @@
+import{_ as r}from"./ai-models-RLSV0VP5.js";import"./react-core-BVORfsS8.js";var _=function(){return r(()=>import("./model.min-CdqdRUPQ.js"),[])},e=[function(){return r(()=>import("./group1-shard1of1.min-DUujGfpw.js"),[])}];export{_ as modelJson,e as weightBundles};

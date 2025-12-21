@@ -1,0 +1,50 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#f8fafc"/>
+    </linearGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="8" stdDeviation="15" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Background Pattern -->
+  <circle cx="100" cy="100" r="80" fill="rgba(255,255,255,0.1)" opacity="0.5"/>
+  <circle cx="1100" cy="150" r="60" fill="rgba(255,255,255,0.1)" opacity="0.4"/>
+  <circle cx="200" cy="530" r="40" fill="rgba(255,255,255,0.1)" opacity="0.6"/>
+  <circle cx="1000" cy="500" r="100" fill="rgba(255,255,255,0.1)" opacity="0.3"/>
+  
+  <!-- Free Badge -->
+  <rect x="1050" y="30" width="120" height="40" rx="20" fill="#10b981" filter="url(#shadow)"/>
+  <text x="1110" y="55" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">FREE</text>
+  
+  <!-- Logo Circle -->
+  <circle cx="600" cy="250" r="80" fill="rgba(255,255,255,0.95)" filter="url(#shadow)"/>
+  <text x="600" y="275" text-anchor="middle" fill="#667eea" font-family="Arial, sans-serif" font-size="72" font-weight="900">Z</text>
+  
+  <!-- Title -->
+  <text x="600" y="380" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="72" font-weight="900" filter="url(#shadow)">Z-APP</text>
+  
+  <!-- Subtitle -->
+  <text x="600" y="430" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-family="Arial, sans-serif" font-size="32" font-weight="500">Connect Instantly - Real-time Chat &amp; Video Calling</text>
+  
+  <!-- Features -->
+  <g transform="translate(300, 480)">
+    <rect x="0" y="0" width="140" height="50" rx="25" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    <text x="70" y="32" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="600">💬 Chat</text>
+    
+    <rect x="160" y="0" width="160" height="50" rx="25" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    <text x="240" y="32" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="600">📹 Video</text>
+    
+    <rect x="340" y="0" width="160" height="50" rx="25" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    <text x="420" y="32" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="600">🔒 Secure</text>
+  </g>
+</svg>

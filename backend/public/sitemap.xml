@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Homepage -->
+  <url>
+    <loc>https://z-app-beta-z.onrender.com/</loc>
+    <lastmod>2024-12-05</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Login Page -->
+  <url>
+    <loc>https://z-app-beta-z.onrender.com/login</loc>
+    <lastmod>2024-12-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Signup Page -->
+  <url>
+    <loc>https://z-app-beta-z.onrender.com/signup</loc>
+    <lastmod>2024-12-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Forgot Password -->
+  <url>
+    <loc>https://z-app-beta-z.onrender.com/forgot-password</loc>
+    <lastmod>2024-12-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <!-- Settings -->
+  <url>
+    <loc>https://z-app-beta-z.onrender.com/settings</loc>
+    <lastmod>2024-12-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Discover/Social Hub -->
+  <url>
+    <loc>https://z-app-beta-z.onrender.com/discover</loc>
+    <lastmod>2024-12-05</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Stranger Chat -->
+  <url>
+    <loc>https://z-app-beta-z.onrender.com/stranger-chat</loc>
+    <lastmod>2024-12-05</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>

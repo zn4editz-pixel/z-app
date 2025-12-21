@@ -7,6 +7,11 @@ import compression from 'compression';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import process from 'process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // Import core modules
 import prisma from './lib/db.js';
 import { initializeSocketHandlers } from './lib/socketHandlers.js';
@@ -23,6 +28,9 @@ import { activityMonitor } from './middleware/activityMonitor.js';
 import rateLimit from 'express-rate-limit';
 const PORT = process.env.PORT || 5001;
 const app = express();
+
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, '../public')));
 const startServer = async () => {
   const server = createServer(app);
   // Trust proxy for load balancer
@@ -170,9 +178,13 @@ const startServer = async () => {
       });
     }
   });
-  // 404 Handler
+  // 404 Handler & SPA Fallback
   app.use('*', (req, res) => {
-    res.status(404).json({ error: 'Route not found' });
+    if (req.originalUrl.startsWith('/api')) {
+      return res.status(404).json({ error: 'Route not found' });
+    }
+    // Serve index.html for all other routes (SPA support)
+    res.sendFile(path.join(__dirname, '../public', 'index.html'));
   });
   // Start Server
   server.listen(PORT, () => {

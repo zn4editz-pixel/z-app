@@ -171,10 +171,9 @@ const App = () => {
   const hideNavbarPaths = ["/stranger", "/suspended", "/blocked", "/goodbye"];
   const shouldShowNavbar =
     hasCompletedProfile && !hideNavbarPaths.includes(window.location.pathname);
-  // Hide navbar on mobile when in chat mode
-  const isMobileChatMode =
-    isMobile && selectedUser && location.pathname === "/";
-  const showNavbarFinal = shouldShowNavbar && !isMobileChatMode;
+  // Hide navbar on mobile when in chat mode - DISABLED to prevent layout jumps
+  // The chat overlay (z-50) will cover the navbar (z-40) automatically
+  const showNavbarFinal = shouldShowNavbar;
   return (
     <div
       data-theme={effectiveTheme}
@@ -186,7 +185,7 @@ const App = () => {
       </ErrorBoundary>
       <Suspense fallback={<LoadingScreen />}>
         <ErrorBoundary>
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             <Routes location={location} key={location.pathname}>
               {/* --- Auth Routes --- */}
               <Route
