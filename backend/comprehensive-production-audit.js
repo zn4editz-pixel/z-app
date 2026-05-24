@@ -1,4 +1,4 @@
-import prisma from './src/lib/prisma.js';
+import prisma from './src/lib/db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -15,14 +15,19 @@ async function comprehensiveProductionAudit() {
         console.log('1️⃣ DATABASE SCHEMA VALIDATION...');
         
         // Check if all required tables exist
-        const tables = ['User', 'Message', 'FriendRequest', 'Report'];
+        const tables = [
+            { name: 'User', key: 'user' },
+            { name: 'Message', key: 'message' },
+            { name: 'FriendRequest', key: 'friendRequest' },
+            { name: 'Report', key: 'report' }
+        ];
         for (const table of tables) {
             try {
-                const count = await prisma[table.toLowerCase()].count();
-                console.log(`   ✅ ${table} table: ${count} records`);
+                const count = await prisma[table.key].count();
+                console.log(`   ✅ ${table.name} table: ${count} records`);
             } catch (error) {
-                issues.push(`❌ ${table} table missing or corrupted`);
-                console.log(`   ❌ ${table} table: ERROR - ${error.message}`);
+                issues.push(`❌ ${table.name} table missing or corrupted`);
+                console.log(`   ❌ ${table.name} table: ERROR - ${error.message}`);
             }
         }
         

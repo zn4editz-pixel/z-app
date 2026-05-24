@@ -26,6 +26,7 @@ import {
   MicOff,
   Flag,
   UserCheck,
+  Smile,
   Sparkles,
   Send,
   X,
@@ -1369,39 +1370,118 @@ const StrangerChatPage = () => {
       {/* Loading */}
       {status === "initializing" && !hasPermissionError && <LoadingSkeleton />}
       {/* Main Video Container */}
-      <div className="flex-1 relative overflow-hidden">
-        {/* Remote Video */}
-        <video
-          ref={remoteVideoRef}
-          autoPlay
-          playsInline
-          muted={false}
-          className="absolute inset-0 w-full h-full object-cover bg-gradient-to-br from-primary/10 to-secondary/10"
-          style={{
-            filter: status === "waiting" ? "blur(20px)" : "none",
-            transition: "filter 0.3s ease",
-            willChange: "filter",
-            backfaceVisibility: "hidden",
-            transform: "translateZ(0)",
-          }}
-        />
+      <div className="flex-1 relative overflow-hidden bg-black select-none">
+        
+        {/* Dynamic WebRTC Video Layout (Equal Split Grid / Full Screen preview) */}
+        <div className={`w-full h-full relative transition-all duration-500 ${
+          status === "connected" 
+            ? "flex flex-col md:flex-row" 
+            : "block"
+        }`}>
+          
+          {/* 1. Remote Video Wrapper */}
+          <div className={`${
+            status === "connected"
+              ? "relative flex-1 w-full h-[50dvh] md:h-full md:w-1/2 overflow-hidden bg-black animate-fadeIn"
+              : "absolute inset-0 w-full h-full opacity-0 pointer-events-none z-0"
+          } transition-all duration-500`}>
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              playsInline
+              muted={false}
+              className="w-full h-full object-cover bg-gradient-to-br from-primary/10 to-secondary/10"
+              style={{
+                filter: status === "waiting" ? "blur(20px)" : "none",
+                transition: "filter 0.3s ease",
+                willChange: "filter",
+                backfaceVisibility: "hidden",
+                transform: "translateZ(0)",
+              }}
+            />
+            
+            {/* Label for Partner */}
+            {status === "connected" && partnerUserData && (
+              <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full text-white text-xs font-bold border border-white/10 z-20 shadow-md flex items-center gap-1.5 animate-fadeIn">
+                <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
+                {partnerUserData.displayName || "Stranger"}
+              </div>
+            )}
+          </div>
+
+          {/* 2. Local Video (Self) Wrapper */}
+          <div className={`${
+            status === "connected"
+              ? "relative flex-1 w-full h-[50dvh] md:h-full md:w-1/2 overflow-hidden bg-black border-t md:border-t-0 md:border-l border-white/10 animate-fadeIn"
+              : "absolute inset-0 w-full h-full z-10 bg-black"
+          } transition-all duration-500`}>
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted={true}
+              className="w-full h-full object-cover"
+              style={{
+                transform: "scaleX(-1) translateZ(0)",
+                willChange: "transform",
+                backfaceVisibility: "hidden",
+              }}
+            />
+
+            {/* Label for Self */}
+            <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full text-white text-xs font-bold border border-white/10 z-20 shadow-md flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+              You
+            </div>
+
+            {/* Self floating controls overlay (always cleanly placed top-right of local video) */}
+            <div className="absolute top-4 right-4 z-20">
+              <div className="flex gap-1.5 bg-black/30 backdrop-blur-md p-1.5 rounded-full border border-white/10 shadow-lg">
+                <button
+                  onClick={toggleVideo}
+                  className={`btn btn-circle btn-xs ${isVideoMuted ? "btn-error" : "btn-ghost"} text-white w-7 h-7 min-h-0`}
+                  title={isVideoMuted ? "Turn Video On" : "Turn Video Off"}
+                >
+                  {isVideoMuted ? (
+                    <VideoOff className="w-3.5 h-3.5" />
+                  ) : (
+                    <Video className="w-3.5 h-3.5" />
+                  )}
+                </button>
+                <button
+                  onClick={toggleAudio}
+                  className={`btn btn-circle btn-xs ${isAudioMuted ? "btn-error" : "btn-ghost"} text-white w-7 h-7 min-h-0`}
+                  title={isAudioMuted ? "Turn Mic On" : "Turn Mic Off"}
+                >
+                  {isAudioMuted ? (
+                    <MicOff className="w-3.5 h-3.5" />
+                  ) : (
+                    <Mic className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+
         {/* Waiting Overlay */}
         {status === "waiting" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-black/50 via-gray-900/30 to-black/50 backdrop-blur-md px-4">
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-black/50 via-gray-900/30 to-black/50 backdrop-blur-md px-4 z-30">
             <div className="text-center space-y-6 p-8 w-full max-w-sm">
               <div className="relative">
                 <div className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>
                 <Users className="absolute inset-0 m-auto w-6 h-6 sm:w-8 sm:h-8 text-yellow-400" />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 bg-black/45 backdrop-blur-sm p-4 rounded-2xl border border-white/5 shadow-md">
                 <h2 className="text-2xl sm:text-3xl font-bold luxury-gradient-text animate-luxury-shimmer">
                   Finding Match
                 </h2>
-                <p className="text-white/80 text-sm sm:text-base">
+                <p className="text-white/85 text-xs sm:text-sm">
                   Connecting you with someone amazing...
                 </p>
                 {onlineCount > 0 && (
-                  <p className="text-xs sm:text-sm text-white/60">
+                  <p className="text-[10px] sm:text-xs text-white/50">
                     {onlineCount} people online
                   </p>
                 )}
@@ -1420,7 +1500,8 @@ const StrangerChatPage = () => {
             </div>
           </div>
         )}
-        {/* Floating Reactions - Move up slightly */}
+
+        {/* Floating Reactions */}
         <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
           {reactions.map((reaction) => (
             <div
@@ -1435,6 +1516,7 @@ const StrangerChatPage = () => {
             </div>
           ))}
         </div>
+
         {/* Top Status Bar - Compact on Mobile */}
         <div className="absolute top-0 left-0 right-0 z-40 bg-gradient-to-b from-black/60 to-transparent pb-4">
           <div className="flex items-center justify-between p-3 sm:p-4">
@@ -1450,13 +1532,14 @@ const StrangerChatPage = () => {
                   </span>
                 </div>
               )}
-              {/* Connection indicator simplified on mobile */}
+              {/* Connection indicator */}
               {status === "connected" && (
                 <div
                   className={`w-2 h-2 rounded-full ${connectionQuality === "good" ? "bg-green-500" : connectionQuality === "poor" ? "bg-yellow-500" : "bg-red-500"}`}
                 ></div>
               )}
             </div>
+
             {/* Center: Partner Info */}
             {status === "connected" && partnerUserData && (
               <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 max-w-[150px] sm:max-w-none justify-center">
@@ -1476,14 +1559,9 @@ const StrangerChatPage = () => {
                 <span className="font-semibold text-white text-xs sm:text-sm truncate">
                   {partnerUserData.displayName || "Stranger"}
                 </span>
-                {/* {chatTime > 0 && (
-									<div className="flex items-center gap-0.5 text-white/70 text-[10px] sm:text-xs shrink-0">
-										<Clock className="w-2.5 h-2.5" />
-										{formatTime(chatTime)}
-									</div>
-								)} */}
               </div>
             )}
+
             {/* Right: Actions */}
             <div className="flex items-center gap-2">
               {status === "connected" && (
@@ -1505,53 +1583,6 @@ const StrangerChatPage = () => {
                   </button>
                 </>
               )}
-            </div>
-          </div>
-        </div>
-        {/* Self Video - Smaller & repositioned on mobile */}
-        <div className="absolute top-16 right-3 sm:top-20 sm:right-4 z-30">
-          <div className="relative w-24 h-36 sm:w-36 sm:h-48 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-white/30 bg-black/20 backdrop-blur-sm transition-all duration-300">
-            <video
-              ref={localVideoRef}
-              autoPlay
-              playsInline
-              muted={true}
-              className="w-full h-full object-cover"
-              style={{
-                transform: "scaleX(-1) translateZ(0)",
-                willChange: "transform",
-                backfaceVisibility: "hidden",
-              }}
-            />
-            {/* Video controls */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 sm:p-2">
-              <div className="flex items-center justify-between">
-                <span className="text-white text-[10px] sm:text-xs font-medium">
-                  You
-                </span>
-                <div className="flex gap-1">
-                  <button
-                    onClick={toggleVideo}
-                    className={`btn btn-circle btn-xs ${isVideoMuted ? "btn-error" : "btn-ghost"} text-white w-5 h-5 min-h-0 sm:w-6 sm:h-6`}
-                  >
-                    {isVideoMuted ? (
-                      <VideoOff className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    ) : (
-                      <Video className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    )}
-                  </button>
-                  <button
-                    onClick={toggleAudio}
-                    className={`btn btn-circle btn-xs ${isAudioMuted ? "btn-error" : "btn-ghost"} text-white w-5 h-5 min-h-0 sm:w-6 sm:h-6`}
-                  >
-                    {isAudioMuted ? (
-                      <MicOff className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    ) : (
-                      <Mic className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    )}
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -1584,52 +1615,22 @@ const StrangerChatPage = () => {
             </form>
           </div>
         )}
-        {/* Reaction Emoji Picker - Drop-up Animation */}
-        {status === "connected" && (
-          <div className="absolute bottom-28 sm:bottom-36 right-4 z-40">
-            {/* Emoji Picker Drop-up */}
-            <div
-              className={`absolute bottom-full right-0 mb-2 transition-all duration-300 origin-bottom-right ${showReactionPicker ? "scale-100 opacity-100" : "scale-0 opacity-0"}`}
-            >
-              <div className="flex gap-2 bg-base-100/95 backdrop-blur-md rounded-2xl px-3 py-2 border border-base-300 shadow-xl">
-                {["❤️", "👍", "😂", "🎉", "😊", "🔥"].map((emoji) => (
-                  <button
-                    key={emoji}
-                    onClick={() => {
-                      sendReaction(emoji);
-                      setShowReactionPicker(false);
-                    }}
-                    className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary/20 active:scale-90 transition-all duration-200"
-                  >
-                    <span className="text-2xl">{emoji}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* Toggle Button */}
-            <button
-              onClick={() => setShowReactionPicker(!showReactionPicker)}
-              className={`btn btn-circle btn-md backdrop-blur-md shadow-lg transition-all duration-300 ${showReactionPicker ? "bg-primary text-primary-content" : "bg-white/10 border border-white/20 text-white hover:bg-white/20"}`}
-            >
-              <span className="text-xl">{showReactionPicker ? "✕" : "😊"}</span>
-            </button>
-          </div>
-        )}
-        {/* Bottom Control Bar - Professional Glass Design */}
-        <div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none pb-safe">
-          <div className="flex items-center justify-center gap-3 sm:gap-4 p-4 sm:p-5 pb-5 sm:pb-7 pointer-events-auto w-full max-w-xl mx-auto">
-            {/* Skip/Next Button - Glass Outline */}
+        {/* Unified Bottom Control Console - Breathtakingly premium floating island */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 select-none max-w-[95vw] sm:max-w-none pointer-events-auto">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 px-5 sm:px-6 py-3 bg-black/60 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl">
+            
+            {/* Skip/Next Button */}
             <button
               onClick={handleSkip}
               disabled={status === "initializing"}
-              className={`btn btn-md sm:btn-lg flex-1 gap-2 shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 font-semibold backdrop-blur-md border-2 ${
+              className={`h-11 sm:h-12 px-4 sm:px-5 rounded-xl flex items-center justify-center gap-1.5 shadow-lg transition-all duration-300 active:scale-95 font-bold border ${
                 status === "waiting"
-                  ? "bg-white/5 border-white/30 text-white hover:bg-white/15 hover:border-white/50"
-                  : "bg-primary/10 border-primary/50 text-primary hover:bg-primary/20 hover:border-primary"
+                  ? "bg-white/5 border-white/15 text-white hover:bg-white/15 hover:border-white/30"
+                  : "bg-primary/20 border-primary/50 text-primary hover:bg-primary/30 hover:border-primary/80"
               }`}
             >
-              <SkipForward className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="font-bold text-sm sm:text-base">
+              <SkipForward className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
+              <span className="text-sm sm:text-base font-semibold">
                 {status === "connected"
                   ? "Next"
                   : status === "waiting"
@@ -1637,45 +1638,122 @@ const StrangerChatPage = () => {
                     : "Start"}
               </span>
             </button>
-            {/* Add Friend Button - Always show when connected */}
+
+            {/* Premium Mic Mute Button */}
+            <button
+              onClick={toggleAudio}
+              className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 active:scale-95 border ${
+                isAudioMuted
+                  ? "bg-red-500/80 border-red-500 text-white hover:bg-red-600"
+                  : "bg-white/5 border-white/10 text-white hover:bg-white/15"
+              }`}
+              title={isAudioMuted ? "Unmute Mic" : "Mute Mic"}
+            >
+              {isAudioMuted ? (
+                <MicOff className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
+              ) : (
+                <Mic className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
+              )}
+            </button>
+
+            {/* Premium Camera Mute Button */}
+            <button
+              onClick={toggleVideo}
+              className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 active:scale-95 border ${
+                isVideoMuted
+                  ? "bg-red-500/80 border-red-500 text-white hover:bg-red-600"
+                  : "bg-white/5 border-white/10 text-white hover:bg-white/15"
+              }`}
+              title={isVideoMuted ? "Turn Camera On" : "Turn Camera Off"}
+            >
+              {isVideoMuted ? (
+                <VideoOff className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
+              ) : (
+                <Video className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
+              )}
+            </button>
+
+            {/* Reaction Emoji Picker - Integrated in the console */}
+            {status === "connected" && (
+              <div className="relative">
+                {/* Emoji Picker Drop-up */}
+                <div
+                  className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-4 transition-all duration-300 origin-bottom ${
+                    showReactionPicker ? "scale-100 opacity-100" : "scale-0 opacity-0"
+                  }`}
+                >
+                  <div className="flex gap-1.5 bg-black/90 backdrop-blur-2xl rounded-2xl px-2.5 py-1.5 border border-white/10 shadow-2xl">
+                    {["❤️", "👍", "😂", "🎉", "😊", "🔥"].map((emoji) => (
+                      <button
+                        key={emoji}
+                        onClick={() => {
+                          sendReaction(emoji);
+                          setShowReactionPicker(false);
+                        }}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-90 transition-all duration-200"
+                      >
+                        <span className="text-xl">{emoji}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Toggle Button */}
+                <button
+                  onClick={() => setShowReactionPicker(!showReactionPicker)}
+                  className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 active:scale-95 border ${
+                    showReactionPicker 
+                      ? "bg-primary border-primary text-white" 
+                      : "bg-white/5 border-white/10 text-white hover:bg-white/15"
+                  }`}
+                  title="Send Reaction"
+                >
+                  <Smile className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
+                </button>
+              </div>
+            )}
+
+            {/* Add Friend Button */}
             {status === "connected" && (
               <button
                 onClick={handleAddFriend}
                 disabled={getFriendButtonConfig?.disabled || !partnerUserId}
-                className={`btn btn-md sm:btn-lg gap-2 backdrop-blur-md border-2 shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 ${
+                className={`h-11 sm:h-12 px-4 rounded-xl flex items-center justify-center gap-2 border shadow-lg transition-all duration-300 active:scale-95 ${
                   getFriendButtonConfig?.disabled
-                    ? "bg-success/10 border-success/50 text-success cursor-not-allowed"
-                    : "bg-secondary/10 border-secondary/50 text-secondary hover:bg-secondary/20 hover:border-secondary"
+                    ? "bg-success/15 border-success/30 text-success cursor-not-allowed"
+                    : "bg-secondary/20 border-secondary/50 text-secondary hover:bg-secondary/30 hover:border-secondary"
                 }`}
                 title={getFriendButtonConfig?.text || "Add Friend"}
               >
                 {getFriendButtonConfig?.icon ? (
-                  <getFriendButtonConfig.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <getFriendButtonConfig.icon className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
                 ) : (
-                  <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <UserPlus className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
                 )}
-                <span className="hidden sm:inline font-semibold">
+                <span className="text-sm font-semibold hidden md:inline">
                   {getFriendButtonConfig?.text || "Add Friend"}
                 </span>
               </button>
             )}
-            {/* Report Button - Subtle */}
+
+            {/* Report Button */}
             {status === "connected" && (
               <button
                 onClick={() => setIsReportModalOpen(true)}
-                className="btn btn-md sm:btn-lg btn-circle backdrop-blur-md bg-white/5 border-2 border-white/20 text-white/70 hover:bg-error/10 hover:border-error/50 hover:text-error shadow-lg transition-all duration-300 active:scale-95"
+                className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 active:scale-95 bg-white/5 border border-white/10 text-white/70 hover:bg-error/10 hover:border-error/50 hover:text-error"
                 title="Report User"
               >
-                <Flag className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Flag className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
               </button>
             )}
-            {/* Leave Button - Glass Outline Error */}
+
+            {/* Leave Button */}
             <button
               onClick={() => navigate("/")}
-              className="btn btn-md sm:btn-lg flex-1 gap-2 backdrop-blur-md bg-error/10 border-2 border-error/50 text-error hover:bg-error/20 hover:border-error shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95"
+              className="h-11 sm:h-12 px-5 sm:px-6 rounded-xl flex items-center justify-center gap-2 border bg-error/20 border-error/50 text-error hover:bg-error/30 hover:border-error transition-all duration-300 active:scale-95 font-semibold"
             >
-              <PhoneOff className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="font-semibold text-sm sm:text-base">Leave</span>
+              <PhoneOff className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
+              <span className="text-sm sm:text-base font-semibold">Leave</span>
             </button>
           </div>
         </div>

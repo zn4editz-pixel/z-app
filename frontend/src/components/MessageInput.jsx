@@ -515,6 +515,14 @@ const EnhancedMessageInput = ({ replyingTo, onCancelReply }) => {
               placeholder="Message..."
               value={text}
               onChange={(e) => handleTyping(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const enterEnabled = localStorage.getItem("chat-enter-to-send") !== "false";
+                  if (!enterEnabled) {
+                    e.preventDefault();
+                  }
+                }
+              }}
               autoComplete="off"
               name="message"
               id="message-input"

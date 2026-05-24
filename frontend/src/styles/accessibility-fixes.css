@@ -2,35 +2,30 @@
 
 /* Improve text contrast ratios for WCAG AA compliance */
 
-/* Base text - ensure minimum 4.5:1 contrast ratio */
+/* Base text - ensure minimum 4.5:1 contrast ratio using theme variables */
 body {
-  color: oklch(0.95 0 0);
-  /* Near white for dark mode */
+  color: oklch(var(--bc));
 }
 
 /* Muted text - improve from 60% to 70% opacity for better contrast */
 .text-base-content\/60,
 [class*="text-base-content/60"] {
   opacity: 0.75 !important;
-  /* Improved from 0.6 to 0.75 for better contrast */
 }
 
 .text-base-content\/70,
 [class*="text-base-content/70"] {
   opacity: 0.8 !important;
-  /* Improved from 0.7 to 0.8 */
 }
 
 .text-base-content\/40,
 [class*="text-base-content/40"] {
   opacity: 0.65 !important;
-  /* Improved from 0.4 to 0.65 for minimum readability */
 }
 
 /* Button text - ensure high contrast */
 .btn {
   font-weight: 500;
-  /* Slightly bolder for better readability */
 }
 
 /* Link text - use theme primary color */
@@ -40,22 +35,19 @@ a {
 
 a:hover {
   color: oklch(0.8 0.15 250);
-  /* Even brighter on hover */
 }
 
 /* Placeholder text - improve contrast */
 ::placeholder {
   opacity: 0.65 !important;
-  /* Improved from typical 0.5 */
   color: currentColor;
 }
 
-/* Input text - ensure high contrast */
+/* Input text - ensure high contrast using theme variables */
 input,
 textarea,
 select {
-  color: oklch(0.95 0 0);
-  /* Near white for dark backgrounds */
+  color: oklch(var(--bc));
 }
 
 /* Disabled state - maintain minimum contrast */
@@ -167,10 +159,10 @@ a:not(.btn):not([class*="btn-"]) {
   color: oklch(0.75 0.1 300) !important;
 }
 
-/* Ensure sufficient contrast for all text on colored backgrounds */
+/* Ensure sufficient contrast for all text on base backgrounds */
 .bg-base-200,
 .bg-base-300 {
-  color: oklch(0.95 0 0);
+  color: oklch(var(--bc));
 }
 
 /* Skip to main content link for screen readers */

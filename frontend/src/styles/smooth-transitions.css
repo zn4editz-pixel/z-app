@@ -37,16 +37,16 @@ input, textarea, select {
 }
 
 input:focus, textarea:focus, select:focus {
-  transform: scale(1.01);
+  /* Removed scaling to prevent browser jank and blurry text */
 }
 
 /* Smooth Card Transitions */
-.card, [class*="card"] {
+.card {
   transition: all var(--transition-base);
   will-change: transform, box-shadow;
 }
 
-.card:hover, [class*="card"]:hover {
+.card:hover, .card-lift:hover {
   transform: translateY(-2px);
 }
 

@@ -1,19 +1,32 @@
 version: '3.8'
 
 services:
-  # MongoDB Database
-  mongodb:
-    image: mongo:6.0
-    container_name: z-app-mongodb
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: z-app-postgres
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-changeme}
-      MONGO_INITDB_DATABASE: z-app
+      POSTGRES_DB: ${POSTGRES_DB:-z_app_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-z_app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password}
     volumes:
-      - mongodb_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
     ports:
-      - "27017:27017"
+      - "5432:5432"
+    networks:
+      - z-app-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: z-app-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-dev_password}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
     networks:
       - z-app-network
 
@@ -26,22 +39,24 @@ services:
     restart: unless-stopped
     environment:
       PORT: 5001
-      MONGODB_URI: mongodb://admin:${MONGO_PASSWORD:-changeme}@mongodb:27017/z-app?authSource=admin
-      JWT_SECRET: ${JWT_SECRET}
-      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-z_app_user}:${POSTGRES_PASSWORD:-dev_password}@postgres:5432/${POSTGRES_DB:-z_app_dev}?schema=public
+      REDIS_URL: redis://:${REDIS_PASSWORD:-dev_password}@redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production-32chars}
+      NODE_ENV: ${NODE_ENV:-development}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       EMAIL_USER: ${EMAIL_USER}
       EMAIL_PASS: ${EMAIL_PASS}
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_USERNAME: ${ADMIN_USERNAME}
-      FRONTEND_URL: ${FRONTEND_URL}
-      CLIENT_URL: ${CLIENT_URL}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@z-app.com}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:5173}
     ports:
       - "5001:5001"
     depends_on:
-      - mongodb
+      - postgres
+      - redis
     networks:
       - z-app-network
     volumes:
@@ -54,8 +69,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL}
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5001}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5001}
     container_name: z-app-frontend
     restart: unless-stopped
     ports:
@@ -66,7 +81,7 @@ services:
     networks:
       - z-app-network
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
 
 networks:
@@ -74,5 +89,7 @@ networks:
     driver: bridge
 
 volumes:
-  mongodb_data:
+  postgres_data:
+    driver: local
+  redis_data:
     driver: local

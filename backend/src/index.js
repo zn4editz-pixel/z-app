@@ -66,10 +66,12 @@ const startServer = async () => {
   // Activity Monitor
   app.use(activityMonitor);
 
+  const isDev = process.env.NODE_ENV !== 'production';
+
   // Rate Limiting - Production Security
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // 100 requests per window
+    max: isDev ? 10000 : 100, // 10000 requests in dev, 100 in prod
     message: { error: 'Too many requests, please try again later' },
     standardHeaders: true,
     legacyHeaders: false
@@ -77,7 +79,7 @@ const startServer = async () => {
 
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // INCREASED FOR DEV: 100 attempts
+    max: isDev ? 10000 : 100, // 10000 attempts in dev, 100 in prod
     message: { error: 'Too many authentication attempts, please try again later' },
     standardHeaders: true,
     legacyHeaders: false

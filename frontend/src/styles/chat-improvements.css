@@ -90,20 +90,46 @@
 }
 
 /* 4. COMPLETELY ELIMINATE BLUE RECTANGLE - ALL BROWSERS */
-/* Remove ALL focus outlines and blue rectangles */
+/* Remove ALL focus outlines and blue rectangles while preserving native layout borders */
 input, textarea, select, button {
   outline: none !important;
-  box-shadow: none !important;
-  border: none !important;
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  appearance: none !important;
   -webkit-tap-highlight-color: transparent !important;
   -webkit-touch-callout: none !important;
-  -webkit-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
-  user-select: none !important;
+}
+
+/* Theme-adaptive input borders that match label text color (base-content) */
+.input-bordered,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea {
+  border: 1px solid oklch(var(--bc) / 0.2) !important; /* Elegant 1px border matching theme text color at 20% opacity */
+  background-color: oklch(var(--b1)) !important;
+  color: oklch(var(--bc)) !important;
+  border-radius: 0.5rem !important;
+  transition: border-color 0.25s ease !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  box-shadow: none !important;
+}
+
+.input-bordered:hover,
+input[type="text"]:hover,
+input[type="email"]:hover,
+input[type="password"]:hover,
+textarea:hover {
+  border-color: oklch(var(--bc) / 0.35) !important; /* Slightly clearer on hover */
+}
+
+.input-bordered:focus,
+.input-bordered:focus-within,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+textarea:focus {
+  border-color: oklch(var(--p) / 0.6) !important; /* Soft active primary color (e.g. golden-orange) - not overly bright */
+  box-shadow: none !important; /* Completely removed thick glowing shadow for clean typing experience */
+  outline: none !important;
 }
 
 /* Specifically target message input */
@@ -620,44 +646,45 @@ input[type="text"], textarea {
     animation: none !important;
   }
 }
-/* COMPLETE BLUE RECTANGLE ELIMINATION - ALL CASES */
-* {
+/* COMPLETE BLUE RECTANGLE ELIMINATION - TARGETED & PROFESSIONAL */
+/* Only target native tap-highlight for mobile devices */
+input, textarea, select, button, a, [role="button"] {
   -webkit-tap-highlight-color: transparent !important;
-  -webkit-touch-callout: none !important;
-  -webkit-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
-  user-select: none !important;
-  outline: none !important;
-  box-shadow: none !important;
 }
 
-/* AGGRESSIVE MOBILE INPUT FIX - Target all input states */
-input, textarea, select, button, div, span, a {
-  -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
-  -webkit-tap-highlight-color: transparent !important;
-  -webkit-touch-callout: none !important;
-  -webkit-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
-  user-select: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  border: none !important;
+/* Focused elements should have a clean, consistent outline or border only when using keyboard navigation */
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible {
+  outline: 2px solid oklch(var(--p) / 0.4) !important;
+  outline-offset: 2px;
+}
+
+/* Allow normal text selection in body, messages, profiles, and custom user fields */
+input[type="text"], input[type="email"], input[type="password"], textarea, 
+.message-text, .user-bio, .username, .full-name, p, span, h1, h2, h3, h4, h5, h6, li {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
+/* Prevent selection only on purely graphical or action elements to feel like a native app */
+.btn, button, .icon, svg, .logo, nav, header, [role="tab"] {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 /* MOBILE TOUCH HIGHLIGHT ELIMINATION */
-input:focus, input:active, input:hover,
-textarea:focus, textarea:active, textarea:hover,
-button:focus, button:active, button:hover,
-div:focus, div:active, div:hover,
-*:focus, *:active, *:hover, *:target {
+input:focus, input:active,
+textarea:focus, textarea:active,
+button:focus, button:active,
+div:focus, div:active,
+*:focus, *:active, *:target {
   -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
   -webkit-tap-highlight-color: transparent !important;
   outline: none !important;
   box-shadow: none !important;
-  border: none !important;
-  background-color: transparent !important;
 }
 
 /* Allow text selection only for text inputs */

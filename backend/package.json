@@ -22,7 +22,7 @@
     "postinstall": "node scripts/setup-schema.js && npx prisma generate",
     "setup:schema": "node scripts/setup-schema.js",
     "health": "node -e \"console.log('Health check passed')\"",
-    "test:db": "node -e \"require('./src/lib/db.js').default.$queryRaw\\`SELECT 1\\`.then(() => console.log('DB OK')).catch(e => {console.error('DB Error:', e.message); process.exit(1);})\"",
+    "test:db": "node scripts/test-db.js",
     "validate:env": "node scripts/validate-env.js",
     "logs": "tail -f logs/app.log",
     "logs:error": "tail -f logs/error.log",

@@ -40,7 +40,7 @@ RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs
 
 # Health check with better error handling
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:5001/health/ping', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
+    CMD node -e "fetch('http://localhost:5001/health/ping').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
 # Start the application
 CMD ["npm", "run", "start:prod"]

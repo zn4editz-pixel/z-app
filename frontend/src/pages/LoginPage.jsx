@@ -179,27 +179,31 @@ const LoginPage = () => {
           <div className="absolute inset-0 bg-[linear-gradient(to_right,theme(colors.primary/0.02)_1px,transparent_1px),linear-gradient(to_bottom,theme(colors.primary/0.02)_1px,transparent_1px)] bg-[size:60px_60px] opacity-30" />
         </div>
         <div className="w-full max-w-md space-y-6 relative z-10">
-          {/* Logo with Premium Gradient Shine Animation */}
+          {/* Logo with Premium Dynamic Theme Glow & Shine Animation */}
           <div className="text-center mb-6">
             <div className="flex flex-col items-center gap-2 group">
-              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-base-content/20 via-base-content/10 to-base-content/20 flex items-center justify-center group-hover:scale-105 transition-all duration-300 shadow-lg premium-logo-container overflow-hidden">
-                {/* Enhanced Gradient Shine Overlay - Multiple layers for better visibility */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-base-100/40 to-transparent premium-shine-animation"></div>
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-base-content/30 to-transparent premium-shine-animation-secondary"></div>
-                {/* Logo with original colors */}
-                <img
-                  src="/z-app-logo.png"
-                  alt="Z App Logo"
-                  className="w-12 h-12 relative z-20 object-contain"
-                />
-                {/* Enhanced inner glow effect */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-base-content/70 to-base-content/70 blur-lg opacity-80 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
-                {/* Medium glow layer */}
-                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-base-content/50 to-base-content/50 blur-xl opacity-70 group-hover:opacity-90 transition-opacity duration-300 z-0"></div>
-                {/* Outer glow for maximum visibility */}
-                <div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-base-content/40 to-base-content/40 blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-300 -z-10"></div>
-                {/* Ultra-wide glow for desktop visibility */}
-                <div className="absolute -inset-6 rounded-full bg-gradient-to-br from-base-content/25 to-base-content/25 blur-3xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 -z-20 hidden lg:block"></div>
+              <div className="relative select-none">
+                {/* Multi-layered Vibrant Theme Backglows (placed outside so they don't clip) */}
+                <div className="absolute inset-0 bg-primary/25 rounded-2xl blur-2xl opacity-75 group-hover:opacity-100 transition-all duration-500 animate-pulse-glow-theme"></div>
+                <div className="absolute -inset-1 bg-gradient-to-tr from-primary to-secondary rounded-2xl blur-md opacity-30 group-hover:opacity-60 transition-all duration-500"></div>
+
+                {/* Cohesive, beautiful premium logo container */}
+                <div className="relative w-16 h-16 rounded-2xl bg-base-200/50 backdrop-blur-md border border-base-content/5 flex items-center justify-center shadow-lg transition-transform duration-500 group-hover:scale-105 group-hover:border-primary/25 overflow-hidden">
+                  {/* Enhanced Gradient Shine Overlay */}
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-base-100/40 to-transparent premium-shine-animation z-10 pointer-events-none"></div>
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-base-content/30 to-transparent premium-shine-animation-secondary z-10 pointer-events-none"></div>
+                  
+                  {/* Z symbol with raw 3D metallic detail and theme-adaptive glow */}
+                  <img
+                    src="/z-app-logo.png"
+                    alt="Z App Logo"
+                    className="w-10 h-10 object-contain relative z-20 transition-all duration-500"
+                    style={{
+                      filter: "drop-shadow(0 0 8px oklch(var(--p) / 0.65))",
+                      willChange: "filter",
+                    }}
+                  />
+                </div>
               </div>
               <h1 className="text-2xl font-bold mt-4 bg-gradient-to-r from-base-content to-base-content/80 bg-clip-text text-transparent">
                 Welcome Back
@@ -313,6 +317,17 @@ const LoginPage = () => {
           animationType={settings?.loginAnimation} // Pass dynamic animation
         />
       </div>
+
+      {/* Dynamic Keyframes for Theme-Adaptive Logo Glow animations */}
+      <style>{`
+        @keyframes pulseGlowTheme {
+          0%, 100% { opacity: 0.6; transform: scale(0.98); }
+          50% { opacity: 0.85; transform: scale(1.03); }
+        }
+        .animate-pulse-glow-theme {
+          animation: pulseGlowTheme 3s ease-in-out infinite;
+        }
+      `}</style>
     </motion.div>
   );
 };

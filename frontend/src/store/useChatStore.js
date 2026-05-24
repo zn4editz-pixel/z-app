@@ -263,6 +263,15 @@ export const useChatStore = create((set, get) => ({
         ((msgSenderId === selectedUserId && msgReceiverId === authUserId) ||
           (msgSenderId === authUserId && msgReceiverId === selectedUserId));
 
+      if (msgSenderId !== authUserId) {
+        const soundEnabled = localStorage.getItem("chat-sounds-enabled") !== "false";
+        if (soundEnabled) {
+          const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav");
+          audio.volume = 0.35;
+          audio.play().catch(() => {});
+        }
+      }
+
       if (isForCurrentChat) {
         // Stop typing indicator when message received
         set({ isTyping: false, typingUserId: null });

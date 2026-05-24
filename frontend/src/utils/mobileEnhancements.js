@@ -99,9 +99,7 @@ export const enhanceButtons = () => {
 };
 // Add Instagram-style card animations
 export const enhanceCards = () => {
-  const cards = document.querySelectorAll(
-    '.card, [class*="bg-base-"], [class*="rounded"]',
-  );
+  const cards = document.querySelectorAll('.card');
   cards.forEach((card) => {
     card.classList.add("instagram-card");
   });

@@ -200,10 +200,11 @@ const HomePage = () => {
     // Update global store
     startCall(selectedUser, callType);
   };
-  // Mobile detection for full-screen chat
+  // Mobile detection - only trigger full-mobile responsive behavior for actual mobile/tablet devices
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+      const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setIsMobile(isMobileUserAgent && window.innerWidth <= 768);
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -224,7 +225,7 @@ const HomePage = () => {
           <div className="bg-base-100 w-full h-full flex overflow-hidden border-base-300 relative">
 
             {/* Sidebar - Always rendered on mobile (behind chat) or desktop (side) */}
-            <div className={`flex-shrink-0 ${isMobile ? 'w-full h-full absolute inset-0' : 'w-80 border-r'}`}>
+            <div className={`flex-shrink-0 ${isMobile ? 'w-full h-full absolute inset-0' : 'w-80 border-r border-base-300'}`}>
               <Sidebar />
             </div>
             {/* Desktop: Static Chat Area (if not mobile) */}
