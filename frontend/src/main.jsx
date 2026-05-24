@@ -1,6 +1,8 @@
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import "./styles/animations.css"; // Critical CSS only
+import "./styles/animations.css";
+import "./styles/responsive.css";
+import "./styles/mobile.css";
 import "./styles/accessibility-fixes.css"; // Accessibility improvements - critical for WCAG compliance
 import "./styles/navbar-hover.css"; // Navbar white hover/active states
 import "./styles/remove-blue.css"; // Remove all blue colors - use theme colors only
@@ -15,14 +17,9 @@ import "./utils/productionSecurity.js";
 // Preload critical resources
 import {
   preloadCriticalResources,
-  loadNonCriticalCSS,
 } from "./utils/cssOptimizer.js";
 // Initialize performance optimizations
 preloadCriticalResources();
-// Load non-critical CSS after initial render
-setTimeout(() => {
-  loadNonCriticalCSS();
-}, 0);
 // Ensure theme is applied before React renders
 (function () {
   try {
