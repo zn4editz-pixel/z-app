@@ -49,9 +49,13 @@ const startServer = async () => {
     origin: (origin, callback) => {
       // Allow requests with no origin (mobile apps, etc.)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
+      
+      // Allow if explicitly listed or matches any Vercel domain (*.vercel.app)
+      const isVercel = /\.vercel\.app$/.test(origin);
+      if (allowedOrigins.includes(origin) || isVercel) {
         return callback(null, true);
       }
+      
       // In production, be strict about origins but log the rejection
       if (process.env.NODE_ENV === 'production') {
         return callback(new Error('Not allowed by CORS'));

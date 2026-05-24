@@ -743,15 +743,10 @@ input[type="text"], input[type="email"], input[type="password"], textarea {
     border: none !important;
   }
   
-  /* Aggressive mobile input targeting */
-  input[type="text"]:focus,
-  input[type="text"]:active,
-  input[type="text"]:hover,
-  input[type="text"]:target {
-    -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
-    -webkit-tap-highlight-color: transparent !important;
-    outline: none !important;
-    box-shadow: none !important;
+  /* Target only message input on mobile to prevent global input border breakage */
+  .mobile-message-input-professional input:focus,
+  .mobile-message-input-professional input:active,
+  .mobile-message-input-professional input:hover {
     border: none !important;
     background: transparent !important;
   }
