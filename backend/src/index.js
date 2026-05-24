@@ -40,6 +40,7 @@ const startServer = async () => {
     process.env.FRONTEND_URL,
     process.env.CLIENT_URL,
     "https://z-app-official.vercel.app", // Hardcoded fallback for Vercel
+    "https://z-app-official-beta.vercel.app", // Hardcoded fallback for Vercel Beta
     "http://localhost:5173", // Development
     "http://localhost:3000", // Development
     "http://127.0.0.1:5173", // Development
