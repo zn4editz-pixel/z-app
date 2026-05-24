@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:secure": "vite build",
-    "vercel-build": "vite build && node vercel-build.js",
+    "vercel-build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "clean": "rm -rf node_modules/.vite && rm -rf dist",
