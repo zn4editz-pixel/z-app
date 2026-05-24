@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node fix-jsx-extensions.js && node remove-console-logs.js",
-    "build:secure": "vite build && node fix-jsx-extensions.js && node remove-console-logs.js",
-    "vercel-build": "vite build && node fix-jsx-extensions.js && node remove-console-logs.js && node vercel-build.js",
+    "build": "vite build",
+    "build:secure": "vite build",
+    "vercel-build": "vite build && node vercel-build.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "clean": "rm -rf node_modules/.vite && rm -rf dist",

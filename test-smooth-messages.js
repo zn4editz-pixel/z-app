@@ -1,1 +1,0 @@
-#!/usr/bin/env node/** * Test Script: Smooth Message Transitions *  * This script validates that messages appear with smooth transitions * and scroll animations work properly. */// Test 1: Added smooth message animations// Test 2: Restored scroll animations// Test 3: Professional animation timing// Test 4: Touch feedback improvements

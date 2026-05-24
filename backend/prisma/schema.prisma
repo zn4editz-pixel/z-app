@@ -43,7 +43,7 @@ model User {
   lastSeen DateTime?
 
   // Verification Request
-  verificationStatus      String    @default("none") // none, pending, approved, rejected
+  verificationStatus      String    @default("none")
   verificationReason      String?
   verificationIdProof     String?
   verificationRequestedAt DateTime?
@@ -106,15 +106,15 @@ model Message {
   receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
 
   // Message status
-  status      String    @default("sent") // sent, delivered, read
+  status      String    @default("sent")
   deliveredAt DateTime?
   readAt      DateTime?
 
   // Call logs
   isCallLog     Boolean @default(false)
-  callType      String? // voice, video
+  callType      String?
   callDuration  Int?
-  callStatus    String? // completed, missed, rejected
+  callStatus    String?
   callInitiator String?
 
   // Reply To
@@ -138,7 +138,7 @@ model FriendRequest {
 
   senderId   String
   receiverId String
-  status     String @default("pending") // pending, accepted, rejected
+  status     String @default("pending")
 
   sender   User @relation("FriendRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
   receiver User @relation("FriendRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
@@ -158,10 +158,9 @@ model Report {
   reportedUserId String
   reason         String
   description    String?
-  status         String  @default("pending") // pending, reviewed, resolved, dismissed
+  status         String  @default("pending")
   screenshot     String?
 
-  // AI Analysis
   isAIDetected Boolean @default(false)
   aiCategory   String?
   aiConfidence Float?
@@ -186,7 +185,7 @@ model AdminNotification {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
 
-  type    String // report, verification, user_action
+  type    String
   title   String
   message String
   isRead  Boolean @default(false)

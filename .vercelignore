@@ -1,8 +1,0 @@
-backend/
-node_modules/
-*.md
-*.bat
-*.sh
-.git/
-.kiro/
-docs/

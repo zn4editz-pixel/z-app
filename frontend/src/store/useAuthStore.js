@@ -1,6 +1,4 @@
-// ... keep imports but REMOVE useFriendStore
 import { create } from "zustand";
-import React from "react";
 import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";

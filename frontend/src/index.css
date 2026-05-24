@@ -1134,8 +1134,8 @@ body.react-loaded {
   /* w-32 */
 
   /* Mask Properties */
-  mask-image: url("/zn4.png");
-  -webkit-mask-image: url("/zn4.png");
+  mask-image: url("/logo.svg");
+  -webkit-mask-image: url("/logo.svg");
   mask-size: contain;
   -webkit-mask-size: contain;
   mask-repeat: no-repeat;
