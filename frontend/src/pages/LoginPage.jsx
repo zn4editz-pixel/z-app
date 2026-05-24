@@ -178,127 +178,119 @@ const LoginPage = () => {
           {/* Subtle Grid Pattern */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,theme(colors.primary/0.02)_1px,transparent_1px),linear-gradient(to_bottom,theme(colors.primary/0.02)_1px,transparent_1px)] bg-[size:60px_60px] opacity-30" />
         </div>
-        <div className="w-full max-w-md space-y-6 relative z-10">
-          {/* Logo with Premium Gradient Shine Animation */}
-          <div className="text-center mb-6">
-            <div className="flex flex-col items-center gap-2 group">
-              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-base-content/20 via-base-content/10 to-base-content/20 flex items-center justify-center group-hover:scale-105 transition-all duration-300 shadow-lg premium-logo-container overflow-hidden">
-                {/* Enhanced Gradient Shine Overlay - Multiple layers for better visibility */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-base-100/40 to-transparent premium-shine-animation"></div>
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-base-content/30 to-transparent premium-shine-animation-secondary"></div>
-                {/* Logo with original colors */}
-                <img
-                  src="/z-app-logo.png"
-                  alt="Z App Logo"
-                  className="w-12 h-12 relative z-20 object-contain"
-                />
-                {/* Enhanced inner glow effect */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-base-content/70 to-base-content/70 blur-lg opacity-80 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
-                {/* Medium glow layer */}
-                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-base-content/50 to-base-content/50 blur-xl opacity-70 group-hover:opacity-90 transition-opacity duration-300 z-0"></div>
-                {/* Outer glow for maximum visibility */}
-                <div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-base-content/40 to-base-content/40 blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-300 -z-10"></div>
-                {/* Ultra-wide glow for desktop visibility */}
-                <div className="absolute -inset-6 rounded-full bg-gradient-to-br from-base-content/25 to-base-content/25 blur-3xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 -z-20 hidden lg:block"></div>
-              </div>
-              <h1 className="text-2xl font-bold mt-4 bg-gradient-to-r from-base-content to-base-content/80 bg-clip-text text-transparent">
-                Welcome Back
-              </h1>
-              <p className="text-base-content/60">Sign in to your account</p>
-            </div>
-          </div>
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* ✅ CHANGED: Email field is now Email/Username field */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">
-                  Email or Username
-                </span>
-              </label>
-              <div className="relative">
-                <div className="!absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none !z-[102]">
-                  {/* Replaced Mail icon with User icon */}
-                  <User className="h-5 w-5 text-base-content/40" />
+          <div className="w-full max-w-md relative z-10">
+          {/* Login Card */}
+          <div className="login-card rounded-2xl border border-base-content/20 bg-base-100/60 backdrop-blur-xl p-8 shadow-2xl">
+            {/* Logo */}
+            <div className="text-center mb-8">
+              <div className="flex flex-col items-center gap-2 group">
+                <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-base-content/20 via-base-content/10 to-base-content/20 flex items-center justify-center group-hover:scale-105 transition-all duration-300 shadow-lg overflow-hidden">
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-base-100/40 to-transparent"></div>
+                  <img
+                    src="/logo.svg"
+                    alt="Z App Logo"
+                    className="w-12 h-12 relative z-20 object-contain"
+                  />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-base-content/70 to-base-content/70 blur-lg opacity-80 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+                  <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-base-content/50 to-base-content/50 blur-xl opacity-70 group-hover:opacity-90 transition-opacity duration-300 z-0"></div>
+                  <div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-base-content/40 to-base-content/40 blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-300 -z-10"></div>
+                  <div className="absolute -inset-6 rounded-full bg-gradient-to-br from-base-content/25 to-base-content/25 blur-3xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 -z-20 hidden lg:block"></div>
                 </div>
-                <input
-                  type="text" // Changed from 'email' to 'text'
-                  className={`input input-bordered w-full pl-10`}
-                  placeholder="Email or Username" // Updated placeholder
-                  value={formData.emailOrUsername} // Updated value
-                  autoComplete="username"
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      emailOrUsername: e.target.value,
-                    })
-                  }
-                />
+                <h1 className="text-2xl font-bold mt-4 bg-gradient-to-r from-base-content to-base-content/80 bg-clip-text text-transparent">
+                  Welcome Back
+                </h1>
+                <p className="text-base-content/60">Sign in to your account</p>
               </div>
             </div>
-            {/* ✅ END OF CHANGES */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Password</span>
-              </label>
-              <div className="relative">
-                <div className="!absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none !z-[102]">
-                  <Lock className="h-5 w-5 text-base-content/40" />
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">
+                    Email or Username
+                  </span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-[102]">
+                    <User className="h-5 w-5 text-base-content/40" />
+                  </div>
+                  <input
+                    type="text"
+                    className="input input-bordered login-input w-full pl-10"
+                    placeholder="Email or Username"
+                    value={formData.emailOrUsername}
+                    autoComplete="username"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        emailOrUsername: e.target.value,
+                      })
+                    }
+                  />
                 </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  className={`input input-bordered w-full pl-10`}
-                  placeholder="Password"
-                  value={formData.password}
-                  autoComplete="current-password"
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                />
-                <button
-                  type="button"
-                  className="!absolute inset-y-0 right-0 pr-3 flex items-center !z-[102]"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-base-content/40" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-base-content/40" />
-                  )}
-                </button>
               </div>
-              {/* Forgot Password Link */}
-              <div className="text-right mt-2">
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-primary hover:underline font-medium"
-                >
-                  Forgot Password?
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Password</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-[102]">
+                    <Lock className="h-5 w-5 text-base-content/40" />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="input input-bordered login-input w-full pl-10"
+                    placeholder="Password"
+                    value={formData.password}
+                    autoComplete="current-password"
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center z-[102]"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5 text-base-content/40" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-base-content/40" />
+                    )}
+                  </button>
+                </div>
+                <div className="text-right mt-2">
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm text-primary hover:underline font-medium"
+                  >
+                    Forgot Password?
+                  </Link>
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="btn btn-primary login-btn w-full shadow-lg"
+                disabled={isLoggingIn}
+              >
+                {isLoggingIn ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  "Sign in"
+                )}
+              </button>
+            </form>
+            <div className="text-center mt-6">
+              <p className="text-base-content/60">
+                Don&apos;t have an account?{" "}
+                <Link to="/signup" className="link link-primary font-medium">
+                  Create account
                 </Link>
-              </div>
+              </p>
             </div>
-            <button
-              type="submit"
-              className="btn btn-primary w-full shadow-lg"
-              disabled={isLoggingIn}
-            >
-              {isLoggingIn ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                "Sign in"
-              )}
-            </button>
-          </form>
-          <div className="text-center">
-            <p className="text-base-content/60">
-              Don&apos;t have an account?{" "}
-              <Link to="/signup" className="link link-primary font-medium">
-                Create account
-              </Link>
-            </p>
           </div>
         </div>
       </div>

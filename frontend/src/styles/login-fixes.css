@@ -1,96 +1,117 @@
-/* 🎯 LOGIN PAGE COMPREHENSIVE FIXES - VISIBILITY FIRST */
-
-/* Ensure no white screen issues */
 html,
 body,
 #root {
   min-height: 100vh;
   background-color: #1a1a1a;
-  /* Fallback dark bg */
   background-color: oklch(var(--b1));
   color: #ffffff;
-  /* Fallback text */
   color: oklch(var(--bc));
 }
 
-/* Login page specific fixes */
 .login-container {
   min-height: 100vh;
   background: oklch(var(--b1));
 }
 
-/* Enhanced button styling */
+.login-card {
+  border: 1px solid oklch(var(--bc) / 0.15);
+}
+
+[data-theme="dark"] .login-card {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.4);
+}
+
 .login-btn {
-  background: oklch(var(--p)) !important;
+  background: linear-gradient(135deg, oklch(var(--p)), oklch(var(--p) / 0.85)) !important;
   color: oklch(var(--pc)) !important;
-  border: 2px solid oklch(var(--p)) !important;
-  font-weight: 600 !important;
-  transition: all 0.2s ease !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  border: none !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  letter-spacing: 0.02em;
+  transition: all 0.25s ease !important;
+  box-shadow: 0 4px 16px oklch(var(--p) / 0.3) !important;
+  position: relative;
+  overflow: hidden;
+  min-height: 48px;
+  border-radius: 0.75rem !important;
+}
+
+.login-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+  background-size: 200% 100%;
+  animation: login-btn-shine 3s ease-in-out infinite;
+}
+
+@keyframes login-btn-shine {
+  0%, 100% { background-position: 200% 0; }
+  50% { background-position: -200% 0; }
 }
 
 .login-btn:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 24px oklch(var(--p) / 0.4) !important;
 }
 
-/* Input field enhancements - ROBUST VISIBILITY */
+.login-btn:active {
+  transform: translateY(0) !important;
+}
+
+.login-btn:disabled {
+  opacity: 0.7;
+  filter: grayscale(0.3);
+}
+
 .login-input {
-  /* Default to a visible border color if variables fail */
-  border: 1px solid rgba(150, 150, 150, 0.5) !important;
-  background-color: rgba(30, 30, 30, 0.5) !important;
-  color: inherit !important;
-  transition: all 0.3s ease !important;
+  border: 1px solid oklch(var(--bc) / 0.2) !important;
+  background-color: oklch(var(--b2) / 0.4) !important;
+  color: oklch(var(--bc)) !important;
+  transition: all 0.25s ease !important;
+  border-radius: 0.75rem !important;
+  min-height: 48px;
+  font-size: 0.95rem !important;
 }
 
-/* Explicit Dark Mode Overrides */
 [data-theme="dark"] .login-input {
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;
-  /* Visible white border */
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   background-color: rgba(0, 0, 0, 0.3) !important;
 }
 
 .login-input:hover {
-  border-color: #ffffff !important;
-  /* Bright white on hover */
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2) !important;
+  border-color: oklch(var(--p) / 0.5) !important;
+}
+
+[data-theme="dark"] .login-input:hover {
+  border-color: rgba(255, 255, 255, 0.5) !important;
 }
 
 .login-input:focus {
-  border-color: #ffffff !important;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2) !important;
+  border-color: oklch(var(--p)) !important;
+  box-shadow: 0 0 0 3px oklch(var(--p) / 0.15) !important;
   outline: none !important;
 }
 
-/* Dark Mode Theme Color Override - Dynamic */
-[data-theme="dark"] .login-logo-icon {
-  color: oklch(var(--p)) !important;
-  /* Primary Theme Color */
-  filter: drop-shadow(0 0 5px oklch(var(--p) / 0.5));
+[data-theme="dark"] .login-input:focus {
+  border-color: rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Animated Gradient Text - Theme Aware */
 .animate-gradient-text {
   font-weight: 800;
   color: oklch(var(--p)) !important;
-  /* Primary fallback */
-
-  /* Gradient properties - Pure Theme Variables */
   background: linear-gradient(to right, oklch(var(--p)), oklch(var(--s)), oklch(var(--p)));
   background-size: 200% auto;
-
-  /* Text clip magic */
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-
   animation: gradient-x 3s linear infinite;
   display: inline-block;
 }
 
-/* Dark Mode Gradient Override - Dynamic Safety */
 [data-theme="dark"] .animate-gradient-text {
-  /* Ensure visibility but use theme variables */
   background: linear-gradient(to right, oklch(var(--p)), oklch(var(--s)), oklch(var(--p))) !important;
   color: oklch(var(--p)) !important;
   background-clip: text;
@@ -100,41 +121,28 @@ body,
 }
 
 @keyframes gradient-x {
-  0% {
-    background-position: 0% center;
-  }
-
-  100% {
-    background-position: 200% center;
-  }
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
 }
 
-/* Right side pattern visibility */
 .auth-pattern {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
   border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Responsive fixes */
 @media (max-width: 1024px) {
-  .auth-pattern {
-    display: none;
-  }
+  .auth-pattern { display: none; }
 }
 
 @media (min-width: 1024px) {
-  .auth-pattern {
-    display: flex !important;
-  }
+  .auth-pattern { display: flex !important; }
 }
 
-/* Error boundary */
 .error-boundary {
   background: oklch(var(--b2));
   color: oklch(var(--bc));
 }
 
-/* Smooth app entry */
 .app-container {
   opacity: 1;
   transition: opacity 0.3s ease;
