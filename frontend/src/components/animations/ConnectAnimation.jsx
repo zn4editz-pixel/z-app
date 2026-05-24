@@ -12,6 +12,11 @@ import {
 } from "lucide-react";
 import { CHARACTERS } from "../../constants/characters";
 const ConnectAnimation = () => {
+  const [stage, setStage] = useState(0);
+  const [messages, setMessages] = useState([]);
+  const [charA, setCharA] = useState(CHARACTERS[0] || { name: "User A", img: "/avatar.png" });
+  const [charB, setCharB] = useState(CHARACTERS[1] || { name: "User B", img: "/avatar.png" });
+
   // Stages:
   // 0: VIDEO_LOCKED (Two cards, video active, chat locked)
   // 1: UNLOCKING (Button clicked, shockwave)
