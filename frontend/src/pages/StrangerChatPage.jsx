@@ -1617,20 +1617,20 @@ const StrangerChatPage = () => {
         )}
         {/* Unified Bottom Control Console - Breathtakingly premium floating island */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 select-none max-w-[95vw] sm:max-w-none pointer-events-auto">
-          <div className="flex items-center gap-2.5 sm:gap-3.5 px-5 sm:px-6 py-3 bg-black/60 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl">
+          <div className="flex items-center gap-1.5 sm:gap-3.5 px-3 sm:px-6 py-2 sm:py-3 bg-black/60 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl">
             
             {/* Skip/Next Button */}
             <button
               onClick={handleSkip}
               disabled={status === "initializing"}
-              className={`h-11 sm:h-12 px-4 sm:px-5 rounded-xl flex items-center justify-center gap-1.5 shadow-lg transition-all duration-300 active:scale-95 font-bold border ${
+              className={`w-10 h-10 sm:w-auto sm:h-12 px-0 sm:px-5 rounded-xl flex items-center justify-center gap-1.5 shadow-lg transition-all duration-300 active:scale-95 font-bold border shrink-0 ${
                 status === "waiting"
                   ? "bg-white/5 border-white/15 text-white hover:bg-white/15 hover:border-white/30"
                   : "bg-primary/20 border-primary/50 text-primary hover:bg-primary/30 hover:border-primary/80"
               }`}
             >
               <SkipForward className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
-              <span className="text-sm sm:text-base font-semibold">
+              <span className="text-sm sm:text-base font-semibold hidden sm:inline">
                 {status === "connected"
                   ? "Next"
                   : status === "waiting"
@@ -1638,11 +1638,11 @@ const StrangerChatPage = () => {
                     : "Start"}
               </span>
             </button>
-
+ 
             {/* Premium Mic Mute Button */}
             <button
               onClick={toggleAudio}
-              className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 active:scale-95 border ${
+              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 active:scale-95 border shrink-0 ${
                 isAudioMuted
                   ? "bg-red-500/80 border-red-500 text-white hover:bg-red-600"
                   : "bg-white/5 border-white/10 text-white hover:bg-white/15"
@@ -1655,11 +1655,11 @@ const StrangerChatPage = () => {
                 <Mic className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
               )}
             </button>
-
+ 
             {/* Premium Camera Mute Button */}
             <button
               onClick={toggleVideo}
-              className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 active:scale-95 border ${
+              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 active:scale-95 border shrink-0 ${
                 isVideoMuted
                   ? "bg-red-500/80 border-red-500 text-white hover:bg-red-600"
                   : "bg-white/5 border-white/10 text-white hover:bg-white/15"
@@ -1672,10 +1672,10 @@ const StrangerChatPage = () => {
                 <Video className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
               )}
             </button>
-
+ 
             {/* Reaction Emoji Picker - Integrated in the console */}
             {status === "connected" && (
-              <div className="relative">
+              <div className="relative shrink-0">
                 {/* Emoji Picker Drop-up */}
                 <div
                   className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-4 transition-all duration-300 origin-bottom ${
@@ -1701,7 +1701,7 @@ const StrangerChatPage = () => {
                 {/* Toggle Button */}
                 <button
                   onClick={() => setShowReactionPicker(!showReactionPicker)}
-                  className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 active:scale-95 border ${
+                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 active:scale-95 border shrink-0 ${
                     showReactionPicker 
                       ? "bg-primary border-primary text-white" 
                       : "bg-white/5 border-white/10 text-white hover:bg-white/15"
@@ -1712,13 +1712,13 @@ const StrangerChatPage = () => {
                 </button>
               </div>
             )}
-
+ 
             {/* Add Friend Button */}
             {status === "connected" && (
               <button
                 onClick={handleAddFriend}
                 disabled={getFriendButtonConfig?.disabled || !partnerUserId}
-                className={`h-11 sm:h-12 px-4 rounded-xl flex items-center justify-center gap-2 border shadow-lg transition-all duration-300 active:scale-95 ${
+                className={`w-10 h-10 sm:w-auto sm:h-12 px-0 sm:px-4 rounded-xl flex items-center justify-center gap-2 border shadow-lg transition-all duration-300 active:scale-95 shrink-0 ${
                   getFriendButtonConfig?.disabled
                     ? "bg-success/15 border-success/30 text-success cursor-not-allowed"
                     : "bg-secondary/20 border-secondary/50 text-secondary hover:bg-secondary/30 hover:border-secondary"
@@ -1735,25 +1735,25 @@ const StrangerChatPage = () => {
                 </span>
               </button>
             )}
-
+ 
             {/* Report Button */}
             {status === "connected" && (
               <button
                 onClick={() => setIsReportModalOpen(true)}
-                className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 active:scale-95 bg-white/5 border border-white/10 text-white/70 hover:bg-error/10 hover:border-error/50 hover:text-error"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 active:scale-95 bg-white/5 border border-white/10 text-white/70 hover:bg-error/10 hover:border-error/50 hover:text-error shrink-0"
                 title="Report User"
               >
                 <Flag className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
               </button>
             )}
-
+ 
             {/* Leave Button */}
             <button
               onClick={() => navigate("/")}
-              className="h-11 sm:h-12 px-5 sm:px-6 rounded-xl flex items-center justify-center gap-2 border bg-error/20 border-error/50 text-error hover:bg-error/30 hover:border-error transition-all duration-300 active:scale-95 font-semibold"
+              className="w-10 h-10 sm:w-auto sm:h-12 px-0 sm:px-6 rounded-xl flex items-center justify-center gap-2 border bg-error/20 border-error/50 text-error hover:bg-error/30 hover:border-error transition-all duration-300 active:scale-95 font-semibold shrink-0"
             >
               <PhoneOff className="w-4.5 h-4.5 sm:w-5 sm:h-5 shrink-0" />
-              <span className="text-sm sm:text-base font-semibold">Leave</span>
+              <span className="text-sm sm:text-base font-semibold hidden sm:inline">Leave</span>
             </button>
           </div>
         </div>
