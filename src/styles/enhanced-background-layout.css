@@ -1,0 +1,378 @@
+/* ===== ENHANCED BACKGROUND LAYOUT SYSTEM ===== */
+/* Strategic background variations for amazing page layouts */
+
+/* ===== MAIN BACKGROUND SYSTEM ===== */
+:root {
+  /* Base background stays the same */
+  --bg-main: hsl(var(--b1));
+  
+  /* Enhanced background variations */
+  --bg-elevated: hsl(var(--b2));
+  --bg-sunken: hsl(var(--b3));
+  --bg-bright: color-mix(in srgb, hsl(var(--b1)) 85%, white 15%);
+  --bg-dark: color-mix(in srgb, hsl(var(--b1)) 85%, black 15%);
+  --bg-accent-light: color-mix(in srgb, hsl(var(--p)) 8%, hsl(var(--b1)) 92%);
+  --bg-accent-dark: color-mix(in srgb, hsl(var(--p)) 12%, hsl(var(--b1)) 88%);
+  
+  /* Gradient backgrounds */
+  --bg-gradient-subtle: linear-gradient(135deg, var(--bg-main) 0%, var(--bg-elevated) 100%);
+  --bg-gradient-bright: linear-gradient(135deg, var(--bg-bright) 0%, var(--bg-main) 100%);
+  --bg-gradient-dark: linear-gradient(135deg, var(--bg-main) 0%, var(--bg-dark) 100%);
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"], [data-theme="night"], [data-theme="coffee"] {
+  --bg-bright: color-mix(in srgb, hsl(var(--b1)) 90%, white 10%);
+  --bg-dark: color-mix(in srgb, hsl(var(--b1)) 90%, black 10%);
+}
+
+/* ===== LAYOUT ZONES ===== */
+
+/* Header/Navbar - Bright elevated area */
+.navbar,
+.header-zone {
+  background: var(--bg-bright) !important;
+  border-bottom: 1px solid color-mix(in srgb, hsl(var(--bc)) 15%, transparent 85%);
+  box-shadow: 0 2px 20px color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+}
+
+/* Sidebar - Slightly darker for contrast */
+.sidebar-container,
+.drawer-side,
+.side-panel {
+  background: var(--bg-dark) !important;
+  border-right: 1px solid color-mix(in srgb, hsl(var(--bc)) 12%, transparent 88%);
+}
+
+/* Main content area - Keep original background */
+.main-content,
+.content-area,
+main {
+  background: var(--bg-main);
+}
+
+/* ===== CARD SYSTEM WITH BACKGROUND VARIATIONS ===== */
+
+/* Primary cards - Bright elevated */
+.card-primary,
+.featured-card,
+.highlight-card {
+  background: var(--bg-bright) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--p)) 20%, transparent 80%);
+  box-shadow: 0 4px 25px color-mix(in srgb, hsl(var(--p)) 12%, transparent 88%);
+}
+
+/* Secondary cards - Elevated but neutral */
+.card,
+.card-secondary {
+  background: var(--bg-elevated) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 10%, transparent 90%);
+}
+
+/* Accent cards - Subtle color tint */
+.card-accent,
+.info-card {
+  background: var(--bg-accent-light) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--p)) 25%, transparent 75%);
+}
+
+/* Dark cards for contrast */
+.card-dark,
+.footer-card {
+  background: var(--bg-dark) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 15%, transparent 85%);
+}
+
+/* ===== SECTION BACKGROUNDS ===== */
+
+/* Hero sections - Gradient bright */
+.hero-section,
+.landing-hero {
+  background: var(--bg-gradient-bright) !important;
+  position: relative;
+}
+
+.hero-section::before,
+.landing-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 20%, color-mix(in srgb, hsl(var(--p)) 8%, transparent 92%) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Feature sections - Alternating backgrounds */
+.section-bright {
+  background: var(--bg-bright);
+  border-top: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+  border-bottom: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+}
+
+.section-dark {
+  background: var(--bg-dark);
+  border-top: 1px solid color-mix(in srgb, hsl(var(--bc)) 12%, transparent 88%);
+  border-bottom: 1px solid color-mix(in srgb, hsl(var(--bc)) 12%, transparent 88%);
+}
+
+.section-accent {
+  background: var(--bg-accent-light);
+  border-top: 1px solid color-mix(in srgb, hsl(var(--p)) 20%, transparent 80%);
+  border-bottom: 1px solid color-mix(in srgb, hsl(var(--p)) 20%, transparent 80%);
+}
+
+/* ===== CHAT INTERFACE ENHANCEMENTS ===== */
+
+/* Chat container - Main background */
+.chat-container {
+  background: var(--bg-main);
+}
+
+/* Message bubbles with alternating backgrounds */
+.message-sent {
+  background: var(--bg-accent-light) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--p)) 25%, transparent 75%);
+}
+
+.message-received {
+  background: var(--bg-elevated) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 12%, transparent 88%);
+}
+
+/* Chat header - Bright */
+.chat-header {
+  background: var(--bg-bright) !important;
+  border-bottom: 1px solid color-mix(in srgb, hsl(var(--bc)) 10%, transparent 90%);
+}
+
+/* Chat input area - Slightly elevated */
+.chat-input-container {
+  background: var(--bg-elevated) !important;
+  border-top: 1px solid color-mix(in srgb, hsl(var(--bc)) 10%, transparent 90%);
+}
+
+/* ===== PROFILE PAGE ENHANCEMENTS ===== */
+
+/* Profile header - Gradient bright */
+.profile-header {
+  background: var(--bg-gradient-bright) !important;
+  position: relative;
+}
+
+.profile-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, hsl(var(--p)) 30%, transparent 70%), transparent);
+}
+
+/* Profile stats - Dark for contrast */
+.profile-stats {
+  background: var(--bg-dark) !important;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 15%, transparent 85%);
+}
+
+/* Profile info cards - Elevated */
+.profile-info-card {
+  background: var(--bg-elevated) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 10%, transparent 90%);
+}
+
+/* ===== ADMIN DASHBOARD ENHANCEMENTS ===== */
+
+/* Dashboard header - Bright */
+.dashboard-header {
+  background: var(--bg-bright) !important;
+  border-bottom: 2px solid color-mix(in srgb, hsl(var(--p)) 20%, transparent 80%);
+}
+
+/* Stats cards - Alternating backgrounds */
+.stat-card:nth-child(odd) {
+  background: var(--bg-bright) !important;
+}
+
+.stat-card:nth-child(even) {
+  background: var(--bg-dark) !important;
+}
+
+/* Data tables - Elevated */
+.data-table {
+  background: var(--bg-elevated) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 10%, transparent 90%);
+}
+
+.data-table thead {
+  background: var(--bg-dark) !important;
+}
+
+.data-table tbody tr:nth-child(even) {
+  background: var(--bg-bright);
+}
+
+/* ===== MODAL ENHANCEMENTS ===== */
+
+/* Modal backdrop - Subtle gradient */
+.modal-backdrop {
+  background: radial-gradient(circle, color-mix(in srgb, hsl(var(--bc)) 20%, transparent 80%) 0%, color-mix(in srgb, hsl(var(--bc)) 40%, transparent 60%) 100%);
+}
+
+/* Modal content - Bright elevated */
+.modal-box {
+  background: var(--bg-bright) !important;
+  border: 2px solid color-mix(in srgb, hsl(var(--p)) 15%, transparent 85%);
+  box-shadow: 0 25px 50px color-mix(in srgb, hsl(var(--bc)) 30%, transparent 70%);
+}
+
+/* Modal header - Accent */
+.modal-header {
+  background: var(--bg-accent-light) !important;
+  border-bottom: 1px solid color-mix(in srgb, hsl(var(--p)) 20%, transparent 80%);
+}
+
+/* ===== FORM ENHANCEMENTS ===== */
+
+/* Form containers - Elevated */
+.form-container {
+  background: var(--bg-elevated) !important;
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 10%, transparent 90%);
+  border-radius: 20px;
+}
+
+/* Form sections - Alternating */
+.form-section:nth-child(odd) {
+  background: var(--bg-bright);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.form-section:nth-child(even) {
+  background: var(--bg-main);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+/* ===== NAVIGATION ENHANCEMENTS ===== */
+
+/* Bottom navigation - Dark for contrast */
+.bottom-nav,
+.mobile-nav {
+  background: var(--bg-dark) !important;
+  border-top: 2px solid color-mix(in srgb, hsl(var(--p)) 15%, transparent 85%);
+}
+
+/* Tab navigation - Bright */
+.tab-navigation {
+  background: var(--bg-bright) !important;
+  border-bottom: 1px solid color-mix(in srgb, hsl(var(--bc)) 10%, transparent 90%);
+}
+
+.tab-active {
+  background: var(--bg-accent-light) !important;
+  border-bottom: 3px solid hsl(var(--p));
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+
+@media (max-width: 768px) {
+  /* Reduce contrast on mobile for better readability */
+  :root {
+    --bg-bright: color-mix(in srgb, hsl(var(--b1)) 92%, white 8%);
+    --bg-dark: color-mix(in srgb, hsl(var(--b1)) 92%, black 8%);
+  }
+  
+  /* Mobile-specific layouts */
+  .mobile-card {
+    background: var(--bg-elevated) !important;
+    border: 1px solid color-mix(in srgb, hsl(var(--bc)) 8%, transparent 92%);
+  }
+}
+
+/* ===== UTILITY CLASSES ===== */
+
+/* Background utilities */
+.bg-main { background: var(--bg-main) !important; }
+.bg-bright { background: var(--bg-bright) !important; }
+.bg-dark { background: var(--bg-dark) !important; }
+.bg-elevated { background: var(--bg-elevated) !important; }
+.bg-accent-light { background: var(--bg-accent-light) !important; }
+.bg-accent-dark { background: var(--bg-accent-dark) !important; }
+
+/* Gradient utilities */
+.bg-gradient-subtle { background: var(--bg-gradient-subtle) !important; }
+.bg-gradient-bright { background: var(--bg-gradient-bright) !important; }
+.bg-gradient-dark { background: var(--bg-gradient-dark) !important; }
+
+/* Border utilities for enhanced sections */
+.border-enhanced {
+  border: 1px solid color-mix(in srgb, hsl(var(--p)) 20%, transparent 80%);
+}
+
+.border-subtle {
+  border: 1px solid color-mix(in srgb, hsl(var(--bc)) 10%, transparent 90%);
+}
+
+/* ===== ANIMATION ENHANCEMENTS ===== */
+
+/* Smooth background transitions */
+.bg-transition {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover effects for background zones */
+.hover-bright:hover {
+  background: var(--bg-bright) !important;
+  transition: background-color 0.3s ease;
+}
+
+.hover-dark:hover {
+  background: var(--bg-dark) !important;
+  transition: background-color 0.3s ease;
+}
+
+/* ===== ACCESSIBILITY ENHANCEMENTS ===== */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --bg-bright: color-mix(in srgb, hsl(var(--b1)) 70%, white 30%);
+    --bg-dark: color-mix(in srgb, hsl(var(--b1)) 70%, black 30%);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .bg-transition,
+  .hover-bright,
+  .hover-dark {
+    transition: none !important;
+  }
+}
+
+/* ===== SPECIAL EFFECTS ===== */
+
+/* Subtle texture overlay for enhanced areas */
+.bg-textured::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 25% 25%, color-mix(in srgb, hsl(var(--bc)) 3%, transparent 97%) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, color-mix(in srgb, hsl(var(--bc)) 3%, transparent 97%) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Glow effects for special sections */
+.section-glow {
+  position: relative;
+  box-shadow: 0 0 40px color-mix(in srgb, hsl(var(--p)) 8%, transparent 92%);
+}
+
+/* Depth shadows for layered look */
+.depth-1 { box-shadow: 0 2px 8px color-mix(in srgb, hsl(var(--bc)) 10%, transparent 90%); }
+.depth-2 { box-shadow: 0 4px 16px color-mix(in srgb, hsl(var(--bc)) 12%, transparent 88%); }
+.depth-3 { box-shadow: 0 8px 32px color-mix(in srgb, hsl(var(--bc)) 15%, transparent 85%); }

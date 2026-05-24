@@ -1,0 +1,112 @@
+/* 🐛 DEBUG FIX - Ensure no CSS is blocking interactions */
+
+/* Remove any potential blocking elements */
+* {
+  pointer-events: inherit !important;
+}
+
+/* Ensure forms work */
+form {
+  pointer-events: auto !important;
+}
+
+form * {
+  pointer-events: auto !important;
+}
+
+/* Ensure inputs work */
+input,
+textarea,
+select {
+  pointer-events: auto !important;
+  cursor: text !important;
+}
+
+/* Ensure buttons work */
+button,
+.btn,
+[type="button"],
+[type="submit"],
+[role="button"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+/* Remove any overlay blocking clicks */
+.overlay,
+.backdrop,
+.modal-backdrop {
+  pointer-events: auto !important;
+}
+
+/* Fix any transform issues */
+.btn,
+button {
+  transform: none !important;
+  will-change: auto !important;
+}
+
+/* Fix any opacity issues */
+.btn:not(:disabled),
+button:not(:disabled) {
+  opacity: 1 !important;
+}
+
+/* Ensure click events work */
+[onclick] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Fix any positioning issues */
+.fixed,
+.absolute,
+.relative {
+  pointer-events: auto !important;
+}
+
+/* Remove any user-select issues */
+.btn,
+button,
+[role="button"] {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* Fix any animation issues */
+.animate-pulse,
+.animate-bounce,
+.animate-spin {
+  pointer-events: auto !important;
+}
+
+/* Ensure navbar buttons work */
+header button,
+header .btn {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 1001 !important;
+}
+
+/* Fix any grid/flex issues */
+.grid *,
+.flex * {
+  pointer-events: auto !important;
+}
+
+/* Remove any backdrop filters that might interfere */
+.backdrop-blur,
+.backdrop-filter {
+  pointer-events: auto !important;
+}
+
+/* Fix any overflow issues */
+.overflow-hidden {
+  pointer-events: auto !important;
+}
+
+.overflow-hidden * {
+  pointer-events: auto !important;
+}

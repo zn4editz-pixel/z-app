@@ -46,11 +46,17 @@ const startServer = async () => {
   ].filter(Boolean);
   app.use(cors({
     origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, etc.)
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      callback(null, true);
+      // In production, be strict about origins but log the rejection
+      if (process.env.NODE_ENV === 'production') {
+        return callback(new Error('Not allowed by CORS'));
+      }
+      // In development, allow all origins
+      return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -125,16 +131,19 @@ const startServer = async () => {
       credentials: true
     },
     transports: ['websocket', 'polling'],
-    pingTimeout: 60000,
-    pingInterval: 25000,
-    upgradeTimeout: 30000,
-    maxHttpBufferSize: 1e6,
-    connectTimeout: 30000,
-    serveClient: false,
-    allowEIO3: false,
-    perMessageDeflate: {
-      threshold: 1024
-    }
+    // ⚡ SPEED OPTIMIZATIONS
+    pingTimeout: 20000,     // Reduced from 60s to 20s
+    pingInterval: 10000,    // Reduced from 25s to 10s  
+    upgradeTimeout: 10000,  // Reduced from 30s to 10s
+    maxHttpBufferSize: 5e5, // Reduced from 1MB to 500KB
+    // Additional speed optimizations
+    allowEIO3: true,
+    compression: false,     // Disable compression for speed
+    httpCompression: false, // Disable HTTP compression
+    perMessageDeflate: false, // Disable per-message compression
+    // Connection optimizations
+    connectTimeout: 5000,   // 5 second connection timeout
+    serveClient: false,     // Don't serve client files
   });
   // Initialize Socket Handlers
   try {

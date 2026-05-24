@@ -1,0 +1,219 @@
+/* GOLDEN PARTICLES ANIMATION SYSTEM */
+
+/* Particles Container */
+.particles-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* Individual Particle */
+.particle {
+  position: absolute;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.6), rgba(245, 158, 11, 0.3));
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/* Particle Size Variations - Optimized for Performance */
+.particle-small {
+  width: 2px;
+  height: 2px;
+  animation: floatSmall 25s linear infinite;
+}
+
+.particle-medium {
+  width: 3px;
+  height: 3px;
+  animation: floatMedium 35s linear infinite;
+}
+
+.particle-large {
+  width: 4px;
+  height: 4px;
+  animation: floatLarge 45s linear infinite;
+}
+
+.particle-extra-large {
+  width: 5px;
+  height: 5px;
+  animation: floatExtraLarge 60s linear infinite;
+}
+
+/* Particle Animation Keyframes */
+@keyframes floatSmall {
+  0% {
+    transform: translateY(100vh) translateX(0px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10vh) translateX(100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes floatMedium {
+  0% {
+    transform: translateY(100vh) translateX(0px) rotate(0deg) scale(0.5);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+    transform: translateY(90vh) translateX(20px) rotate(36deg) scale(1);
+  }
+  50% {
+    transform: translateY(50vh) translateX(-30px) rotate(180deg) scale(1.2);
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-10vh) translateX(80px) rotate(360deg) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes floatLarge {
+  0% {
+    transform: translateY(100vh) translateX(0px) rotate(0deg) scale(0.3);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+    transform: translateY(85vh) translateX(-20px) rotate(54deg) scale(1);
+  }
+  30% {
+    transform: translateY(70vh) translateX(40px) rotate(108deg) scale(1.3);
+  }
+  50% {
+    transform: translateY(50vh) translateX(-60px) rotate(180deg) scale(1.5);
+  }
+  70% {
+    transform: translateY(30vh) translateX(30px) rotate(252deg) scale(1.2);
+  }
+  85% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-10vh) translateX(-40px) rotate(360deg) scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes floatExtraLarge {
+  0% {
+    transform: translateY(100vh) translateX(0px) rotate(0deg) scale(0.2);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(80vh) translateX(30px) rotate(72deg) scale(1);
+  }
+  40% {
+    transform: translateY(60vh) translateX(-50px) rotate(144deg) scale(1.4);
+  }
+  60% {
+    transform: translateY(40vh) translateX(70px) rotate(216deg) scale(1.6);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(20vh) translateX(-30px) rotate(288deg) scale(1.2);
+  }
+  100% {
+    transform: translateY(-10vh) translateX(50px) rotate(360deg) scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* Glowing Particles */
+.particle-glow {
+  box-shadow: 
+    0 0 6px rgba(251, 191, 36, 0.5),
+    0 0 12px rgba(245, 158, 11, 0.3),
+    0 0 18px rgba(251, 191, 36, 0.2);
+}
+
+/* Sparkling Effect - Simplified for Performance */
+.particle-sparkle {
+  background: rgba(251, 191, 36, 0.4);
+  opacity: 0.6;
+}
+
+/* Constellation Effect */
+.particle-constellation {
+  background: rgba(251, 191, 36, 0.9);
+  box-shadow: 
+    0 0 4px rgba(251, 191, 36, 0.8),
+    0 0 8px rgba(245, 158, 11, 0.6);
+}
+
+/* Staggered Animation Delays */
+.particle:nth-child(1) { animation-delay: 0s; left: 5%; }
+.particle:nth-child(2) { animation-delay: 2s; left: 15%; }
+.particle:nth-child(3) { animation-delay: 4s; left: 25%; }
+.particle:nth-child(4) { animation-delay: 6s; left: 35%; }
+.particle:nth-child(5) { animation-delay: 8s; left: 45%; }
+.particle:nth-child(6) { animation-delay: 10s; left: 55%; }
+.particle:nth-child(7) { animation-delay: 12s; left: 65%; }
+.particle:nth-child(8) { animation-delay: 14s; left: 75%; }
+.particle:nth-child(9) { animation-delay: 16s; left: 85%; }
+.particle:nth-child(10) { animation-delay: 18s; left: 95%; }
+.particle:nth-child(11) { animation-delay: 1s; left: 10%; }
+.particle:nth-child(12) { animation-delay: 3s; left: 20%; }
+.particle:nth-child(13) { animation-delay: 5s; left: 30%; }
+.particle:nth-child(14) { animation-delay: 7s; left: 40%; }
+.particle:nth-child(15) { animation-delay: 9s; left: 50%; }
+.particle:nth-child(16) { animation-delay: 11s; left: 60%; }
+.particle:nth-child(17) { animation-delay: 13s; left: 70%; }
+.particle:nth-child(18) { animation-delay: 15s; left: 80%; }
+.particle:nth-child(19) { animation-delay: 17s; left: 90%; }
+.particle:nth-child(20) { animation-delay: 19s; left: 5%; }
+
+/* Mobile Optimization */
+@media (max-width: 768px) {
+  .particle-large,
+  .particle-extra-large {
+    display: none;
+  }
+  
+  .particle-medium {
+    width: 3px;
+    height: 3px;
+  }
+  
+  .particle-small {
+    width: 1.5px;
+    height: 1.5px;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .particles-container {
+    display: none;
+  }
+}
+
+/* Performance Optimization */
+.particles-container {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.particle {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}

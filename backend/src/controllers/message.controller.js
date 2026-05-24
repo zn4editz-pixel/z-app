@@ -76,7 +76,8 @@ export const getUsersForSidebar = async (req, res) => {
           callDuration: true,
           reactions: true,
           status: true,
-          createdAt: true
+          createdAt: true,
+          timestamp: true
         }
       });
       // Parse reactions if needed

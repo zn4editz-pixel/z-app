@@ -1,0 +1,1 @@
+#!/usr/bin/env node/** * Fix React Hooks Error Script *  * This script fixes the React hooks error caused by requestAnimationFrame * state updates that could happen after component unmount. */

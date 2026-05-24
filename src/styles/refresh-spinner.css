@@ -1,0 +1,542 @@
+/* 🎡 REFRESH SPINNER - Beautiful Spin Wheel for Page Refreshes */
+/* ⚠️ SCOPED: All styles are scoped to .refresh-spinner-overlay to prevent conflicts */
+
+.refresh-spinner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg,
+      hsl(var(--b1) / 0.95) 0%,
+      hsl(var(--b2) / 0.98) 50%,
+      hsl(var(--b1) / 0.95) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  pointer-events: none;
+}
+
+.refresh-spinner-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.refresh-spinner-overlay.hiding {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  pointer-events: none;
+}
+
+/* ⚠️ SCOPED: Only apply to refresh spinner container */
+.refresh-spinner-overlay .refresh-spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 40px;
+  border-radius: 24px;
+  background: hsl(var(--b1) / 0.8);
+  border: 1px solid hsl(var(--bc) / 0.1);
+  box-shadow:
+    0 20px 60px hsl(var(--bc) / 0.1),
+    0 8px 32px hsl(var(--bc) / 0.05),
+    inset 0 1px 0 hsl(var(--bc) / 0.1);
+  animation: refresh-container-float 3s ease-in-out infinite;
+}
+
+/* ⚠️ SCOPED: Main Spin Wheel - Only inside refresh spinner overlay */
+.refresh-spinner-overlay .refresh-spinner-wheel {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ⚠️ SCOPED: Outer Ring with Progress */
+.refresh-spinner-overlay .refresh-spinner-outer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  color: hsl(var(--p));
+  animation: refresh-outer-spin 3s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+}
+
+.refresh-spinner-overlay .refresh-progress-ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.refresh-spinner-overlay .refresh-progress-circle {
+  transition: stroke-dashoffset 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+/* ⚠️ SCOPED: Middle Ring - Rotating Dots */
+.refresh-spinner-overlay .refresh-spinner-middle {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  animation: refresh-middle-spin 2s linear infinite reverse;
+}
+
+.refresh-spinner-overlay .refresh-spinner-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: hsl(var(--s));
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform-origin: 0 0;
+  animation: refresh-dot-pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 12px hsl(var(--s) / 0.6);
+}
+
+/* ⚠️ SCOPED: Inner Core */
+.refresh-spinner-overlay .refresh-spinner-core {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg,
+      hsl(var(--p)) 0%,
+      hsl(var(--s)) 50%,
+      hsl(var(--a)) 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: refresh-core-pulse 2s ease-in-out infinite;
+  box-shadow:
+    0 0 20px hsl(var(--p) / 0.4),
+    inset 0 2px 8px hsl(var(--bc) / 0.1);
+}
+
+.refresh-spinner-overlay .refresh-spinner-logo {
+  width: 24px;
+  height: 24px;
+  color: white;
+  animation: refresh-logo-spin 4s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+}
+
+/* ⚠️ SCOPED: Floating Particles */
+.refresh-spinner-overlay .refresh-particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.refresh-spinner-overlay .refresh-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: hsl(var(--a));
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform-origin: 0 0;
+  animation: refresh-particle-orbit 4s linear infinite;
+  opacity: 0.7;
+  box-shadow: 0 0 8px hsl(var(--a) / 0.8);
+}
+
+/* ⚠️ SCOPED: Text Elements */
+.refresh-spinner-overlay .refresh-spinner-text {
+  text-align: center;
+  color: hsl(var(--bc));
+}
+
+.refresh-spinner-overlay .refresh-message {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  animation: refresh-text-glow 2s ease-in-out infinite;
+}
+
+.refresh-spinner-overlay .refresh-percentage {
+  font-size: 2rem;
+  font-weight: 700;
+  color: hsl(var(--p));
+  animation: refresh-percentage-pulse 1s ease-in-out infinite;
+  text-shadow: 0 0 20px hsl(var(--p) / 0.3);
+}
+
+/* ⚠️ SCOPED: Loading Dots */
+.refresh-spinner-overlay .refresh-loading-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.refresh-spinner-overlay .refresh-loading-dots span {
+  width: 8px;
+  height: 8px;
+  background: hsl(var(--bc) / 0.6);
+  border-radius: 50%;
+  animation: refresh-dot-bounce 1.4s ease-in-out infinite;
+}
+
+.refresh-spinner-overlay .refresh-loading-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.refresh-spinner-overlay .refresh-loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.refresh-spinner-overlay .refresh-loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Keyframe Animations */
+@keyframes refresh-container-float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes refresh-outer-spin {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.9;
+  }
+
+  25% {
+    transform: rotate(90deg) scale(1.05);
+    opacity: 1;
+  }
+
+  50% {
+    transform: rotate(180deg) scale(1);
+    opacity: 0.95;
+  }
+
+  75% {
+    transform: rotate(270deg) scale(0.98);
+    opacity: 1;
+  }
+
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 0.9;
+  }
+}
+
+@keyframes refresh-middle-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes refresh-dot-pulse {
+
+  0%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+@keyframes refresh-core-pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 20px hsl(var(--p) / 0.4),
+      inset 0 2px 8px hsl(var(--bc) / 0.1);
+  }
+
+  50% {
+    transform: scale(1.1);
+    box-shadow:
+      0 0 30px hsl(var(--p) / 0.6),
+      0 0 50px hsl(var(--s) / 0.3),
+      inset 0 2px 8px hsl(var(--bc) / 0.1);
+  }
+}
+
+@keyframes refresh-logo-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes refresh-particle-orbit {
+  0% {
+    transform: rotate(0deg) translateY(-70px) scale(0.5);
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 1;
+    transform: rotate(90deg) translateY(-70px) scale(1);
+  }
+
+  75% {
+    opacity: 1;
+    transform: rotate(270deg) translateY(-70px) scale(1);
+  }
+
+  100% {
+    transform: rotate(360deg) translateY(-70px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes refresh-text-glow {
+
+  0%,
+  100% {
+    opacity: 0.8;
+    text-shadow: none;
+  }
+
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 20px hsl(var(--bc) / 0.3);
+  }
+}
+
+@keyframes refresh-percentage-pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes refresh-dot-bounce {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* ⚠️ SCOPED: Theme-Specific Enhancements - Only for refresh spinner */
+
+/* Dark Themes */
+[data-theme="dark"] .refresh-spinner-overlay .refresh-spinner-container,
+[data-theme="night"] .refresh-spinner-overlay .refresh-spinner-container,
+[data-theme="black"] .refresh-spinner-overlay .refresh-spinner-container {
+  background: hsl(var(--b1) / 0.9);
+  box-shadow:
+    0 20px 60px hsl(var(--bc) / 0.2),
+    0 8px 32px hsl(var(--bc) / 0.1),
+    inset 0 1px 0 hsl(var(--bc) / 0.2);
+}
+
+[data-theme="dark"] .refresh-spinner-overlay .refresh-progress-circle,
+[data-theme="night"] .refresh-spinner-overlay .refresh-progress-circle,
+[data-theme="black"] .refresh-spinner-overlay .refresh-progress-circle {
+  filter: drop-shadow(0 0 12px currentColor);
+}
+
+/* Cyberpunk Theme */
+[data-theme="cyberpunk"] .refresh-spinner-overlay .refresh-spinner-outer {
+  color: #ff00ff;
+}
+
+[data-theme="cyberpunk"] .refresh-spinner-overlay .refresh-spinner-dot {
+  background: #00ffff;
+  box-shadow: 0 0 15px #00ffff;
+}
+
+[data-theme="cyberpunk"] .refresh-spinner-overlay .refresh-spinner-core {
+  background: linear-gradient(135deg, #ff00ff 0%, #00ffff 100%);
+  box-shadow:
+    0 0 30px #ff00ff,
+    0 0 50px #00ffff,
+    inset 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="cyberpunk"] .refresh-spinner-overlay .refresh-particle {
+  background: #ffff00;
+  box-shadow: 0 0 12px #ffff00;
+}
+
+[data-theme="cyberpunk"] .refresh-spinner-overlay .refresh-percentage {
+  color: #ff00ff;
+  text-shadow: 0 0 25px #ff00ff;
+}
+
+/* Luxury Theme */
+[data-theme="luxury"] .refresh-spinner-overlay .refresh-spinner-outer {
+  color: #ffd700;
+}
+
+[data-theme="luxury"] .refresh-spinner-overlay .refresh-spinner-dot {
+  background: #ffd700;
+  box-shadow: 0 0 15px #ffd700;
+}
+
+[data-theme="luxury"] .refresh-spinner-overlay .refresh-spinner-core {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  box-shadow:
+    0 0 25px #ffd700,
+    inset 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="luxury"] .refresh-spinner-overlay .refresh-percentage {
+  color: #ffd700;
+  text-shadow: 0 0 20px #ffd700;
+}
+
+/* Synthwave Theme */
+[data-theme="synthwave"] .refresh-spinner-overlay .refresh-spinner-outer {
+  color: #ff6ec7;
+}
+
+[data-theme="synthwave"] .refresh-spinner-overlay .refresh-spinner-dot {
+  background: #00d9ff;
+  box-shadow: 0 0 15px #00d9ff;
+}
+
+[data-theme="synthwave"] .refresh-spinner-overlay .refresh-spinner-core {
+  background: linear-gradient(135deg, #ff6ec7 0%, #00d9ff 100%);
+}
+
+/* ⚠️ SCOPED: Performance Optimizations - Only for refresh spinner */
+.refresh-spinner-overlay .refresh-spinner-wheel,
+.refresh-spinner-overlay .refresh-spinner-outer,
+.refresh-spinner-overlay .refresh-spinner-middle,
+.refresh-spinner-overlay .refresh-spinner-core,
+.refresh-spinner-overlay .refresh-spinner-dot,
+.refresh-spinner-overlay .refresh-particle {
+  will-change: transform, opacity;
+  transform-origin: center;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Force Hardware Acceleration */
+.refresh-spinner-overlay .refresh-spinner-container {
+  transform: translateZ(0);
+}
+
+/* Reduced Motion Support */
+/* Reduced motion block removed to ensure animations play */
+
+/* ⚠️ SCOPED: Mobile Optimizations - Only for refresh spinner */
+@media (max-width: 768px) {
+  .refresh-spinner-overlay .refresh-spinner-container {
+    padding: 32px 24px;
+    border-radius: 20px;
+  }
+
+  .refresh-spinner-overlay .refresh-spinner-wheel {
+    width: 100px;
+    height: 100px;
+  }
+
+  .refresh-spinner-overlay .refresh-spinner-core {
+    width: 40px;
+    height: 40px;
+  }
+
+  .refresh-spinner-overlay .refresh-spinner-logo {
+    width: 20px;
+    height: 20px;
+  }
+
+  .refresh-spinner-overlay .refresh-percentage {
+    font-size: 1.75rem;
+  }
+}
+
+/* High DPI Displays */
+@media (-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
+
+  .refresh-progress-circle,
+  .refresh-spinner-dot,
+  .refresh-particle {
+    filter: blur(0);
+  }
+}
+
+/* Browser Compatibility */
+@-webkit-keyframes refresh-outer-spin {
+  0% {
+    -webkit-transform: rotate(0deg) scale(1);
+  }
+
+  25% {
+    -webkit-transform: rotate(90deg) scale(1.05);
+  }
+
+  50% {
+    -webkit-transform: rotate(180deg) scale(1);
+  }
+
+  75% {
+    -webkit-transform: rotate(270deg) scale(0.98);
+  }
+
+  100% {
+    -webkit-transform: rotate(360deg) scale(1);
+  }
+}
+
+@-moz-keyframes refresh-outer-spin {
+  0% {
+    -moz-transform: rotate(0deg) scale(1);
+  }
+
+  25% {
+    -moz-transform: rotate(90deg) scale(1.05);
+  }
+
+  50% {
+    -moz-transform: rotate(180deg) scale(1);
+  }
+
+  75% {
+    -moz-transform: rotate(270deg) scale(0.98);
+  }
+
+  100% {
+    -moz-transform: rotate(360deg) scale(1);
+  }
+}

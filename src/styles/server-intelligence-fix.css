@@ -1,0 +1,301 @@
+/* SERVER INTELLIGENCE FLICKER FIX - ENHANCED */
+
+/* Enhanced black background with curved edges and anti-flicker optimizations */
+.server-intelligence-container {
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%) !important;
+  border-radius: 1.5rem !important;
+  padding: 2rem !important;
+  margin: 1rem !important;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8), 
+              0 0 0 1px rgba(255, 215, 0, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  border: 2px solid rgba(255, 215, 0, 0.2) !important;
+  min-height: auto;
+  position: relative;
+  overflow: hidden;
+  
+  /* Anti-flicker optimizations */
+  contain: layout style paint;
+  will-change: auto;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Add subtle golden glow around the container */
+.server-intelligence-container::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, 
+    rgba(255, 215, 0, 0.3) 0%, 
+    rgba(255, 165, 0, 0.2) 25%, 
+    rgba(255, 215, 0, 0.3) 50%, 
+    rgba(255, 165, 0, 0.2) 75%, 
+    rgba(255, 215, 0, 0.3) 100%);
+  border-radius: 1.5rem;
+  z-index: -1;
+  animation: goldenGlow 4s ease-in-out infinite;
+}
+
+@keyframes goldenGlow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+/* Smooth transitions for all metric cards with black background compatibility and flicker prevention */
+.metric-card-theme {
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  background: linear-gradient(135deg, 
+    rgba(26, 26, 26, 0.9) 0%, 
+    rgba(40, 40, 40, 0.8) 50%, 
+    rgba(26, 26, 26, 0.9) 100%) !important;
+  border: 2px solid rgba(251, 191, 36, 0.4) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 
+              0 0 0 1px rgba(251, 191, 36, 0.1) !important;
+  
+  /* Anti-flicker optimizations */
+  contain: layout style;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent flicker on chart updates with black background - enhanced */
+.chart-container-theme {
+  transition: none; /* Remove transitions that cause flicker */
+  will-change: auto; /* Let browser optimize */
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  background: linear-gradient(135deg, 
+    rgba(26, 26, 26, 0.9) 0%, 
+    rgba(40, 40, 40, 0.8) 50%, 
+    rgba(26, 26, 26, 0.9) 100%) !important;
+  border: 2px solid rgba(251, 191, 36, 0.4) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 
+              0 0 0 1px rgba(251, 191, 36, 0.1) !important;
+  
+  /* Enhanced anti-flicker optimizations */
+  contain: layout style paint;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  image-rendering: optimizeSpeed;
+}
+
+/* Smooth loading state transitions */
+.loading-state {
+  transition: opacity 0.3s ease-out;
+}
+
+/* Optimize shimmer effects */
+.admin-card-theme .animate-pulse {
+  animation-duration: 3s;
+  animation-timing-function: ease-in-out;
+}
+
+/* Reduce animation frequency for better performance */
+.admin-card-theme .bg-gradient-to-r {
+  animation-duration: 4s;
+}
+
+/* Prevent layout shifts and fix admin card theme for black background */
+.admin-card-theme {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, 
+    rgba(26, 26, 26, 0.95) 0%, 
+    rgba(40, 40, 40, 0.9) 50%, 
+    rgba(26, 26, 26, 0.95) 100%) !important;
+  border: 2px solid rgba(251, 191, 36, 0.4) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8), 
+              0 0 0 1px rgba(251, 191, 36, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+/* Smooth metric value transitions - flicker prevention */
+.metric-value {
+  transition: none; /* Remove transitions that cause flicker */
+  will-change: auto;
+  contain: layout;
+}
+
+/* Optimize resource bars - prevent flicker */
+.resource-bar {
+  transition: width 1.2s ease-out; /* Slower transition */
+  will-change: width;
+  contain: layout;
+}
+
+/* Prevent flicker on live updates - slower animation */
+.live-indicator {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; /* Slower pulse */
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Smooth chart transitions - anti-flicker */
+.recharts-wrapper {
+  transition: none; /* Remove transitions that cause chart flicker */
+  contain: layout style;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Prevent text flicker */
+.metric-text {
+  transition: none; /* Remove color transitions that cause flicker */
+  contain: layout;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Optimize golden effects - slower animations */
+.golden-glow {
+  animation-duration: 6s; /* Slower animation */
+  animation-timing-function: ease-in-out;
+}
+
+/* Performance optimizations and spacing */
+.server-intelligence-container {
+  contain: layout style paint;
+  will-change: auto;
+}
+
+/* ENHANCED FLICKER PREVENTION */
+
+/* Prevent chart re-renders and flicker */
+.recharts-surface,
+.recharts-layer,
+.recharts-cartesian-grid,
+.recharts-line,
+.recharts-area {
+  will-change: auto !important;
+  contain: layout !important;
+  -webkit-font-smoothing: antialiased !important;
+  image-rendering: optimizeSpeed !important;
+}
+
+/* Stabilize chart animations */
+.recharts-line-curve,
+.recharts-area-curve {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Prevent metric card content flicker */
+.metric-card-theme * {
+  will-change: auto;
+  contain: layout;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Stabilize gradient animations */
+.admin-panel-gradient,
+.dashboard-overview-gradient,
+.admin-panel-gradient-wave {
+  animation-play-state: running;
+  animation-fill-mode: both;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Prevent number flicker in metrics */
+.metric-card-theme .text-3xl,
+.metric-card-theme .text-2xl,
+.metric-card-theme .text-xl {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  contain: layout;
+}
+
+/* Stabilize resource bars */
+.resource-bar > div {
+  transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  will-change: width;
+  contain: layout;
+}
+
+/* Prevent shimmer effect flicker */
+.animate-pulse {
+  animation-duration: 4s !important;
+  animation-timing-function: ease-in-out !important;
+}
+
+/* Chart container stability */
+.recharts-responsive-container {
+  contain: layout style !important;
+  will-change: auto !important;
+}
+
+/* Prevent tooltip flicker */
+.recharts-tooltip-wrapper {
+  transition: none !important;
+  will-change: auto !important;
+}
+
+/* Enhanced spacing for all child elements */
+.server-intelligence-container > * {
+  margin-bottom: 1.5rem !important;
+}
+
+.server-intelligence-container > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Curved edges for all cards inside */
+.server-intelligence-container .bg-gradient-to-br {
+  border-radius: 1rem !important;
+  padding: 1.5rem !important;
+}
+
+/* Enhanced golden borders */
+.server-intelligence-container .border-yellow-400\/50,
+.server-intelligence-container .border-2 {
+  border-color: rgba(251, 191, 36, 0.4) !important;
+  border-width: 2px !important;
+}
+
+/* Responsive spacing */
+@media (max-width: 768px) {
+  .server-intelligence-container {
+    padding: 1rem !important;
+    margin: 0.5rem !important;
+    border-radius: 1rem !important;
+  }
+  
+  .server-intelligence-container > * {
+    margin-bottom: 1rem !important;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .metric-card-theme,
+  .chart-container-theme,
+  .loading-state,
+  .metric-value,
+  .resource-bar {
+    transition: none;
+    animation: none;
+  }
+  
+  .live-indicator {
+    animation: none;
+    opacity: 1;
+  }
+}

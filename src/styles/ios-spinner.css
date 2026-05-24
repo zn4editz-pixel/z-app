@@ -1,0 +1,121 @@
+/* iOS-Style Loading Spinner - Fixed Center with Circular Animation */
+.ios-spinner {
+  position: relative;
+  display: inline-block;
+  margin: 0 auto;
+  animation: ios-rotate 1s linear infinite;
+}
+
+.ios-spinner-bar {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  width: 3px;
+  height: 25%;
+  background-color: hsl(var(--p));
+  border-radius: 2px;
+  transform-origin: 50% 200%;
+  margin-left: -1.5px;
+  opacity: 1;
+}
+
+/* Circular rotation animation */
+@keyframes ios-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Fade effect for bars */
+@keyframes ios-fade {
+  0% { opacity: 0.2; }
+  8.33% { opacity: 1; }
+  16.66% { opacity: 0.2; }
+  100% { opacity: 0.2; }
+}
+
+/* Theme-specific colors */
+[data-theme="dark"] .ios-spinner-bar,
+[data-theme="night"] .ios-spinner-bar,
+[data-theme="black"] .ios-spinner-bar {
+  background-color: hsl(var(--p));
+  box-shadow: 0 0 3px hsl(var(--p) / 0.5);
+}
+
+/* Cyberpunk theme */
+[data-theme="cyberpunk"] .ios-spinner-bar {
+  background: linear-gradient(to bottom, #ff00ff, #00ffff);
+  box-shadow: 0 0 5px #ff00ff;
+}
+
+/* Luxury theme */
+[data-theme="luxury"] .ios-spinner-bar {
+  background: linear-gradient(to bottom, #ffd700, #ffed4e);
+  box-shadow: 0 0 4px #ffd700;
+}
+
+/* Size variants */
+.ios-spinner.w-6 .ios-spinner-bar {
+  width: 2px;
+  height: 30%;
+  margin-left: -1px;
+}
+
+.ios-spinner.w-10 .ios-spinner-bar {
+  width: 3px;
+  height: 35%;
+  margin-left: -1.5px;
+}
+
+.ios-spinner.w-14 .ios-spinner-bar {
+  width: 4px;
+  height: 35%;
+  margin-left: -2px;
+}
+
+.ios-spinner.w-20 .ios-spinner-bar {
+  width: 5px;
+  height: 35%;
+  margin-left: -2.5px;
+}
+
+/* Force animation */
+.ios-spinner-bar {
+  animation-play-state: running !important;
+  animation-duration: 1.2s !important;
+  animation-timing-function: linear !important;
+  animation-iteration-count: infinite !important;
+  animation-name: ios-fade !important;
+}
+
+/* Performance optimization */
+.ios-spinner,
+.ios-spinner-bar {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Browser compatibility */
+@-webkit-keyframes ios-rotate {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
+@-webkit-keyframes ios-fade {
+  0% { opacity: 0.2; }
+  8.33% { opacity: 1; }
+  16.66% { opacity: 0.2; }
+  100% { opacity: 0.2; }
+}
+
+@-moz-keyframes ios-rotate {
+  0% { -moz-transform: rotate(0deg); }
+  100% { -moz-transform: rotate(360deg); }
+}
+
+@-moz-keyframes ios-fade {
+  0% { opacity: 0.2; }
+  8.33% { opacity: 1; }
+  16.66% { opacity: 0.2; }
+  100% { opacity: 0.2; }
+}

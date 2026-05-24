@@ -1,0 +1,262 @@
+/* Enhanced Animated Spinner - Beautiful and Smooth */
+.simple-spinner {
+  position: relative;
+  border: 3px solid hsl(var(--bc) / 0.1);
+  border-top: 3px solid hsl(var(--p));
+  border-radius: 50%;
+  animation: enhanced-spin 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+  opacity: 0.9;
+  box-shadow:
+    0 0 20px hsl(var(--p) / 0.3),
+    inset 0 0 20px hsl(var(--p) / 0.1);
+}
+
+/* Glowing pulse effect */
+.simple-spinner::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  border-radius: 50%;
+  border: 2px solid hsl(var(--p) / 0.2);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Inner rotating element */
+.simple-spinner::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top: 2px solid hsl(var(--p) / 0.6);
+  animation: enhanced-spin 0.8s linear infinite reverse;
+}
+
+/* Enhanced Keyframe Animations */
+@keyframes enhanced-spin {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.9;
+  }
+
+  25% {
+    transform: rotate(90deg) scale(1.05);
+    opacity: 1;
+  }
+
+  50% {
+    transform: rotate(180deg) scale(1);
+    opacity: 0.95;
+  }
+
+  75% {
+    transform: rotate(270deg) scale(0.95);
+    opacity: 1;
+  }
+
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 0.9;
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+/* Smooth breathing effect */
+@keyframes breathe {
+
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+
+  50% {
+    transform: scale(1.02);
+    filter: brightness(1.1);
+  }
+}
+
+/* Force enhanced animations */
+.simple-spinner {
+  animation-play-state: running !important;
+  animation-duration: 1.2s !important;
+  animation-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+  animation-iteration-count: infinite !important;
+  animation-name: enhanced-spin !important;
+}
+
+.simple-spinner::before {
+  animation-play-state: running !important;
+  animation-duration: 2s !important;
+  animation-timing-function: ease-in-out !important;
+  animation-iteration-count: infinite !important;
+  animation-name: pulse-glow !important;
+}
+
+.simple-spinner::after {
+  animation-play-state: running !important;
+  animation-duration: 0.8s !important;
+  animation-timing-function: linear !important;
+  animation-iteration-count: infinite !important;
+  animation-name: enhanced-spin !important;
+  animation-direction: reverse !important;
+}
+
+/* Theme-Specific Enhancements */
+
+/* Dark themes - Enhanced glow */
+[data-theme="dark"] .simple-spinner,
+[data-theme="night"] .simple-spinner,
+[data-theme="black"] .simple-spinner {
+  box-shadow:
+    0 0 25px hsl(var(--p) / 0.4),
+    0 0 40px hsl(var(--p) / 0.2),
+    inset 0 0 15px hsl(var(--p) / 0.1);
+}
+
+/* Cyberpunk theme - Neon effect */
+[data-theme="cyberpunk"] .simple-spinner {
+  border-top-color: #ff00ff;
+  box-shadow:
+    0 0 30px #ff00ff,
+    0 0 50px #00ffff,
+    inset 0 0 20px #ff00ff;
+  animation-duration: 0.8s;
+}
+
+[data-theme="cyberpunk"] .simple-spinner::before {
+  border-color: #00ffff;
+  box-shadow: 0 0 15px #00ffff;
+}
+
+[data-theme="cyberpunk"] .simple-spinner::after {
+  border-top-color: #00ffff;
+  animation-duration: 0.6s;
+}
+
+/* Luxury theme - Gold effect */
+[data-theme="luxury"] .simple-spinner {
+  border-top-color: #ffd700;
+  box-shadow:
+    0 0 25px #ffd700,
+    0 0 40px #ffed4e,
+    inset 0 0 15px #ffd700;
+}
+
+/* Retro theme - Vintage glow */
+[data-theme="retro"] .simple-spinner {
+  filter: sepia(0.3) hue-rotate(10deg);
+  box-shadow:
+    0 0 20px hsl(var(--p) / 0.4),
+    inset 0 0 10px hsl(var(--p) / 0.2);
+}
+
+/* Performance optimizations */
+.simple-spinner,
+.simple-spinner::before,
+.simple-spinner::after {
+  will-change: transform, opacity;
+  transform-origin: center;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Container breathing effect */
+.simple-spinner-container {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+/* Hover enhancement */
+.simple-spinner:hover {
+  animation-duration: 0.6s !important;
+  transform: scale(1.1);
+  box-shadow:
+    0 0 30px hsl(var(--p) / 0.5),
+    inset 0 0 25px hsl(var(--p) / 0.2);
+}
+
+/* Loading text pulse */
+.spinner-text {
+  animation: text-pulse 2s ease-in-out infinite;
+}
+
+@keyframes text-pulse {
+
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: translateY(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+/* Reduced motion support */
+/* Reduced motion block removed to ensure animations play */
+
+/* Browser compatibility */
+@-webkit-keyframes enhanced-spin {
+  0% {
+    -webkit-transform: rotate(0deg) scale(1);
+  }
+
+  25% {
+    -webkit-transform: rotate(90deg) scale(1.05);
+  }
+
+  50% {
+    -webkit-transform: rotate(180deg) scale(1);
+  }
+
+  75% {
+    -webkit-transform: rotate(270deg) scale(0.95);
+  }
+
+  100% {
+    -webkit-transform: rotate(360deg) scale(1);
+  }
+}
+
+@-moz-keyframes enhanced-spin {
+  0% {
+    -moz-transform: rotate(0deg) scale(1);
+  }
+
+  25% {
+    -moz-transform: rotate(90deg) scale(1.05);
+  }
+
+  50% {
+    -moz-transform: rotate(180deg) scale(1);
+  }
+
+  75% {
+    -moz-transform: rotate(270deg) scale(0.95);
+  }
+
+  100% {
+    -moz-transform: rotate(360deg) scale(1);
+  }
+}

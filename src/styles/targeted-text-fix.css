@@ -1,0 +1,31 @@
+/* ===== TARGETED TEXT FIXES ===== */
+/* Only target specific elements that need white text */
+
+/* Button hover text (keep existing functionality) */
+.btn:hover,
+button:hover,
+a.btn:hover {
+  color: #ffffff !important;
+}
+
+/* Sidebar usernames only */
+.sidebar .font-semibold {
+  color: #ffffff !important;
+}
+
+/* Chat usernames only */
+.chat-header .font-semibold {
+  color: #ffffff !important;
+}
+
+/* Profile names in discover page */
+.discover-page .font-bold {
+  color: #ffffff !important;
+}
+
+/* Only target username-specific classes */
+.username,
+.user-name,
+.display-name {
+  color: #ffffff !important;
+}

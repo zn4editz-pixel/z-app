@@ -14,7 +14,7 @@ const MobileHeader = () => {
         {/* Logo Only - No Text */}
         <Link to="/" className="flex items-center">
           <img
-            src="/logo.svg"
+            src="/zn4.png"
             alt="Z-App"
             className="h-9 w-auto object-contain"
           />

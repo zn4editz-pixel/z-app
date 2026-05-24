@@ -1,0 +1,11 @@
+/* 
+ * 🛡️ FORCE ANIMATIONS DISABLED
+ * 
+ * This file previously contained aggressive !important rules that forced generic animations.
+ * This was "blocking" complex custom animations (like the modern multi-ring spinners) 
+ * by overriding their specific keyframes.
+ * 
+ * Now that the underlying "animation: none" bugs are fixed in the component CSS files,
+ * we can safely disable this aggressive override file to let the beautiful custom 
+ * animations shine through! ✨
+ */

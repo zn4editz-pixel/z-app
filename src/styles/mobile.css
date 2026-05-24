@@ -1,0 +1,789 @@
+/* Mobile-optimized styles for Android APK */
+
+/* Safe area utilities for all devices */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  /* Keep navbar visible but optimize it */
+  header.fixed.top-0 {
+    display: block !important;
+  }
+
+  /* Add padding for bottom navigation */
+  body {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+
+  /* Better touch targets for mobile - but don't override all buttons */
+  .btn:not(.btn-circle):not(.btn-sm) {
+    min-height: 48px;
+    padding: 12px 24px;
+  }
+
+  /* Keep circle buttons small */
+  .btn-circle {
+    min-height: 40px;
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Better input fields */
+  input:not([type="file"]), textarea, select {
+    font-size: 16px;
+  }
+
+  /* Improved spacing */
+  .space-y-4 > * + * {
+    margin-top: 16px;
+  }
+
+  .space-y-6 > * + * {
+    margin-top: 24px;
+  }
+
+  /* Better cards */
+  .card {
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Improved chat bubbles */
+  .chat-bubble {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* Better navigation */
+  .navbar {
+    padding: 12px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Improved sidebar */
+  .sidebar {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Better modals */
+  .modal-box {
+    max-width: 90%;
+    border-radius: 20px;
+    padding: 24px;
+  }
+
+  /* Improved avatars */
+  .avatar {
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* Better badges */
+  .badge {
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 12px;
+  }
+
+  /* Improved tabs */
+  .tabs-boxed {
+    padding: 6px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .tab {
+    padding: 12px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 10px;
+  }
+
+  /* Better scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+
+  /* Improved loading states */
+  .loading {
+    width: 48px;
+    height: 48px;
+  }
+
+  /* Better alerts */
+  .alert {
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 15px;
+  }
+
+  /* Improved dropdowns */
+  .dropdown-content {
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .menu li a {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 15px;
+  }
+
+  /* Better forms */
+  .form-control {
+    margin-bottom: 20px;
+  }
+
+  .label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  /* Improved chat container */
+  .chat-container {
+    padding: 16px;
+  }
+
+  /* Better message input */
+  .message-input {
+    padding: 12px 16px;
+    border-radius: 24px;
+    font-size: 16px;
+  }
+
+  /* Improved profile cards */
+  .profile-card {
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Better status indicators */
+  .status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+  }
+
+  /* Improved notification badges */
+  .notification-badge {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 10px;
+  }
+
+  /* Better hover effects (for devices that support it) */
+  @media (hover: hover) {
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .card:hover {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  /* Improved focus states for accessibility */
+  button:focus,
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: 3px solid rgba(99, 102, 241, 0.5);
+    outline-offset: 2px;
+  }
+
+  /* Improved touch feedback */
+  .btn-ripple,
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Better scrolling on iOS */
+  .overflow-y-auto,
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Improved pull-to-refresh indicator */
+  .ptr-indicator {
+    padding: 16px;
+    text-align: center;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.5);
+  }
+
+  /* Better empty states */
+  .empty-state {
+    padding: 48px 24px;
+    text-align: center;
+  }
+
+  .empty-state-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 16px;
+    opacity: 0.3;
+  }
+
+  /* Improved skeleton loaders */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.06) 25%,
+      rgba(0, 0, 0, 0.15) 50%,
+      rgba(0, 0, 0, 0.06) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+    border-radius: 8px;
+  }
+
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Better ripple effect for buttons */
+  .btn-ripple {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  .btn-ripple:active::after {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+/* Dark mode improvements */
+[data-theme="dark"] {
+  .card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .btn {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Offline mode styles */
+.offline-banner {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  padding: 12px 16px;
+  text-align: center;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.offline-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+/* Cached data indicator */
+.cached-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #f59e0b;
+}
+
+
+/* Mobile Bottom Navigation Styles */
+.mobile-bottom-nav {
+  height: 64px;
+  background: var(--fallback-b1, oklch(var(--b1)));
+  border-top: 1px solid var(--fallback-bc, oklch(var(--bc) / 0.2));
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Nav items */
+.mobile-bottom-nav a {
+  transition: all 0.2s ease;
+}
+
+.mobile-bottom-nav a:active {
+  transform: scale(0.95);
+}
+
+/* Active state */
+.mobile-bottom-nav a.active {
+  color: var(--fallback-p, oklch(var(--p)));
+}
+
+/* Badge on nav items */
+.mobile-bottom-nav .badge {
+  position: absolute;
+  top: 8px;
+  right: 25%;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Cached data indicator */
+.cached-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #f59e0b;
+}
+
+
+/* Remove tap highlight on mobile - NO RECTANGLE BOX */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection in inputs and text areas */
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  -khtml-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Remove focus outline on mobile */
+button:focus,
+a:focus,
+input:focus,
+textarea:focus {
+  outline: none;
+}
+
+/* Better button press feedback without rectangle */
+button:active,
+a:active {
+  opacity: 0.7;
+  transform: scale(0.98);
+  transition: all 0.1s ease;
+}
+
+/* ===== ADDITIONAL MOBILE IMPROVEMENTS ===== */
+
+/* Better page transitions on mobile */
+@media (max-width: 768px) {
+  .page-container {
+    padding-top: 60px;
+    padding-bottom: 70px;
+    min-height: 100vh;
+  }
+
+  /* Improved auth pages */
+  .auth-container {
+    padding: 16px;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .auth-form {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  /* Better profile pages */
+  .profile-container {
+    padding: 16px;
+    padding-top: 80px;
+  }
+
+  .profile-avatar {
+    width: 96px;
+    height: 96px;
+  }
+
+  /* Improved settings page */
+  .settings-container {
+    padding: 16px;
+    padding-top: 80px;
+  }
+
+  .theme-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  /* Better discover page */
+  .discover-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .user-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  /* Improved admin dashboard */
+  .admin-container {
+    padding: 16px;
+    padding-top: 80px;
+  }
+
+  .admin-stats {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  /* Better stranger chat */
+  .stranger-chat-container {
+    height: calc(100vh - 60px);
+    padding: 0;
+  }
+
+  .stranger-controls {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  /* Improved modals */
+  .modal-content {
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 100px);
+    margin: 16px;
+    border-radius: 16px;
+  }
+
+  .modal-header {
+    padding: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .modal-body {
+    padding: 16px;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+
+  .modal-footer {
+    padding: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  /* Better form inputs */
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-label {
+    font-size: 14px;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .form-input {
+    font-size: 16px;
+    padding: 12px 16px;
+    border-radius: 8px;
+  }
+
+  .form-textarea {
+    font-size: 16px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    min-height: 100px;
+  }
+
+  /* Better buttons */
+  .btn-mobile {
+    min-height: 44px;
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+
+  .btn-icon-mobile {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Improved cards */
+  .card-mobile {
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* Better lists */
+  .list-item-mobile {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+
+  /* Improved avatars */
+  .avatar-xs {
+    width: 32px;
+    height: 32px;
+  }
+
+  .avatar-sm {
+    width: 40px;
+    height: 40px;
+  }
+
+  .avatar-md {
+    width: 48px;
+    height: 48px;
+  }
+
+  .avatar-lg {
+    width: 64px;
+    height: 64px;
+  }
+
+  .avatar-xl {
+    width: 96px;
+    height: 96px;
+  }
+
+  /* Better badges */
+  .badge-mobile {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+
+  /* Improved tabs */
+  .tabs-mobile {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .tabs-mobile::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-mobile {
+    flex-shrink: 0;
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+
+  /* Better alerts */
+  .alert-mobile {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  /* Improved tooltips */
+  .tooltip-mobile {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    max-width: 200px;
+  }
+
+  /* Better dropdowns */
+  .dropdown-mobile {
+    max-height: 300px;
+    overflow-y: auto;
+    border-radius: 12px;
+  }
+
+  .dropdown-item-mobile {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+
+  /* Improved progress bars */
+  .progress-mobile {
+    height: 6px;
+    border-radius: 3px;
+  }
+
+  /* Better loading states */
+  .loading-mobile {
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .loading-spinner-mobile {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Improved empty states */
+  .empty-state-mobile {
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .empty-state-icon-mobile {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+  }
+
+  .empty-state-text-mobile {
+    font-size: 16px;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  /* Better error states */
+  .error-state-mobile {
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .error-icon-mobile {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    color: #ef4444;
+  }
+
+  /* Improved success states */
+  .success-state-mobile {
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .success-icon-mobile {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    color: #10b981;
+  }
+}
+
+/* Extra small devices (phones in portrait) */
+@media (max-width: 375px) {
+  .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .btn-mobile {
+    font-size: 14px;
+    padding: 10px 16px;
+  }
+
+  .card-mobile {
+    padding: 12px;
+  }
+
+  .modal-content {
+    margin: 12px;
+  }
+}
+
+/* Large phones and small tablets */
+@media (min-width: 480px) and (max-width: 767px) {
+  .theme-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .discover-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

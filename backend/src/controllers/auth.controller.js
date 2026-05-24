@@ -5,7 +5,6 @@ import prisma from "../lib/db.js";
 import { generateToken } from "../lib/utils.js";
 import sendEmail from "../utils/sendEmail.js";
 import { getLocationData, getClientIP } from "../utils/geoLocation.js";
-import { logger } from "../lib/logger.js";
 
 // ─── Signup ─────────────────────────────────────────────
 export const signup = async (req, res) => {
@@ -155,7 +154,7 @@ export const login = async (req, res) => {
 			city: updatedUser.city,
 		});
 	} catch (error) {
-		logger.error("Login error:", error);
+		console.error("Login error:", error);
 		res.status(500).json({ message: "Login failed. Please try again later." });
 	}
 };

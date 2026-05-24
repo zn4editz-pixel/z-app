@@ -1,0 +1,511 @@
+/* ===== SIMPLE THEME VISIBILITY FIXES ===== */
+/* Just ensure basic visibility - no complex overrides */
+
+/* Input fields - ensure visible borders */
+.input-bordered {
+  border: 1px solid hsl(var(--b3)) !important;
+}
+
+.input-bordered:focus {
+  border-color: hsl(var(--p)) !important;
+  outline: none !important;
+}
+
+/* Ensure text is visible */
+.label-text {
+  color: hsl(var(--bc)) !important;
+}
+
+.input {
+  color: hsl(var(--bc)) !important;
+}
+
+.input::placeholder {
+  color: hsl(var(--bc) / 0.6) !important;
+}
+
+/* ===== BUTTONS ===== */
+/* Ensure buttons have proper contrast */
+.btn {
+  border: 1px solid hsl(var(--b3)) !important;
+}
+
+.btn-primary {
+  background-color: hsl(var(--p)) !important;
+  color: hsl(var(--pc)) !important;
+  border-color: hsl(var(--p)) !important;
+}
+
+.btn-primary:hover {
+  background-color: hsl(var(--p) / 0.9) !important;
+}
+
+/* ===== TEXT ELEMENTS ===== */
+/* Ensure all text has proper contrast */
+.text-base-content {
+  color: hsl(var(--bc)) !important;
+}
+
+.text-base-content\/60,
+.text-base-content\/70 {
+  color: hsl(var(--bc) / 0.7) !important;
+}
+
+.text-base-content\/40,
+.text-base-content\/50 {
+  color: hsl(var(--bc) / 0.6) !important;
+}
+
+/* ===== CARDS AND CONTAINERS ===== */
+.card,
+.bg-base-100 {
+  background-color: hsl(var(--b1)) !important;
+  border: 1px solid hsl(var(--b3)) !important;
+}
+
+.bg-base-200 {
+  background-color: hsl(var(--b2)) !important;
+}
+
+.bg-base-300 {
+  background-color: hsl(var(--b3)) !important;
+}
+
+/* ===== BORDERS ===== */
+.border,
+.border-base-300 {
+  border-color: hsl(var(--b3)) !important;
+}
+
+.border-base-200 {
+  border-color: hsl(var(--b2)) !important;
+}
+
+/* ===== ICONS ===== */
+/* Ensure icons are visible */
+svg,
+.lucide {
+  color: inherit;
+}
+
+/* Icon colors for different contexts */
+.text-primary svg,
+.text-primary .lucide {
+  color: hsl(var(--p)) !important;
+}
+
+.text-success svg,
+.text-success .lucide {
+  color: hsl(var(--su)) !important;
+}
+
+.text-warning svg,
+.text-warning .lucide {
+  color: hsl(var(--wa)) !important;
+}
+
+.text-error svg,
+.text-error .lucide {
+  color: hsl(var(--er)) !important;
+}
+
+/* ===== LOGIN PAGE SPECIFIC FIXES ===== */
+.login-input {
+  background-color: hsl(var(--b1)) !important;
+  border: 2px solid hsl(var(--b3)) !important;
+  color: hsl(var(--bc)) !important;
+  border-radius: 0.5rem !important;
+}
+
+.login-input:focus {
+  border-color: hsl(var(--p)) !important;
+  box-shadow: 0 0 0 3px hsl(var(--p) / 0.1) !important;
+}
+
+/* Force borders on all input elements in login page */
+input[type="text"],
+input[type="email"], 
+input[type="password"] {
+  border: 2px solid hsl(var(--b3)) !important;
+  background-color: hsl(var(--b1)) !important;
+  color: hsl(var(--bc)) !important;
+}
+
+/* Ensure DaisyUI input class has borders */
+.input-bordered {
+  border: 2px solid hsl(var(--b3)) !important;
+}
+
+/* Override any conflicting styles */
+.input {
+  border: 2px solid hsl(var(--b3)) !important;
+  background-color: hsl(var(--b1)) !important;
+}
+
+.login-logo-icon {
+  color: hsl(var(--p)) !important;
+}
+
+/* ===== ADMIN DASHBOARD FIXES ===== */
+.admin-card-glass {
+  background-color: hsl(var(--b1) / 0.8) !important;
+  border: 1px solid hsl(var(--b3)) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* ===== NAVBAR FIXES ===== */
+.navbar {
+  background-color: hsl(var(--b1)) !important;
+  border-bottom: 1px solid hsl(var(--b3)) !important;
+}
+
+/* ===== DROPDOWN FIXES ===== */
+.dropdown-content {
+  background-color: hsl(var(--b1)) !important;
+  border: 1px solid hsl(var(--b3)) !important;
+  box-shadow: 0 10px 25px hsl(var(--bc) / 0.1) !important;
+}
+
+/* ===== MODAL FIXES ===== */
+.modal-box {
+  background-color: hsl(var(--b1)) !important;
+  border: 1px solid hsl(var(--b3)) !important;
+}
+
+/* ===== SIDEBAR FIXES ===== */
+.sidebar {
+  background-color: hsl(var(--b1)) !important;
+  border-right: 1px solid hsl(var(--b3)) !important;
+}
+
+/* ===== CHAT FIXES ===== */
+.chat-bubble {
+  border: 1px solid hsl(var(--b3)) !important;
+}
+
+.chat-bubble-primary {
+  background-color: hsl(var(--p)) !important;
+  color: hsl(var(--pc)) !important;
+}
+
+.chat-bubble-secondary {
+  background-color: hsl(var(--b2)) !important;
+  color: hsl(var(--bc)) !important;
+}
+
+/* ===== LOADING STATES ===== */
+.loading {
+  color: hsl(var(--p)) !important;
+}
+
+/* ===== THEME-SPECIFIC OVERRIDES ===== */
+/* For very dark themes, ensure minimum contrast */
+[data-theme="dark"] .text-base-content\/40,
+[data-theme="dark"] .text-base-content\/50,
+[data-theme="night"] .text-base-content\/40,
+[data-theme="night"] .text-base-content\/50,
+[data-theme="black"] .text-base-content\/40,
+[data-theme="black"] .text-base-content\/50 {
+  color: hsl(var(--bc) / 0.8) !important;
+}
+
+/* For very light themes, ensure text is dark enough */
+[data-theme="light"] .text-base-content\/60,
+[data-theme="light"] .text-base-content\/70,
+[data-theme="cupcake"] .text-base-content\/60,
+[data-theme="cupcake"] .text-base-content\/70 {
+  color: hsl(var(--bc) / 0.8) !important;
+}
+
+
+
+/* ===== ACCESSIBILITY IMPROVEMENTS ===== */
+/* Ensure focus states are always visible */
+*:focus {
+  outline: 2px solid hsl(var(--p)) !important;
+  outline-offset: 2px !important;
+}
+
+/* Remove outline for mouse users, keep for keyboard users */
+*:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+*:focus-visible {
+  outline: 2px solid hsl(var(--p)) !important;
+  outline-offset: 2px !important;
+}
+
+
+
+/* ===== ANIMATION FIXES ===== */
+/* Ensure animated elements maintain visibility */
+.animate-gradient-text {
+  background: linear-gradient(45deg, hsl(var(--p)), hsl(var(--s)), hsl(var(--a))) !important;
+  background-size: 200% 200% !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  animation: gradient-shift 3s ease-in-out infinite !important;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Fallback for browsers that don't support background-clip: text */
+@supports not (-webkit-background-clip: text) {
+  .animate-gradient-text {
+    color: hsl(var(--p)) !important;
+    -webkit-text-fill-color: unset !important;
+  }
+}/* ===== 
+VIEW PROFILE BUTTON HOVER FIX ===== */
+/* Fix for DiscoverPage View Profile button hover contrast */
+a[href*="/profile/"].btn:hover {
+  color: #000000 !important; /* Force dark text on hover */
+}
+
+/* Ensure View Profile button text is always readable on hover */
+.hover\:text-primary-content:hover {
+  color: #000000 !important;
+}
+/* ====
+= GLOBAL BACKGROUND FIX ===== */
+/* Force main background to match navbar theme */
+body {
+  background-color: hsl(var(--b1)) !important;
+}
+
+html {
+  background-color: hsl(var(--b1)) !important;
+}
+
+/* Ensure all main page containers use theme background */
+.min-h-screen {
+  background-color: hsl(var(--b1)) !important;
+}
+
+/* Override any fixed backgrounds */
+.fixed.inset-0 {
+  background-color: hsl(var(--b1)) !important;
+}
+/
+* ===== ULTRA AGGRESSIVE BACKGROUND FIX ===== */
+/* Force all possible background elements to use theme color */
+html,
+html body,
+body,
+#root,
+#root > div,
+#root > div > div,
+.min-h-screen,
+.fixed.inset-0,
+div[class*="bg-"],
+[class*="bg-base-200"],
+[class*="bg-slate-"],
+[class*="bg-gray-"],
+[class*="bg-neutral-"] {
+  background-color: hsl(var(--b1)) !important;
+  background: hsl(var(--b1)) !important;
+}
+
+/* Target specific theme attributes */
+html[data-theme] body,
+html[data-theme] #root,
+html[data-theme] #root > div,
+html[data-theme] .min-h-screen,
+html[data-theme] .fixed.inset-0 {
+  background-color: hsl(var(--b1)) !important;
+  background: hsl(var(--b1)) !important;
+}
+
+/* Override any inline styles */
+*[style*="background"] {
+  background-color: hsl(var(--b1)) !important;
+  background: hsl(var(--b1)) !important;
+}
+
+/* Force specific dark classes to light */
+.bg-base-200,
+.bg-slate-900,
+.bg-gray-900,
+.bg-neutral-900,
+.bg-zinc-900 {
+  background-color: hsl(var(--b1)) !important;
+  background: hsl(var(--b1)) !important;
+}
+/* ===== U
+NIVERSAL WHITE TEXT ON HOVER ===== */
+/* Force all buttons to have white text on hover */
+
+/* All buttons get white text on hover */
+.btn:hover,
+button:hover,
+a.btn:hover,
+[role="button"]:hover {
+  color: #ffffff !important;
+}
+
+/* Navbar buttons */
+.navbar .btn:hover,
+.navbar button:hover,
+.navbar a:hover {
+  color: #ffffff !important;
+}
+
+/* Social Hub buttons */
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-success:hover,
+.btn-error:hover,
+.btn-warning:hover,
+.btn-ghost:hover,
+.btn-outline:hover {
+  color: #ffffff !important;
+}
+
+/* View Profile buttons */
+a[href*="/profile/"].btn:hover {
+  color: #ffffff !important;
+}
+
+/* Discover page buttons */
+.hover\:text-primary-content:hover {
+  color: #ffffff !important;
+}
+
+/* Link buttons */
+a.btn:hover,
+.btn a:hover {
+  color: #ffffff !important;
+}
+
+/* Icon buttons */
+.btn-circle:hover,
+.btn-square:hover {
+  color: #ffffff !important;
+}
+
+/* Ensure icons inside buttons are also white on hover */
+.btn:hover svg,
+.btn:hover .lucide,
+button:hover svg,
+button:hover .lucide {
+  color: #ffffff !important;
+}
+
+/* Override any conflicting text colors on hover */
+.btn:hover *,
+button:hover * {
+  color: #ffffff !important;
+}/* ==
+=== WHITE TEXT FOR BETTER VISIBILITY ===== */
+/* Make usernames and other text elements white */
+
+/* Usernames in sidebar and chat */
+.font-semibold,
+.font-bold,
+h1, h2, h3, h4, h5, h6 {
+  color: #ffffff !important;
+}
+
+/* Chat usernames and names */
+.text-lg,
+.text-xl,
+.text-2xl {
+  color: #ffffff !important;
+}
+
+/* Sidebar usernames */
+.sidebar .font-semibold,
+.sidebar .font-bold,
+.sidebar h3,
+.sidebar .text-base {
+  color: #ffffff !important;
+}
+
+/* Chat header usernames */
+.chat-header .font-semibold,
+.chat-header .font-bold {
+  color: #ffffff !important;
+}
+
+/* Profile names */
+.profile-name,
+.user-name,
+.nickname {
+  color: #ffffff !important;
+}
+
+/* General text elements */
+.text-base-content,
+.text-gray-900,
+.text-gray-800,
+.text-black {
+  color: #ffffff !important;
+}
+
+/* Ensure all text in cards is white */
+.card .font-semibold,
+.card .font-bold,
+.card h1, .card h2, .card h3 {
+  color: #ffffff !important;
+}
+
+/* Discover page usernames */
+.discover-page .font-bold,
+.discover-page .font-semibold {
+  color: #ffffff !important;
+}
+
+/* Chat container text */
+.chat-container .font-semibold,
+.chat-container .font-bold {
+  color: #ffffff !important;
+}/
+* ===== AGGRESSIVE WHITE TEXT OVERRIDE ===== */
+/* Force white text with maximum specificity */
+
+/* Universal text override */
+* {
+  color: #ffffff !important;
+}
+
+/* Override specific text colors */
+.text-base-content,
+.text-gray-900,
+.text-gray-800,
+.text-gray-700,
+.text-gray-600,
+.text-black,
+span,
+p,
+div,
+h1, h2, h3, h4, h5, h6 {
+  color: #ffffff !important;
+}
+
+/* Sidebar specific */
+.sidebar *,
+.sidebar span,
+.sidebar p,
+.sidebar div,
+.sidebar h1, .sidebar h2, .sidebar h3 {
+  color: #ffffff !important;
+}
+
+/* Chat specific */
+.chat-container *,
+.chat-header *,
+.message * {
+  color: #ffffff !important;
+}
+
+/* Cards and containers */
+.card *,
+.bg-base-100 *,
+.bg-base-200 * {
+  color: #ffffff !important;
+}

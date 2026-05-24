@@ -138,7 +138,7 @@ const Sidebar = () => {
     // Handle Game Invites - Special Styling
     if (lastMsg.text && lastMsg.text.startsWith("GAME_INVITE:")) {
       const msgTime = new Date(
-        lastMsg.timestamp || lastMsg.createdAt,
+        lastMsg.createdAt || lastMsg.timestamp,
       ).getTime();
       const timeDiff = Date.now() - msgTime;
       const isExpired = timeDiff > 20000; // 20 seconds expiration
@@ -244,11 +244,11 @@ const Sidebar = () => {
     .sort((a, b) => {
       // Priority 1: Sort by most recent interaction (latest message timestamp)
       // This ensures the person you most recently chatted with appears at the top
-      const aTimestamp = a.lastMessage?.timestamp || a.lastMessage?.createdAt
-        ? new Date(a.lastMessage?.timestamp || a.lastMessage?.createdAt).getTime()
+      const aTimestamp = a.lastMessage?.timestamp
+        ? new Date(a.lastMessage.timestamp).getTime()
         : 0;
-      const bTimestamp = b.lastMessage?.timestamp || b.lastMessage?.createdAt
-        ? new Date(b.lastMessage?.timestamp || b.lastMessage?.createdAt).getTime()
+      const bTimestamp = b.lastMessage?.timestamp
+        ? new Date(b.lastMessage.timestamp).getTime()
         : 0;
       // If both have messages, sort by most recent
       if (aTimestamp && bTimestamp) {

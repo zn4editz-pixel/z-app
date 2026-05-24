@@ -1,0 +1,544 @@
+/* 🎨 Unified Admin Panel Theme System */
+
+/* ===== THEME COLOR VARIABLES ===== */
+:root {
+  /* Primary Theme Colors */
+  --admin-primary: oklch(var(--p));
+  --admin-primary-content: oklch(var(--pc));
+  --admin-secondary: oklch(var(--s));
+  --admin-secondary-content: oklch(var(--sc));
+  --admin-accent: oklch(var(--a));
+  --admin-accent-content: oklch(var(--ac));
+  
+  /* Background Colors */
+  --admin-base-100: oklch(var(--b1));
+  --admin-base-200: oklch(var(--b2));
+  --admin-base-300: oklch(var(--b3));
+  --admin-base-content: oklch(var(--bc));
+  
+  /* Status Colors */
+  --admin-success: oklch(var(--su));
+  --admin-success-content: oklch(var(--suc));
+  --admin-warning: oklch(var(--wa));
+  --admin-warning-content: oklch(var(--wac));
+  --admin-error: oklch(var(--er));
+  --admin-error-content: oklch(var(--erc));
+  --admin-info: oklch(var(--in));
+  --admin-info-content: oklch(var(--inc));
+  
+  /* Enhanced Theme Colors */
+  --admin-gradient-primary: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+  --admin-gradient-success: linear-gradient(135deg, var(--admin-success), #10b981);
+  --admin-gradient-warning: linear-gradient(135deg, var(--admin-warning), #f59e0b);
+  --admin-gradient-error: linear-gradient(135deg, var(--admin-error), #ef4444);
+  --admin-gradient-info: linear-gradient(135deg, var(--admin-info), #3b82f6);
+  
+  /* Shadow Colors */
+  --admin-shadow-primary: rgba(var(--p) / 0.2);
+  --admin-shadow-success: rgba(34, 197, 94, 0.2);
+  --admin-shadow-warning: rgba(245, 158, 11, 0.2);
+  --admin-shadow-error: rgba(239, 68, 68, 0.2);
+  --admin-shadow-info: rgba(59, 130, 246, 0.2);
+}
+
+/* ===== UNIFIED ADMIN COMPONENTS ===== */
+
+/* Admin Panel Header */
+.admin-panel-header {
+  background: var(--admin-gradient-primary);
+  color: var(--admin-primary-content);
+  border: 2px solid rgba(var(--p) / 0.3);
+  box-shadow: 0 8px 32px var(--admin-shadow-primary);
+}
+
+.admin-panel-title {
+  background: var(--admin-gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+}
+
+.admin-panel-subtitle {
+  color: var(--admin-base-content);
+  opacity: 0.8;
+}
+
+/* Tab Navigation */
+.admin-tabs-container {
+  background: var(--admin-base-100);
+  border: 2px solid var(--admin-base-300);
+  box-shadow: 0 4px 16px rgba(var(--bc) / 0.1);
+}
+
+.admin-tab {
+  color: var(--admin-base-content);
+  transition: all 0.3s ease;
+}
+
+.admin-tab:hover {
+  background: var(--admin-base-200);
+  color: var(--admin-primary);
+  transform: translateY(-1px);
+}
+
+.admin-tab.active {
+  background: var(--admin-gradient-primary);
+  color: var(--admin-primary-content);
+  box-shadow: 0 4px 12px var(--admin-shadow-primary);
+}
+
+.admin-tab-icon {
+  color: inherit;
+}
+
+/* Card Components */
+.admin-card-unified {
+  background: var(--admin-base-100);
+  border: 2px solid var(--admin-base-300);
+  color: var(--admin-base-content);
+  box-shadow: 0 4px 16px rgba(var(--bc) / 0.1);
+  transition: all 0.3s ease;
+}
+
+.admin-card-unified:hover {
+  border-color: var(--admin-primary);
+  box-shadow: 0 8px 32px var(--admin-shadow-primary);
+  transform: translateY(-2px);
+}
+
+/* Metric Cards with Status Colors */
+.admin-metric-card {
+  background: var(--admin-base-100);
+  border: 2px solid var(--admin-base-300);
+  color: var(--admin-base-content);
+  transition: all 0.3s ease;
+}
+
+.admin-metric-card.healthy {
+  border-color: var(--admin-success);
+  background: linear-gradient(135deg, var(--admin-base-100), rgba(var(--su) / 0.05));
+}
+
+.admin-metric-card.healthy:hover {
+  box-shadow: 0 8px 32px var(--admin-shadow-success);
+}
+
+.admin-metric-card.warning {
+  border-color: var(--admin-warning);
+  background: linear-gradient(135deg, var(--admin-base-100), rgba(var(--wa) / 0.05));
+}
+
+.admin-metric-card.warning:hover {
+  box-shadow: 0 8px 32px var(--admin-shadow-warning);
+}
+
+.admin-metric-card.critical {
+  border-color: var(--admin-error);
+  background: linear-gradient(135deg, var(--admin-base-100), rgba(var(--er) / 0.05));
+}
+
+.admin-metric-card.critical:hover {
+  box-shadow: 0 8px 32px var(--admin-shadow-error);
+}
+
+/* Icon Containers */
+.admin-icon-container {
+  background: var(--admin-gradient-primary);
+  color: var(--admin-primary-content);
+  border: 2px solid rgba(var(--p) / 0.3);
+  box-shadow: 0 4px 12px var(--admin-shadow-primary);
+}
+
+.admin-icon-container.success {
+  background: var(--admin-gradient-success);
+  color: var(--admin-success-content);
+  border-color: var(--admin-success);
+  box-shadow: 0 4px 12px var(--admin-shadow-success);
+}
+
+.admin-icon-container.warning {
+  background: var(--admin-gradient-warning);
+  color: var(--admin-warning-content);
+  border-color: var(--admin-warning);
+  box-shadow: 0 4px 12px var(--admin-shadow-warning);
+}
+
+.admin-icon-container.error {
+  background: var(--admin-gradient-error);
+  color: var(--admin-error-content);
+  border-color: var(--admin-error);
+  box-shadow: 0 4px 12px var(--admin-shadow-error);
+}
+
+.admin-icon-container.info {
+  background: var(--admin-gradient-info);
+  color: var(--admin-info-content);
+  border-color: var(--admin-info);
+  box-shadow: 0 4px 12px var(--admin-shadow-info);
+}
+
+/* Text Styles */
+.admin-text-primary {
+  color: var(--admin-primary);
+}
+
+.admin-text-secondary {
+  color: var(--admin-secondary);
+}
+
+.admin-text-content {
+  color: var(--admin-base-content);
+}
+
+.admin-text-muted {
+  color: var(--admin-base-content);
+  opacity: 0.7;
+}
+
+.admin-text-gradient {
+  background: var(--admin-gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Button Styles */
+.admin-btn-primary {
+  background: var(--admin-gradient-primary);
+  color: var(--admin-primary-content);
+  border: 2px solid rgba(var(--p) / 0.3);
+  box-shadow: 0 4px 12px var(--admin-shadow-primary);
+}
+
+.admin-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px var(--admin-shadow-primary);
+}
+
+.admin-btn-secondary {
+  background: var(--admin-base-200);
+  color: var(--admin-base-content);
+  border: 2px solid var(--admin-base-300);
+}
+
+.admin-btn-secondary:hover {
+  background: var(--admin-base-300);
+  border-color: var(--admin-primary);
+}
+
+.admin-btn-success {
+  background: var(--admin-gradient-success);
+  color: var(--admin-success-content);
+  border: 2px solid var(--admin-success);
+  box-shadow: 0 4px 12px var(--admin-shadow-success);
+}
+
+.admin-btn-warning {
+  background: var(--admin-gradient-warning);
+  color: var(--admin-warning-content);
+  border: 2px solid var(--admin-warning);
+  box-shadow: 0 4px 12px var(--admin-shadow-warning);
+}
+
+.admin-btn-error {
+  background: var(--admin-gradient-error);
+  color: var(--admin-error-content);
+  border: 2px solid var(--admin-error);
+  box-shadow: 0 4px 12px var(--admin-shadow-error);
+}
+
+/* Status Indicators */
+.admin-status-healthy {
+  color: var(--admin-success);
+  background: rgba(var(--su) / 0.1);
+  border: 1px solid var(--admin-success);
+}
+
+.admin-status-warning {
+  color: var(--admin-warning);
+  background: rgba(var(--wa) / 0.1);
+  border: 1px solid var(--admin-warning);
+}
+
+.admin-status-critical {
+  color: var(--admin-error);
+  background: rgba(var(--er) / 0.1);
+  border: 1px solid var(--admin-error);
+}
+
+.admin-status-info {
+  color: var(--admin-info);
+  background: rgba(var(--in) / 0.1);
+  border: 1px solid var(--admin-info);
+}
+
+/* Chart Containers */
+.admin-chart-container {
+  background: var(--admin-base-100);
+  border: 2px solid var(--admin-base-300);
+  color: var(--admin-base-content);
+  box-shadow: 0 4px 16px rgba(var(--bc) / 0.1);
+}
+
+.admin-chart-title {
+  color: var(--admin-primary);
+  font-weight: 600;
+}
+
+/* Form Elements */
+.admin-input {
+  background: var(--admin-base-200);
+  border: 2px solid var(--admin-base-300);
+  color: var(--admin-base-content);
+}
+
+.admin-input:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(var(--p) / 0.1);
+}
+
+.admin-select {
+  background: var(--admin-base-200);
+  border: 2px solid var(--admin-base-300);
+  color: var(--admin-base-content);
+}
+
+.admin-textarea {
+  background: var(--admin-base-200);
+  border: 2px solid var(--admin-base-300);
+  color: var(--admin-base-content);
+  resize: vertical;
+}
+
+/* Loading States */
+.admin-loading {
+  color: var(--admin-primary);
+}
+
+.admin-loading-text {
+  color: var(--admin-base-content);
+  opacity: 0.8;
+}
+
+/* Error States */
+.admin-error-container {
+  background: rgba(var(--er) / 0.05);
+  border: 2px solid var(--admin-error);
+  color: var(--admin-base-content);
+}
+
+.admin-error-icon {
+  color: var(--admin-error);
+}
+
+.admin-error-title {
+  color: var(--admin-error);
+}
+
+.admin-error-message {
+  color: var(--admin-base-content);
+  opacity: 0.8;
+}
+
+/* User Cards */
+.admin-user-card {
+  background: var(--admin-base-100);
+  border: 2px solid var(--admin-base-300);
+  color: var(--admin-base-content);
+  transition: all 0.3s ease;
+}
+
+.admin-user-card:hover {
+  border-color: var(--admin-primary);
+  box-shadow: 0 4px 16px var(--admin-shadow-primary);
+}
+
+.admin-user-name {
+  color: var(--admin-base-content);
+  font-weight: 600;
+}
+
+.admin-user-username {
+  color: var(--admin-base-content);
+  opacity: 0.7;
+}
+
+.admin-user-online {
+  background: var(--admin-success);
+  border: 2px solid var(--admin-base-100);
+}
+
+/* Progress Bars */
+.admin-progress-bar {
+  background: var(--admin-base-300);
+}
+
+.admin-progress-fill {
+  background: var(--admin-gradient-primary);
+  box-shadow: 0 0 10px var(--admin-shadow-primary);
+}
+
+.admin-progress-fill.success {
+  background: var(--admin-gradient-success);
+  box-shadow: 0 0 10px var(--admin-shadow-success);
+}
+
+.admin-progress-fill.warning {
+  background: var(--admin-gradient-warning);
+  box-shadow: 0 0 10px var(--admin-shadow-warning);
+}
+
+.admin-progress-fill.error {
+  background: var(--admin-gradient-error);
+  box-shadow: 0 0 10px var(--admin-shadow-error);
+}
+
+/* Badges and Pills */
+.admin-badge {
+  background: var(--admin-primary);
+  color: var(--admin-primary-content);
+  border: 1px solid rgba(var(--p) / 0.3);
+}
+
+.admin-badge.success {
+  background: var(--admin-success);
+  color: var(--admin-success-content);
+  border-color: var(--admin-success);
+}
+
+.admin-badge.warning {
+  background: var(--admin-warning);
+  color: var(--admin-warning-content);
+  border-color: var(--admin-warning);
+}
+
+.admin-badge.error {
+  background: var(--admin-error);
+  color: var(--admin-error-content);
+  border-color: var(--admin-error);
+}
+
+.admin-badge.info {
+  background: var(--admin-info);
+  color: var(--admin-info-content);
+  border-color: var(--admin-info);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .admin-panel-header {
+    padding: 1rem;
+  }
+  
+  .admin-card-unified {
+    padding: 1rem;
+  }
+  
+  .admin-metric-card {
+    padding: 1rem;
+  }
+  
+  .admin-chart-container {
+    padding: 1rem;
+  }
+}
+
+/* Dark Mode Enhancements */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --admin-shadow-primary: rgba(var(--p) / 0.3);
+    --admin-shadow-success: rgba(34, 197, 94, 0.3);
+    --admin-shadow-warning: rgba(245, 158, 11, 0.3);
+    --admin-shadow-error: rgba(239, 68, 68, 0.3);
+    --admin-shadow-info: rgba(59, 130, 246, 0.3);
+  }
+}
+
+/* Animation Classes */
+.admin-animate-in {
+  animation: adminSlideIn 0.6s ease-out;
+}
+
+.admin-animate-fade {
+  animation: adminFadeIn 0.5s ease-out;
+}
+
+.admin-animate-scale {
+  animation: adminScaleIn 0.4s ease-out;
+}
+
+@keyframes adminSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes adminFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes adminScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Hover Effects */
+.admin-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(var(--bc) / 0.15);
+}
+
+.admin-hover-glow:hover {
+  box-shadow: 0 0 20px var(--admin-shadow-primary);
+}
+
+.admin-hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Focus States */
+.admin-focus:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--p) / 0.2);
+}
+
+/* Utility Classes */
+.admin-text-xs { font-size: 0.75rem; }
+.admin-text-sm { font-size: 0.875rem; }
+.admin-text-base { font-size: 1rem; }
+.admin-text-lg { font-size: 1.125rem; }
+.admin-text-xl { font-size: 1.25rem; }
+.admin-text-2xl { font-size: 1.5rem; }
+.admin-text-3xl { font-size: 1.875rem; }
+
+.admin-font-normal { font-weight: 400; }
+.admin-font-medium { font-weight: 500; }
+.admin-font-semibold { font-weight: 600; }
+.admin-font-bold { font-weight: 700; }
+
+.admin-rounded-sm { border-radius: 0.125rem; }
+.admin-rounded { border-radius: 0.25rem; }
+.admin-rounded-md { border-radius: 0.375rem; }
+.admin-rounded-lg { border-radius: 0.5rem; }
+.admin-rounded-xl { border-radius: 0.75rem; }
+.admin-rounded-2xl { border-radius: 1rem; }
+
+.admin-shadow-sm { box-shadow: 0 1px 2px rgba(var(--bc) / 0.05); }
+.admin-shadow { box-shadow: 0 1px 3px rgba(var(--bc) / 0.1); }
+.admin-shadow-md { box-shadow: 0 4px 6px rgba(var(--bc) / 0.1); }
+.admin-shadow-lg { box-shadow: 0 10px 15px rgba(var(--bc) / 0.1); }
+.admin-shadow-xl { box-shadow: 0 20px 25px rgba(var(--bc) / 0.1); }
+.admin-shadow-2xl { box-shadow: 0 25px 50px rgba(var(--bc) / 0.25); }

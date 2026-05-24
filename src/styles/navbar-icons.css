@@ -1,0 +1,78 @@
+/* Navbar Icon-Only Styling - No Background Circles */
+
+/* Remove all button backgrounds and borders */
+.navbar-icon-btn {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0.5rem !important;
+  border-radius: 0 !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Remove hover backgrounds */
+.navbar-icon-btn:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Remove active backgrounds */
+.navbar-icon-btn.active {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Icon color states */
+.navbar-icon-btn svg {
+  color: hsl(var(--bc) / 0.6) !important;
+  transition: color 0.2s ease !important;
+}
+
+/* Hover state - white icons */
+.navbar-icon-btn:hover svg {
+  color: white !important;
+}
+
+/* Active state - white icons */
+.navbar-icon-btn.active svg {
+  color: white !important;
+}
+
+/* Remove focus outlines */
+.navbar-icon-btn:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove any DaisyUI button styling */
+.navbar-icon-btn.btn-circle {
+  border-radius: 0 !important;
+}
+
+.navbar-icon-btn.btn-ghost {
+  background: transparent !important;
+}
+
+.navbar-icon-btn.btn-active {
+  background: transparent !important;
+}
+
+/* Notification badge positioning */
+.navbar-icon-btn .notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: hsl(var(--er)) !important;
+  color: white !important;
+  font-size: 0.75rem !important;
+  font-weight: bold !important;
+  border-radius: 50% !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+  animation: pulse 2s infinite !important;
+}

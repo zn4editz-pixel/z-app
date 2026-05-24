@@ -1,0 +1,57 @@
+# 🔧 DOCKER COMPOSE OVERRIDE FOR DEVELOPMENT
+# This file is automatically used when running `docker-compose up`
+# For production, use: docker-compose -f docker-compose.production.yml up
+
+version: '3.8'
+
+services:
+  # Development backend with hot reload
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=5001
+      - DATABASE_URL=postgresql://z_app_user:dev_password@postgres:5432/z_app_dev
+    command: npm run dev
+    ports:
+      - "5001:5001"
+
+  # Development frontend with hot reload
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost:5001
+      - VITE_API_URL=http://localhost:5001
+    command: npm run dev
+    ports:
+      - "5173:5173"
+
+  # Development database
+  postgres:
+    environment:
+      - POSTGRES_DB=z_app_dev
+      - POSTGRES_USER=z_app_user
+      - POSTGRES_PASSWORD=dev_password
+    ports:
+      - "5432:5432"
+
+  # Development Redis
+  redis:
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass dev_password
+
+  # Remove nginx for development (frontend runs on Vite dev server)
+  nginx:
+    profiles:
+      - production

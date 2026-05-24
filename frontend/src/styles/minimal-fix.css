@@ -1,0 +1,11 @@
+/* 🎯 MINIMAL FIX - Just fix the white space issue */
+
+/* Fix white space at bottom during scroll */
+html, body {
+  background-color: oklch(var(--b1));
+}
+
+/* Ensure consistent background */
+#root {
+  background-color: oklch(var(--b1));
+}

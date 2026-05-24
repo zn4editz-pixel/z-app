@@ -1,0 +1,299 @@
+/* 🎨 MODERN SPINNER - Beautiful, Smooth, Guaranteed Animation */
+
+.modern-spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.modern-spinner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Outer Ring - Main rotation */
+.modern-spinner-outer {
+  position: relative;
+  border-radius: 50%;
+  border: solid transparent;
+  border-top-color: currentColor;
+  border-right-color: currentColor;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  animation: modern-spin-outer 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: conic-gradient(from 0deg,
+      transparent 0deg,
+      currentColor 90deg,
+      transparent 180deg,
+      currentColor 270deg,
+      transparent 360deg);
+  background-clip: padding-box;
+  opacity: 0.8;
+}
+
+/* Inner Ring - Counter rotation */
+.modern-spinner-inner {
+  position: absolute;
+  border-radius: 50%;
+  border: solid transparent;
+  border-top-color: currentColor;
+  border-left-color: currentColor;
+  border-bottom-color: transparent;
+  border-right-color: transparent;
+  animation: modern-spin-inner 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite reverse;
+  opacity: 0.6;
+}
+
+/* Center Dot - Pulse animation */
+.modern-spinner-dot {
+  position: absolute;
+  border-radius: 50%;
+  background-color: currentColor;
+  animation: modern-pulse 1.5s ease-in-out infinite;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Loading Text */
+.modern-spinner-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--bc) / 0.7);
+  animation: modern-text-fade 2s ease-in-out infinite;
+  text-align: center;
+  letter-spacing: 0.025em;
+}
+
+/* Keyframe Animations */
+@keyframes modern-spin-outer {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.8;
+  }
+
+  25% {
+    transform: rotate(90deg) scale(1.05);
+    opacity: 1;
+  }
+
+  50% {
+    transform: rotate(180deg) scale(1);
+    opacity: 0.9;
+  }
+
+  75% {
+    transform: rotate(270deg) scale(0.95);
+    opacity: 1;
+  }
+
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes modern-spin-inner {
+  0% {
+    transform: rotate(0deg) scale(0.8);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: rotate(-180deg) scale(1.1);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: rotate(-360deg) scale(0.8);
+    opacity: 0.6;
+  }
+}
+
+@keyframes modern-pulse {
+
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0.7;
+  }
+
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 1;
+  }
+}
+
+@keyframes modern-text-fade {
+
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Hover Effects */
+.modern-spinner-container:hover .modern-spinner-outer {
+  animation-duration: 0.8s;
+}
+
+.modern-spinner-container:hover .modern-spinner-inner {
+  animation-duration: 0.6s;
+}
+
+/* Theme Variants */
+.modern-spinner.text-primary {
+  color: hsl(var(--p));
+}
+
+.modern-spinner.text-secondary {
+  color: hsl(var(--s));
+}
+
+.modern-spinner.text-accent {
+  color: hsl(var(--a));
+}
+
+.modern-spinner.text-success {
+  color: hsl(var(--su));
+}
+
+.modern-spinner.text-warning {
+  color: hsl(var(--wa));
+}
+
+.modern-spinner.text-error {
+  color: hsl(var(--er));
+}
+
+.modern-spinner.text-white {
+  color: white;
+}
+
+/* Performance Optimizations */
+.modern-spinner-outer,
+.modern-spinner-inner,
+.modern-spinner-dot {
+  will-change: transform, opacity;
+  transform-origin: center;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Force Hardware Acceleration */
+.modern-spinner {
+  transform: translateZ(0);
+}
+
+/* Reduced Motion Support */
+/* Reduced motion block removed to ensure animations play */
+
+/* Dark Theme Enhancements */
+[data-theme="dark"] .modern-spinner-outer,
+[data-theme="synthwave"] .modern-spinner-outer,
+[data-theme="halloween"] .modern-spinner-outer,
+[data-theme="forest"] .modern-spinner-outer,
+[data-theme="black"] .modern-spinner-outer,
+[data-theme="luxury"] .modern-spinner-outer,
+[data-theme="dracula"] .modern-spinner-outer,
+[data-theme="business"] .modern-spinner-outer,
+[data-theme="night"] .modern-spinner-outer,
+[data-theme="coffee"] .modern-spinner-outer,
+[data-theme="dim"] .modern-spinner-outer {
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+/* Special Effects for Cyberpunk Theme */
+[data-theme="cyberpunk"] .modern-spinner-outer {
+  filter: drop-shadow(0 0 12px #ff00ff) drop-shadow(0 0 20px #00ffff);
+  animation-duration: 0.6s;
+}
+
+[data-theme="cyberpunk"] .modern-spinner-inner {
+  filter: drop-shadow(0 0 8px #00ffff);
+  animation-duration: 0.4s;
+}
+
+/* Luxury Theme Gold Effect */
+[data-theme="luxury"] .modern-spinner {
+  color: #ffd700;
+}
+
+[data-theme="luxury"] .modern-spinner-outer {
+  filter: drop-shadow(0 0 10px #ffd700);
+}
+
+/* Emergency Fallback - Force Animation */
+.modern-spinner-outer {
+  animation-play-state: running !important;
+  animation-fill-mode: none !important;
+  animation-delay: 0s !important;
+}
+
+.modern-spinner-inner {
+  animation-play-state: running !important;
+  animation-fill-mode: none !important;
+  animation-delay: 0s !important;
+}
+
+.modern-spinner-dot {
+  animation-play-state: running !important;
+  animation-fill-mode: none !important;
+  animation-delay: 0s !important;
+}
+
+/* Ensure animations work in all browsers */
+@-webkit-keyframes modern-spin-outer {
+  0% {
+    -webkit-transform: rotate(0deg) scale(1);
+  }
+
+  25% {
+    -webkit-transform: rotate(90deg) scale(1.05);
+  }
+
+  50% {
+    -webkit-transform: rotate(180deg) scale(1);
+  }
+
+  75% {
+    -webkit-transform: rotate(270deg) scale(0.95);
+  }
+
+  100% {
+    -webkit-transform: rotate(360deg) scale(1);
+  }
+}
+
+@-moz-keyframes modern-spin-outer {
+  0% {
+    -moz-transform: rotate(0deg) scale(1);
+  }
+
+  25% {
+    -moz-transform: rotate(90deg) scale(1.05);
+  }
+
+  50% {
+    -moz-transform: rotate(180deg) scale(1);
+  }
+
+  75% {
+    -moz-transform: rotate(270deg) scale(0.95);
+  }
+
+  100% {
+    -moz-transform: rotate(360deg) scale(1);
+  }
+}
