@@ -46,10 +46,10 @@ const MessageStatus = ({ message, isMyMessage }) => {
   }
   if (isRead) {
     return (
-      <div className="flex items-center ml-1" title="Read">
+      <div className="flex items-center ml-1 status-tick-container" title="Seen">
         {/* Double Tick (Read) - Theme-based primary color */}
         <svg
-          className="w-4 h-4 text-primary"
+          className="w-4 h-4 status-tick-read"
           fill="currentColor"
           viewBox="0 0 16 16"
         >
@@ -60,10 +60,10 @@ const MessageStatus = ({ message, isMyMessage }) => {
     );
   } else if (isDelivered) {
     return (
-      <div className="flex items-center ml-1" title="Delivered">
+      <div className="flex items-center ml-1 status-tick-container" title="Delivered">
         {/* Double Tick (Delivered) - Exact match from Sidebar */}
         <svg
-          className="w-4 h-4 text-base-content/50"
+          className="w-4 h-4 status-tick-delivered"
           fill="currentColor"
           viewBox="0 0 16 16"
         >
@@ -75,10 +75,10 @@ const MessageStatus = ({ message, isMyMessage }) => {
   } else {
     // Sent (Server Received)
     return (
-      <div className="flex items-center ml-1" title="Sent">
+      <div className="flex items-center ml-1 status-tick-container" title="Sent">
         {/* Single Tick (Sent) - Exact match from Sidebar */}
         <svg
-          className="w-4 h-4 text-base-content/50"
+          className="w-4 h-4 status-tick-sent"
           fill="currentColor"
           viewBox="0 0 16 16"
         >

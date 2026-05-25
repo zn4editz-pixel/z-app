@@ -160,6 +160,10 @@ const HomePage = () => {
     }
     return () => {
       isSubscribed = false;
+      try {
+        const { unsubscribeFromMessages } = useChatStore.getState();
+        unsubscribeFromMessages();
+      } catch (e) {}
     };
   }, [socket, authUser]);
   const handleStartCall = (callType) => {

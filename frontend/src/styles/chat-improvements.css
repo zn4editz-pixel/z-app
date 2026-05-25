@@ -233,49 +233,94 @@ input[type="text"], textarea {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Long press reaction picker - Mobile Optimized */
+/* Long press reaction picker - Mobile Optimized (Floating Glassmorphic Card Style) */
 .reaction-picker-mobile {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: oklch(var(--b1) / 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 24px 24px 0 0;
-  padding: 20px;
-  z-index: 9999;
-  transform: translateY(100%);
-  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  bottom: calc(72px + env(safe-area-inset-bottom)); /* Perfectly above input bar */
+  left: 50%;
+  transform: translate(-50%, 150%) scale(0.9);
+  width: calc(100% - 32px);
+  max-width: 360px;
+  background: oklch(var(--b1) / 0.85);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  border-radius: 28px;
+  padding: 14px 16px;
+  z-index: 99999;
+  opacity: 0;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px oklch(var(--b3) / 0.25);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
 }
 
 .reaction-picker-mobile.visible {
-  transform: translateY(0);
+  transform: translate(-50%, 0) scale(1);
+  opacity: 1;
 }
 
 .reaction-picker-mobile .reaction-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 12px;
+  justify-items: center;
 }
 
 .reaction-picker-mobile .reaction-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: oklch(var(--b2));
-  font-size: 24px;
-  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  background: oklch(var(--b2) / 0.7);
+  font-size: 22px;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.reaction-picker-mobile .reaction-button:hover {
+  transform: scale(1.15) translateY(-3px);
+  background: oklch(var(--b2));
 }
 
 .reaction-picker-mobile .reaction-button:active {
   transform: scale(0.9);
   background: oklch(var(--p) / 0.1);
+}
+
+/* Premium Seen Checkmark Micro-Animations */
+.status-tick-container {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+}
+
+@keyframes tick-pop-animation {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.status-tick-read {
+  animation: tick-pop-animation 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  color: oklch(var(--p)) !important; /* Premium Theme Primary color */
+}
+
+.status-tick-delivered {
+  color: oklch(var(--bc) / 0.45) !important;
+}
+
+.status-tick-sent {
+  color: oklch(var(--bc) / 0.45) !important;
 }
 
 /* Enhanced haptic feedback */

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 import { useThemeStore } from "../store/useThemeStore";
@@ -93,13 +94,10 @@ const EnhancedChatMessage = ({
   const isReceiverOnline = selectedUser && onlineUsers.includes(selectedUser.id);
   const reactions = Array.isArray(message.reactions) ? message.reactions : [];
 
-  // Auto-mark messages as read
+  // Auto-mark messages as read - INSTANTLY
   useEffect(() => {
     if (!isMyMessage && selectedUser && message.status !== "read") {
-      const timer = setTimeout(() => {
-        useChatStore.getState().markMessagesAsRead(selectedUser.id);
-      }, 1000);
-      return () => clearTimeout(timer);
+      useChatStore.getState().markMessagesAsRead(selectedUser.id);
     }
   }, [isMyMessage, selectedUser?.id, message.status]);
 
@@ -779,9 +777,9 @@ const EnhancedChatMessage = ({
       </div>
 
       {/* Enhanced Mobile Reaction Picker */}
-      {showReactionPicker && (
+      {showReactionPicker && createPortal(
         <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center"
+          className="fixed inset-0 bg-black/60 z-[99999] flex items-end justify-center"
           onClick={() => setShowReactionPicker(false)}
         >
           <div
@@ -813,7 +811,8 @@ const EnhancedChatMessage = ({
               </button>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Enhanced Image Modal */}

@@ -241,9 +241,8 @@ export const useChatStore = create((set, get) => ({
     });
 
     const messageHandler = (newMessage) => {
-      // ... (message handler logic remains same, handled by existing code in file)
       const receiveTime = performance.now();
-      const { selectedUser, messages } = get();
+      const { selectedUser } = get();
       const { authUser } = useAuthStore.getState();
 
       if (!newMessage || !newMessage.id) {
@@ -289,39 +288,30 @@ export const useChatStore = create((set, get) => ({
           get().markMessagesAsRead(selectedUserId);
         }
 
-        let currentMessages = get().messages;
+        // 🔥 IMMUNE TO RACE CONDITIONS: Functional state update for messages list!
+        set((state) => {
+          const exists = state.messages.some((m) => m.id === newMessage.id);
+          if (exists) return state;
 
-        // Check if message already exists to avoid duplicates
-        const isDuplicateById = currentMessages.some(
-          (m) => m.id === newMessage.id,
-        );
-        // ...
-        if (isDuplicateById) return;
-
-        if (msgSenderId === authUserId) {
-          // This is our own message coming back from server (echo)
-          currentMessages = get().messages;
-          const optimisticIndex = currentMessages.findIndex(
-            (m) =>
-              (m.tempId && (m.status === "sending" || m.status === "sent")) ||
-              (m.status === "sending" &&
-                m.senderId === authUserId &&
-                m.text === newMessage.text),
-          );
-
-          if (optimisticIndex !== -1) {
-            const updatedMessages = currentMessages.map((m, idx) =>
-              idx === optimisticIndex
-                ? { ...newMessage, status: newMessage.status || "sent" }
-                : m,
+          if (msgSenderId === authUserId) {
+            // This is our own message coming back from server (echo)
+            const optimisticIndex = state.messages.findIndex(
+              (m) =>
+                (m.tempId && (m.status === "sending" || m.status === "sent")) ||
+                (m.status === "sending" &&
+                  m.senderId === authUserId &&
+                  m.text === newMessage.text),
             );
-            set({ messages: updatedMessages });
-            return;
-          }
-        }
 
-        const updatedMessages = [...currentMessages, newMessage];
-        set({ messages: [...updatedMessages] });
+            if (optimisticIndex !== -1) {
+              const updated = [...state.messages];
+              updated[optimisticIndex] = { ...newMessage, status: newMessage.status || "sent" };
+              return { messages: updated };
+            }
+          }
+
+          return { messages: [...state.messages, newMessage] };
+        });
 
         // Scroll to bottom (optional trigger if needed)
         setTimeout(() => {
@@ -381,7 +371,6 @@ export const useChatStore = create((set, get) => ({
       // Backend sends: { messageId, deliveredAt }
       const messageId = payload?.messageId || payload;
       const deliveredAt = payload?.deliveredAt || new Date().toISOString();
-      const { messages } = get();
       const targetId = messageId.toString();
 
       set((state) => ({
@@ -432,53 +421,50 @@ export const useChatStore = create((set, get) => ({
 
     const messagesReadHandler = (payload) => {
       const { messageIds = [], receiverId, readBy } = payload;
-      const { messages } = get();
       const { authUser } = useAuthStore.getState();
-
-      // Note: 'readBy' or 'receiverId' is the person who DID the reading.
-      const readerId = readBy || receiverId;
 
       if (!authUser) return;
 
-      // CASE 1: Specific Message IDs provided (Preferred)
-      if (messageIds.length > 0) {
-        const updatedMessages = messages.map((msg) => {
-          if (messageIds.includes(msg.id) && msg.senderId === authUser.id) {
-            return {
-              ...msg,
-              status: "read",
-              isRead: true,
-              readAt: new Date().toISOString(),
-            };
-          }
-          return msg;
-        });
-        set({ messages: updatedMessages });
-        return;
-      }
+      set((state) => {
+        // CASE 1: Specific Message IDs provided (Preferred)
+        if (messageIds.length > 0) {
+          const updatedMessages = state.messages.map((msg) => {
+            if (messageIds.includes(msg.id) && msg.senderId === authUser.id) {
+              return {
+                ...msg,
+                status: "read",
+                isRead: true,
+                readAt: new Date().toISOString(),
+              };
+            }
+            return msg;
+          });
+          return { messages: updatedMessages };
+        }
 
-      // CASE 2: "readBy" User ID provided (Fallback/Legacy)
-      // If the receiver read our chat, mark ALL our messages to them as read
-      if (readBy) {
-        const updatedMessages = messages.map((msg) => {
-          // If I sent this message TO the person who just read it, and it's not read yet
-          if (
-            msg.receiverId === readBy &&
-            msg.senderId === authUser.id &&
-            !msg.isRead &&
-            msg.status !== "read"
-          ) {
-            return {
-              ...msg,
-              status: "read",
-              isRead: true,
-              readAt: new Date().toISOString(),
-            };
-          }
-          return msg;
-        });
-        set({ messages: updatedMessages });
-      }
+        // CASE 2: "readBy" User ID provided (Fallback/Legacy)
+        if (readBy) {
+          const updatedMessages = state.messages.map((msg) => {
+            if (
+              msg.receiverId === readBy &&
+              msg.senderId === authUser.id &&
+              !msg.isRead &&
+              msg.status !== "read"
+            ) {
+              return {
+                ...msg,
+                status: "read",
+                isRead: true,
+                readAt: new Date().toISOString(),
+              };
+            }
+            return msg;
+          });
+          return { messages: updatedMessages };
+        }
+
+        return state;
+      });
     };
 
     socket.on("newMessage", messageHandler);
