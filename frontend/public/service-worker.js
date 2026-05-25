@@ -1,4 +1,4 @@
-const CACHE_NAME = 'z-app-v1';
+const CACHE_NAME = 'z-app-v2';
 const urlsToCache = [
   '/',
   '/index.html',

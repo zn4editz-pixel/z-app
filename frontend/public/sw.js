@@ -3,9 +3,9 @@
  * Provides offline support and caching
  */
 
-const CACHE_NAME = 'z-app-v1';
-const STATIC_CACHE = 'z-app-static-v1';
-const DYNAMIC_CACHE = 'z-app-dynamic-v1';
+const CACHE_NAME = 'z-app-v2';
+const STATIC_CACHE = 'z-app-static-v2';
+const DYNAMIC_CACHE = 'z-app-dynamic-v2';
 
 const STATIC_ASSETS = [
   '/',
